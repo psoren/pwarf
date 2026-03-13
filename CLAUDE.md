@@ -83,6 +83,12 @@ One branch per issue (see CI/agent guide in `.github/`). PRs target `main`.
 
 **Every code change must have a GitHub issue.** Before starting any implementation work, check that a GitHub issue exists and reference it in the branch name (`feat/issue-NNN-short-description`) and PR title (`closes #NNN`). Do not open a PR without a linked issue.
 
+**PRs must have exactly one commit before merging.** Squash all work-in-progress commits before opening or updating a PR: `git rebase -i origin/main` and squash everything into a single commit with a clean message.
+
+**Delete the branch after a PR is merged.** Remote branches should be deleted via the GitHub PR UI ("Delete branch") or `git push origin --delete <branch>`. Also prune the local ref: `git fetch --prune`.
+
+After rebasing a branch onto main, force-push is expected and safe: `git push --force-with-lease`.
+
 ## Screenshots for visual PRs
 
 Any PR that touches `src/ui/` **must** include screenshots. Follow these steps:
