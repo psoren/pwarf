@@ -1,0 +1,225 @@
+
+DWARF FORTRESS CLONE
+Agent-Driven Development Plan
+Built with Claude Code Agents + GitHub Issues + CI/CD
+
+Tech Stack: TypeScript • PixiJS • bitecs • Vite • React • Vitest
+1. What You’re Building
+A browser-based Dwarf Fortress clone: a top-down, tile-based colony simulation where the player manages autonomous dwarves in a procedurally generated 3D world made of z-levels.
+
+Core Game Loop
+World generation: Perlin noise heightmaps, biomes, underground stone/ore layers, caverns, rivers
+ECS tick loop: Every game tick runs systems in order — AI decisions, pathfinding, job execution, needs decay, combat, rendering
+Player-as-manager: You never directly control dwarves. You designate zones (mine here, farm here, store here), place buildings, and assign labor. Dwarves figure out the rest.
+Production chains: Mine ore → smelt bars → forge weapons. Plant seeds → grow crops → cook meals. All data-driven from YAML.
+Combat: Body-part targeting, material-based damage, injuries, military squads
+Mood/needs: Hunger, thirst, sleep, happiness. Neglect leads to tantrum spirals.
+
+Tech Stack
+TypeScript everywhere — you know React, and Java OOP maps cleanly onto TS
+bitecs for Entity-Component-System — fast, simple, keeps systems decoupled
+PixiJS for 2D tile rendering in the browser (or xterm.js for ASCII)
+React for UI overlays: menus, stock screens, labor assignment
+Vite for builds, Vitest for testing
+YAML for data definitions (materials, reactions, creatures)
+2. Repository Structure
+Set up your repo with clear boundaries so agents know exactly where to work:
+
+dwarf-fortress-clone/
+├─ .github/workflows/     ← CI + playtest + Claude review
+├─ .claude/
+│   ├─ settings.json        ← Claude Code project config
+│   └─ commands/            ← Custom slash commands
+├─ docs/
+│   ├─ ARCHITECTURE.md      ← System overview (agents read this first)
+│   ├─ CONVENTIONS.md       ← Code style, naming, patterns
+│   ├─ AGENT_GUIDE.md       ← How agents approach issues
+│   └─ specs/               ← Detailed specs per system
+├─ src/
+│   ├─ core/                ← ECS, world state, tick loop
+│   ├─ map/                 ← Terrain gen, z-levels, tiles
+│   ├─ entities/            ← Dwarves, creatures, items
+│   ├─ systems/             ← Pathfinding, AI, jobs, physics
+│   ├─ ui/                  ← Rendering, input, menus
+│   └─ data/                ← YAML: materials, buildings, etc.
+├─ scripts/
+│   ├─ playtest.ts          ← Headless playtesting script
+│   └─ file-issues.ts       ← Auto-files GitHub issues from reviews
+├─ tests/
+└─ assets/
+3. The Agent Workflow
+GitHub Issues are your task queue. Each issue is a bounded unit of work that a Claude Code agent picks up, implements, PRs, and closes. The full loop:
+
+
+
+Issue Design Principles
+One issue = one PR = one bounded task. No mega-issues.
+Every issue includes: acceptance criteria, files to touch, interfaces to conform to, test plan.
+Label system: phase-0 through phase-5, agent-ready, blocked, needs-human-review
+Dependency links: Issues reference blockers explicitly ("Blocked by #12, #14")
+
+Agent Session Flow
+Read the GitHub issue — understand acceptance criteria and dependencies
+Read ARCHITECTURE.md — understand where the work fits
+Read existing code in relevant modules
+Implement — write code conforming to CONVENTIONS.md
+Write tests — unit tests for new functionality
+Run tests — ensure nothing is broken
+Create PR — with description referencing the issue
+
+Parallelization
+At any phase, many issues are independent. Run 3–5 agents in parallel on non-conflicting issues. Use the blocked label and dependency links to enforce ordering. Do a human review pass every few hours on merged PRs.
+4. CI/CD Pipeline
+4a. Build & Test (ci.yml)
+Runs on every push and PR. Blocks merging if anything fails.
+
+# .github/workflows/ci.yml
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+Branch protection: Go to Settings → Branches → Add rule for main. Enable "Require status checks to pass before merging" and select the CI job.
+
+4b. Claude PR Review (claude-review.yml)
+Claude Code automatically reviews every PR against your architecture and conventions:
+
+# .github/workflows/claude-review.yml
+name: Claude PR Review
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          review: true
+          review_context: |
+            Review against docs/CONVENTIONS.md and
+            docs/ARCHITECTURE.md. Check tests exist and
+            cover acceptance criteria from linked issue.
+
+Setup: Store your Anthropic API key in repo Settings → Secrets → ANTHROPIC_API_KEY
+
+4c. Slack Notifications for Stuck Agents
+If an agent’s job fails or times out, you get pinged in Slack:
+
+Set timeout-minutes: 30 on agent jobs
+Add a failure step that posts to your Slack webhook
+Have agents add a needs-human label to issues they can’t resolve after two attempts
+
+- name: Notify on failure
+  if: failure()
+  run: |
+    curl -X POST ${{ secrets.SLACK_WEBHOOK }} \
+      -H 'Content-Type: application/json' \
+      -d '{"text":"Agent stuck on PR #${{ ... }}"}'
+
+Setup: Create a Slack app with incoming webhooks. Store the webhook URL in repo Settings → Secrets → SLACK_WEBHOOK
+5. Automated Playtesting
+This is the secret weapon. After every merge to main, an agent plays the game headlessly and files bugs automatically.
+
+Step 1: Headless Game API
+Expose your game as a programmatic API alongside the visual version:
+
+export class HeadlessGame {
+  tick(): GameState { }
+  designateMine(x, y, z): void { }
+  buildWorkshop(type, x, y, z): void { }
+  getStocks(): ItemCount[] { }
+  getDwarves(): DwarfStatus[] { }
+  runFor(ticks: number): GameState { }
+}
+
+Step 2: Playtest Script
+A script that creates a game, plays it for N ticks, and dumps a report:
+
+const game = new HeadlessGame({ seed: 12345 });
+game.embark();
+game.designateMine(10, 10, -1, 15, 15, -3);
+game.runFor(500);
+// Write game state to playtest-report.json
+
+Step 3: Claude Reviews the Playtest
+A Claude Code agent reads the report and evaluates: Did dwarves mine successfully? Did anyone starve or get stuck pathfinding? Are there broken entity states? It outputs a JSON array of issues.
+
+Step 4: Auto-File Issues
+A script reads Claude’s JSON output and creates GitHub issues via the Octokit API, complete with labels and descriptions.
+
+Step 5: GitHub Action
+Wire it all together as a workflow that triggers on pushes to main. The playtest runs, Claude reviews, and issues are filed automatically.
+6. Development Phases
+~100 issues across 6 phases. Don’t start the next phase until the current phase’s integration test passes.
+
+Phase 0: Scaffolding & Core (Issues #1–10)
+Foundational work. Run these mostly sequentially with human review.
+
+
+
+Phase 1: Terrain Generation (Issues #11–20)
+
+
+Phase 2: Dwarf Simulation Core (Issues #21–40)
+The heart of the game. Many issues here can be parallelized.
+
+
+
+Phase 3: Economy & Production (Issues #41–60)
+
+Phase 4: Combat & Creatures (Issues #61–80)
+
+
+Phase 5: Polish & Advanced (Issues #81–100)
+
+7. Your Action Items
+Here’s exactly what to do, in order:
+
+
+
+Create the GitHub repo with the folder structure from Section 2
+Initialize the project: npm init, install TypeScript, Vite, Vitest, bitecs, PixiJS, React
+Write ARCHITECTURE.md — describe the ECS pattern, tick loop, module boundaries, data flow
+Write CONVENTIONS.md — code style, naming conventions, file organization, test expectations
+Write AGENT_GUIDE.md — how agents should read issues, branch, implement, test, and PR
+Set up .claude/settings.json pointing to docs as required context
+Set up GitHub Actions: ci.yml (build/test) and claude-review.yml (PR review)
+Configure branch protection: require CI pass before merge
+Create a Slack app with incoming webhooks; store URL in repo secrets
+Store ANTHROPIC_API_KEY in repo secrets
+
+
+
+File issues #1–10 on GitHub with detailed acceptance criteria
+Run agents on them mostly sequentially: ECS core → map → renderer → entities
+Human-review every PR in this phase — these set the patterns
+Verify the integration: a rendered map with entities moving on it
+
+
+
+File next phase’s issues once current integration test passes
+Run 3–5 agents in parallel on non-blocking issues
+Human review pass every few hours on merged code
+Set up the playtest workflow once Phase 2 is far enough along
+Refine issue descriptions when agent output misses the mark
+
+
+

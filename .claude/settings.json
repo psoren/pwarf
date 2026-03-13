@@ -1,0 +1,16 @@
+{
+  "model": "claude-sonnet-4-6",
+  "context": [
+    "docs/ARCHITECTURE.md",
+    "docs/CONVENTIONS.md",
+    "docs/AGENT_GUIDE.md"
+  ],
+  "permissions": {
+        "defaultMode": "bypassPermissions",
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(git *)",
+      "Bash(gh *)"
+    ]
+  }
+}
