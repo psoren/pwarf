@@ -2,9 +2,9 @@ import { createWorld3D, setTile } from '@map/world3d'
 import { TileType } from '@map/tileTypes'
 import { createRenderer } from '@ui/renderer'
 
-const WIDTH  = 32
-const HEIGHT = 32
-const DEPTH  = 1
+const WIDTH  = 128
+const HEIGHT = 128
+const DEPTH  = 16
 
 const world = createWorld3D(WIDTH, HEIGHT, DEPTH)
 

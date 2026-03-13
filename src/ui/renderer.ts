@@ -22,29 +22,26 @@ export async function createRenderer(canvas: HTMLCanvasElement): Promise<Rendere
   const tilesGfx = new Graphics()
   app.stage.addChild(tilesGfx)
 
-  const tilesWide = Math.ceil(canvas.width / TILE_SIZE) + 1
-  const tilesHigh = Math.ceil(canvas.height / TILE_SIZE) + 1
-
   function drawTiles(world: World3D, viewZ: number, cameraX: number, cameraY: number): void {
     tilesGfx.clear()
 
-    const startTileX = Math.floor(cameraX / TILE_SIZE)
-    const startTileY = Math.floor(cameraY / TILE_SIZE)
+    if (viewZ < 0 || viewZ >= world.depth) return
 
-    for (let ty = 0; ty < tilesHigh; ty++) {
-      for (let tx = 0; tx < tilesWide; tx++) {
-        const worldX = startTileX + tx
-        const worldY = startTileY + ty
+    const viewW = canvas.width
+    const viewH = canvas.height
 
-        if (worldX < 0 || worldX >= world.width) continue
-        if (worldY < 0 || worldY >= world.height) continue
-        if (viewZ < 0 || viewZ >= world.depth) continue
+    const startX = Math.max(0, cameraX)
+    const startY = Math.max(0, cameraY)
+    const endX   = Math.min(world.width,  cameraX + Math.ceil(viewW / TILE_SIZE) + 1)
+    const endY   = Math.min(world.height, cameraY + Math.ceil(viewH / TILE_SIZE) + 1)
 
-        const tile = getTile(world, worldX, worldY, viewZ)
+    for (let ty = startY; ty < endY; ty++) {
+      for (let tx = startX; tx < endX; tx++) {
+        const tile  = getTile(world, tx, ty, viewZ)
         const color = TILE_COLORS[tile]
 
-        const screenX = worldX * TILE_SIZE - cameraX
-        const screenY = worldY * TILE_SIZE - cameraY
+        const screenX = (tx - cameraX) * TILE_SIZE
+        const screenY = (ty - cameraY) * TILE_SIZE
 
         tilesGfx.rect(screenX, screenY, TILE_SIZE, TILE_SIZE).fill(color)
       }
