@@ -5,12 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>pwarf</title>
     <style>
-      body { margin: 0; background: #1a1a1a; color: #ccc; font-family: monospace; }
-      #app { display: flex; justify-content: center; align-items: center; height: 100vh; }
+      body, html { margin: 0; padding: 0; overflow: hidden; background: #1a1a1a; color: #ccc; font-family: monospace; }
+      #app { position: relative; width: 100vw; height: 100vh; }
+
+      #help-hint {
+        position: absolute;
+        bottom: 12px;
+        right: 16px;
+        font-size: 12px;
+        color: #888;
+        pointer-events: none;
+        z-index: 10;
+      }
+
+      #help-modal {
+        display: none;
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.75);
+        z-index: 20;
+        justify-content: center;
+        align-items: center;
+      }
+      #help-modal.open { display: flex; }
+
+      #help-modal-box {
+        background: #1e1e1e;
+        border: 1px solid #444;
+        padding: 24px 32px;
+        min-width: 280px;
+      }
+      #help-modal-box h2 { margin: 0 0 16px; font-size: 14px; color: #ccc; letter-spacing: 0.1em; text-transform: uppercase; }
+      #help-modal-box table { border-collapse: collapse; width: 100%; }
+      #help-modal-box td { padding: 4px 0; font-size: 13px; }
+      #help-modal-box td:first-child { color: #6af; width: 160px; }
+      #help-modal-box td:last-child { color: #aaa; }
+      #help-modal-box .close-hint { margin-top: 20px; font-size: 11px; color: #555; text-align: center; }
     </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div id="help-hint">H – help</div>
+      <div id="help-modal">
+        <div id="help-modal-box">
+          <h2>Controls</h2>
+          <table>
+            <tr><td>W A S D / Arrow keys</td><td>Pan camera</td></tr>
+            <tr><td>+ / =</td><td>Go up one Z level</td></tr>
+            <tr><td>−</td><td>Go down one Z level</td></tr>
+            <tr><td>H</td><td>Toggle this help</td></tr>
+          </table>
+          <p class="close-hint">Press H or click to close</p>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
