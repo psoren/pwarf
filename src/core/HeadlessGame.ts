@@ -1,7 +1,6 @@
-import { addEntity, addComponent, query } from 'bitecs'
+import { query } from 'bitecs'
 import { createGameWorld } from '@core/world'
 import type { GameWorld } from '@core/world'
-import { Position } from '@core/components/position'
 import { createWorld3D, setTile } from '@map/world3d'
 import type { World3D } from '@map/world3d'
 import { TileType } from '@map/tileTypes'
@@ -9,10 +8,10 @@ import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_DEPTH, TICKS_PER_SECOND } from '@core/
 import type { GameState, DwarfStatus, ItemCount } from '@core/types'
 import { movementSystem } from '@systems/movementSystem'
 import { log } from '@core/logger'
-import { nameStore } from '@core/stores'
-
-const DWARF_FIRST = ['Urist', 'Bomrek', 'Meng', 'Sibrek', 'Ber', 'Doren', 'Vucar']
-const DWARF_LAST  = ['Oilystockade', 'Hammerstone', 'Claspedtome', 'Inkdagger', 'Bravefists', 'Stonebraid', 'Goldenaxe']
+import { setupEmbark } from '@entities/embarkSite'
+import { Position } from '@core/components/position'
+import { generateWorld } from '@map/generators/worldGenOrchestrator'
+import type { ProgressCallback } from '@map/generators/worldGenOrchestrator'
 
 type MineDesignation = {
   x1: number; y1: number; z1: number
@@ -53,6 +52,7 @@ export class HeadlessGame {
   /**
    * Initialize the ECS world, generate the starting map (flat stone floor at z=0),
    * and spawn 7 dwarves at the center of the map on the surface.
+   * Synchronous — safe for tests that run in Node without browser APIs.
    */
   embark(): void {
     this.world = createGameWorld()
@@ -76,20 +76,40 @@ export class HeadlessGame {
       depth: this.depth,
     })
 
-    const centerX = Math.floor(this.width / 2)
-    const centerY = Math.floor(this.height / 2)
+    // Use setupEmbark for dwarf placement (falls back to center when all tiles are Stone)
+    setupEmbark(this.world, this.map, this.seed)
 
-    // Spawn 7 starting dwarves near the map center, scattered ±4 tiles
-    for (let i = 0; i < 7; i++) {
-      const eid = addEntity(this.world)
-      addComponent(this.world, eid, Position)
-      Position.x[eid] = centerX + Math.floor((Math.random() - 0.5) * 8)
-      Position.y[eid] = centerY + Math.floor((Math.random() - 0.5) * 8)
-      Position.z[eid] = 0
-      nameStore.set(eid, `${DWARF_FIRST[i % DWARF_FIRST.length]!} ${DWARF_LAST[(i * 3) % DWARF_LAST.length]!}`)
-    }
+    log('info', 'embark.dwarves_spawned', {
+      count: 7,
+      centerX: Math.floor(this.width / 2),
+      centerY: Math.floor(this.height / 2),
+    })
+  }
 
-    log('info', 'embark.dwarves_spawned', { count: 7, centerX, centerY })
+  /**
+   * Async embark: generate a full procedural world, then place dwarves.
+   * Use for gameplay; use embark() for tests.
+   */
+  async embarkAsync(onProgress?: ProgressCallback): Promise<void> {
+    this.world = createGameWorld()
+    this._tickCount = 0
+
+    this.map = await generateWorld(
+      this.seed,
+      this.width,
+      this.height,
+      this.depth,
+      onProgress,
+    )
+
+    setupEmbark(this.world, this.map, this.seed)
+
+    log('info', 'embark.async.complete', {
+      seed: this.seed,
+      width: this.width,
+      height: this.height,
+      depth: this.depth,
+    })
   }
 
   /**
