@@ -1,6 +1,13 @@
 import { HeadlessGame } from '@core/HeadlessGame'
 import { createRenderer } from '@ui/renderer'
-import { TICKS_PER_SECOND } from '@core/constants'
+import { TICKS_PER_SECOND, WORLD_WIDTH, WORLD_HEIGHT, TILE_SIZE } from '@core/constants'
+import { initLogger } from '@core/logger'
+
+const axiomToken = import.meta.env.VITE_AXIOM_TOKEN
+const axiomDataset = import.meta.env.VITE_AXIOM_DATASET
+if (axiomToken !== undefined && axiomDataset !== undefined) {
+  initLogger({ token: axiomToken, dataset: axiomDataset })
+}
 
 const game = new HeadlessGame({ seed: 42 })
 game.embark()
@@ -13,8 +20,11 @@ canvas.width  = 512
 canvas.height = 512
 appEl.appendChild(canvas)
 
-let cameraX = 0
-let cameraY = 0
+// Start camera centered on dwarf spawn point (map center)
+const tilesWide = Math.floor(canvas.width / TILE_SIZE)
+const tilesHigh = Math.floor(canvas.height / TILE_SIZE)
+let cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(tilesWide / 2)
+let cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(tilesHigh / 2)
 let viewZ   = 0
 
 window.addEventListener('keydown', (e: KeyboardEvent) => {

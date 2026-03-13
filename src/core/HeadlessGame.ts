@@ -8,6 +8,7 @@ import { TileType } from '@map/tileTypes'
 import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_DEPTH, TICKS_PER_SECOND } from '@core/constants'
 import type { GameState, DwarfStatus, ItemCount } from '@core/types'
 import { movementSystem } from '@systems/movementSystem'
+import { log } from '@core/logger'
 
 type MineDesignation = {
   x1: number; y1: number; z1: number
@@ -61,6 +62,13 @@ export class HeadlessGame {
       }
     }
 
+    log('info', 'world.gen.complete', {
+      seed: this.seed,
+      width: this.width,
+      height: this.height,
+      depth: this.depth,
+    })
+
     const centerX = Math.floor(this.width / 2)
     const centerY = Math.floor(this.height / 2)
 
@@ -72,6 +80,8 @@ export class HeadlessGame {
       Position.y[eid] = centerY
       Position.z[eid] = 0
     }
+
+    log('info', 'embark.dwarves_spawned', { count: 7, centerX, centerY })
   }
 
   /**
