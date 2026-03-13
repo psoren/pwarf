@@ -11,6 +11,7 @@ export type GameUIHandle = {
   updateHUD(tick: number, viewZ: number, camX: number, camY: number): void
   setSelectedEid(eid: number | null): void
   toggleHelp(): void
+  setMode(mode: 'select' | 'mine'): void
 }
 
 type Props = {
@@ -26,6 +27,7 @@ export function GameUI({ onReady, onSelectDwarf }: Props) {
   const [selectedEid, setSelectedEidState] = useState<number | null>(null)
   const [hud, setHud]             = useState({ tick: 0, viewZ: 0, camX: 0, camY: 0 })
   const [helpOpen, setHelpOpen]   = useState(false)
+  const [mode, setModeState]      = useState<'select' | 'mine'>('select')
 
   const handleSelectDwarf = useCallback((eid: number | null) => {
     setSelectedEidState(eid)
@@ -40,6 +42,7 @@ export function GameUI({ onReady, onSelectDwarf }: Props) {
       updateHUD:     (tick, viewZ, camX, camY) => setHud({ tick, viewZ, camX, camY }),
       setSelectedEid: (eid) => setSelectedEidState(eid),
       toggleHelp:    ()     => setHelpOpen(h => !h),
+      setMode:       (m)    => setModeState(m),
     }
     onReady(handle)
   }, [onReady])
@@ -68,6 +71,9 @@ export function GameUI({ onReady, onSelectDwarf }: Props) {
         <div>Z: {hud.viewZ}{hud.viewZ === 0 ? ' (surface)' : ' (underground)'}</div>
         <div>Tick: {hud.tick}</div>
         <div>X: {hud.camX}  Y: {hud.camY}</div>
+        {mode === 'mine' && (
+          <div style={{ color: '#FF6600', marginTop: 4 }}>⛏ Mine mode (M to exit)</div>
+        )}
       </div>
 
       {/* Help hint bottom-right (above sidebar) */}

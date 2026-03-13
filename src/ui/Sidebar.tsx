@@ -15,7 +15,7 @@ const STATE_COLORS: Record<string, string> = {
   Dead:       '#444',
 }
 
-function NeedsBar({ value, low, high }: { value: number; low: string; high: string }) {
+function NeedsBar({ value, high }: { value: number; high: string }) {
   const pct = Math.round(value * 100)
   const color = value > 0.5 ? high : value > 0.25 ? '#ff8800' : '#ff2200'
   return (
@@ -59,9 +59,9 @@ function DwarfRow({ dwarf, isSelected, onClick }: DwarfRowProps) {
         <span style={{ color: stateColor, fontSize: 10 }}>{stateName}</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <NeedsBar value={dwarf.hunger} low="#ff2200" high="#ff8800" />
-        <NeedsBar value={dwarf.thirst} low="#ff2200" high="#44DDFF" />
-        <NeedsBar value={dwarf.sleep}  low="#ff2200" high="#88aaff" />
+        <NeedsBar value={dwarf.hunger} high="#ff8800" />
+        <NeedsBar value={dwarf.thirst} high="#44DDFF" />
+        <NeedsBar value={dwarf.sleep}  high="#88aaff" />
       </div>
     </div>
   )

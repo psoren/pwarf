@@ -24,6 +24,8 @@ import { Position } from '@core/components/position'
 import { Needs, DwarfAI } from '@core/components/dwarf'
 import { Mood } from '@core/components/mood'
 import { Item, ItemType, ItemMaterial } from '@core/components/item'
+import { Designation } from '@core/components/designation'
+import { patchGrowthSystem } from '@systems/patchGrowthSystem'
 import { generateWorld } from '@map/generators/worldGenOrchestrator'
 import type { ProgressCallback } from '@map/generators/worldGenOrchestrator'
 
@@ -165,6 +167,7 @@ export class HeadlessGame {
     const dt = 1 / TICKS_PER_SECOND
 
     needsDecaySystem(this.world)
+    patchGrowthSystem(this.world)
     moodSystem(this.world, this._tickCount)
     dwarfAISystem(this.world, this.map, this._tickCount)
     mineExecutionSystem(this.world, this.map)
@@ -319,6 +322,24 @@ export class HeadlessGame {
         y: Item.y[eid] ?? 0,
         z: Item.z[eid] ?? 0,
         itemType: Item.itemType[eid] ?? 0,
+      })
+    }
+    return result
+  }
+
+  /**
+   * Returns coordinates of all pending mine designations for rendering.
+   */
+  getDesignations(): { x: number; y: number; z: number }[] {
+    if (!this.world) return []
+    const eids = query(this.world, [Designation])
+    const result: { x: number; y: number; z: number }[] = []
+    for (let i = 0; i < eids.length; i++) {
+      const eid = eids[i]!
+      result.push({
+        x: Designation.tileX[eid] ?? 0,
+        y: Designation.tileY[eid] ?? 0,
+        z: Designation.tileZ[eid] ?? 0,
       })
     }
     return result
