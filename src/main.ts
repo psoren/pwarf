@@ -1,6 +1,6 @@
 import { HeadlessGame } from '@core/HeadlessGame'
 import { createRenderer } from '@ui/renderer'
-import { TICKS_PER_SECOND, WORLD_WIDTH, WORLD_HEIGHT, TILE_SIZE } from '@core/constants'
+import { TICKS_PER_SECOND, WORLD_WIDTH, WORLD_HEIGHT, WORLD_DEPTH, TILE_SIZE } from '@core/constants'
 import { initLogger } from '@core/logger'
 
 const axiomToken = import.meta.env.VITE_AXIOM_TOKEN
@@ -17,6 +17,9 @@ if (!appEl) throw new Error('No #app element found')
 
 const helpModal = document.getElementById('help-modal')
 if (!helpModal) throw new Error('No #help-modal element found')
+
+const hudZ    = document.getElementById('hud-z')
+const hudTick = document.getElementById('hud-tick')
 
 helpModal.addEventListener('click', () => { helpModal.classList.remove('open') })
 
@@ -49,7 +52,8 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
   }
   cameraX = Math.max(0, cameraX)
   cameraY = Math.max(0, cameraY)
-  viewZ   = Math.max(0, viewZ)
+  viewZ   = Math.max(0, Math.min(WORLD_DEPTH - 1, viewZ))
+  if (hudZ) hudZ.textContent = `Z: ${viewZ}${viewZ === 0 ? ' (surface)' : ''}`
 })
 
 createRenderer(canvas).then((renderer) => {
@@ -64,7 +68,10 @@ createRenderer(canvas).then((renderer) => {
   })
 
   // Advance simulation at a fixed tick rate
-  setInterval(() => { game.tick() }, 1000 / TICKS_PER_SECOND)
+  setInterval(() => {
+    const state = game.tick()
+    if (hudTick) hudTick.textContent = `Tick: ${state.tick}`
+  }, 1000 / TICKS_PER_SECOND)
 
   // Render each animation frame
   function frame(): void {
