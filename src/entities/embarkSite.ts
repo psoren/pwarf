@@ -7,6 +7,7 @@ import { Position } from '@core/components/position'
 import { TileCoord } from '@core/components/tileCoord'
 import { DwarfAI, DwarfState, Needs, Skills, Labor, ALL_LABORS } from '@core/components/dwarf'
 import { Mood } from '@core/components/mood'
+import { Item, ItemType, ItemMaterial } from '@core/components/item'
 import { nameStore } from '@core/stores'
 import { mulberry32 } from '@map/biomes'
 
@@ -67,9 +68,10 @@ export function setupEmbark(world: GameWorld, map: World3D, seed: number): Embar
     DwarfAI.drinkTargetEid[eid] = -1
 
     addComponent(world, eid, Needs)
-    Needs.hunger[eid] = 1.0
-    Needs.thirst[eid] = 1.0
-    Needs.sleep[eid] = 1.0
+    // Start partially depleted so dwarves seek food/drink within ~1 minute
+    Needs.hunger[eid] = 0.55
+    Needs.thirst[eid] = 0.38
+    Needs.sleep[eid] = 0.8
 
     addComponent(world, eid, Skills)
 
@@ -86,5 +88,41 @@ export function setupEmbark(world: GameWorld, map: World3D, seed: number): Embar
     dwarfEids.push(eid)
   }
 
+  // Spawn food and drink items scattered around the embark site
+  // so dwarves have something to consume immediately
+  spawnEmbarkSupplies(world, site.x, site.y, rng)
+
   return { dwarfEids, siteX: site.x, siteY: site.y }
+}
+
+function spawnEmbarkSupplies(
+  world: GameWorld,
+  siteX: number,
+  siteY: number,
+  rng: () => number,
+): void {
+  // 10 food + 10 drink items scattered within ±6 tiles of site
+  for (let i = 0; i < 10; i++) {
+    const eid = addEntity(world)
+    addComponent(world, eid, Item)
+    Item.itemType[eid]  = ItemType.Food
+    Item.material[eid]  = ItemMaterial.Plump
+    Item.quality[eid]   = 1
+    Item.carriedBy[eid] = -1
+    Item.x[eid] = siteX + Math.floor((rng() - 0.5) * 12)
+    Item.y[eid] = siteY + Math.floor((rng() - 0.5) * 12)
+    Item.z[eid] = 0
+  }
+
+  for (let i = 0; i < 10; i++) {
+    const eid = addEntity(world)
+    addComponent(world, eid, Item)
+    Item.itemType[eid]  = ItemType.Drink
+    Item.material[eid]  = ItemMaterial.None
+    Item.quality[eid]   = 1
+    Item.carriedBy[eid] = -1
+    Item.x[eid] = siteX + Math.floor((rng() - 0.5) * 12)
+    Item.y[eid] = siteY + Math.floor((rng() - 0.5) * 12)
+    Item.z[eid] = 0
+  }
 }
