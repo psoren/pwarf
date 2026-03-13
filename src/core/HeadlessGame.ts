@@ -9,6 +9,10 @@ import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_DEPTH, TICKS_PER_SECOND } from '@core/
 import type { GameState, DwarfStatus, ItemCount } from '@core/types'
 import { movementSystem } from '@systems/movementSystem'
 import { log } from '@core/logger'
+import { nameStore } from '@core/stores'
+
+const DWARF_FIRST = ['Urist', 'Bomrek', 'Meng', 'Sibrek', 'Ber', 'Doren', 'Vucar']
+const DWARF_LAST  = ['Oilystockade', 'Hammerstone', 'Claspedtome', 'Inkdagger', 'Bravefists', 'Stonebraid', 'Goldenaxe']
 
 type MineDesignation = {
   x1: number; y1: number; z1: number
@@ -82,6 +86,7 @@ export class HeadlessGame {
       Position.x[eid] = centerX + Math.floor((Math.random() - 0.5) * 8)
       Position.y[eid] = centerY + Math.floor((Math.random() - 0.5) * 8)
       Position.z[eid] = 0
+      nameStore.set(eid, `${DWARF_FIRST[i % DWARF_FIRST.length]!} ${DWARF_LAST[(i * 3) % DWARF_LAST.length]!}`)
     }
 
     log('info', 'embark.dwarves_spawned', { count: 7, centerX, centerY })

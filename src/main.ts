@@ -3,6 +3,7 @@ import { createRenderer } from '@ui/renderer'
 import { createInputHandler } from '@ui/input'
 import { TICKS_PER_SECOND, WORLD_WIDTH, WORLD_HEIGHT, WORLD_DEPTH, TILE_SIZE } from '@core/constants'
 import { initLogger } from '@core/logger'
+import { nameStore } from '@core/stores'
 
 const axiomToken = import.meta.env.VITE_AXIOM_TOKEN
 const axiomDataset = import.meta.env.VITE_AXIOM_DATASET
@@ -19,10 +20,11 @@ if (!appEl) throw new Error('No #app element found')
 const helpModal = document.getElementById('help-modal')
 if (!helpModal) throw new Error('No #help-modal element found')
 
-const hudZ    = document.getElementById('hud-z')
-const hudTick = document.getElementById('hud-tick')
-const hudXY   = document.getElementById('hud-xy')
-const hudMsg  = document.getElementById('hud-msg')
+const hudZ        = document.getElementById('hud-z')
+const hudTick     = document.getElementById('hud-tick')
+const hudXY       = document.getElementById('hud-xy')
+const hudMsg      = document.getElementById('hud-msg')
+const hudSelected = document.getElementById('hud-selected')
 
 helpModal.addEventListener('click', () => { helpModal.classList.remove('open') })
 
@@ -32,16 +34,34 @@ canvas.height = window.innerHeight
 appEl.appendChild(canvas)
 
 // Start camera centered on dwarf spawn point (map center)
-let cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
-let cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
+let cameraX     = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
+let cameraY     = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
 // viewZ: 0 = surface, negative = underground
-let viewZ   = 0
+let viewZ       = 0
+let selectedEid: number | null = null
 
 const CAM_MARGIN = 10
 
 function updateHUD(): void {
   if (hudZ)  hudZ.textContent  = `Z: ${viewZ}${viewZ === 0 ? ' (surface)' : ' (underground)'}`
   if (hudXY) hudXY.textContent = `X: ${cameraX}  Y: ${cameraY}`
+}
+
+function updateSelectedHud(): void {
+  if (!hudSelected) return
+  if (selectedEid === null) {
+    hudSelected.textContent = ''
+    return
+  }
+  const name = nameStore.get(selectedEid) ?? `Dwarf #${selectedEid}`
+  const dwarves = game.getDwarves()
+  const d = dwarves.find(dw => dw.eid === selectedEid)
+  if (d) {
+    hudSelected.textContent = `${name} (${Math.round(d.x)}, ${Math.round(d.y)}, ${d.z})`
+  } else {
+    hudSelected.textContent = ''
+    selectedEid = null
+  }
 }
 
 updateHUD()
@@ -69,9 +89,16 @@ const input = createInputHandler(canvas, (cmd) => {
     case 'CANCEL':
       helpModal.classList.remove('open')
       break
-    case 'TILE_CLICK':
-      // handled in commit 3 (dwarf selection)
+    case 'TILE_CLICK': {
+      const tileX = cmd.x + cameraX
+      const tileY = cmd.y + cameraY
+      const worldZ = -viewZ  // dwarves use positive z, 0 = surface
+      const dwarves = game.getDwarves()
+      const hit = dwarves.find(d => Math.round(d.x) === tileX && Math.round(d.y) === tileY && d.z === worldZ)
+      selectedEid = hit?.eid ?? null
+      updateSelectedHud()
       break
+    }
   }
 }, () => viewZ)
 
@@ -103,6 +130,7 @@ createRenderer(canvas).then((renderer) => {
     renderer.drawDwarves(dwarves, worldZ, cameraX, cameraY)
     const onLevel = dwarves.filter(d => d.z === worldZ)
     if (hudMsg) hudMsg.textContent = onLevel.length === 0 ? 'No dwarves on this level' : ''
+    updateSelectedHud()
     requestAnimationFrame(frame)
   }
   requestAnimationFrame(frame)

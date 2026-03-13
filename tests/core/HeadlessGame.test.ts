@@ -16,12 +16,15 @@ describe('HeadlessGame', () => {
       expect(game.getDwarves()).toHaveLength(7)
     })
 
-    it('places dwarves at the center of the map at z=0', () => {
+    it('places dwarves near the center of the map at z=0', () => {
       game.embark()
       const dwarves = game.getDwarves()
+      const center = 16  // Math.floor(32 / 2)
       for (const dwarf of dwarves) {
-        expect(dwarf.x).toBe(16)   // Math.floor(32 / 2)
-        expect(dwarf.y).toBe(16)
+        expect(dwarf.x).toBeGreaterThanOrEqual(center - 4)
+        expect(dwarf.x).toBeLessThanOrEqual(center + 4)
+        expect(dwarf.y).toBeGreaterThanOrEqual(center - 4)
+        expect(dwarf.y).toBeLessThanOrEqual(center + 4)
         expect(dwarf.z).toBe(0)
       }
     })
