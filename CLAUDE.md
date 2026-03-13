@@ -80,3 +80,11 @@ TILE_SIZE = 16px, TICKS_PER_SECOND = 20, MAX_ENTITIES = 10 000
 ## Branch policy
 
 One branch per issue (see CI/agent guide in `.github/`). PRs target `main`.
+
+## Agent model selection
+
+- **Subagents** (research, search, exploration, file reads): use `model: "sonnet"`
+- **Trivial lookups** (single file search, simple one-off questions): use `model: "haiku"`
+- **Main context** (synthesis, architectural decisions, writing code): opus (default — no override needed)
+
+Never spawn a subagent with opus. Reserve the main context for work that requires synthesis across multiple sources or non-trivial code generation.
