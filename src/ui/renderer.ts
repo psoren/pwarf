@@ -4,7 +4,7 @@ import { type World3D, getTile } from '@map/world3d'
 import { ItemType } from '@core/components/item'
 import { TILE_COLORS } from './tileColors'
 
-type DwarfPos = { eid?: number; x: number; y: number; z: number }
+type DwarfPos = { eid?: number; x: number; y: number; z: number; hunger?: number; thirst?: number }
 type ItemPos  = { x: number; y: number; z: number; itemType: number }
 
 export type Renderer = {
@@ -90,6 +90,14 @@ export async function createRenderer(canvas: HTMLCanvasElement): Promise<Rendere
       if (isSelected) {
         dwarfGfx.rect(screenX, screenY, TILE_SIZE, TILE_SIZE).stroke({ color: 0xFFFFFF, width: 2 })
       }
+      // Draw needs bars: hunger (top, orange→red) and thirst (bottom, cyan→red)
+      const barW = TILE_SIZE - 4
+      const hunger = d.hunger ?? 1
+      const thirst = d.thirst ?? 1
+      const hColor = hunger > 0.5 ? 0xFF8800 : hunger > 0.25 ? 0xFF4400 : 0xFF0000
+      const tColor = thirst > 0.5 ? 0x00CCFF : thirst > 0.25 ? 0x0088FF : 0xFF0000
+      dwarfGfx.rect(screenX + 2, screenY,                     Math.round(barW * hunger), 2).fill(hColor)
+      dwarfGfx.rect(screenX + 2, screenY + TILE_SIZE - 2, Math.round(barW * thirst), 2).fill(tColor)
     }
   }
 

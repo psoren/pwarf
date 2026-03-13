@@ -41,7 +41,14 @@ let cameraY     = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE
 let viewZ       = 0
 let selectedEid: number | null = null
 
-const CAM_MARGIN = 10
+const CAM_MARGIN = 2
+
+function clampCamera(): void {
+  const viewTilesX = Math.ceil(canvas.width  / TILE_SIZE)
+  const viewTilesY = Math.ceil(canvas.height / TILE_SIZE)
+  cameraX = Math.max(-CAM_MARGIN, Math.min(WORLD_WIDTH  - viewTilesX + CAM_MARGIN, cameraX))
+  cameraY = Math.max(-CAM_MARGIN, Math.min(WORLD_HEIGHT - viewTilesY + CAM_MARGIN, cameraY))
+}
 
 function updateHUD(): void {
   if (hudZ)  hudZ.textContent  = `Z: ${viewZ}${viewZ === 0 ? ' (surface)' : ' (underground)'}`
@@ -83,8 +90,7 @@ const input = createInputHandler(canvas, (cmd) => {
     case 'MOVE_CAMERA':
       cameraX += cmd.dx
       cameraY += cmd.dy
-      cameraX = Math.max(-CAM_MARGIN, Math.min(WORLD_WIDTH  + CAM_MARGIN, cameraX))
-      cameraY = Math.max(-CAM_MARGIN, Math.min(WORLD_HEIGHT + CAM_MARGIN, cameraY))
+      clampCamera()
       updateHUD()
       break
     case 'CHANGE_Z':
@@ -136,8 +142,7 @@ function startGame(): void {
   const site = game.getEmbarkSite()
   cameraX = site.x - Math.floor(canvas.width  / TILE_SIZE / 2)
   cameraY = site.y - Math.floor(canvas.height / TILE_SIZE / 2)
-  cameraX = Math.max(-CAM_MARGIN, Math.min(WORLD_WIDTH  + CAM_MARGIN, cameraX))
-  cameraY = Math.max(-CAM_MARGIN, Math.min(WORLD_HEIGHT + CAM_MARGIN, cameraY))
+  clampCamera()
   updateHUD()
 
   createRenderer(canvas).then((renderer) => {

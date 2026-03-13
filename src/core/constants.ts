@@ -12,10 +12,11 @@ export const TILE_SIZE = 16     // pixels per tile
 // Tick loop
 export const TICKS_PER_SECOND = 20
 
-// Needs decay rates (per tick)
-export const HUNGER_DECAY_RATE = 0.00005
-export const THIRST_DECAY_RATE = 0.0001
-export const SLEEP_DECAY_RATE  = 0.000025
+// Needs decay rates (per tick) — fast enough that dwarves seek food/drink
+// visibly within ~15s and cycle every ~30s
+export const HUNGER_DECAY_RATE = 0.0004
+export const THIRST_DECAY_RATE = 0.0008
+export const SLEEP_DECAY_RATE  = 0.0002
 export const NEEDS_CRITICAL_THRESHOLD = 0.25
 
 // Sleep restore rate (per tick)
