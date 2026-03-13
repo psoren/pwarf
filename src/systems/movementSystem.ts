@@ -1,29 +1,44 @@
 import { query } from 'bitecs'
 import type { GameWorld } from '@core/world'
 import { Position } from '@core/components/position'
-import { WORLD_WIDTH, WORLD_HEIGHT } from '@core/constants'
+import { TileCoord } from '@core/components/tileCoord'
+import { DwarfAI, DwarfState } from '@core/components/dwarf'
+import { pathStore, pathIndexStore } from '@core/stores'
 
 /**
- * Random-walk movement system: each tick every dwarf moves to a random
- * adjacent tile or stays put (4 directions + idle = 5 outcomes).
+ * Path-following movement system.
+ * Each tick, advance each dwarf one step along their stored path.
+ * Dwarves stand still if no path is set.
  */
 export function movementSystem(world: GameWorld, _dt: number): void {
-  const entities = query(world, [Position])
+  const entities = query(world, [Position, DwarfAI])
   for (let i = 0; i < entities.length; i++) {
     const eid = entities[i]!
-    let nx = Position.x[eid] ?? 0
-    let ny = Position.y[eid] ?? 0
+    if ((DwarfAI.state[eid] as DwarfState) === DwarfState.Dead) continue
 
-    // 0 = stay, 1 = up, 2 = down, 3 = left, 4 = right
-    const dir = Math.floor(Math.random() * 5)
-    switch (dir) {
-      case 1: ny -= 1; break
-      case 2: ny += 1; break
-      case 3: nx -= 1; break
-      case 4: nx += 1; break
+    const path = pathStore.get(eid)
+    if (!path || path.length === 0) continue
+
+    const idx = pathIndexStore.get(eid) ?? 0
+    if (idx >= path.length) {
+      pathStore.delete(eid)
+      pathIndexStore.delete(eid)
+      continue
     }
 
-    Position.x[eid] = Math.max(0, Math.min(WORLD_WIDTH - 1, nx))
-    Position.y[eid] = Math.max(0, Math.min(WORLD_HEIGHT - 1, ny))
+    const next = path[idx]!
+    // next.z is storageZ (0=surface); Position.z and TileCoord.z use negative convention
+    Position.x[eid] = next.x
+    Position.y[eid] = next.y
+    Position.z[eid] = -next.z
+    TileCoord.x[eid] = next.x
+    TileCoord.y[eid] = next.y
+    TileCoord.z[eid] = -next.z
+
+    pathIndexStore.set(eid, idx + 1)
+    if (idx + 1 >= path.length) {
+      pathStore.delete(eid)
+      pathIndexStore.delete(eid)
+    }
   }
 }
