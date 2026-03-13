@@ -5,7 +5,7 @@ Current playable state of pwarf. Updated with each PR that changes gameplay, ren
 ## What's implemented
 
 ### Rendering
-- PixiJS canvas (512×512px) centered in the browser window
+- PixiJS canvas (fullscreen — fills the browser window)
 - Tile rendering at z=0: stone floor covers the entire 128×128 surface
 - Dwarves rendered as cyan squares (12×12px inset within a 16px tile)
 - Camera starts centered on the dwarf spawn point
@@ -13,13 +13,14 @@ Current playable state of pwarf. Updated with each PR that changes gameplay, ren
 ### Camera controls
 | Key | Action |
 |-----|--------|
-| Arrow keys / WASD | Pan the camera |
-| `+` / `=` | Move up one z-level |
-| `-` | Move down one z-level |
+| Arrow keys / WASD | Pan the camera (clamped to world bounds) |
+| `+` / `=` | Go deeper (underground) |
+| `-` | Go up (toward surface) |
+| `H` | Toggle help modal |
 
 ### Simulation
 - ECS world powered by bitecs v0.4
-- 7 dwarves spawn at map center (64, 64) on z=0
+- 7 dwarves spawn near map center (scattered ±4 tiles from 64, 64) on z=0
 - Tick loop runs at 20 ticks/second
 - Movement system: dwarves wander randomly each tick
 
@@ -33,6 +34,6 @@ Current playable state of pwarf. Updated with each PR that changes gameplay, ren
 - No jobs, tasks, or AI goals
 - No items, food, or needs
 - No digging or construction
-- No UI overlay (React layer not yet wired up)
+- No React UI layer (HUD and help modal are plain HTML)
 - No save/load
 - No enemies or events

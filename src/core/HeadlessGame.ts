@@ -75,12 +75,12 @@ export class HeadlessGame {
     const centerX = Math.floor(this.width / 2)
     const centerY = Math.floor(this.height / 2)
 
-    // Spawn 7 starting dwarves at the map center on the surface (z=0)
+    // Spawn 7 starting dwarves near the map center, scattered ±4 tiles
     for (let i = 0; i < 7; i++) {
       const eid = addEntity(this.world)
       addComponent(this.world, eid, Position)
-      Position.x[eid] = centerX
-      Position.y[eid] = centerY
+      Position.x[eid] = centerX + Math.floor((Math.random() - 0.5) * 8)
+      Position.y[eid] = centerY + Math.floor((Math.random() - 0.5) * 8)
       Position.z[eid] = 0
     }
 
