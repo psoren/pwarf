@@ -89,7 +89,9 @@ One branch per issue (see CI/agent guide in `.github/`). PRs target `main`.
 
 After rebasing a branch onto main, force-push is expected and safe: `git push --force-with-lease`.
 
-**Every code change must have a GitHub issue.** Before starting any implementation work, check that a GitHub issue exists and reference it in the branch name (`feat/issue-NNN-short-description`) and PR title (`closes #NNN`). Do not open a PR without a linked issue.
+**Non-trivial code changes must have a GitHub issue.** Before starting any implementation work, check that a GitHub issue exists and reference it in the branch name (`feat/issue-NNN-short-description`) and PR title (`closes #NNN`). Do not open a PR without a linked issue.
+
+Small housekeeping changes (typo fixes, doc updates, config tweaks) can be committed directly to `main` without an issue or PR.
 
 **PRs must have exactly one commit before merging.** Squash all work-in-progress commits before opening or updating a PR: `git rebase -i origin/main` and squash everything into a single commit with a clean message.
 
