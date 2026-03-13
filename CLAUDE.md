@@ -85,17 +85,34 @@ One branch per issue (see CI/agent guide in `.github/`). PRs target `main`.
 
 ## Screenshots for visual PRs
 
-If a PR touches anything in `src/ui/`, run the screenshot script before opening the PR:
+Any PR that touches `src/ui/` **must** include screenshots. Follow these steps:
 
+**Before making changes** — take a baseline screenshot on the current branch:
 ```bash
-npm run screenshot
+npm run screenshot          # saves screenshots/latest.png
+mv screenshots/latest.png screenshots/before.png
 ```
 
-This builds the project, starts the preview server, captures `screenshots/latest.png`, and shuts the server down. Commit `screenshots/latest.png` to the branch and embed it in the PR body:
+**After making changes** — take an after screenshot:
+```bash
+npm run screenshot          # saves screenshots/latest.png (the "after")
+```
+
+Commit both `screenshots/before.png` and `screenshots/latest.png` to the branch, then embed them in the PR body:
 
 ```markdown
-## Screenshot
-![before](screenshots/before.png) → ![after](screenshots/latest.png)
+## Screenshots
+| Before | After |
+|--------|-------|
+| ![before](screenshots/before.png) | ![after](screenshots/latest.png) |
 ```
 
-Rename `screenshots/latest.png` to `screenshots/before.png` first if there is an existing screenshot to compare against.
+If there is no meaningful "before" (e.g. adding a brand-new UI feature), only include the "after" screenshot.
+
+## Agent model selection
+
+- **Subagents** (research, search, exploration, file reads): use `model: "sonnet"`
+- **Trivial lookups** (single file search, simple one-off questions): use `model: "haiku"`
+- **Main context** (synthesis, architectural decisions, writing code): opus (default — no override needed)
+
+Never spawn a subagent with opus. Reserve the main context for work that requires synthesis across multiple sources or non-trivial code generation.
