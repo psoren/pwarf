@@ -170,7 +170,7 @@ export class HeadlessGame {
     consumptionSystem(this.world, this.map, this._tickCount)
     sleepingSystem(this.world, this._tickCount)
     tantrumsSystem(this.world, this._tickCount)
-    movementSystem(this.world, dt)
+    movementSystem(this.world, dt, this.map)
     jobCleanupSystem(this.world)
 
     this._tickCount += 1
@@ -297,6 +297,28 @@ export class HeadlessGame {
       })
     }
 
+    return result
+  }
+
+  /**
+   * Returns all loose (uncarried) items in the world.
+   */
+  getItems(): { eid: number; x: number; y: number; z: number; itemType: number }[] {
+    if (this.world === null) return []
+    const world = this.world
+    const entities = query(world, [Item])
+    const result: { eid: number; x: number; y: number; z: number; itemType: number }[] = []
+    for (let i = 0; i < entities.length; i++) {
+      const eid = entities[i]!
+      if ((Item.carriedBy[eid] ?? -1) !== -1) continue
+      result.push({
+        eid,
+        x: Item.x[eid] ?? 0,
+        y: Item.y[eid] ?? 0,
+        z: Item.z[eid] ?? 0,
+        itemType: Item.itemType[eid] ?? 0,
+      })
+    }
     return result
   }
 

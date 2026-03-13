@@ -1,12 +1,15 @@
 import { Application, Graphics } from 'pixi.js'
 import { TILE_SIZE } from '@core/constants'
 import { type World3D, getTile } from '@map/world3d'
+import { ItemType } from '@core/components/item'
 import { TILE_COLORS } from './tileColors'
 
 type DwarfPos = { eid?: number; x: number; y: number; z: number }
+type ItemPos  = { x: number; y: number; z: number; itemType: number }
 
 export type Renderer = {
   drawTiles(world: World3D, viewZ: number, cameraX: number, cameraY: number): void
+  drawItems(items: ItemPos[], viewZ: number, cameraX: number, cameraY: number): void
   drawDwarves(dwarves: DwarfPos[], viewZ: number, cameraX: number, cameraY: number, selectedEid?: number | null): void
   resize(width: number, height: number): void
   destroy(): void
@@ -25,6 +28,9 @@ export async function createRenderer(canvas: HTMLCanvasElement): Promise<Rendere
 
   const tilesGfx = new Graphics()
   app.stage.addChild(tilesGfx)
+
+  const itemGfx = new Graphics()
+  app.stage.addChild(itemGfx)
 
   const dwarfGfx = new Graphics()
   app.stage.addChild(dwarfGfx)
@@ -55,6 +61,22 @@ export async function createRenderer(canvas: HTMLCanvasElement): Promise<Rendere
     }
   }
 
+  function drawItems(items: ItemPos[], viewZ: number, cameraX: number, cameraY: number): void {
+    itemGfx.clear()
+    for (const item of items) {
+      if (item.z !== viewZ) continue
+      const screenX = (item.x - cameraX) * TILE_SIZE
+      const screenY = (item.y - cameraY) * TILE_SIZE
+      // Food = yellow-green dot, Drink = cyan dot, other = white dot
+      const color =
+        item.itemType === ItemType.Food  ? 0xAAFF44 :
+        item.itemType === ItemType.Drink ? 0x44DDFF :
+        0xFFFFFF
+      const r = TILE_SIZE / 5
+      itemGfx.circle(screenX + TILE_SIZE / 2, screenY + TILE_SIZE / 2, r).fill(color)
+    }
+  }
+
   function drawDwarves(dwarves: DwarfPos[], viewZ: number, cameraX: number, cameraY: number, selectedEid?: number | null): void {
     dwarfGfx.clear()
     for (const d of dwarves) {
@@ -79,5 +101,5 @@ export async function createRenderer(canvas: HTMLCanvasElement): Promise<Rendere
     app.destroy()
   }
 
-  return { drawTiles, drawDwarves, resize, destroy }
+  return { drawTiles, drawItems, drawDwarves, resize, destroy }
 }

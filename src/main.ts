@@ -160,7 +160,9 @@ function startGame(): void {
     function frame(): void {
       const worldZ = -viewZ
       const dwarves = game.getDwarves()
+      const items   = game.getItems()
       renderer.drawTiles(map, worldZ, cameraX, cameraY)
+      renderer.drawItems(items, worldZ, cameraX, cameraY)
       renderer.drawDwarves(dwarves, worldZ, cameraX, cameraY, selectedEid)
       const onLevel = dwarves.filter(d => d.z === worldZ)
       if (hudMsg) hudMsg.textContent = onLevel.length === 0 ? 'No dwarves on this level' : ''

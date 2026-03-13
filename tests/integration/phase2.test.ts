@@ -51,17 +51,15 @@ describe('Phase 2 integration', () => {
     }
   }, 30_000)
 
-  it('dwarves stand still when idle (no random wander)', () => {
+  it('idle dwarves wander — positions change over 100 ticks', () => {
     const game = new HeadlessGame({ seed: 1, width: 32, height: 32, depth: 2 })
     game.embark()
     const before = game.getDwarves().map(d => ({ x: d.x, y: d.y }))
-    game.runFor(10)
+    game.runFor(100)
     const after = game.getDwarves().map(d => ({ x: d.x, y: d.y }))
-    // Dwarves should not have moved (no jobs, needs still high after 10 ticks)
-    for (let i = 0; i < before.length; i++) {
-      expect(after[i]!.x).toBe(before[i]!.x)
-      expect(after[i]!.y).toBe(before[i]!.y)
-    }
+    // At least one dwarf should have moved (wander chance 15% per tick over 100 ticks)
+    const moved = after.filter((d, i) => d.x !== before[i]!.x || d.y !== before[i]!.y)
+    expect(moved.length).toBeGreaterThan(0)
   })
 
   it('dwarves have state field in DwarfStatus', () => {
