@@ -35,6 +35,8 @@ Before writing anything, read the files you'll be modifying or sitting alongside
 
 ## Step 5 — Branch
 
+**Always create a new branch from an up-to-date main. Never commit directly to main. Never reuse a branch from a previous issue. Each issue gets its own branch and its own PR.**
+
 ```bash
 git checkout main && git pull
 git checkout -b feat/issue-NNN-short-description
