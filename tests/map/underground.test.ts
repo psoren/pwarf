@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { generateHeightmap } from '@map/generators/heightmap'
 import { generateUnderground } from '@map/generators/underground'
 import { OreMaterial } from '@map/materials'
-import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_DEPTH } from '@core/constants'
+import { WORLD_DEPTH } from '@core/constants'
 
 describe('generateUnderground', () => {
   const width = 128

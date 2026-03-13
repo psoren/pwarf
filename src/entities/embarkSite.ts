@@ -4,6 +4,9 @@ import type { World3D } from '@map/world3d'
 import { getTile } from '@map/world3d'
 import { TileType } from '@map/tileTypes'
 import { Position } from '@core/components/position'
+import { TileCoord } from '@core/components/tileCoord'
+import { DwarfAI, DwarfState, Needs, Skills, Labor, ALL_LABORS } from '@core/components/dwarf'
+import { Mood } from '@core/components/mood'
 import { nameStore } from '@core/stores'
 import { mulberry32 } from '@map/biomes'
 
@@ -46,9 +49,36 @@ export function setupEmbark(world: GameWorld, map: World3D, seed: number): Embar
   for (let i = 0; i < 7; i++) {
     const eid = addEntity(world)
     addComponent(world, eid, Position)
-    Position.x[eid] = site.x + Math.floor((rng() - 0.5) * 4)
-    Position.y[eid] = site.y + Math.floor((rng() - 0.5) * 4)
+    const px = site.x + Math.floor((rng() - 0.5) * 4)
+    const py = site.y + Math.floor((rng() - 0.5) * 4)
+    Position.x[eid] = px
+    Position.y[eid] = py
     Position.z[eid] = 0
+
+    addComponent(world, eid, TileCoord)
+    TileCoord.x[eid] = px
+    TileCoord.y[eid] = py
+    TileCoord.z[eid] = 0
+
+    addComponent(world, eid, DwarfAI)
+    DwarfAI.state[eid] = DwarfState.Idle
+    DwarfAI.jobEid[eid] = -1
+    DwarfAI.eatTargetEid[eid] = -1
+    DwarfAI.drinkTargetEid[eid] = -1
+
+    addComponent(world, eid, Needs)
+    Needs.hunger[eid] = 1.0
+    Needs.thirst[eid] = 1.0
+    Needs.sleep[eid] = 1.0
+
+    addComponent(world, eid, Skills)
+
+    addComponent(world, eid, Labor)
+    Labor.enabled[eid] = ALL_LABORS
+
+    addComponent(world, eid, Mood)
+    Mood.happiness[eid] = 1.0
+
     nameStore.set(
       eid,
       `${DWARF_FIRST[i % DWARF_FIRST.length]!} ${DWARF_LAST[(i * 3) % DWARF_LAST.length]!}`,

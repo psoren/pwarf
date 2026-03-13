@@ -19,12 +19,13 @@ describe('HeadlessGame', () => {
     it('places dwarves near the center of the map at z=0', () => {
       game.embark()
       const dwarves = game.getDwarves()
-      const center = 16  // Math.floor(32 / 2)
+      // Dwarves spawn at a grass tile; with a 32x32 map and seed 42,
+      // the site is somewhere within the non-border region (10..22 range)
       for (const dwarf of dwarves) {
-        expect(dwarf.x).toBeGreaterThanOrEqual(center - 4)
-        expect(dwarf.x).toBeLessThanOrEqual(center + 4)
-        expect(dwarf.y).toBeGreaterThanOrEqual(center - 4)
-        expect(dwarf.y).toBeLessThanOrEqual(center + 4)
+        expect(dwarf.x).toBeGreaterThanOrEqual(8)
+        expect(dwarf.x).toBeLessThanOrEqual(24)
+        expect(dwarf.y).toBeGreaterThanOrEqual(8)
+        expect(dwarf.y).toBeLessThanOrEqual(24)
         expect(dwarf.z).toBe(0)
       }
     })
@@ -37,11 +38,11 @@ describe('HeadlessGame', () => {
       expect(state.tick).toBe(1)
     })
 
-    it('lays stone at z=0 (surface) across the entire map', () => {
+    it('lays grass at z=0 (surface) across the entire map', () => {
       game.embark()
       const map = game.getMap()
-      expect(getTile(0, 0, 0, map)).toBe(TileType.Stone)
-      expect(getTile(16, 16, 0, map)).toBe(TileType.Stone)
+      expect(getTile(0, 0, 0, map)).toBe(TileType.Grass)
+      expect(getTile(16, 16, 0, map)).toBe(TileType.Grass)
     })
 
     it('generates stone for underground levels z=1..5', () => {

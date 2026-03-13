@@ -58,7 +58,12 @@ function updateSelectedHud(): void {
   const dwarves = game.getDwarves()
   const d = dwarves.find(dw => dw.eid === selectedEid)
   if (d) {
-    hudSelected.textContent = `${name} (${Math.round(d.x)}, ${Math.round(d.y)}, ${d.z})`
+    const stateNames = ['Idle','SeekingJob','ExecutingJob','Eating','Drinking','Sleeping','Tantrum','Dead']
+    const stateName = stateNames[d.state ?? 0] ?? 'Idle'
+    const h = Math.round((d.hunger ?? 1) * 100)
+    const t = Math.round((d.thirst ?? 1) * 100)
+    const s = Math.round((d.sleep ?? 1) * 100)
+    hudSelected.textContent = `${name} [${stateName}] H:${h}% T:${t}% S:${s}%`
   } else {
     hudSelected.textContent = ''
     selectedEid = null

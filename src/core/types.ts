@@ -31,6 +31,7 @@ export type DwarfStatus = {
   sleep: number
   happiness: number
   job: string | null
+  state?: number
 }
 
 /**
