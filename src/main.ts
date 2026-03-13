@@ -1,5 +1,6 @@
 import { HeadlessGame } from '@core/HeadlessGame'
 import { createRenderer } from '@ui/renderer'
+import { createInputHandler } from '@ui/input'
 import { TICKS_PER_SECOND, WORLD_WIDTH, WORLD_HEIGHT, WORLD_DEPTH, TILE_SIZE } from '@core/constants'
 import { initLogger } from '@core/logger'
 
@@ -21,6 +22,7 @@ if (!helpModal) throw new Error('No #help-modal element found')
 const hudZ    = document.getElementById('hud-z')
 const hudTick = document.getElementById('hud-tick')
 const hudXY   = document.getElementById('hud-xy')
+const hudMsg  = document.getElementById('hud-msg')
 
 helpModal.addEventListener('click', () => { helpModal.classList.remove('open') })
 
@@ -47,25 +49,33 @@ updateHUD()
 window.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.key === 'h' || e.key === 'H') {
     helpModal.classList.toggle('open')
-    return
   }
-  if (e.key === 'Escape') {
-    helpModal.classList.remove('open')
-    return
-  }
-  switch (e.key) {
-    case 'ArrowUp':    case 'w': case 'W': cameraY -= 1; break
-    case 'ArrowDown':  case 's': case 'S': cameraY += 1; break
-    case 'ArrowLeft':  case 'a': case 'A': cameraX -= 1; break
-    case 'ArrowRight': case 'd': case 'D': cameraX += 1; break
-    case '+': case '=': viewZ += 1; break  // toward surface
-    case '-': viewZ -= 1; break            // deeper underground
-  }
-  cameraX = Math.max(-CAM_MARGIN, Math.min(WORLD_WIDTH  + CAM_MARGIN, cameraX))
-  cameraY = Math.max(-CAM_MARGIN, Math.min(WORLD_HEIGHT + CAM_MARGIN, cameraY))
-  viewZ   = Math.min(0, Math.max(-(WORLD_DEPTH - 1), viewZ))
-  updateHUD()
 })
+
+const input = createInputHandler(canvas, (cmd) => {
+  switch (cmd.type) {
+    case 'MOVE_CAMERA':
+      cameraX += cmd.dx
+      cameraY += cmd.dy
+      cameraX = Math.max(-CAM_MARGIN, Math.min(WORLD_WIDTH  + CAM_MARGIN, cameraX))
+      cameraY = Math.max(-CAM_MARGIN, Math.min(WORLD_HEIGHT + CAM_MARGIN, cameraY))
+      updateHUD()
+      break
+    case 'CHANGE_Z':
+      // dz: +1 = toward surface (viewZ increases toward 0), -1 = deeper (viewZ decreases)
+      viewZ = Math.min(0, Math.max(-(WORLD_DEPTH - 1), viewZ + cmd.dz))
+      updateHUD()
+      break
+    case 'CANCEL':
+      helpModal.classList.remove('open')
+      break
+    case 'TILE_CLICK':
+      // handled in commit 3 (dwarf selection)
+      break
+  }
+}, () => viewZ)
+
+window.addEventListener('unload', () => { input.destroy() })
 
 createRenderer(canvas).then((renderer) => {
   const map = game.getMap()
@@ -88,8 +98,11 @@ createRenderer(canvas).then((renderer) => {
   // Render each animation frame
   function frame(): void {
     const worldZ = -viewZ
+    const dwarves = game.getDwarves()
     renderer.drawTiles(map, worldZ, cameraX, cameraY)
-    renderer.drawDwarves(game.getDwarves(), worldZ, cameraX, cameraY)
+    renderer.drawDwarves(dwarves, worldZ, cameraX, cameraY)
+    const onLevel = dwarves.filter(d => d.z === worldZ)
+    if (hudMsg) hudMsg.textContent = onLevel.length === 0 ? 'No dwarves on this level' : ''
     requestAnimationFrame(frame)
   }
   requestAnimationFrame(frame)
