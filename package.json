@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "screenshot": "node --import tsx/esm scripts/screenshot.ts"
   },
   "repository": {
     "type": "git",
@@ -27,6 +28,8 @@
     "@vitest/ui": "^4.1.0",
     "eslint": "^10.0.3",
     "js-yaml": "^4.1.1",
+    "playwright": "^1.58.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^8.0.0",
     "vite-tsconfig-paths": "^6.1.1",

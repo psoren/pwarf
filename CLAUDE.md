@@ -80,3 +80,22 @@ TILE_SIZE = 16px, TICKS_PER_SECOND = 20, MAX_ENTITIES = 10 000
 ## Branch policy
 
 One branch per issue (see CI/agent guide in `.github/`). PRs target `main`.
+
+**Every code change must have a GitHub issue.** Before starting any implementation work, check that a GitHub issue exists and reference it in the branch name (`feat/issue-NNN-short-description`) and PR title (`closes #NNN`). Do not open a PR without a linked issue.
+
+## Screenshots for visual PRs
+
+If a PR touches anything in `src/ui/`, run the screenshot script before opening the PR:
+
+```bash
+npm run screenshot
+```
+
+This builds the project, starts the preview server, captures `screenshots/latest.png`, and shuts the server down. Commit `screenshots/latest.png` to the branch and embed it in the PR body:
+
+```markdown
+## Screenshot
+![before](screenshots/before.png) → ![after](screenshots/latest.png)
+```
+
+Rename `screenshots/latest.png` to `screenshots/before.png` first if there is an existing screenshot to compare against.
