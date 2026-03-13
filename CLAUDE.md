@@ -25,6 +25,12 @@ npx vitest run tests/core/HeadlessGame.test.ts
 
 CI runs: lint → typecheck → test → build (in that order).
 
+## package-lock.json
+
+Always commit `package-lock.json`. CI uses `npm ci` which requires it for reproducible installs.
+
+**Never delete and regenerate it from scratch.** `npm install` on macOS only includes optional packages for the current platform — regenerating drops the Linux-specific binaries (e.g. `@rolldown/binding-linux-x64-gnu`) and breaks CI. To add or update a package, always run `npm install <pkg>` on top of the existing lockfile.
+
 ## Architecture
 
 ### ECS (bitecs v0.4)
