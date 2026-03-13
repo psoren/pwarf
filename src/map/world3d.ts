@@ -49,3 +49,31 @@ export function setTile(x: number, y: number, z: number, w: World3D, type: TileT
   }
   w.tiles[tileIndex(x, y, z, w)] = type
 }
+
+export function getMaterial(x: number, y: number, z: number, w: World3D): number {
+  if (!inBounds(x, y, z, w)) {
+    return 0
+  }
+  return w.materials[tileIndex(x, y, z, w)] ?? 0
+}
+
+export function setMaterial(x: number, y: number, z: number, w: World3D, mat: number): void {
+  if (!inBounds(x, y, z, w)) {
+    return
+  }
+  w.materials[tileIndex(x, y, z, w)] = mat
+}
+
+export function getFlags(x: number, y: number, z: number, w: World3D): number {
+  if (!inBounds(x, y, z, w)) {
+    return 0
+  }
+  return w.flags[tileIndex(x, y, z, w)] ?? 0
+}
+
+export function setFlags(x: number, y: number, z: number, w: World3D, flags: number): void {
+  if (!inBounds(x, y, z, w)) {
+    return
+  }
+  w.flags[tileIndex(x, y, z, w)] = flags
+}
