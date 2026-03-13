@@ -49,6 +49,7 @@ export class HeadlessGame {
   // Stored for future use by systems that need tile data
   private map: World3D | null = null
   private _tickCount = 0
+  private _embarkSite: { x: number; y: number } | null = null
 
   constructor(opts: HeadlessGameOpts) {
     this.seed = opts.seed
@@ -92,12 +93,13 @@ export class HeadlessGame {
     })
 
     // Use setupEmbark for dwarf placement
-    setupEmbark(this.world, this.map, this.seed)
+    const embarkResult = setupEmbark(this.world, this.map, this.seed)
+    this._embarkSite = { x: embarkResult.siteX, y: embarkResult.siteY }
 
     log('info', 'embark.dwarves_spawned', {
       count: 7,
-      centerX: Math.floor(this.width / 2),
-      centerY: Math.floor(this.height / 2),
+      centerX: embarkResult.siteX,
+      centerY: embarkResult.siteY,
     })
   }
 
@@ -117,7 +119,8 @@ export class HeadlessGame {
       onProgress,
     )
 
-    setupEmbark(this.world, this.map, this.seed)
+    const embarkResult = setupEmbark(this.world, this.map, this.seed)
+    this._embarkSite = { x: embarkResult.siteX, y: embarkResult.siteY }
 
     log('info', 'embark.async.complete', {
       seed: this.seed,
@@ -136,6 +139,17 @@ export class HeadlessGame {
       throw new Error('Call embark() before getMap()')
     }
     return this.map
+  }
+
+  /**
+   * Returns the embark site coordinates (center of the spawned dwarf cluster).
+   * Throws if called before embark().
+   */
+  getEmbarkSite(): { x: number; y: number } {
+    if (this._embarkSite === null) {
+      throw new Error('Call embark() before getEmbarkSite()')
+    }
+    return this._embarkSite
   }
 
   /**

@@ -132,9 +132,12 @@ game.embarkAsync((progress, label) => {
 })
 
 function startGame(): void {
-  // Re-center camera on embark site (dwarves are near map center)
-  cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
-  cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
+  // Center camera on the actual embark site
+  const site = game.getEmbarkSite()
+  cameraX = site.x - Math.floor(canvas.width  / TILE_SIZE / 2)
+  cameraY = site.y - Math.floor(canvas.height / TILE_SIZE / 2)
+  cameraX = Math.max(-CAM_MARGIN, Math.min(WORLD_WIDTH  + CAM_MARGIN, cameraX))
+  cameraY = Math.max(-CAM_MARGIN, Math.min(WORLD_HEIGHT + CAM_MARGIN, cameraY))
   updateHUD()
 
   createRenderer(canvas).then((renderer) => {
@@ -144,8 +147,6 @@ function startGame(): void {
       canvas.width  = window.innerWidth
       canvas.height = window.innerHeight
       renderer.resize(canvas.width, canvas.height)
-      cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
-      cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
       updateHUD()
     })
 
