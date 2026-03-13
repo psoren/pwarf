@@ -81,6 +81,8 @@ TILE_SIZE = 16px, TICKS_PER_SECOND = 20, MAX_ENTITIES = 10 000
 
 One branch per issue (see CI/agent guide in `.github/`). PRs target `main`.
 
+After rebasing a branch onto main, force-push is expected and safe: `git push --force-with-lease`.
+
 **Every code change must have a GitHub issue.** Before starting any implementation work, check that a GitHub issue exists and reference it in the branch name (`feat/issue-NNN-short-description`) and PR title (`closes #NNN`). Do not open a PR without a linked issue.
 
 ## Screenshots for visual PRs
