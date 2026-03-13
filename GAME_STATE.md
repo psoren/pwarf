@@ -18,9 +18,17 @@ Current playable state of pwarf. Updated with each PR that changes gameplay, ren
 | `-` | Go up (toward surface) |
 | `H` | Toggle help modal |
 
+### HUD / UI
+- Z-level display: shows current z and "(surface)" / "(underground)" label
+- Tick counter updates in real time
+- "No dwarves on this level" warning when none visible at current z
+- Click a dwarf to select it — HUD shows name and position
+- Help modal (H key) lists all controls; ESC or click to dismiss
+
 ### Simulation
 - ECS world powered by bitecs v0.4
 - 7 dwarves spawn near map center (scattered ±4 tiles from 64, 64) on z=0
+- Each dwarf has a procedurally generated name (e.g. "Urist Hammerstone")
 - Tick loop runs at 20 ticks/second
 - Movement system: dwarves wander randomly each tick
 
