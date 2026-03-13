@@ -1,0 +1,29 @@
+- id: granite
+  name: Granite
+  category: stone
+  color: "#a89080"
+  hardness: 7
+
+- id: limestone
+  name: Limestone
+  category: stone
+  color: "#c8b89a"
+  hardness: 3
+
+- id: iron_ore
+  name: Iron Ore
+  category: stone
+  color: "#8b4513"
+  hardness: 5
+
+- id: iron_bar
+  name: Iron Bar
+  category: metal
+  color: "#808080"
+  hardness: 8
+
+- id: soil
+  name: Soil
+  category: soil
+  color: "#6b4f2a"
+  hardness: 1
