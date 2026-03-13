@@ -11,3 +11,15 @@ export const TILE_SIZE = 16     // pixels per tile
 
 // Tick loop
 export const TICKS_PER_SECOND = 20
+
+// Needs decay rates (per tick)
+export const HUNGER_DECAY_RATE = 0.00005
+export const THIRST_DECAY_RATE = 0.0001
+export const SLEEP_DECAY_RATE  = 0.000025
+export const NEEDS_CRITICAL_THRESHOLD = 0.25
+
+// Sleep restore rate (per tick)
+export const SLEEP_RESTORE_RATE = 0.002
+
+// Mining ticks to complete one tile
+export const MINING_TICKS = 50
