@@ -11,7 +11,53 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Post to Slack
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_UPDATE_WEBHOOK }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_ADDITIONS: ${{ github.event.pull_request.additions }}
+          PR_DELETIONS: ${{ github.event.pull_request.deletions }}
+          PR_FILES: ${{ github.event.pull_request.changed_files }}
         run: |
-          curl -X POST ${{ secrets.SLACK_UPDATE_WEBHOOK }} \
+          PAYLOAD=$(jq -n \
+            --arg title "$PR_TITLE" \
+            --arg url "$PR_URL" \
+            --arg body "$PR_BODY" \
+            --arg author "$PR_AUTHOR" \
+            --arg additions "$PR_ADDITIONS" \
+            --arg deletions "$PR_DELETIONS" \
+            --arg files "$PR_FILES" \
+            '{
+              blocks: [
+                {
+                  type: "header",
+                  text: { type: "plain_text", text: ("✅ " + $title) }
+                },
+                {
+                  type: "section",
+                  fields: [
+                    { type: "mrkdwn", text: ("*Author:* " + $author) },
+                    { type: "mrkdwn", text: ("*Changes:* +" + $additions + " / -" + $deletions + " across " + $files + " files") }
+                  ]
+                },
+                {
+                  type: "section",
+                  text: { type: "mrkdwn", text: $body }
+                },
+                {
+                  type: "actions",
+                  elements: [
+                    {
+                      type: "button",
+                      text: { type: "plain_text", text: "View PR" },
+                      url: $url
+                    }
+                  ]
+                }
+              ]
+            }')
+          curl -X POST "$SLACK_WEBHOOK" \
             -H 'Content-Type: application/json' \
-            -d '{"text":"✅ PR merged: ${{ github.event.pull_request.title }}\n${{ github.event.pull_request.html_url }}"}'
+            -d "$PAYLOAD"
