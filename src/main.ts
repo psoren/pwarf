@@ -1,9 +1,12 @@
+import { createElement } from 'react'
+import { createRoot } from 'react-dom/client'
 import { HeadlessGame } from '@core/HeadlessGame'
 import { createRenderer } from '@ui/renderer'
 import { createInputHandler } from '@ui/input'
 import { TICKS_PER_SECOND, WORLD_WIDTH, WORLD_HEIGHT, WORLD_DEPTH, TILE_SIZE } from '@core/constants'
 import { initLogger } from '@core/logger'
-import { nameStore } from '@core/stores'
+import { GameUI } from '@ui/GameUI'
+import type { GameUIHandle } from '@ui/GameUI'
 
 const axiomToken = import.meta.env.VITE_AXIOM_TOKEN
 const axiomDataset = import.meta.env.VITE_AXIOM_DATASET
@@ -13,32 +16,21 @@ if (axiomToken !== undefined && axiomDataset !== undefined) {
 
 const appEl = document.getElementById('app')
 if (!appEl) throw new Error('No #app element found')
+const uiEl = document.getElementById('ui')
+if (!uiEl) throw new Error('No #ui element found')
 
-const helpModal = document.getElementById('help-modal')
-if (!helpModal) throw new Error('No #help-modal element found')
-
-const loadingOverlay  = document.getElementById('loading-overlay')
-const loadingBar      = document.getElementById('loading-bar')
-const loadingLabel    = document.getElementById('loading-label')
-
-const hudZ        = document.getElementById('hud-z')
-const hudTick     = document.getElementById('hud-tick')
-const hudXY       = document.getElementById('hud-xy')
-const hudMsg      = document.getElementById('hud-msg')
-const hudSelected = document.getElementById('hud-selected')
-
-helpModal.addEventListener('click', () => { helpModal.classList.remove('open') })
-
+// Canvas sits behind the React UI layer
 const canvas = document.createElement('canvas')
 canvas.width  = window.innerWidth
 canvas.height = window.innerHeight
 appEl.appendChild(canvas)
 
-// Start camera centered on map center — will reposition after embark
-let cameraX     = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
-let cameraY     = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
-// viewZ: 0 = surface, negative = underground
-let viewZ       = 0
+// Camera / view state
+let cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
+let cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
+let viewZ   = 0
+
+// selectedEid is owned by React; main.ts reads this ref for the canvas highlight
 let selectedEid: number | null = null
 
 const CAM_MARGIN = 2
@@ -50,40 +42,17 @@ function clampCamera(): void {
   cameraY = Math.max(-CAM_MARGIN, Math.min(WORLD_HEIGHT - viewTilesY + CAM_MARGIN, cameraY))
 }
 
-function updateHUD(): void {
-  if (hudZ)  hudZ.textContent  = `Z: ${viewZ}${viewZ === 0 ? ' (surface)' : ' (underground)'}`
-  if (hudXY) hudXY.textContent = `X: ${cameraX}  Y: ${cameraY}`
-}
+// Bridge to React UI — populated once React calls onReady
+let ui: GameUIHandle | null = null
 
-function updateSelectedHud(): void {
-  if (!hudSelected) return
-  if (selectedEid === null) {
-    hudSelected.textContent = ''
-    return
-  }
-  const name = nameStore.get(selectedEid) ?? `Dwarf #${selectedEid}`
-  const dwarves = game.getDwarves()
-  const d = dwarves.find(dw => dw.eid === selectedEid)
-  if (d) {
-    const stateNames = ['Idle','SeekingJob','ExecutingJob','Eating','Drinking','Sleeping','Tantrum','Dead']
-    const stateName = stateNames[d.state ?? 0] ?? 'Idle'
-    const h = Math.round((d.hunger ?? 1) * 100)
-    const t = Math.round((d.thirst ?? 1) * 100)
-    const s = Math.round((d.sleep ?? 1) * 100)
-    hudSelected.textContent = `${name} [${stateName}] H:${h}% T:${t}% S:${s}%`
-  } else {
-    hudSelected.textContent = ''
-    selectedEid = null
-  }
-}
+// Mount React
+const root = createRoot(uiEl)
+root.render(createElement(GameUI, {
+  onReady:       (handle) => { ui = handle },
+  onSelectDwarf: (eid)    => { selectedEid = eid },
+}))
 
-updateHUD()
-
-window.addEventListener('keydown', (e: KeyboardEvent) => {
-  if (e.key === 'h' || e.key === 'H') {
-    helpModal.classList.toggle('open')
-  }
-})
+// --- Input ---
 
 const input = createInputHandler(canvas, (cmd) => {
   switch (cmd.type) {
@@ -91,59 +60,57 @@ const input = createInputHandler(canvas, (cmd) => {
       cameraX += cmd.dx
       cameraY += cmd.dy
       clampCamera()
-      updateHUD()
+      ui?.updateHUD(game.getTickCount(), viewZ, cameraX, cameraY)
       break
     case 'CHANGE_Z':
-      // dz: +1 = toward surface (viewZ increases toward 0), -1 = deeper (viewZ decreases)
       viewZ = Math.min(0, Math.max(-(WORLD_DEPTH - 1), viewZ + cmd.dz))
-      updateHUD()
+      ui?.updateHUD(game.getTickCount(), viewZ, cameraX, cameraY)
       break
     case 'CANCEL':
-      helpModal.classList.remove('open')
       break
     case 'TILE_CLICK': {
       const tileX = cmd.x + cameraX
       const tileY = cmd.y + cameraY
-      const worldZ = -viewZ  // dwarves use positive z, 0 = surface
+      const worldZ = -viewZ
       const dwarves = game.getDwarves()
       const hit = dwarves.find(d => Math.round(d.x) === tileX && Math.round(d.y) === tileY && d.z === worldZ)
-      selectedEid = hit?.eid ?? null
-      updateSelectedHud()
+      const eid = hit?.eid ?? null
+      selectedEid = eid
+      ui?.setSelectedEid(eid)
       break
     }
   }
 }, () => viewZ)
 
+window.addEventListener('keydown', (e: KeyboardEvent) => {
+  if (e.key === 'h' || e.key === 'H') ui?.toggleHelp()
+  if (e.key === 'Escape')             { selectedEid = null; ui?.setSelectedEid(null) }
+})
+
 window.addEventListener('unload', () => { input.destroy() })
 
-// --- World generation + game boot ---
+// --- Game boot ---
 
 const game = new HeadlessGame({ seed: 42 })
 
-function showLoading(show: boolean): void {
-  if (loadingOverlay) loadingOverlay.style.display = show ? 'flex' : 'none'
-}
-
-showLoading(true)
-
 game.embarkAsync((progress, label) => {
-  if (loadingBar)   loadingBar.style.width = `${Math.round(progress * 100)}%`
-  if (loadingLabel) loadingLabel.textContent = label
+  ui?.setProgress(progress, label)
 }).then(() => {
-  showLoading(false)
   startGame()
 }).catch((err: unknown) => {
   console.error('World gen failed', err)
-  if (loadingLabel) loadingLabel.textContent = 'World generation failed — check console.'
+  ui?.setProgress(1, 'World generation failed — check console.')
 })
 
 function startGame(): void {
-  // Center camera on the actual embark site
   const site = game.getEmbarkSite()
   cameraX = site.x - Math.floor(canvas.width  / TILE_SIZE / 2)
   cameraY = site.y - Math.floor(canvas.height / TILE_SIZE / 2)
   clampCamera()
-  updateHUD()
+
+  ui?.setPlaying()
+  ui?.updateDwarves(game.getDwarves())
+  ui?.updateHUD(0, viewZ, cameraX, cameraY)
 
   createRenderer(canvas).then((renderer) => {
     const map = game.getMap()
@@ -152,26 +119,25 @@ function startGame(): void {
       canvas.width  = window.innerWidth
       canvas.height = window.innerHeight
       renderer.resize(canvas.width, canvas.height)
-      updateHUD()
+      clampCamera()
+      ui?.updateHUD(game.getTickCount(), viewZ, cameraX, cameraY)
     })
 
-    // Advance simulation at a fixed tick rate
+    // Simulation tick
     setInterval(() => {
       const state = game.tick()
-      if (hudTick) hudTick.textContent = `Tick: ${state.tick}`
+      ui?.updateDwarves(state.dwarves)
+      ui?.updateHUD(state.tick, viewZ, cameraX, cameraY)
     }, 1000 / TICKS_PER_SECOND)
 
-    // Render each animation frame
+    // Render loop
     function frame(): void {
-      const worldZ = -viewZ
+      const worldZ  = -viewZ
       const dwarves = game.getDwarves()
       const items   = game.getItems()
       renderer.drawTiles(map, worldZ, cameraX, cameraY)
       renderer.drawItems(items, worldZ, cameraX, cameraY)
       renderer.drawDwarves(dwarves, worldZ, cameraX, cameraY, selectedEid)
-      const onLevel = dwarves.filter(d => d.z === worldZ)
-      if (hudMsg) hudMsg.textContent = onLevel.length === 0 ? 'No dwarves on this level' : ''
-      updateSelectedHud()
       requestAnimationFrame(frame)
     }
     requestAnimationFrame(frame)
