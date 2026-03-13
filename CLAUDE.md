@@ -99,18 +99,21 @@ After rebasing a branch onto main, force-push is expected and safe: `git push --
 
 ## Screenshots for visual PRs
 
-Any PR that touches `src/ui/` **must** include screenshots. Follow these steps:
+Any PR that touches `src/ui/` **must** include screenshots. Use the **Claude in Chrome** browser automation tools to capture them — navigate to the running dev server, take a screenshot with `mcp__claude-in-chrome__computer` (action: `screenshot`), and save the result.
 
-**Before making changes** — take a baseline screenshot on the current branch:
+Alternatively, use the Playwright-based script:
+
 ```bash
-npm run screenshot          # saves screenshots/latest.png
-mv screenshots/latest.png screenshots/before.png
+npm run screenshot          # builds, starts preview, saves screenshots/latest.png
+                            # (auto-moves previous latest.png → before.png)
 ```
 
-**After making changes** — take an after screenshot:
-```bash
-npm run screenshot          # saves screenshots/latest.png (the "after")
-```
+The typical flow for the script approach:
+1. Run `npm run screenshot` on the **old code** to capture the before state → `screenshots/latest.png`
+2. Apply your changes
+3. Run `npm run screenshot` again → old `latest.png` becomes `before.png`, new state saved as `latest.png`
+
+If you used the stash trick (stash the change, screenshot, pop, screenshot), that works too.
 
 Commit both `screenshots/before.png` and `screenshots/latest.png` to the branch, then embed them in the PR body:
 
@@ -122,6 +125,10 @@ Commit both `screenshots/before.png` and `screenshots/latest.png` to the branch,
 ```
 
 If there is no meaningful "before" (e.g. adding a brand-new UI feature), only include the "after" screenshot.
+
+## Game state documentation
+
+`GAME_STATE.md` in the repo root documents the current playable state of the game: what's implemented, what the player can do, and what's next. **Update it with every PR** that changes gameplay, rendering, UI, or systems — keep it accurate as a living snapshot of where the game stands.
 
 ## Agent model selection
 
