@@ -1,19 +1,9 @@
-import { createWorld3D, setTile } from '@map/world3d'
-import { TileType } from '@map/tileTypes'
+import { HeadlessGame } from '@core/HeadlessGame'
 import { createRenderer } from '@ui/renderer'
+import { TICKS_PER_SECOND } from '@core/constants'
 
-const WIDTH  = 128
-const HEIGHT = 128
-const DEPTH  = 16
-
-const world = createWorld3D(WIDTH, HEIGHT, DEPTH)
-
-// Fill z=0 with Stone tiles
-for (let y = 0; y < HEIGHT; y++) {
-  for (let x = 0; x < WIDTH; x++) {
-    setTile(x, y, 0, world, TileType.Stone)
-  }
-}
+const game = new HeadlessGame({ seed: 42 })
+game.embark()
 
 const appEl = document.getElementById('app')
 if (!appEl) throw new Error('No #app element found')
@@ -23,8 +13,37 @@ canvas.width  = 512
 canvas.height = 512
 appEl.appendChild(canvas)
 
+let cameraX = 0
+let cameraY = 0
+let viewZ   = 0
+
+window.addEventListener('keydown', (e: KeyboardEvent) => {
+  switch (e.key) {
+    case 'ArrowUp':    case 'w': case 'W': cameraY -= 1; break
+    case 'ArrowDown':  case 's': case 'S': cameraY += 1; break
+    case 'ArrowLeft':  case 'a': case 'A': cameraX -= 1; break
+    case 'ArrowRight': case 'd': case 'D': cameraX += 1; break
+    case '+': case '=': viewZ += 1; break
+    case '-': viewZ -= 1; break
+  }
+  cameraX = Math.max(0, cameraX)
+  cameraY = Math.max(0, cameraY)
+  viewZ   = Math.max(0, viewZ)
+})
+
 createRenderer(canvas).then((renderer) => {
-  renderer.drawTiles(world, 0, 0, 0)
+  const map = game.getMap()
+
+  // Advance simulation at a fixed tick rate
+  setInterval(() => { game.tick() }, 1000 / TICKS_PER_SECOND)
+
+  // Render each animation frame
+  function frame(): void {
+    renderer.drawTiles(map, viewZ, cameraX, cameraY)
+    renderer.drawDwarves(game.getDwarves(), viewZ, cameraX, cameraY)
+    requestAnimationFrame(frame)
+  }
+  requestAnimationFrame(frame)
 }).catch((err: unknown) => {
   console.error('Renderer init failed', err)
 })

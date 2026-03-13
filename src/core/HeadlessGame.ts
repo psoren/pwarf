@@ -5,8 +5,9 @@ import { Position } from '@core/components/position'
 import { createWorld3D, setTile } from '@map/world3d'
 import type { World3D } from '@map/world3d'
 import { TileType } from '@map/tileTypes'
-import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_DEPTH } from '@core/constants'
+import { WORLD_WIDTH, WORLD_HEIGHT, WORLD_DEPTH, TICKS_PER_SECOND } from '@core/constants'
 import type { GameState, DwarfStatus, ItemCount } from '@core/types'
+import { movementSystem } from '@systems/movementSystem'
 
 type MineDesignation = {
   x1: number; y1: number; z1: number
@@ -74,6 +75,17 @@ export class HeadlessGame {
   }
 
   /**
+   * Returns the World3D tile map. Used by the renderer in browser context.
+   * Throws if called before embark().
+   */
+  getMap(): World3D {
+    if (this.map === null) {
+      throw new Error('Call embark() before getMap()')
+    }
+    return this.map
+  }
+
+  /**
    * Advance the simulation by one tick and return the resulting GameState.
    * Runs synchronously — no browser APIs used.
    */
@@ -81,8 +93,8 @@ export class HeadlessGame {
     if (this.world === null) {
       throw new Error('Call embark() before tick()')
     }
-    // No systems registered yet — advance the counter only.
-    // When systems are added they will be called here with the fixed dt.
+    const dt = 1 / TICKS_PER_SECOND
+    movementSystem(this.world, dt)
     this._tickCount += 1
     return this._buildState()
   }
