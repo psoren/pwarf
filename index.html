@@ -5,107 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>pwarf</title>
     <style>
-      body, html { margin: 0; padding: 0; overflow: hidden; background: #1a1a1a; color: #ccc; font-family: monospace; }
+      * { box-sizing: border-box; }
+      body, html { margin: 0; padding: 0; overflow: hidden; background: #111; color: #ccc; font-family: monospace; }
       #app { position: relative; width: 100vw; height: 100vh; }
-
-      #hud {
-        position: absolute;
-        top: 12px;
-        left: 16px;
-        font-size: 12px;
-        color: #aaa;
-        pointer-events: none;
-        z-index: 10;
-        line-height: 1.6;
-      }
-
-      #help-hint {
-        position: absolute;
-        bottom: 12px;
-        right: 16px;
-        font-size: 12px;
-        color: #ccc;
-        pointer-events: none;
-        z-index: 10;
-      }
-
-      #help-modal {
-        display: none;
-        position: absolute;
-        inset: 0;
-        background: rgba(0,0,0,0.75);
-        z-index: 20;
-        justify-content: center;
-        align-items: center;
-      }
-      #help-modal.open { display: flex; }
-
-      #help-modal-box {
-        background: #1e1e1e;
-        border: 1px solid #444;
-        padding: 24px 32px;
-        min-width: 280px;
-      }
-      #help-modal-box h2 { margin: 0 0 16px; font-size: 14px; color: #ccc; letter-spacing: 0.1em; text-transform: uppercase; }
-      #help-modal-box table { border-collapse: collapse; width: 100%; }
-      #help-modal-box td { padding: 4px 0; font-size: 13px; }
-      #help-modal-box td:first-child { color: #6af; width: 160px; }
-      #help-modal-box td:last-child { color: #aaa; }
-      #help-modal-box .close-hint { margin-top: 20px; font-size: 11px; color: #555; text-align: center; }
-
-      #loading-overlay {
-        position: absolute;
-        inset: 0;
-        background: #111;
-        z-index: 30;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 20px;
-        font-family: monospace;
-        color: #aaa;
-      }
-      #loading-overlay .loading-title { font-size: 20px; color: #ccc; letter-spacing: 0.2em; }
-      #loading-overlay .loading-ascii { font-size: 22px; color: #DAA520; }
-      #loading-bar-track {
-        width: 300px;
-        height: 6px;
-        background: #333;
-        border: 1px solid #555;
-      }
-      #loading-bar { height: 100%; width: 0%; background: #DAA520; transition: width 0.2s; }
-      #loading-label { font-size: 12px; color: #777; min-height: 18px; }
+      #ui  { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
     </style>
   </head>
   <body>
-    <div id="loading-overlay">
-      <div class="loading-title">pwarf</div>
-      <div class="loading-ascii">(•_•) ⛏</div>
-      <div id="loading-bar-track"><div id="loading-bar"></div></div>
-      <div id="loading-label">Preparing world...</div>
-    </div>
     <div id="app">
-      <div id="hud">
-        <div id="hud-z">Z: 0 (surface)</div>
-        <div id="hud-tick">Tick: 0</div>
-        <div id="hud-xy">X: 0  Y: 0</div>
-        <div id="hud-msg"></div>
-        <div id="hud-selected"></div>
-      </div>
-      <div id="help-hint">H – help</div>
-      <div id="help-modal">
-        <div id="help-modal-box">
-          <h2>Controls</h2>
-          <table>
-            <tr><td>W A S D / Arrow keys</td><td>Pan camera</td></tr>
-            <tr><td>+ / =</td><td>Go up (toward surface)</td></tr>
-            <tr><td>−</td><td>Go deeper (underground)</td></tr>
-            <tr><td>H</td><td>Toggle this help</td></tr>
-          </table>
-          <p class="close-hint">Press H or click to close</p>
-        </div>
-      </div>
+      <div id="ui"></div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

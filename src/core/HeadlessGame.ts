@@ -152,6 +152,8 @@ export class HeadlessGame {
     return this._embarkSite
   }
 
+  getTickCount(): number { return this._tickCount }
+
   /**
    * Advance the simulation by one tick and return the resulting GameState.
    * Runs synchronously — no browser APIs used.
