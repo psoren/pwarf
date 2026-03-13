@@ -55,10 +55,13 @@ export class HeadlessGame {
     this.map = createWorld3D(this.width, this.height, this.depth)
     this._tickCount = 0
 
-    // Lay a flat stone floor at z=0 across the entire map
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        setTile(x, y, 0, this.map, TileType.Stone)
+    // Lay stone at z=0 (surface) and underground levels z=1..5
+    const undergroundLevels = Math.min(5, this.depth - 1)
+    for (let zLevel = 0; zLevel <= undergroundLevels; zLevel++) {
+      for (let y = 0; y < this.height; y++) {
+        for (let x = 0; x < this.width; x++) {
+          setTile(x, y, zLevel, this.map, TileType.Stone)
+        }
       }
     }
 
