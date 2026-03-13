@@ -87,6 +87,16 @@ TILE_SIZE = 16px, TICKS_PER_SECOND = 20, MAX_ENTITIES = 10 000
 
 One branch per issue (see CI/agent guide in `.github/`). PRs target `main`.
 
+**Always use a git worktree for new work.** Never make code changes directly in the main checkout. Create a worktree for each branch so the main checkout stays clean and multiple branches can be open simultaneously without stashing:
+
+```bash
+git worktree add .worktrees/issue-NNN-short-description -b feat/issue-NNN-short-description
+cd .worktrees/issue-NNN-short-description
+# do all work here
+```
+
+When using the Agent tool for implementation tasks, pass `isolation: "worktree"` to run the agent in an isolated copy.
+
 After rebasing a branch onto main, force-push is expected and safe: `git push --force-with-lease`.
 
 **Non-trivial code changes must have a GitHub issue.** Before starting any implementation work, check that a GitHub issue exists and reference it in the branch name (`feat/issue-NNN-short-description`) and PR title (`closes #NNN`). Do not open a PR without a linked issue.
