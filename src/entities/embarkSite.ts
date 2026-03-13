@@ -68,10 +68,10 @@ export function setupEmbark(world: GameWorld, map: World3D, seed: number): Embar
     DwarfAI.drinkTargetEid[eid] = -1
 
     addComponent(world, eid, Needs)
-    // Start partially depleted so dwarves seek food/drink within ~1 minute
-    Needs.hunger[eid] = 0.55
-    Needs.thirst[eid] = 0.38
-    Needs.sleep[eid] = 0.8
+    // Start near-critical so dwarves immediately seek food/drink
+    Needs.hunger[eid] = 0.30
+    Needs.thirst[eid] = 0.27
+    Needs.sleep[eid] = 0.7
 
     addComponent(world, eid, Skills)
 
