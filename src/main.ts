@@ -15,19 +15,30 @@ game.embark()
 const appEl = document.getElementById('app')
 if (!appEl) throw new Error('No #app element found')
 
+const helpModal = document.getElementById('help-modal')
+if (!helpModal) throw new Error('No #help-modal element found')
+
+helpModal.addEventListener('click', () => { helpModal.classList.remove('open') })
+
 const canvas = document.createElement('canvas')
-canvas.width  = 512
-canvas.height = 512
+canvas.width  = window.innerWidth
+canvas.height = window.innerHeight
 appEl.appendChild(canvas)
 
 // Start camera centered on dwarf spawn point (map center)
-const tilesWide = Math.floor(canvas.width / TILE_SIZE)
-const tilesHigh = Math.floor(canvas.height / TILE_SIZE)
-let cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(tilesWide / 2)
-let cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(tilesHigh / 2)
+let cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
+let cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
 let viewZ   = 0
 
 window.addEventListener('keydown', (e: KeyboardEvent) => {
+  if (e.key === 'h' || e.key === 'H') {
+    helpModal.classList.toggle('open')
+    return
+  }
+  if (e.key === 'Escape') {
+    helpModal.classList.remove('open')
+    return
+  }
   switch (e.key) {
     case 'ArrowUp':    case 'w': case 'W': cameraY -= 1; break
     case 'ArrowDown':  case 's': case 'S': cameraY += 1; break
@@ -43,6 +54,14 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
 
 createRenderer(canvas).then((renderer) => {
   const map = game.getMap()
+
+  window.addEventListener('resize', () => {
+    canvas.width  = window.innerWidth
+    canvas.height = window.innerHeight
+    renderer.resize(canvas.width, canvas.height)
+    cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
+    cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
+  })
 
   // Advance simulation at a fixed tick rate
   setInterval(() => { game.tick() }, 1000 / TICKS_PER_SECOND)

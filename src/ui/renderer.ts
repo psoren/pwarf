@@ -8,6 +8,7 @@ type DwarfPos = { x: number; y: number; z: number }
 export type Renderer = {
   drawTiles(world: World3D, viewZ: number, cameraX: number, cameraY: number): void
   drawDwarves(dwarves: DwarfPos[], viewZ: number, cameraX: number, cameraY: number): void
+  resize(width: number, height: number): void
   destroy(): void
 }
 
@@ -65,9 +66,13 @@ export async function createRenderer(canvas: HTMLCanvasElement): Promise<Rendere
     }
   }
 
+  function resize(width: number, height: number): void {
+    app.renderer.resize(width, height)
+  }
+
   function destroy(): void {
     app.destroy()
   }
 
-  return { drawTiles, drawDwarves, destroy }
+  return { drawTiles, drawDwarves, resize, destroy }
 }
