@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { HeadlessGame } from '@core/HeadlessGame'
+import { getTile } from '@map/world3d'
+import { TileType } from '@map/tileTypes'
 
 describe('HeadlessGame', () => {
   let game: HeadlessGame
@@ -30,6 +32,22 @@ describe('HeadlessGame', () => {
       game.embark()
       const state = game.tick()
       expect(state.tick).toBe(1)
+    })
+
+    it('lays stone at z=0 (surface) across the entire map', () => {
+      game.embark()
+      const map = game.getMap()
+      expect(getTile(0, 0, 0, map)).toBe(TileType.Stone)
+      expect(getTile(16, 16, 0, map)).toBe(TileType.Stone)
+    })
+
+    it('generates stone for underground levels z=1..5', () => {
+      game.embark()
+      const map = game.getMap()
+      // game uses depth:4 in beforeEach, so check z=1..3 (depth-1)
+      for (let z = 1; z <= 3; z++) {
+        expect(getTile(0, 0, z, map)).toBe(TileType.Stone)
+      }
     })
   })
 
@@ -123,6 +141,10 @@ describe('HeadlessGame', () => {
 
     it('throws if called before embark()', () => {
       expect(() => game.getDwarves()).toThrow('Call embark() before getDwarves()')
+    })
+
+    it('getMap() throws if called before embark()', () => {
+      expect(() => game.getMap()).toThrow('Call embark() before getMap()')
     })
   })
 

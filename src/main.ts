@@ -20,6 +20,7 @@ if (!helpModal) throw new Error('No #help-modal element found')
 
 const hudZ    = document.getElementById('hud-z')
 const hudTick = document.getElementById('hud-tick')
+const hudXY   = document.getElementById('hud-xy')
 
 helpModal.addEventListener('click', () => { helpModal.classList.remove('open') })
 
@@ -31,7 +32,17 @@ appEl.appendChild(canvas)
 // Start camera centered on dwarf spawn point (map center)
 let cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
 let cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
+// viewZ: 0 = surface, negative = underground
 let viewZ   = 0
+
+const CAM_MARGIN = 10
+
+function updateHUD(): void {
+  if (hudZ)  hudZ.textContent  = `Z: ${viewZ}${viewZ === 0 ? ' (surface)' : ' (underground)'}`
+  if (hudXY) hudXY.textContent = `X: ${cameraX}  Y: ${cameraY}`
+}
+
+updateHUD()
 
 window.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.key === 'h' || e.key === 'H') {
@@ -47,13 +58,13 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
     case 'ArrowDown':  case 's': case 'S': cameraY += 1; break
     case 'ArrowLeft':  case 'a': case 'A': cameraX -= 1; break
     case 'ArrowRight': case 'd': case 'D': cameraX += 1; break
-    case '+': case '=': viewZ += 1; break
-    case '-': viewZ -= 1; break
+    case '+': case '=': viewZ += 1; break  // toward surface
+    case '-': viewZ -= 1; break            // deeper underground
   }
-  cameraX = Math.max(0, cameraX)
-  cameraY = Math.max(0, cameraY)
-  viewZ   = Math.max(0, Math.min(WORLD_DEPTH - 1, viewZ))
-  if (hudZ) hudZ.textContent = `Z: ${viewZ}${viewZ === 0 ? ' (surface)' : ''}`
+  cameraX = Math.max(-CAM_MARGIN, Math.min(WORLD_WIDTH  + CAM_MARGIN, cameraX))
+  cameraY = Math.max(-CAM_MARGIN, Math.min(WORLD_HEIGHT + CAM_MARGIN, cameraY))
+  viewZ   = Math.min(0, Math.max(-(WORLD_DEPTH - 1), viewZ))
+  updateHUD()
 })
 
 createRenderer(canvas).then((renderer) => {
@@ -65,6 +76,7 @@ createRenderer(canvas).then((renderer) => {
     renderer.resize(canvas.width, canvas.height)
     cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
     cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
+    updateHUD()
   })
 
   // Advance simulation at a fixed tick rate
@@ -75,8 +87,9 @@ createRenderer(canvas).then((renderer) => {
 
   // Render each animation frame
   function frame(): void {
-    renderer.drawTiles(map, viewZ, cameraX, cameraY)
-    renderer.drawDwarves(game.getDwarves(), viewZ, cameraX, cameraY)
+    const worldZ = -viewZ
+    renderer.drawTiles(map, worldZ, cameraX, cameraY)
+    renderer.drawDwarves(game.getDwarves(), worldZ, cameraX, cameraY)
     requestAnimationFrame(frame)
   }
   requestAnimationFrame(frame)

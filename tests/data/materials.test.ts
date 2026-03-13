@@ -1,7 +1,4 @@
 import { describe, it, expect } from 'vitest'
-import { writeFileSync, unlinkSync } from 'fs'
-import { join } from 'path'
-import yaml from 'js-yaml'
 import { z } from 'zod'
 import { loadMaterials } from '@data/loaders/materials'
 import type { Material } from '@data/loaders/materials'
@@ -60,7 +57,7 @@ describe('loadMaterials()', () => {
 
 describe('loadMaterials() — invalid data', () => {
   it('throws when category is invalid', () => {
-    const bad: unknown[] = [
+    const bad = [
       {
         id: 'bad_material',
         name: 'Bad Material',
@@ -69,9 +66,6 @@ describe('loadMaterials() — invalid data', () => {
         hardness: 5,
       },
     ]
-    const tmpPath = join(process.cwd(), 'src/data/materials_tmp_test.yaml')
-    writeFileSync(tmpPath, yaml.dump(bad), 'utf8')
-    unlinkSync(tmpPath)
 
     const MaterialSchema = z.object({
       id:       z.string(),

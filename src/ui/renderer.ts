@@ -61,8 +61,8 @@ export async function createRenderer(canvas: HTMLCanvasElement): Promise<Rendere
       if (d.z !== viewZ) continue
       const screenX = (d.x - cameraX) * TILE_SIZE
       const screenY = (d.y - cameraY) * TILE_SIZE
-      // Draw dwarf as a cyan square inset 2px from the tile edges
-      dwarfGfx.rect(screenX + 2, screenY + 2, TILE_SIZE - 4, TILE_SIZE - 4).fill(0x00FFFF)
+      // Draw dwarf as a goldenrod square inset 2px from the tile edges
+      dwarfGfx.rect(screenX + 2, screenY + 2, TILE_SIZE - 4, TILE_SIZE - 4).fill(0xDAA520)
     }
   }
 
