@@ -3,6 +3,9 @@ import tsparser from '@typescript-eslint/parser'
 
 export default [
   {
+    ignores: ['.claude/**'],
+  },
+  {
     files: ['src/**/*.ts', 'src/**/*.tsx', 'tests/**/*.ts', 'scripts/**/*.ts'],
     languageOptions: {
       parser: tsparser,

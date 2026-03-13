@@ -81,6 +81,34 @@ TILE_SIZE = 16px, TICKS_PER_SECOND = 20, MAX_ENTITIES = 10 000
 
 One branch per issue (see CI/agent guide in `.github/`). PRs target `main`.
 
+**Every code change must have a GitHub issue.** Before starting any implementation work, check that a GitHub issue exists and reference it in the branch name (`feat/issue-NNN-short-description`) and PR title (`closes #NNN`). Do not open a PR without a linked issue.
+
+## Screenshots for visual PRs
+
+Any PR that touches `src/ui/` **must** include screenshots. Follow these steps:
+
+**Before making changes** — take a baseline screenshot on the current branch:
+```bash
+npm run screenshot          # saves screenshots/latest.png
+mv screenshots/latest.png screenshots/before.png
+```
+
+**After making changes** — take an after screenshot:
+```bash
+npm run screenshot          # saves screenshots/latest.png (the "after")
+```
+
+Commit both `screenshots/before.png` and `screenshots/latest.png` to the branch, then embed them in the PR body:
+
+```markdown
+## Screenshots
+| Before | After |
+|--------|-------|
+| ![before](screenshots/before.png) | ![after](screenshots/latest.png) |
+```
+
+If there is no meaningful "before" (e.g. adding a brand-new UI feature), only include the "after" screenshot.
+
 ## Agent model selection
 
 - **Subagents** (research, search, exploration, file reads): use `model: "sonnet"`
