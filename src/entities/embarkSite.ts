@@ -8,8 +8,11 @@ import { TileCoord } from '@core/components/tileCoord'
 import { DwarfAI, DwarfState, Needs, Skills, Labor, ALL_LABORS } from '@core/components/dwarf'
 import { Mood } from '@core/components/mood'
 import { Item, ItemType, ItemMaterial } from '@core/components/item'
+import { Patch } from '@core/components/patch'
 import { nameStore } from '@core/stores'
 import { mulberry32 } from '@map/biomes'
+
+const PATCH_INTERVAL = 200  // ticks between item spawns (~10s at 20 ticks/sec)
 
 const DWARF_FIRST = ['Urist', 'Bomrek', 'Meng', 'Sibrek', 'Ber', 'Doren', 'Vucar']
 const DWARF_LAST  = ['Oilystockade', 'Hammerstone', 'Claspedtome', 'Inkdagger', 'Bravefists', 'Stonebraid', 'Goldenaxe']
@@ -88,41 +91,57 @@ export function setupEmbark(world: GameWorld, map: World3D, seed: number): Embar
     dwarfEids.push(eid)
   }
 
-  // Spawn food and drink items scattered around the embark site
-  // so dwarves have something to consume immediately
-  spawnEmbarkSupplies(world, site.x, site.y, rng)
+  // Spawn permanent resource patches so the colony can survive indefinitely
+  spawnEmbarkPatches(world, site.x, site.y, rng)
 
   return { dwarfEids, siteX: site.x, siteY: site.y }
 }
 
-function spawnEmbarkSupplies(
+function spawnPatch(
+  world: GameWorld,
+  x: number, y: number,
+  itemType: ItemType,
+  timerOffset: number,
+): void {
+  const eid = addEntity(world)
+  addComponent(world, eid, Patch)
+  Patch.x[eid]        = x
+  Patch.y[eid]        = y
+  Patch.z[eid]        = 0
+  Patch.itemType[eid] = itemType
+  Patch.interval[eid] = PATCH_INTERVAL
+  Patch.timer[eid]    = timerOffset  // stagger so patches don't all fire at once
+
+  // Spawn one initial item immediately
+  const itemEid = addEntity(world)
+  addComponent(world, itemEid, Item)
+  Item.itemType[itemEid]  = itemType
+  Item.material[itemEid]  = itemType === ItemType.Food ? ItemMaterial.Plump : ItemMaterial.None
+  Item.quality[itemEid]   = 1
+  Item.carriedBy[itemEid] = -1
+  Item.x[itemEid] = x
+  Item.y[itemEid] = y
+  Item.z[itemEid] = 0
+}
+
+function spawnEmbarkPatches(
   world: GameWorld,
   siteX: number,
   siteY: number,
   rng: () => number,
 ): void {
-  // 10 food + 10 drink items scattered within ±6 tiles of site
-  for (let i = 0; i < 10; i++) {
-    const eid = addEntity(world)
-    addComponent(world, eid, Item)
-    Item.itemType[eid]  = ItemType.Food
-    Item.material[eid]  = ItemMaterial.Plump
-    Item.quality[eid]   = 1
-    Item.carriedBy[eid] = -1
-    Item.x[eid] = siteX + Math.floor((rng() - 0.5) * 12)
-    Item.y[eid] = siteY + Math.floor((rng() - 0.5) * 12)
-    Item.z[eid] = 0
-  }
-
-  for (let i = 0; i < 10; i++) {
-    const eid = addEntity(world)
-    addComponent(world, eid, Item)
-    Item.itemType[eid]  = ItemType.Drink
-    Item.material[eid]  = ItemMaterial.None
-    Item.quality[eid]   = 1
-    Item.carriedBy[eid] = -1
-    Item.x[eid] = siteX + Math.floor((rng() - 0.5) * 12)
-    Item.y[eid] = siteY + Math.floor((rng() - 0.5) * 12)
-    Item.z[eid] = 0
+  // 5 mushroom patches (food) + 4 water springs (drink), staggered timers
+  const configs: Array<{ type: ItemType; count: number }> = [
+    { type: ItemType.Food,  count: 5 },
+    { type: ItemType.Drink, count: 4 },
+  ]
+  let offset = 0
+  for (const { type, count } of configs) {
+    for (let i = 0; i < count; i++) {
+      const px = siteX + Math.floor((rng() - 0.5) * 14)
+      const py = siteY + Math.floor((rng() - 0.5) * 14)
+      spawnPatch(world, px, py, type, offset)
+      offset += Math.floor(PATCH_INTERVAL / (count + 1))
+    }
   }
 }

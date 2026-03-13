@@ -35,10 +35,11 @@ export function HelpModal({ onClose }: Props) {
           <tbody>
             {[
               ['W A S D / Arrows', 'Pan camera'],
-              ['+ / =', 'Go up (toward surface)'],
-              ['−', 'Go deeper (underground)'],
-              ['H', 'Toggle this help'],
-              ['Esc', 'Close / deselect'],
+              ['+ / =',            'Go up (toward surface)'],
+              ['−',                'Go deeper (underground)'],
+              ['M',                'Toggle mine mode (drag to designate)'],
+              ['H',                'Toggle this help'],
+              ['Esc',              'Close / deselect'],
             ].map(([key, desc]) => (
               <tr key={key}>
                 <td style={{ padding: '4px 0', color: '#6af', width: 160, fontSize: 13 }}>{key}</td>

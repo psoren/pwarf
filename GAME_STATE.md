@@ -54,10 +54,24 @@ Current playable state of pwarf. Updated with each PR that changes gameplay, ren
 - **Job cleanup:** removes completed/abandoned jobs
 - Movement system: dwarves pathfind toward goals (random wander when idle)
 
+### Mining (Phase 3)
+- Press **M** to enter Mine mode; HUD shows orange "⛏ Mine mode (M to exit)" banner
+- Click and drag on the canvas to designate a rectangular area for mining
+- Designated tiles show orange X markers; dwarves with mining labor claim and execute jobs
+- Mining a solid tile converts it to Floor; drops a Stone item
+- **ESC** cancels mine mode and clears any selection
+
+### Mushroom patches / resource regeneration
+- 5 mushroom patches (food) + 4 water springs (drink) spawn near the embark site
+- Each patch spawns one item immediately on embark, then regenerates every ~200 ticks (~10s)
+- Patches are permanent — the colony can sustain indefinitely if dwarves reach the resources
+
+### React UI layer (Phase 3)
+- Entire HUD + sidebar now rendered by React (replaces plain HTML overlay)
+- Loading screen, HUD, dwarf sidebar, help modal, and mode indicator all React components
+
 ## What's not yet playable
-- No UI to designate mining or stockpile areas (must be triggered via code)
-- No items, food, or needs resources placed in world yet — dwarves eventually starve
-- No React UI layer (HUD and help modal are plain HTML)
+- No stockpile UI (designation API exists but no drag-to-designate in game yet)
 - No save/load
 - No enemies or events
 - No construction
