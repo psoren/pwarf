@@ -3,11 +3,11 @@ import { TILE_SIZE } from '@core/constants'
 import { type World3D, getTile } from '@map/world3d'
 import { TILE_COLORS } from './tileColors'
 
-type DwarfPos = { x: number; y: number; z: number }
+type DwarfPos = { eid?: number; x: number; y: number; z: number }
 
 export type Renderer = {
   drawTiles(world: World3D, viewZ: number, cameraX: number, cameraY: number): void
-  drawDwarves(dwarves: DwarfPos[], viewZ: number, cameraX: number, cameraY: number): void
+  drawDwarves(dwarves: DwarfPos[], viewZ: number, cameraX: number, cameraY: number, selectedEid?: number | null): void
   resize(width: number, height: number): void
   destroy(): void
 }
@@ -55,14 +55,19 @@ export async function createRenderer(canvas: HTMLCanvasElement): Promise<Rendere
     }
   }
 
-  function drawDwarves(dwarves: DwarfPos[], viewZ: number, cameraX: number, cameraY: number): void {
+  function drawDwarves(dwarves: DwarfPos[], viewZ: number, cameraX: number, cameraY: number, selectedEid?: number | null): void {
     dwarfGfx.clear()
     for (const d of dwarves) {
       if (d.z !== viewZ) continue
       const screenX = (d.x - cameraX) * TILE_SIZE
       const screenY = (d.y - cameraY) * TILE_SIZE
+      const isSelected = selectedEid != null && d.eid === selectedEid
       // Draw dwarf as a goldenrod square inset 2px from the tile edges
       dwarfGfx.rect(screenX + 2, screenY + 2, TILE_SIZE - 4, TILE_SIZE - 4).fill(0xDAA520)
+      // Draw selection highlight as a white border
+      if (isSelected) {
+        dwarfGfx.rect(screenX, screenY, TILE_SIZE, TILE_SIZE).stroke({ color: 0xFFFFFF, width: 2 })
+      }
     }
   }
 

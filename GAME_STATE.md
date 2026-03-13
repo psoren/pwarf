@@ -6,42 +6,49 @@ Current playable state of pwarf. Updated with each PR that changes gameplay, ren
 
 ### Rendering
 - PixiJS canvas (fullscreen — fills the browser window)
-- Tile rendering at z=0: stone floor covers the entire 128×128 surface
-- Dwarves rendered as cyan squares (12×12px inset within a 16px tile)
-- Camera starts centered on the dwarf spawn point
+- Tile rendering at z=0: procedurally generated surface (grass, sand, snow, water, stone peaks)
+- Underground z-levels: stone, ore veins, caverns, magma at deepest level
+- Dwarves rendered as goldenrod squares (12×12px); selected dwarf gets a white border
+- Camera starts centered on the embark site after world gen
 
 ### Camera controls
 | Key | Action |
 |-----|--------|
-| Arrow keys / WASD | Pan the camera (clamped to world bounds) |
-| `+` / `=` | Go deeper (underground) |
-| `-` | Go up (toward surface) |
+| Arrow keys / WASD | Pan the camera (±10 tile margin at edges) |
+| `+` / `=` | Go up (toward surface) |
+| `−` | Go deeper (underground) |
 | `H` | Toggle help modal |
 
 ### HUD / UI
+- Loading screen with progress bar during world gen ("Raising mountains...", etc.)
 - Z-level display: shows current z and "(surface)" / "(underground)" label
+- X/Y camera position display
 - Tick counter updates in real time
 - "No dwarves on this level" warning when none visible at current z
-- Click a dwarf to select it — HUD shows name and position
+- Click a dwarf tile to select it — HUD shows name and position; white border highlights selection
 - Help modal (H key) lists all controls; ESC or click to dismiss
+
+### World generation (Phase 1)
+- Procedural 128×128×16 world generated from seed 42 on startup (takes ~1–3s)
+- **Heightmap:** fBm simplex noise with 6 octaves, power curve for dramatic peaks
+- **Biomes:** temperature × moisture → Tundra, Desert, Grassland, Forest, Savanna, Tropical, Rainforest, Ocean
+- **Surface tiles:** grass (temperate), sand (desert), snow (tundra), water (ocean/rivers), stone (mountain peaks)
+- **Rivers:** D8 flow accumulation → water tiles connect highland to ocean
+- **Underground:** layered stone (granite/limestone/sandstone/basalt/marble), ore veins (coal/iron/copper/gold/adamantine), caverns, magma at z=15
+- **Embark site:** selects a non-water non-mountain tile cluster, places 7 named dwarves there
+- Deterministic: same seed → identical world
 
 ### Simulation
 - ECS world powered by bitecs v0.4
-- 7 dwarves spawn near map center (scattered ±4 tiles from 64, 64) on z=0
+- 7 dwarves spawn at embark site (near map center) on z=0
 - Each dwarf has a procedurally generated name (e.g. "Urist Hammerstone")
 - Tick loop runs at 20 ticks/second
 - Movement system: dwarves wander randomly each tick
-
-### Map
-- 128×128×16 tile world
-- z=0: flat stone floor across the entire surface
-- z=1–15: empty air (not yet generated)
-- Tile types defined: Air, Stone, Soil, Water, Floor, Wall
 
 ## What's not yet playable
 - No jobs, tasks, or AI goals
 - No items, food, or needs
 - No digging or construction
-- No React UI layer (HUD and help modal are plain HTML)
+- No React UI layer (HUD and help modal are plain HTML; WorldGenProgressScreen component exists but not yet wired to the loading screen)
 - No save/load
 - No enemies or events

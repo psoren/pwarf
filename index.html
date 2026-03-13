@@ -52,9 +52,39 @@
       #help-modal-box td:first-child { color: #6af; width: 160px; }
       #help-modal-box td:last-child { color: #aaa; }
       #help-modal-box .close-hint { margin-top: 20px; font-size: 11px; color: #555; text-align: center; }
+
+      #loading-overlay {
+        position: absolute;
+        inset: 0;
+        background: #111;
+        z-index: 30;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        font-family: monospace;
+        color: #aaa;
+      }
+      #loading-overlay .loading-title { font-size: 20px; color: #ccc; letter-spacing: 0.2em; }
+      #loading-overlay .loading-ascii { font-size: 22px; color: #DAA520; }
+      #loading-bar-track {
+        width: 300px;
+        height: 6px;
+        background: #333;
+        border: 1px solid #555;
+      }
+      #loading-bar { height: 100%; width: 0%; background: #DAA520; transition: width 0.2s; }
+      #loading-label { font-size: 12px; color: #777; min-height: 18px; }
     </style>
   </head>
   <body>
+    <div id="loading-overlay">
+      <div class="loading-title">pwarf</div>
+      <div class="loading-ascii">(•_•) ⛏</div>
+      <div id="loading-bar-track"><div id="loading-bar"></div></div>
+      <div id="loading-label">Preparing world...</div>
+    </div>
     <div id="app">
       <div id="hud">
         <div id="hud-z">Z: 0 (surface)</div>

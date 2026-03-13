@@ -11,14 +11,15 @@ if (axiomToken !== undefined && axiomDataset !== undefined) {
   initLogger({ token: axiomToken, dataset: axiomDataset })
 }
 
-const game = new HeadlessGame({ seed: 42 })
-game.embark()
-
 const appEl = document.getElementById('app')
 if (!appEl) throw new Error('No #app element found')
 
 const helpModal = document.getElementById('help-modal')
 if (!helpModal) throw new Error('No #help-modal element found')
+
+const loadingOverlay  = document.getElementById('loading-overlay')
+const loadingBar      = document.getElementById('loading-bar')
+const loadingLabel    = document.getElementById('loading-label')
 
 const hudZ        = document.getElementById('hud-z')
 const hudTick     = document.getElementById('hud-tick')
@@ -33,7 +34,7 @@ canvas.width  = window.innerWidth
 canvas.height = window.innerHeight
 appEl.appendChild(canvas)
 
-// Start camera centered on dwarf spawn point (map center)
+// Start camera centered on map center — will reposition after embark
 let cameraX     = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
 let cameraY     = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
 // viewZ: 0 = surface, negative = underground
@@ -104,36 +105,64 @@ const input = createInputHandler(canvas, (cmd) => {
 
 window.addEventListener('unload', () => { input.destroy() })
 
-createRenderer(canvas).then((renderer) => {
-  const map = game.getMap()
+// --- World generation + game boot ---
 
-  window.addEventListener('resize', () => {
-    canvas.width  = window.innerWidth
-    canvas.height = window.innerHeight
-    renderer.resize(canvas.width, canvas.height)
-    cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
-    cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
-    updateHUD()
-  })
+const game = new HeadlessGame({ seed: 42 })
 
-  // Advance simulation at a fixed tick rate
-  setInterval(() => {
-    const state = game.tick()
-    if (hudTick) hudTick.textContent = `Tick: ${state.tick}`
-  }, 1000 / TICKS_PER_SECOND)
+function showLoading(show: boolean): void {
+  if (loadingOverlay) loadingOverlay.style.display = show ? 'flex' : 'none'
+}
 
-  // Render each animation frame
-  function frame(): void {
-    const worldZ = -viewZ
-    const dwarves = game.getDwarves()
-    renderer.drawTiles(map, worldZ, cameraX, cameraY)
-    renderer.drawDwarves(dwarves, worldZ, cameraX, cameraY)
-    const onLevel = dwarves.filter(d => d.z === worldZ)
-    if (hudMsg) hudMsg.textContent = onLevel.length === 0 ? 'No dwarves on this level' : ''
-    updateSelectedHud()
-    requestAnimationFrame(frame)
-  }
-  requestAnimationFrame(frame)
+showLoading(true)
+
+game.embarkAsync((progress, label) => {
+  if (loadingBar)   loadingBar.style.width = `${Math.round(progress * 100)}%`
+  if (loadingLabel) loadingLabel.textContent = label
+}).then(() => {
+  showLoading(false)
+  startGame()
 }).catch((err: unknown) => {
-  console.error('Renderer init failed', err)
+  console.error('World gen failed', err)
+  if (loadingLabel) loadingLabel.textContent = 'World generation failed — check console.'
 })
+
+function startGame(): void {
+  // Re-center camera on embark site (dwarves are near map center)
+  cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
+  cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
+  updateHUD()
+
+  createRenderer(canvas).then((renderer) => {
+    const map = game.getMap()
+
+    window.addEventListener('resize', () => {
+      canvas.width  = window.innerWidth
+      canvas.height = window.innerHeight
+      renderer.resize(canvas.width, canvas.height)
+      cameraX = Math.floor(WORLD_WIDTH  / 2) - Math.floor(canvas.width  / TILE_SIZE / 2)
+      cameraY = Math.floor(WORLD_HEIGHT / 2) - Math.floor(canvas.height / TILE_SIZE / 2)
+      updateHUD()
+    })
+
+    // Advance simulation at a fixed tick rate
+    setInterval(() => {
+      const state = game.tick()
+      if (hudTick) hudTick.textContent = `Tick: ${state.tick}`
+    }, 1000 / TICKS_PER_SECOND)
+
+    // Render each animation frame
+    function frame(): void {
+      const worldZ = -viewZ
+      const dwarves = game.getDwarves()
+      renderer.drawTiles(map, worldZ, cameraX, cameraY)
+      renderer.drawDwarves(dwarves, worldZ, cameraX, cameraY, selectedEid)
+      const onLevel = dwarves.filter(d => d.z === worldZ)
+      if (hudMsg) hudMsg.textContent = onLevel.length === 0 ? 'No dwarves on this level' : ''
+      updateSelectedHud()
+      requestAnimationFrame(frame)
+    }
+    requestAnimationFrame(frame)
+  }).catch((err: unknown) => {
+    console.error('Renderer init failed', err)
+  })
+}
