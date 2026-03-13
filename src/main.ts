@@ -1,6 +1,13 @@
 import { HeadlessGame } from '@core/HeadlessGame'
 import { createRenderer } from '@ui/renderer'
 import { TICKS_PER_SECOND } from '@core/constants'
+import { initLogger } from '@core/logger'
+
+const axiomToken = import.meta.env.VITE_AXIOM_TOKEN
+const axiomDataset = import.meta.env.VITE_AXIOM_DATASET
+if (axiomToken !== undefined && axiomDataset !== undefined) {
+  initLogger({ token: axiomToken, dataset: axiomDataset })
+}
 
 const game = new HeadlessGame({ seed: 42 })
 game.embark()
