@@ -3,8 +3,11 @@ import { TILE_SIZE } from '@core/constants'
 import { type World3D, getTile } from '@map/world3d'
 import { TILE_COLORS } from './tileColors'
 
+type DwarfPos = { x: number; y: number; z: number }
+
 export type Renderer = {
   drawTiles(world: World3D, viewZ: number, cameraX: number, cameraY: number): void
+  drawDwarves(dwarves: DwarfPos[], viewZ: number, cameraX: number, cameraY: number): void
   destroy(): void
 }
 
@@ -21,6 +24,9 @@ export async function createRenderer(canvas: HTMLCanvasElement): Promise<Rendere
 
   const tilesGfx = new Graphics()
   app.stage.addChild(tilesGfx)
+
+  const dwarfGfx = new Graphics()
+  app.stage.addChild(dwarfGfx)
 
   function drawTiles(world: World3D, viewZ: number, cameraX: number, cameraY: number): void {
     tilesGfx.clear()
@@ -48,9 +54,20 @@ export async function createRenderer(canvas: HTMLCanvasElement): Promise<Rendere
     }
   }
 
+  function drawDwarves(dwarves: DwarfPos[], viewZ: number, cameraX: number, cameraY: number): void {
+    dwarfGfx.clear()
+    for (const d of dwarves) {
+      if (d.z !== viewZ) continue
+      const screenX = (d.x - cameraX) * TILE_SIZE
+      const screenY = (d.y - cameraY) * TILE_SIZE
+      // Draw dwarf as a cyan square inset 2px from the tile edges
+      dwarfGfx.rect(screenX + 2, screenY + 2, TILE_SIZE - 4, TILE_SIZE - 4).fill(0x00FFFF)
+    }
+  }
+
   function destroy(): void {
     app.destroy()
   }
 
-  return { drawTiles, destroy }
+  return { drawTiles, drawDwarves, destroy }
 }
