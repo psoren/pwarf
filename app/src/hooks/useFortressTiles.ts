@@ -71,7 +71,8 @@ export function useFortressTiles({
         .gte('x', x0)
         .lt('x', x1)
         .gte('y', y0)
-        .lt('y', y1);
+        .lt('y', y1)
+        .limit(5000);
 
       if (error) {
         console.error('[useFortressTiles] fetch error:', error.message);

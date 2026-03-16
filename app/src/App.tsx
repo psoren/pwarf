@@ -79,9 +79,9 @@ export default function App() {
           if (session.civId) {
             setCivId(session.civId);
             setMode("fortress");
-            if (session.fortressX != null && session.fortressY != null) {
-              viewport.setOffset(session.fortressX, session.fortressY);
-            }
+            // Fortress uses local coordinates starting at (0,0),
+            // not the world embark coordinates.
+            viewport.setOffset(0, 0);
           }
           setPlayerEnsured(true);
         })
@@ -153,6 +153,7 @@ export default function App() {
       const id = await embark(worldId, viewport.cursorX, viewport.cursorY, worldSeed);
       setCivId(id);
       setMode("fortress");
+      viewport.setOffset(0, 0);
     } catch (err) {
       console.error("Embark failed:", err);
     }
