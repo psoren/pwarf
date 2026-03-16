@@ -29,6 +29,11 @@ export function useViewport() {
     }));
   }, []);
 
+  /** Jump viewport to an absolute offset (and optionally set cursor) */
+  const setOffset = useCallback((x: number, y: number) => {
+    setState((prev) => ({ ...prev, offsetX: x, offsetY: y, cursorX: x, cursorY: y }));
+  }, []);
+
   /** Set cursor position in world tile coords */
   const setCursor = useCallback((x: number, y: number) => {
     setState((prev) => ({ ...prev, cursorX: x, cursorY: y }));
@@ -69,5 +74,5 @@ export function useViewport() {
     dragRef.current = null;
   }, []);
 
-  return { ...state, pan, setCursor, onDragStart, onDragMove, onDragEnd };
+  return { ...state, pan, setOffset, setCursor, onDragStart, onDragMove, onDragEnd };
 }

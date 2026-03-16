@@ -36,7 +36,7 @@ describe("loadSession", () => {
 
     const result = await loadSession("user-1");
 
-    expect(result).toEqual({ worldId: null, worldSeed: null, civId: null });
+    expect(result).toEqual({ worldId: null, worldSeed: null, civId: null, fortressX: null, fortressY: null });
     expect(mockFrom).toHaveBeenCalledWith("players");
   });
 
@@ -45,7 +45,7 @@ describe("loadSession", () => {
 
     const result = await loadSession("user-1");
 
-    expect(result).toEqual({ worldId: null, worldSeed: null, civId: null });
+    expect(result).toEqual({ worldId: null, worldSeed: null, civId: null, fortressX: null, fortressY: null });
   });
 
   it("returns worldId, seed, and civId when player has an active civilization", async () => {
@@ -60,13 +60,13 @@ describe("loadSession", () => {
       error: null,
     });
     mockSingle.mockResolvedValueOnce({
-      data: { id: "civ-xyz" },
+      data: { id: "civ-xyz", tile_x: 100, tile_y: 200 },
       error: null,
     });
 
     const result = await loadSession("user-1");
 
-    expect(result).toEqual({ worldId: "world-abc", worldSeed: 12345n, civId: "civ-xyz" });
+    expect(result).toEqual({ worldId: "world-abc", worldSeed: 12345n, civId: "civ-xyz", fortressX: 100, fortressY: 200 });
     expect(mockFrom).toHaveBeenCalledWith("worlds");
     expect(mockFrom).toHaveBeenCalledWith("civilizations");
   });
@@ -84,6 +84,6 @@ describe("loadSession", () => {
 
     const result = await loadSession("user-1");
 
-    expect(result).toEqual({ worldId: "world-abc", worldSeed: 99999n, civId: null });
+    expect(result).toEqual({ worldId: "world-abc", worldSeed: 99999n, civId: null, fortressX: null, fortressY: null });
   });
 });

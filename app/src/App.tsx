@@ -63,6 +63,9 @@ export default function App() {
           if (session.civId) {
             setCivId(session.civId);
             setMode("fortress");
+            if (session.fortressX != null && session.fortressY != null) {
+              viewport.setOffset(session.fortressX, session.fortressY);
+            }
           }
           setPlayerEnsured(true);
         })
@@ -74,7 +77,7 @@ export default function App() {
       setWorldSeed(null);
       setCivId(null);
     }
-  }, [user, playerEnsured]);
+  }, [user, playerEnsured, viewport.setOffset]);
 
   const handleKeyAction = useCallback(
     (action: KeyAction) => {

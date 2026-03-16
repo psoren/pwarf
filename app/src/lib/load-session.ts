@@ -4,6 +4,8 @@ export interface GameSession {
   worldId: string | null;
   worldSeed: bigint | null;
   civId: string | null;
+  fortressX: number | null;
+  fortressY: number | null;
 }
 
 /**
@@ -18,14 +20,14 @@ export async function loadSession(userId: string): Promise<GameSession> {
     .single();
 
   const worldId = player?.world_id ?? null;
-  if (!worldId) return { worldId: null, worldSeed: null, civId: null };
+  if (!worldId) return { worldId: null, worldSeed: null, civId: null, fortressX: null, fortressY: null };
 
   // Fetch world seed and active civilization in parallel
   const [worldResult, civResult] = await Promise.all([
     supabase.from("worlds").select("seed").eq("id", worldId).single(),
     supabase
       .from("civilizations")
-      .select("id")
+      .select("id, tile_x, tile_y")
       .eq("world_id", worldId)
       .eq("player_id", userId)
       .eq("status", "active")
@@ -37,5 +39,11 @@ export async function loadSession(userId: string): Promise<GameSession> {
     ? BigInt(worldResult.data.seed)
     : null;
 
-  return { worldId, worldSeed, civId: civResult.data?.id ?? null };
+  return {
+    worldId,
+    worldSeed,
+    civId: civResult.data?.id ?? null,
+    fortressX: civResult.data?.tile_x ?? null,
+    fortressY: civResult.data?.tile_y ?? null,
+  };
 }
