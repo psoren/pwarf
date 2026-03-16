@@ -27,6 +27,12 @@ Before merging any new sim system:
 - Unit tests for all pure functions
 - Headless mode still works (no new browser dependencies)
 
+## Workflow
+
+- **Every change must have a GitHub issue filed first.** Include a description and apply appropriate labels (`bug`, `documentation`, `enhancement`, `phase-0` through `phase-5`, etc.).
+- Reference the issue number in commits and PRs (e.g., `closes #123`).
+- Close the issue when the PR is merged.
+
 ## Build & Typecheck
 
 - Typecheck all: `npm run build` (runs tsc in each workspace)
