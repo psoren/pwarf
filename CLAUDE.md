@@ -44,3 +44,10 @@ Before merging any new sim system:
 - TypeScript throughout
 - ESM modules (`"type": "module"`)
 - No default exports — use named exports
+
+## Playtesting
+
+- **Every PR must include a playtest.** After implementing a feature or fix, run the game in Chrome and verify it works end-to-end.
+- Include a text report in the PR description summarizing what was tested and the results.
+- Include screenshots demonstrating the feature working (or bugs found).
+- Use the `/playtest` skill to run the game locally in Chrome with browser automation.
