@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback } from "react";
 import type { WorldTile, TerrainType } from "@pwarf/shared";
+import { DWARF_POSITION_MAP } from "./fortressDwarves";
 
 interface MainViewportProps {
   mode: "fortress" | "world";
@@ -32,6 +33,11 @@ function fortressTile(wx: number, wy: number): { ch: string; fg: string } {
     (wy >= 1 && wy <= 9 && wx === 13);
 
   if (isWall) return { ch: "#", fg: "#888" };
+
+  // Dwarf at this position?
+  const dwarf = DWARF_POSITION_MAP.get(`${wx},${wy}`);
+  if (dwarf) return { ch: "\u263A", fg: "#00cccc" };
+
   if (inRoom) return { ch: ".", fg: "#555" };
 
   // Ore vein
