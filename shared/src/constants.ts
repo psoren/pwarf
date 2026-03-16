@@ -32,8 +32,6 @@ export const MIN_NEED = 0;
 export const STRESS_TANTRUM_THRESHOLD = 80;
 
 // ============================================================
-<<<<<<< HEAD
-=======
 // Need decay rates (per tick)
 // ============================================================
 // Physical needs decay faster than psychological needs.
@@ -70,7 +68,6 @@ export const STRESS_TANTRUM_MODERATE = 90;
 export const STRESS_TANTRUM_SEVERE = 96;
 
 // ============================================================
->>>>>>> feat: add per-need decay rates and stress tier constants (closes #133)
 // Skills
 // ============================================================
 
