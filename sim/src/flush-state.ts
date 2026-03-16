@@ -3,7 +3,7 @@ import type { SimContext } from "./sim-context.js";
 /**
  * Flush dirty entities and pending events to Supabase.
  *
- * All five flushes run in parallel via Promise.all. Errors are
+ * All flushes run in parallel via Promise.all. Errors are
  * logged with console.warn but do not throw — the sim keeps running
  * and will retry on the next flush cycle.
  */
@@ -20,6 +20,8 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   const dirtyMonsters = state.monsters.filter((m) =>
     state.dirtyMonsterIds.has(m.id),
   );
+  const dirtyTasks = state.tasks.filter((t) => state.dirtyTaskIds.has(t.id));
+  const newTasks = [...state.newTasks];
   const events = [...state.pendingEvents];
 
   const promises: PromiseLike<void>[] = [];
@@ -68,6 +70,28 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
     );
   }
 
+  if (dirtyTasks.length > 0) {
+    promises.push(
+      supabase
+        .from("tasks")
+        .upsert(dirtyTasks)
+        .then(({ error }) => {
+          if (error) console.warn(`[flush] tasks upsert failed: ${error.message}`);
+        }),
+    );
+  }
+
+  if (newTasks.length > 0) {
+    promises.push(
+      supabase
+        .from("tasks")
+        .insert(newTasks)
+        .then(({ error }) => {
+          if (error) console.warn(`[flush] tasks insert failed: ${error.message}`);
+        }),
+    );
+  }
+
   if (events.length > 0) {
     promises.push(
       supabase
@@ -86,5 +110,7 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   state.dirtyItemIds.clear();
   state.dirtyStructureIds.clear();
   state.dirtyMonsterIds.clear();
+  state.dirtyTaskIds.clear();
+  state.newTasks = [];
   state.pendingEvents = [];
 }

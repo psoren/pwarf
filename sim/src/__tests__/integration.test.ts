@@ -48,6 +48,10 @@ function makeDwarf(overrides?: Partial<Dwarf>): Dwarf {
     born_year: null,
     died_year: null,
     cause_of_death: null,
+    current_task_id: null,
+    position_x: 0,
+    position_y: 0,
+    position_z: 0,
     created_at: new Date().toISOString(),
     ...overrides,
   };

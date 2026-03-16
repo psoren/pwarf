@@ -147,6 +147,24 @@ export type EncounterOutcome =
   | 'catastrophic_loss'
   | 'unknown';
 
+export type TaskType =
+  | 'mine'
+  | 'haul'
+  | 'farm_till'
+  | 'farm_plant'
+  | 'farm_harvest'
+  | 'eat'
+  | 'drink'
+  | 'sleep';
+
+export type TaskStatus =
+  | 'pending'
+  | 'claimed'
+  | 'in_progress'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
+
 export type FortressTileType =
   | 'open_air'
   | 'soil'
@@ -291,6 +309,10 @@ export interface Dwarf {
   born_year: number | null;
   died_year: number | null;
   cause_of_death: string | null;
+  current_task_id: string | null;
+  position_x: number;
+  position_y: number;
+  position_z: number;
   created_at: string;
 }
 
@@ -483,4 +505,21 @@ export interface FortressTile {
   is_revealed: boolean;
   is_mined: boolean;
   created_at: string;
+}
+
+export interface Task {
+  id: string;
+  civilization_id: string;
+  task_type: TaskType;
+  status: TaskStatus;
+  priority: number;
+  assigned_dwarf_id: string | null;
+  target_x: number | null;
+  target_y: number | null;
+  target_z: number | null;
+  target_item_id: string | null;
+  work_progress: number;
+  work_required: number;
+  created_at: string;
+  completed_at: string | null;
 }

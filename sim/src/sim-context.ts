@@ -1,10 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Dwarf,
+  DwarfSkill,
   Item,
   Structure,
   Monster,
   WorldEvent,
+  Task,
 } from "@pwarf/shared";
 
 /** Cached world-state slices that get loaded at start and updated incrementally. */
@@ -13,7 +15,8 @@ export interface CachedState {
   items: Item[];
   structures: Structure[];
   monsters: Monster[];
-  workOrders: unknown[];
+  tasks: Task[];
+  dwarfSkills: DwarfSkill[];
   worldEvents: WorldEvent[];
 
   /** IDs of entities modified during the current tick, to be flushed to DB. */
@@ -21,9 +24,17 @@ export interface CachedState {
   dirtyItemIds: Set<string>;
   dirtyStructureIds: Set<string>;
   dirtyMonsterIds: Set<string>;
+  dirtyTaskIds: Set<string>;
+
+  /** New tasks created this tick that need to be inserted (not upserted). */
+  newTasks: Task[];
 
   /** Events queued during a tick, flushed by the event-firing phase. */
   pendingEvents: WorldEvent[];
+
+  /** Tracks ticks at zero need for starvation/dehydration death. */
+  zeroFoodTicks: Map<string, number>;
+  zeroDrinkTicks: Map<string, number>;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */
@@ -33,13 +44,18 @@ export function createEmptyCachedState(): CachedState {
     items: [],
     structures: [],
     monsters: [],
-    workOrders: [],
+    tasks: [],
+    dwarfSkills: [],
     worldEvents: [],
     dirtyDwarfIds: new Set(),
     dirtyItemIds: new Set(),
     dirtyStructureIds: new Set(),
     dirtyMonsterIds: new Set(),
+    dirtyTaskIds: new Set(),
+    newTasks: [],
     pendingEvents: [],
+    zeroFoodTicks: new Map(),
+    zeroDrinkTicks: new Map(),
   };
 }
 
