@@ -1,4 +1,4 @@
-import type { NoiseFunction2D } from "simplex-noise";
+import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
 import type { TerrainType } from "./db-types.js";
 
 // ============================================================
@@ -173,4 +173,44 @@ export function elevationToMeters(normalizedElevation: number): number {
   // Ocean (< 0.25) maps to roughly [-200, 300]
   // Mountains (> 0.85) maps to roughly [1700, 2000]
   return Math.round(normalizedElevation * 2200 - 200);
+}
+
+// ============================================================
+// World deriver — initializes noise once, derives any tile
+// ============================================================
+
+export interface DerivedTile {
+  terrain: TerrainType;
+  elevation: number;
+  biome_tags: string[];
+}
+
+export interface WorldDeriver {
+  deriveTile(x: number, y: number): DerivedTile;
+}
+
+export function createWorldDeriver(seed: bigint): WorldDeriver {
+  const rng = createAleaRng(seed);
+  const elevationNoise = createNoise2D(rng);
+  const moistureNoise = createNoise2D(rng);
+  const temperatureNoise = createNoise2D(rng);
+  const specialNoises = SPECIAL_TERRAINS.map(() => createNoise2D(rng));
+
+  return {
+    deriveTile(x: number, y: number): DerivedTile {
+      const elevation = fbm(elevationNoise, x, y, 6, 0.005, 1.0);
+      const moisture = fbm(moistureNoise, x, y, 4, 0.008, 1.0);
+      const temperature = fbm(temperatureNoise, x, y, 3, 0.004, 1.0);
+
+      let terrain = deriveTerrain(elevation, moisture, temperature);
+      const special = deriveSpecialOverlay(specialNoises, x, y, 0.003);
+      if (special) terrain = special;
+
+      return {
+        terrain,
+        elevation: elevationToMeters(elevation),
+        biome_tags: deriveBiomeTags(elevation, moisture, temperature),
+      };
+    },
+  };
 }
