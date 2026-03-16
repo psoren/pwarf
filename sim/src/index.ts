@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { SimRunner } from "./sim-runner.js";
 
+export { loadStateFromSupabase } from "./load-state.js";
+
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
@@ -16,8 +18,9 @@ const runner = new SimRunner(supabase);
 
 // For now, accept civilization ID from env or default to a placeholder.
 const civId = process.env.CIVILIZATION_ID ?? "default";
+const worldId = process.env.WORLD_ID ?? "default";
 
-runner.start(civId).catch((err) => {
+runner.start(civId, worldId).catch((err) => {
   console.error("[sim] failed to start:", err);
   process.exit(1);
 });
