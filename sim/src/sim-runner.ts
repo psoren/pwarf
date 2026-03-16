@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { STEPS_PER_SECOND, STEPS_PER_YEAR } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
-import { createEmptyCachedState } from "./sim-context.js";
+import { loadStateFromSupabase } from "./load-state.js";
 import {
   needsDecay,
   taskExecution,
@@ -36,8 +36,12 @@ export class SimRunner {
   }
 
   /** Load initial state from Supabase and begin the tick loop. */
-  async start(civilizationId: string): Promise<void> {
-    const cached = createEmptyCachedState();
+  async start(civilizationId: string, worldId: string): Promise<void> {
+    const cached = await loadStateFromSupabase(
+      this.supabase,
+      civilizationId,
+      worldId,
+    );
 
     this.ctx = {
       supabase: this.supabase,
