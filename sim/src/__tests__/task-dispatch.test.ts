@@ -1,0 +1,654 @@
+import { describe, it, expect } from "vitest";
+import { randomUUID } from "node:crypto";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Dwarf, DwarfSkill, Task, Item } from "@pwarf/shared";
+import {
+  FOOD_DECAY_PER_TICK,
+  DRINK_DECAY_PER_TICK,
+  SLEEP_DECAY_PER_TICK,
+  NEED_INTERRUPT_FOOD,
+  NEED_INTERRUPT_DRINK,
+  STARVATION_TICKS,
+  FOOD_RESTORE_AMOUNT,
+  DRINK_RESTORE_AMOUNT,
+  BASE_WORK_RATE,
+  WORK_EAT,
+  MAX_NEED,
+} from "@pwarf/shared";
+import type { SimContext } from "../sim-context.js";
+import { createEmptyCachedState } from "../sim-context.js";
+import { needsDecay } from "../phases/needs-decay.js";
+import { jobClaiming } from "../phases/job-claiming.js";
+import { taskExecution } from "../phases/task-execution.js";
+import { needSatisfaction } from "../phases/need-satisfaction.js";
+import { stressUpdate } from "../phases/stress-update.js";
+import { createTask, isDwarfIdle } from "../task-helpers.js";
+
+// ---------------------------------------------------------------------------
+// Test helpers
+// ---------------------------------------------------------------------------
+
+function makeDwarf(overrides?: Partial<Dwarf>): Dwarf {
+  return {
+    id: randomUUID(),
+    civilization_id: "civ-1",
+    name: "Urist",
+    surname: "McTestdwarf",
+    status: "alive",
+    age: 30,
+    gender: "male",
+    need_food: 80,
+    need_drink: 80,
+    need_sleep: 80,
+    need_social: 50,
+    need_purpose: 50,
+    need_beauty: 50,
+    stress_level: 0,
+    is_in_tantrum: false,
+    health: 100,
+    injuries: [],
+    memories: [],
+    trait_openness: null,
+    trait_conscientiousness: null,
+    trait_extraversion: null,
+    trait_agreeableness: null,
+    trait_neuroticism: null,
+    religious_devotion: 0,
+    faction_id: null,
+    born_year: null,
+    died_year: null,
+    cause_of_death: null,
+    current_task_id: null,
+    position_x: 0,
+    position_y: 0,
+    position_z: 0,
+    created_at: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+function makeSkill(dwarfId: string, skillName: string, level = 0, xp = 0): DwarfSkill {
+  return {
+    id: randomUUID(),
+    dwarf_id: dwarfId,
+    skill_name: skillName,
+    level,
+    xp,
+    last_used_year: null,
+  };
+}
+
+function makeItem(overrides?: Partial<Item>): Item {
+  return {
+    id: randomUUID(),
+    name: "Plump helmet",
+    category: "food",
+    quality: "standard",
+    material: "plant",
+    weight: 1,
+    value: 2,
+    is_artifact: false,
+    created_by_dwarf_id: null,
+    created_in_civ_id: "civ-1",
+    created_year: 1,
+    held_by_dwarf_id: null,
+    located_in_civ_id: "civ-1",
+    located_in_ruin_id: null,
+    lore: null,
+    properties: {},
+    created_at: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+function makeContext(opts?: {
+  dwarves?: Dwarf[];
+  skills?: DwarfSkill[];
+  tasks?: Task[];
+  items?: Item[];
+}): SimContext {
+  const state = createEmptyCachedState();
+  state.dwarves = opts?.dwarves ?? [];
+  state.dwarfSkills = opts?.skills ?? [];
+  state.tasks = opts?.tasks ?? [];
+  state.items = opts?.items ?? [];
+
+  return {
+    supabase: null as unknown as SupabaseClient,
+    civilizationId: "civ-1",
+    step: 0,
+    year: 1,
+    day: 1,
+    state,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Task helper tests
+// ---------------------------------------------------------------------------
+
+describe("isDwarfIdle", () => {
+  it("alive dwarf with no task is idle", () => {
+    const dwarf = makeDwarf();
+    expect(isDwarfIdle(dwarf)).toBe(true);
+  });
+
+  it("dwarf with current task is not idle", () => {
+    const dwarf = makeDwarf({ current_task_id: randomUUID() });
+    expect(isDwarfIdle(dwarf)).toBe(false);
+  });
+
+  it("dead dwarf is not idle", () => {
+    const dwarf = makeDwarf({ status: "dead" });
+    expect(isDwarfIdle(dwarf)).toBe(false);
+  });
+
+  it("dwarf in tantrum is not idle", () => {
+    const dwarf = makeDwarf({ is_in_tantrum: true });
+    expect(isDwarfIdle(dwarf)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Job claiming tests
+// ---------------------------------------------------------------------------
+
+describe("job claiming", () => {
+  it("assigns an idle dwarf to a pending task", async () => {
+    const dwarf = makeDwarf();
+    const skill = makeSkill(dwarf.id, "mining", 5);
+    const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
+
+    createTask(ctx.state, "civ-1", {
+      task_type: "mine",
+      target_x: 10,
+      target_y: 10,
+      target_z: 0,
+    });
+
+    await jobClaiming(ctx);
+
+    expect(dwarf.current_task_id).not.toBeNull();
+    const task = ctx.state.tasks[0]!;
+    expect(task.status).toBe("claimed");
+    expect(task.assigned_dwarf_id).toBe(dwarf.id);
+  });
+
+  it("does not assign a dwarf without the required skill", async () => {
+    const dwarf = makeDwarf();
+    // No mining skill
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    createTask(ctx.state, "civ-1", {
+      task_type: "mine",
+      target_x: 10,
+      target_y: 10,
+      target_z: 0,
+    });
+
+    await jobClaiming(ctx);
+
+    expect(dwarf.current_task_id).toBeNull();
+    expect(ctx.state.tasks[0]!.status).toBe("pending");
+  });
+
+  it("any dwarf can haul", async () => {
+    const dwarf = makeDwarf();
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    createTask(ctx.state, "civ-1", {
+      task_type: "haul",
+      target_x: 5,
+      target_y: 5,
+      target_z: 0,
+    });
+
+    await jobClaiming(ctx);
+
+    expect(dwarf.current_task_id).not.toBeNull();
+    expect(ctx.state.tasks[0]!.status).toBe("claimed");
+  });
+
+  it("prefers higher-priority tasks", async () => {
+    const dwarf = makeDwarf();
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    createTask(ctx.state, "civ-1", {
+      task_type: "haul",
+      priority: 3,
+      target_x: 5,
+      target_y: 5,
+      target_z: 0,
+    });
+    createTask(ctx.state, "civ-1", {
+      task_type: "haul",
+      priority: 8,
+      target_x: 5,
+      target_y: 5,
+      target_z: 0,
+    });
+
+    await jobClaiming(ctx);
+
+    const claimedTask = ctx.state.tasks.find(t => t.status === "claimed");
+    expect(claimedTask!.priority).toBe(8);
+  });
+
+  it("does not double-assign tasks", async () => {
+    const dwarf1 = makeDwarf();
+    const dwarf2 = makeDwarf();
+    const ctx = makeContext({ dwarves: [dwarf1, dwarf2] });
+
+    createTask(ctx.state, "civ-1", {
+      task_type: "haul",
+      target_x: 5,
+      target_y: 5,
+      target_z: 0,
+    });
+
+    await jobClaiming(ctx);
+
+    const assigned = [dwarf1.current_task_id, dwarf2.current_task_id].filter(Boolean);
+    expect(assigned).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Task execution tests
+// ---------------------------------------------------------------------------
+
+describe("task execution", () => {
+  it("progresses work when dwarf is at task site", async () => {
+    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "haul",
+      target_x: 10,
+      target_y: 10,
+      target_z: 0,
+      work_required: 20,
+    });
+    task.status = "claimed";
+    task.assigned_dwarf_id = dwarf.id;
+    dwarf.current_task_id = task.id;
+
+    await taskExecution(ctx);
+
+    expect(task.status).toBe("in_progress");
+    expect(task.work_progress).toBe(BASE_WORK_RATE);
+  });
+
+  it("completes task when work reaches required amount", async () => {
+    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "haul",
+      target_x: 10,
+      target_y: 10,
+      target_z: 0,
+      work_required: 1, // Completes in one tick
+    });
+    task.status = "in_progress";
+    task.assigned_dwarf_id = dwarf.id;
+    dwarf.current_task_id = task.id;
+
+    await taskExecution(ctx);
+
+    expect(task.status).toBe("completed");
+    expect(dwarf.current_task_id).toBeNull();
+  });
+
+  it("eating restores food need", async () => {
+    const dwarf = makeDwarf({
+      position_x: 0, position_y: 0, position_z: 0,
+      need_food: 20,
+    });
+    const food = makeItem({ category: "food" });
+    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
+
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "eat",
+      target_x: 0,
+      target_y: 0,
+      target_z: 0,
+      target_item_id: food.id,
+      work_required: 1,
+      assigned_dwarf_id: dwarf.id,
+    });
+    task.status = "in_progress";
+    task.assigned_dwarf_id = dwarf.id;
+    dwarf.current_task_id = task.id;
+
+    await taskExecution(ctx);
+
+    expect(task.status).toBe("completed");
+    expect(dwarf.need_food).toBe(Math.min(MAX_NEED, 20 + FOOD_RESTORE_AMOUNT));
+    // Food item should be consumed
+    expect(ctx.state.items.find(i => i.id === food.id)).toBeUndefined();
+  });
+
+  it("drinking restores drink need", async () => {
+    const dwarf = makeDwarf({
+      position_x: 0, position_y: 0, position_z: 0,
+      need_drink: 15,
+    });
+    const drink = makeItem({ category: "drink", name: "Dwarven ale" });
+    const ctx = makeContext({ dwarves: [dwarf], items: [drink] });
+
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "drink",
+      target_x: 0,
+      target_y: 0,
+      target_z: 0,
+      target_item_id: drink.id,
+      work_required: 1,
+      assigned_dwarf_id: dwarf.id,
+    });
+    task.status = "in_progress";
+    task.assigned_dwarf_id = dwarf.id;
+    dwarf.current_task_id = task.id;
+
+    await taskExecution(ctx);
+
+    expect(task.status).toBe("completed");
+    expect(dwarf.need_drink).toBe(Math.min(MAX_NEED, 15 + DRINK_RESTORE_AMOUNT));
+  });
+
+  it("sleeping restores sleep to 100", async () => {
+    const dwarf = makeDwarf({
+      position_x: 0, position_y: 0, position_z: 0,
+      need_sleep: 10,
+    });
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "sleep",
+      target_x: 0,
+      target_y: 0,
+      target_z: 0,
+      work_required: 1,
+      assigned_dwarf_id: dwarf.id,
+    });
+    task.status = "in_progress";
+    task.assigned_dwarf_id = dwarf.id;
+    dwarf.current_task_id = task.id;
+
+    await taskExecution(ctx);
+
+    expect(dwarf.need_sleep).toBe(MAX_NEED);
+  });
+
+  it("mining creates a stone item", async () => {
+    const dwarf = makeDwarf({ position_x: 9, position_y: 10, position_z: 0 });
+    const skill = makeSkill(dwarf.id, "mining", 0);
+    const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
+
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "mine",
+      target_x: 10,
+      target_y: 10,
+      target_z: 0,
+      work_required: 1,
+    });
+    task.status = "in_progress";
+    task.assigned_dwarf_id = dwarf.id;
+    dwarf.current_task_id = task.id;
+
+    await taskExecution(ctx);
+
+    expect(task.status).toBe("completed");
+    const stoneItems = ctx.state.items.filter(i => i.category === "raw_material");
+    expect(stoneItems.length).toBe(1);
+    expect(stoneItems[0]!.name).toBe("Stone block");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Need satisfaction tests
+// ---------------------------------------------------------------------------
+
+describe("need satisfaction", () => {
+  it("creates eat task when food need is low", async () => {
+    const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1 });
+    const food = makeItem({ category: "food" });
+    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
+
+    await needSatisfaction(ctx);
+
+    const eatTasks = ctx.state.tasks.filter(t => t.task_type === "eat");
+    expect(eatTasks).toHaveLength(1);
+    expect(eatTasks[0]!.assigned_dwarf_id).toBe(dwarf.id);
+  });
+
+  it("creates drink task when drink need is low", async () => {
+    const dwarf = makeDwarf({ need_drink: NEED_INTERRUPT_DRINK - 1 });
+    const drink = makeItem({ category: "drink", name: "Ale" });
+    const ctx = makeContext({ dwarves: [dwarf], items: [drink] });
+
+    await needSatisfaction(ctx);
+
+    const drinkTasks = ctx.state.tasks.filter(t => t.task_type === "drink");
+    expect(drinkTasks).toHaveLength(1);
+  });
+
+  it("does not create eat task if no food exists", async () => {
+    const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1 });
+    const ctx = makeContext({ dwarves: [dwarf], items: [] });
+
+    await needSatisfaction(ctx);
+
+    const eatTasks = ctx.state.tasks.filter(t => t.task_type === "eat");
+    expect(eatTasks).toHaveLength(0);
+  });
+
+  it("drops current task when need is critical", async () => {
+    const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1 });
+    const food = makeItem({ category: "food" });
+    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
+
+    // Give dwarf a haul task
+    const haulTask = createTask(ctx.state, "civ-1", {
+      task_type: "haul",
+      target_x: 5,
+      target_y: 5,
+      target_z: 0,
+    });
+    haulTask.status = "in_progress";
+    haulTask.assigned_dwarf_id = dwarf.id;
+    dwarf.current_task_id = haulTask.id;
+
+    await needSatisfaction(ctx);
+
+    // Haul task should be returned to pending
+    expect(haulTask.status).toBe("pending");
+    expect(haulTask.assigned_dwarf_id).toBeNull();
+    expect(dwarf.current_task_id).toBeNull();
+
+    // Eat task should be created
+    const eatTasks = ctx.state.tasks.filter(t => t.task_type === "eat");
+    expect(eatTasks).toHaveLength(1);
+  });
+
+  it("does not interrupt an existing autonomous task", async () => {
+    const dwarf = makeDwarf({ need_food: 10, need_drink: 10 });
+    const food = makeItem({ category: "food" });
+    const drink = makeItem({ category: "drink", name: "Ale" });
+    const ctx = makeContext({ dwarves: [dwarf], items: [food, drink] });
+
+    // Dwarf is already eating
+    const eatTask = createTask(ctx.state, "civ-1", {
+      task_type: "eat",
+      target_x: 0,
+      target_y: 0,
+      target_z: 0,
+      target_item_id: food.id,
+      assigned_dwarf_id: dwarf.id,
+    });
+    eatTask.status = "in_progress";
+    dwarf.current_task_id = eatTask.id;
+
+    await needSatisfaction(ctx);
+
+    // Should not create a drink task while eating
+    const drinkTasks = ctx.state.tasks.filter(t => t.task_type === "drink");
+    expect(drinkTasks).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stress update tests
+// ---------------------------------------------------------------------------
+
+describe("stress update", () => {
+  it("increases stress when needs are critically low", async () => {
+    const dwarf = makeDwarf({
+      need_food: 5,
+      need_drink: 5,
+      stress_level: 0,
+    });
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    await stressUpdate(ctx);
+
+    expect(dwarf.stress_level).toBeGreaterThan(0);
+  });
+
+  it("decreases stress when needs are comfortable", async () => {
+    const dwarf = makeDwarf({
+      need_food: 80,
+      need_drink: 80,
+      need_sleep: 80,
+      stress_level: 50,
+    });
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    await stressUpdate(ctx);
+
+    expect(dwarf.stress_level).toBeLessThan(50);
+  });
+
+  it("does not affect dead dwarves", async () => {
+    const dwarf = makeDwarf({ status: "dead", stress_level: 50 });
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    await stressUpdate(ctx);
+
+    expect(dwarf.stress_level).toBe(50);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Starvation scenario (integration)
+// ---------------------------------------------------------------------------
+
+describe("starvation scenario", () => {
+  it("dwarf dies after prolonged food deprivation", async () => {
+    const dwarf = makeDwarf({ need_food: 0, need_drink: 80 });
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    // Run task execution for STARVATION_TICKS to trigger death
+    for (let i = 0; i < STARVATION_TICKS; i++) {
+      ctx.step = i;
+      await taskExecution(ctx);
+    }
+
+    expect(dwarf.status).toBe("dead");
+    expect(dwarf.cause_of_death).toBe("starvation");
+  });
+
+  it("dwarf survives if food is available before starvation", async () => {
+    const dwarf = makeDwarf({ need_food: 0, need_drink: 80 });
+    const food = makeItem({ category: "food" });
+    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
+
+    // Run partway through starvation window
+    for (let i = 0; i < STARVATION_TICKS / 2; i++) {
+      ctx.step = i;
+      await taskExecution(ctx);
+    }
+
+    expect(dwarf.status).toBe("alive");
+
+    // Now eat
+    const eatTask = createTask(ctx.state, "civ-1", {
+      task_type: "eat",
+      target_x: 0,
+      target_y: 0,
+      target_z: 0,
+      target_item_id: food.id,
+      work_required: 1,
+      assigned_dwarf_id: dwarf.id,
+    });
+    eatTask.status = "in_progress";
+    dwarf.current_task_id = eatTask.id;
+    dwarf.need_food = 0; // still starving
+
+    await taskExecution(ctx);
+
+    // Food restored, starvation counter reset
+    expect(dwarf.need_food).toBe(FOOD_RESTORE_AMOUNT);
+    expect(dwarf.status).toBe("alive");
+  });
+
+  it("full core loop: needs decay until dwarf seeks food autonomously", async () => {
+    const dwarf = makeDwarf({
+      need_food: NEED_INTERRUPT_FOOD + 5, // Just above threshold
+      need_drink: 80,
+      need_sleep: 80,
+    });
+    const food = makeItem({ category: "food" });
+    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
+
+    // Run needs decay until food drops below interrupt threshold
+    let ticks = 0;
+    while (dwarf.need_food >= NEED_INTERRUPT_FOOD && ticks < 1000) {
+      await needsDecay(ctx);
+      ticks++;
+    }
+
+    expect(dwarf.need_food).toBeLessThan(NEED_INTERRUPT_FOOD);
+
+    // Now run need satisfaction — should create an eat task
+    await needSatisfaction(ctx);
+
+    const eatTasks = ctx.state.tasks.filter(t => t.task_type === "eat");
+    expect(eatTasks).toHaveLength(1);
+    expect(eatTasks[0]!.assigned_dwarf_id).toBe(dwarf.id);
+
+    // Run job claiming to pick up the task
+    await jobClaiming(ctx);
+
+    expect(dwarf.current_task_id).toBe(eatTasks[0]!.id);
+
+    // Run task execution to completion (work_required is WORK_EAT = 10)
+    for (let i = 0; i < WORK_EAT; i++) {
+      await taskExecution(ctx);
+    }
+
+    expect(eatTasks[0]!.status).toBe("completed");
+    expect(dwarf.need_food).toBeGreaterThan(NEED_INTERRUPT_FOOD);
+  });
+
+  it("fortress falls when all dwarves die", async () => {
+    const dwarves = [
+      makeDwarf({ need_food: 0, need_drink: 80 }),
+      makeDwarf({ need_food: 0, need_drink: 80 }),
+    ];
+    const ctx = makeContext({ dwarves });
+
+    for (let i = 0; i < STARVATION_TICKS; i++) {
+      ctx.step = i;
+      await taskExecution(ctx);
+    }
+
+    expect(dwarves.every(d => d.status === "dead")).toBe(true);
+
+    // Should have queued a fortress_fallen event
+    const fallenEvents = ctx.state.pendingEvents.filter(
+      e => e.category === "fortress_fallen",
+    );
+    expect(fallenEvents.length).toBeGreaterThanOrEqual(1);
+  });
+});

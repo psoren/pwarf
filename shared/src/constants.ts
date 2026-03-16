@@ -73,3 +73,89 @@ export const STRESS_TANTRUM_SEVERE = 96;
 
 /** Maximum achievable skill level for any dwarf skill */
 export const MAX_SKILL_LEVEL = 20;
+
+// ============================================================
+// Task dispatch
+// ============================================================
+
+/** Base work progress added per tick (before skill modifier) */
+export const BASE_WORK_RATE = 1;
+
+/** Need threshold below which a dwarf interrupts work to drink */
+export const NEED_INTERRUPT_DRINK = 25;
+
+/** Need threshold below which a dwarf interrupts work to eat */
+export const NEED_INTERRUPT_FOOD = 25;
+
+/** Need threshold below which a dwarf interrupts work to sleep */
+export const NEED_INTERRUPT_SLEEP = 20;
+
+/** Ticks at need_food=0 before starvation death (~10 in-game days) */
+export const STARVATION_TICKS = 490;
+
+/** Ticks at need_drink=0 before dehydration death (~5 in-game days) */
+export const DEHYDRATION_TICKS = 245;
+
+/** Amount need_food is restored when eating basic food */
+export const FOOD_RESTORE_AMOUNT = 40;
+
+/** Amount need_drink is restored when drinking basic drink */
+export const DRINK_RESTORE_AMOUNT = 50;
+
+/** Stress penalty per tick for sleeping on the floor instead of a bed */
+export const FLOOR_SLEEP_STRESS = 5;
+
+// ============================================================
+// Task work requirements
+// ============================================================
+
+/** Base work required to mine a tile */
+export const WORK_MINE_BASE = 100;
+
+/** Base work required to haul an item */
+export const WORK_HAUL_BASE = 20;
+
+/** Base work required to till a farm plot */
+export const WORK_FARM_TILL_BASE = 60;
+
+/** Base work required to plant seeds */
+export const WORK_FARM_PLANT_BASE = 40;
+
+/** Base work required to harvest a crop */
+export const WORK_FARM_HARVEST_BASE = 30;
+
+/** Work required for eating */
+export const WORK_EAT = 10;
+
+/** Work required for drinking */
+export const WORK_DRINK = 10;
+
+/** Work required for sleeping */
+export const WORK_SLEEP = 50;
+
+// ============================================================
+// Material hardness multipliers (for mining)
+// ============================================================
+
+export const HARDNESS_SOIL = 0.3;
+export const HARDNESS_STONE = 1.0;
+export const HARDNESS_IGNITE = 1.5;
+export const HARDNESS_ORE = 1.2;
+export const HARDNESS_GEM = 1.4;
+
+// ============================================================
+// XP awards
+// ============================================================
+
+export const XP_MINE = 15;
+export const XP_FARM_TILL = 10;
+export const XP_FARM_PLANT = 10;
+export const XP_FARM_HARVEST = 10;
+
+// ============================================================
+// Scoring weights (job claiming)
+// ============================================================
+
+export const SCORE_PRIORITY_WEIGHT = 3;
+export const SCORE_SKILL_WEIGHT = 2;
+export const SCORE_DISTANCE_WEIGHT = 0.5;
