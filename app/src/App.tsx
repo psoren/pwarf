@@ -236,6 +236,7 @@ export default function App() {
           offsetY={viewport.offsetY}
           cursorX={viewport.cursorX}
           cursorY={viewport.cursorY}
+          zLevel={zLevel}
           onCursorMove={viewport.setCursor}
           onDragStart={viewport.onDragStart}
           onDragMove={viewport.onDragMove}

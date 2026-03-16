@@ -9,6 +9,7 @@ interface MainViewportProps {
   offsetY: number;
   cursorX: number;
   cursorY: number;
+  zLevel?: number;
   onCursorMove: (x: number, y: number) => void;
   onDragStart: (clientX: number, clientY: number, charW: number, charH: number) => void;
   onDragMove: (clientX: number, clientY: number, charW: number, charH: number) => void;
@@ -77,6 +78,7 @@ export default function MainViewport({
   offsetY,
   cursorX,
   cursorY,
+  zLevel,
   onCursorMove,
   onDragStart,
   onDragMove,
@@ -104,9 +106,11 @@ export default function MainViewport({
 
   const getFortressTile = useCallback(
     (wx: number, wy: number): { ch: string; fg: string } => {
-      // Check for dwarf at this position
-      const dwarf = DWARF_POSITION_MAP.get(`${wx},${wy}`);
-      if (dwarf) return { ch: "\u263A", fg: "#00cccc" };
+      // Check for dwarf at this position (only on surface level)
+      if (zLevel === 0) {
+        const dwarf = DWARF_POSITION_MAP.get(`${wx},${wy}`);
+        if (dwarf) return { ch: "\u263A", fg: "#00cccc" };
+      }
 
       if (fortressTiles) {
         const tile = fortressTiles.get(`${wx},${wy}`);
@@ -116,7 +120,7 @@ export default function MainViewport({
       }
       return { ch: " ", fg: "#000" };
     },
-    [fortressTiles],
+    [fortressTiles, zLevel],
   );
 
   const getTile = mode === "fortress" ? getFortressTile : getWorldTile;
