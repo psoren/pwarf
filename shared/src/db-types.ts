@@ -147,6 +147,24 @@ export type EncounterOutcome =
   | 'catastrophic_loss'
   | 'unknown';
 
+export type FortressTileType =
+  | 'open_air'
+  | 'soil'
+  | 'stone'
+  | 'ore'
+  | 'gem'
+  | 'water'
+  | 'magma'
+  | 'lava_stone'
+  | 'cavern_floor'
+  | 'cavern_wall'
+  | 'constructed_wall'
+  | 'constructed_floor'
+  | 'stair_up'
+  | 'stair_down'
+  | 'stair_both'
+  | 'empty';
+
 // ============================================================
 // Row types for all tables
 // ============================================================
@@ -452,4 +470,17 @@ export interface Structure {
   ruin_id: string | null;
   quality: ItemQuality | null;
   notes: string | null;
+}
+
+export interface FortressTile {
+  id: string;
+  civilization_id: string;
+  x: number;
+  y: number;
+  z: number;
+  tile_type: FortressTileType;
+  material: string | null;
+  is_revealed: boolean;
+  is_mined: boolean;
+  created_at: string;
 }

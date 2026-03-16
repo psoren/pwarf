@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #1a1a1a;
+  --bg-panel: #222;
+  --bg-hover: #2a2a2a;
+  --border: #333;
+  --text: #b5b5b5;
+  --text-bright: #d4d4d4;
+  --green: #4af626;
+  --amber: #ffbf00;
+  --red: #ff4444;
+  --cyan: #00cccc;
+  --blue: #5555ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "IBM Plex Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 14px;
+}
+
+::selection {
+  background: var(--green);
+  color: var(--bg);
+}
+
+/* Scrollbar styling for panel content */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-panel);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
