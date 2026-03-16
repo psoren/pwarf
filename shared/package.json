@@ -17,5 +17,8 @@
   },
   "devDependencies": {
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "simplex-noise": "^4.0.3"
   }
 }

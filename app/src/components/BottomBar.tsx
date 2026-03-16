@@ -2,9 +2,12 @@ interface BottomBarProps {
   mode: "fortress" | "world";
   cursorX: number;
   cursorY: number;
+  terrain?: string | null;
 }
 
-export default function BottomBar({ mode, cursorX, cursorY }: BottomBarProps) {
+export default function BottomBar({ mode, cursorX, cursorY, terrain }: BottomBarProps) {
+  const terrainLabel = terrain ?? (mode === "fortress" ? "Floor (stone)" : "Plains");
+
   return (
     <footer className="flex items-center justify-between px-3 py-0.5 border-t border-[var(--border)] bg-[var(--bg-panel)] text-xs select-none shrink-0">
       <div className="flex gap-3">
@@ -12,7 +15,7 @@ export default function BottomBar({ mode, cursorX, cursorY }: BottomBarProps) {
           Tile: ({cursorX}, {cursorY})
         </span>
         <span className="text-[var(--text)]">
-          {mode === "fortress" ? "Floor (stone)" : "Plains"}
+          {terrainLabel}
         </span>
       </div>
 

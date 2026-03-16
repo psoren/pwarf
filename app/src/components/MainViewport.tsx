@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback } from "react";
+import type { WorldTile, TerrainType } from "@pwarf/shared";
 
 interface MainViewportProps {
   mode: "fortress" | "world";
@@ -10,6 +11,8 @@ interface MainViewportProps {
   onDragStart: (clientX: number, clientY: number, charW: number, charH: number) => void;
   onDragMove: (clientX: number, clientY: number, charW: number, charH: number) => void;
   onDragEnd: () => void;
+  worldTiles?: Map<string, WorldTile>;
+  onViewportSize?: (cols: number, rows: number) => void;
 }
 
 // Character cell dimensions (monospace)
@@ -40,17 +43,33 @@ function fortressTile(wx: number, wy: number): { ch: string; fg: string } {
   return { ch: ".", fg: "#444" };
 }
 
-// --- World tile palette ---
-function worldTile(wx: number, wy: number): { ch: string; fg: string } {
+// --- World tile palette (terrain → glyph + color) ---
+const TERRAIN_GLYPHS: Record<TerrainType, { ch: string; fg: string }> = {
+  mountain:    { ch: "^",  fg: "#aaa" },
+  forest:      { ch: "\u2663", fg: "#228B22" },
+  plains:      { ch: "\u2591", fg: "#8B7355" },
+  desert:      { ch: "\u2261", fg: "#cc9944" },
+  tundra:      { ch: "*",  fg: "#ddeeff" },
+  swamp:       { ch: "\u2248", fg: "#668866" },
+  ocean:       { ch: "~",  fg: "#4488ff" },
+  volcano:     { ch: "\u25B2", fg: "#ff4400" },
+  underground: { ch: ".",  fg: "#886688" },
+  haunted:     { ch: "!",  fg: "#9944cc" },
+  savage:      { ch: "!",  fg: "#ff4444" },
+  evil:        { ch: "!",  fg: "#990066" },
+};
+
+// --- Fallback hash-based world tile ---
+function worldTileFallback(wx: number, wy: number): { ch: string; fg: string } {
   const hash = ((wx * 374761393 + wy * 668265263) >>> 0) % 100;
-  if (hash < 10) return { ch: "^", fg: "#aaa" };      // mountain
-  if (hash < 30) return { ch: "\u2663", fg: "#228B22" }; // forest (club suit)
-  if (hash < 40) return { ch: "~", fg: "#4488ff" };    // ocean
-  if (hash < 55) return { ch: "\u2591", fg: "#8B7355" }; // plains (light shade)
-  if (hash < 65) return { ch: "=", fg: "#cc9944" };    // desert
-  if (hash < 75) return { ch: "T", fg: "#2d8b2d" };    // jungle
-  if (hash < 85) return { ch: ",", fg: "#6b8e23" };    // grassland
-  return { ch: ".", fg: "#556" };                        // barren
+  if (hash < 10) return { ch: "^", fg: "#aaa" };
+  if (hash < 30) return { ch: "\u2663", fg: "#228B22" };
+  if (hash < 40) return { ch: "~", fg: "#4488ff" };
+  if (hash < 55) return { ch: "\u2591", fg: "#8B7355" };
+  if (hash < 65) return { ch: "=", fg: "#cc9944" };
+  if (hash < 75) return { ch: "T", fg: "#2d8b2d" };
+  if (hash < 85) return { ch: ",", fg: "#6b8e23" };
+  return { ch: ".", fg: "#556" };
 }
 
 export default function MainViewport({
@@ -63,12 +82,27 @@ export default function MainViewport({
   onDragStart,
   onDragMove,
   onDragEnd,
+  worldTiles,
+  onViewportSize,
 }: MainViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
 
-  const getTile = mode === "fortress" ? fortressTile : worldTile;
+  const getWorldTile = useCallback(
+    (wx: number, wy: number): { ch: string; fg: string } => {
+      if (worldTiles) {
+        const tile = worldTiles.get(`${wx},${wy}`);
+        if (tile) {
+          return TERRAIN_GLYPHS[tile.terrain] ?? worldTileFallback(wx, wy);
+        }
+      }
+      return worldTileFallback(wx, wy);
+    },
+    [worldTiles],
+  );
+
+  const getTile = mode === "fortress" ? fortressTile : getWorldTile;
 
   // Render the grid
   const render = useCallback(() => {
@@ -97,6 +131,9 @@ export default function MainViewport({
 
     const cols = Math.ceil(w / CHAR_W);
     const rows = Math.ceil(h / CHAR_H);
+
+    // Report viewport size for tile fetching
+    onViewportSize?.(cols, rows);
 
     ctx.font = `${CHAR_H - 2}px "IBM Plex Mono", "Fira Code", monospace`;
     ctx.textBaseline = "top";
@@ -129,7 +166,7 @@ export default function MainViewport({
       ctx.lineWidth = 1;
       ctx.strokeRect(cx + 0.5, cy + 0.5, CHAR_W - 1, CHAR_H - 1);
     }
-  }, [offsetX, offsetY, cursorX, cursorY, getTile]);
+  }, [offsetX, offsetY, cursorX, cursorY, getTile, onViewportSize]);
 
   // Re-render on state change
   useEffect(() => {
