@@ -3,10 +3,12 @@ interface BottomBarProps {
   cursorX: number;
   cursorY: number;
   terrain?: string | null;
+  zLevel?: number;
+  fortressTileLabel?: string | null;
 }
 
-export default function BottomBar({ mode, cursorX, cursorY, terrain }: BottomBarProps) {
-  const terrainLabel = terrain ?? (mode === "fortress" ? "Floor (stone)" : "Plains");
+export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, fortressTileLabel }: BottomBarProps) {
+  const terrainLabel = terrain ?? fortressTileLabel ?? (mode === "fortress" ? "Floor (stone)" : "Plains");
 
   return (
     <footer className="flex items-center justify-between px-3 py-0.5 border-t border-[var(--border)] bg-[var(--bg-panel)] text-xs select-none shrink-0">
@@ -14,6 +16,11 @@ export default function BottomBar({ mode, cursorX, cursorY, terrain }: BottomBar
         <span className="text-[var(--text)]">
           Tile: ({cursorX}, {cursorY})
         </span>
+        {zLevel != null && (
+          <span className="text-[var(--amber)]">
+            Z: {zLevel}
+          </span>
+        )}
         <span className="text-[var(--text)]">
           {terrainLabel}
         </span>
@@ -23,6 +30,11 @@ export default function BottomBar({ mode, cursorX, cursorY, terrain }: BottomBar
         <span>
           <kbd className="text-[var(--amber)]">WASD</kbd> pan
         </span>
+        {mode === "fortress" && (
+          <span>
+            <kbd className="text-[var(--amber)]">&lt; &gt;</kbd> z-level
+          </span>
+        )}
         <span>
           <kbd className="text-[var(--amber)]">Tab</kbd> mode
         </span>

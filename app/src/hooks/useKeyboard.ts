@@ -4,7 +4,9 @@ export type KeyAction =
   | { type: "pan"; dx: number; dy: number }
   | { type: "toggle_mode" }
   | { type: "toggle_left_panel" }
-  | { type: "toggle_right_panel" };
+  | { type: "toggle_right_panel" }
+  | { type: "z_up" }
+  | { type: "z_down" };
 
 export function useKeyboard(onAction: (action: KeyAction) => void) {
   useEffect(() => {
@@ -47,6 +49,12 @@ export function useKeyboard(onAction: (action: KeyAction) => void) {
           break;
         case "]":
           onAction({ type: "toggle_right_panel" });
+          break;
+        case "<":
+          onAction({ type: "z_up" });
+          break;
+        case ">":
+          onAction({ type: "z_down" });
           break;
       }
     }

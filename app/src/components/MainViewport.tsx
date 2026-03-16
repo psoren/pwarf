@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback } from "react";
-import type { WorldTile, TerrainType } from "@pwarf/shared";
+import type { WorldTile, TerrainType, FortressTileType } from "@pwarf/shared";
+import type { FortressViewTile } from "../hooks/useFortressTiles";
 import { DWARF_POSITION_MAP } from "./fortressDwarves";
 
 interface MainViewportProps {
@@ -13,6 +14,7 @@ interface MainViewportProps {
   onDragMove: (clientX: number, clientY: number, charW: number, charH: number) => void;
   onDragEnd: () => void;
   worldTiles?: Map<string, WorldTile>;
+  fortressTiles?: Map<string, FortressViewTile>;
   onViewportSize?: (cols: number, rows: number) => void;
 }
 
@@ -20,36 +22,27 @@ interface MainViewportProps {
 const CHAR_W = 10;
 const CHAR_H = 18;
 
-// --- Fortress tile palette ---
-function fortressTile(wx: number, wy: number): { ch: string; fg: string } {
-  // Simple deterministic pattern: walls on borders, floor inside
-  const inRoom =
-    wx >= 2 && wx <= 12 && wy >= 2 && wy <= 8 &&
-    !(wx === 7 && wy === 2); // door gap
-  const isWall =
-    (wx >= 1 && wx <= 13 && wy === 1) ||
-    (wx >= 1 && wx <= 13 && wy === 9) ||
-    (wy >= 1 && wy <= 9 && wx === 1) ||
-    (wy >= 1 && wy <= 9 && wx === 13);
+// --- Fortress tile glyph map ---
+const FORTRESS_GLYPHS: Record<FortressTileType, { ch: string; fg: string }> = {
+  open_air:           { ch: ".",  fg: "#446" },
+  soil:               { ch: "\u2592", fg: "#8B6914" },
+  stone:              { ch: "\u2593", fg: "#888" },
+  ore:                { ch: "$",  fg: "#ffbf00" },
+  gem:                { ch: "\u2666", fg: "#ff44ff" },
+  water:              { ch: "~",  fg: "#4488ff" },
+  magma:              { ch: "~",  fg: "#ff4400" },
+  lava_stone:         { ch: "\u2593", fg: "#993300" },
+  cavern_floor:       { ch: ".",  fg: "#556655" },
+  cavern_wall:        { ch: "\u2593", fg: "#666" },
+  constructed_wall:   { ch: "#",  fg: "#aaa" },
+  constructed_floor:  { ch: "+",  fg: "#888" },
+  stair_up:           { ch: "<",  fg: "#4af626" },
+  stair_down:         { ch: ">",  fg: "#4af626" },
+  stair_both:         { ch: "X",  fg: "#4af626" },
+  empty:              { ch: " ",  fg: "#000" },
+};
 
-  if (isWall) return { ch: "#", fg: "#888" };
-
-  // Dwarf at this position?
-  const dwarf = DWARF_POSITION_MAP.get(`${wx},${wy}`);
-  if (dwarf) return { ch: "\u263A", fg: "#00cccc" };
-
-  if (inRoom) return { ch: ".", fg: "#555" };
-
-  // Ore vein
-  if ((wx * 7 + wy * 13) % 47 === 0) return { ch: "$", fg: "#ffbf00" };
-  // Stairs
-  if (wx === 7 && wy === 5) return { ch: ">", fg: "#4af626" };
-
-  // Rock floor
-  return { ch: ".", fg: "#444" };
-}
-
-// --- World tile palette (terrain → glyph + color) ---
+// --- World tile palette (terrain -> glyph + color) ---
 const TERRAIN_GLYPHS: Record<TerrainType, { ch: string; fg: string }> = {
   mountain:    { ch: "^",  fg: "#aaa" },
   forest:      { ch: "\u2663", fg: "#228B22" },
@@ -89,6 +82,7 @@ export default function MainViewport({
   onDragMove,
   onDragEnd,
   worldTiles,
+  fortressTiles,
   onViewportSize,
 }: MainViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -108,7 +102,24 @@ export default function MainViewport({
     [worldTiles],
   );
 
-  const getTile = mode === "fortress" ? fortressTile : getWorldTile;
+  const getFortressTile = useCallback(
+    (wx: number, wy: number): { ch: string; fg: string } => {
+      // Check for dwarf at this position
+      const dwarf = DWARF_POSITION_MAP.get(`${wx},${wy}`);
+      if (dwarf) return { ch: "\u263A", fg: "#00cccc" };
+
+      if (fortressTiles) {
+        const tile = fortressTiles.get(`${wx},${wy}`);
+        if (tile) {
+          return FORTRESS_GLYPHS[tile.tileType] ?? { ch: "?", fg: "#f00" };
+        }
+      }
+      return { ch: " ", fg: "#000" };
+    },
+    [fortressTiles],
+  );
+
+  const getTile = mode === "fortress" ? getFortressTile : getWorldTile;
 
   // Render the grid
   const render = useCallback(() => {
