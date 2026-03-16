@@ -1,0 +1,15 @@
+{
+  "name": "pwarf",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "app",
+    "sim",
+    "shared"
+  ],
+  "scripts": {
+    "dev:app": "npm run dev --workspace=app",
+    "dev:sim": "npm run dev --workspace=sim",
+    "build": "npm run build --workspaces"
+  }
+}
