@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { STEPS_PER_SECOND, STEPS_PER_YEAR } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { loadStateFromSupabase } from "./load-state.js";
+import { flushToSupabase } from "./flush-state.js";
 import {
   needsDecay,
   taskExecution,
@@ -25,6 +26,7 @@ import {
 export class SimRunner {
   private supabase: SupabaseClient;
   private timer: ReturnType<typeof setInterval> | null = null;
+  private flushTimer: ReturnType<typeof setInterval> | null = null;
   private ctx: SimContext | null = null;
 
   stepCount = 0;
@@ -60,6 +62,13 @@ export class SimRunner {
     this.timer = setInterval(() => {
       void this.tick();
     }, intervalMs);
+
+    // Flush dirty state to Supabase every 1 second
+    this.flushTimer = setInterval(() => {
+      if (this.ctx) {
+        void flushToSupabase(this.ctx);
+      }
+    }, 1000);
   }
 
   /** Pause the loop and persist state. */
@@ -68,6 +77,16 @@ export class SimRunner {
       clearInterval(this.timer);
       this.timer = null;
     }
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+      this.flushTimer = null;
+    }
+
+    // Final flush to ensure no dirty data is lost
+    if (this.ctx) {
+      await flushToSupabase(this.ctx);
+    }
+
     console.log(`[sim] stopped at step ${this.stepCount}`);
   }
 

@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SimRunner } from "./sim-runner.js";
 
 export { loadStateFromSupabase } from "./load-state.js";
+export { flushToSupabase } from "./flush-state.js";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
