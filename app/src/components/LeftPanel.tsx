@@ -1,4 +1,5 @@
 import type { WorldTile } from "@pwarf/shared";
+import { FORTRESS_DWARVES } from "./fortressDwarves";
 
 interface LeftPanelProps {
   mode: "fortress" | "world";
@@ -7,16 +8,6 @@ interface LeftPanelProps {
   cursorTile?: WorldTile | null;
   onEmbark?: () => void;
 }
-
-const PLACEHOLDER_DWARVES = [
-  { name: "Urist", job: "Miner" },
-  { name: "Doren", job: "Mason" },
-  { name: "Kadol", job: "Brewer" },
-  { name: "Aban", job: "Woodcutter" },
-  { name: "Likot", job: "Farmer" },
-  { name: "Morul", job: "Idle" },
-  { name: "Fikod", job: "Hauling" },
-];
 
 export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmbark }: LeftPanelProps) {
   const isOcean = cursorTile?.terrain === "ocean";
@@ -42,7 +33,7 @@ export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmb
 
           {mode === "fortress" ? (
             <ul className="space-y-0.5">
-              {PLACEHOLDER_DWARVES.map((d) => (
+              {FORTRESS_DWARVES.map((d) => (
                 <li
                   key={d.name}
                   className="flex justify-between hover:bg-[var(--bg-hover)] px-1"
