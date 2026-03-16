@@ -10,6 +10,10 @@
   "scripts": {
     "dev:app": "npm run dev --workspace=app",
     "dev:sim": "npm run dev --workspace=sim",
-    "build": "npm run build --workspaces"
+    "build": "npm run build --workspaces",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.0"
   }
 }
