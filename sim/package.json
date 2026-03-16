@@ -9,12 +9,13 @@
     "build": "tsc"
   },
   "dependencies": {
+    "@pwarf/shared": "*",
     "@supabase/supabase-js": "^2.49.0",
-    "@pwarf/shared": "*"
+    "simplex-noise": "^4.0.3"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
+    "@types/node": "^22.0.0",
     "tsx": "^4.19.0",
-    "@types/node": "^22.0.0"
+    "typescript": "^5.7.0"
   }
 }
