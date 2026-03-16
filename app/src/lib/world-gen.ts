@@ -82,5 +82,11 @@ export async function createAndGenerateWorld(
     onProgress?.(100);
   }
 
+  // Link world to the current player
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    await supabase.from('players').update({ world_id: worldId }).eq('id', user.id);
+  }
+
   return { worldId, seed };
 }
