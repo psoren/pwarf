@@ -27,9 +27,9 @@ export default function App() {
 
   // World state
   const [worldId, setWorldId] = useState<string | null>(null);
-  const [generating, setGenerating] = useState(false);
-  const [genProgress, setGenProgress] = useState(0);
-  const [genError, setGenError] = useState<string | null>(null);
+  const [worldSeed, setWorldSeed] = useState<bigint | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const [civId, setCivId] = useState<string | null>(null);
 
   // Viewport size (reported from MainViewport)
@@ -41,6 +41,7 @@ export default function App() {
 
   const { tileMap, getTile } = useWorldTiles({
     worldId,
+    worldSeed,
     offsetX: viewport.offsetX,
     offsetY: viewport.offsetY,
     viewportCols: vpCols,
@@ -55,7 +56,10 @@ export default function App() {
       ensurePlayer(supabase, user.id, user.email ?? "unknown")
         .then(() => loadSession(user.id))
         .then((session) => {
-          if (session.worldId) setWorldId(session.worldId);
+          if (session.worldId) {
+            setWorldId(session.worldId);
+            setWorldSeed(session.worldSeed);
+          }
           if (session.civId) {
             setCivId(session.civId);
             setMode("fortress");
@@ -67,6 +71,7 @@ export default function App() {
     if (!user) {
       setPlayerEnsured(false);
       setWorldId(null);
+      setWorldSeed(null);
       setCivId(null);
     }
   }, [user, playerEnsured]);
@@ -104,18 +109,16 @@ export default function App() {
   }, []);
 
   const handleGenerateWorld = useCallback(async () => {
-    setGenerating(true);
-    setGenError(null);
-    setGenProgress(0);
+    setCreating(true);
+    setCreateError(null);
     try {
-      const { worldId: wid } = await createAndGenerateWorld("New World", (pct) => {
-        setGenProgress(pct);
-      });
+      const { worldId: wid, seed } = await createAndGenerateWorld("New World");
       setWorldId(wid);
+      setWorldSeed(seed);
     } catch (err) {
-      setGenError(err instanceof Error ? err.message : String(err));
+      setCreateError(err instanceof Error ? err.message : String(err));
     } finally {
-      setGenerating(false);
+      setCreating(false);
     }
   }, []);
 
@@ -156,13 +159,13 @@ export default function App() {
   }
 
   // Pre-world screen: generate button
-  if (!worldId && !generating) {
+  if (!worldId && !creating) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full bg-[var(--bg-panel)] gap-4">
         <h1 className="text-[var(--amber)] text-2xl font-bold tracking-wider">pWarf</h1>
         <p className="text-[var(--text)] text-sm">A dwarf fortress adventure awaits.</p>
-        {genError && (
-          <p className="text-red-400 text-xs max-w-md text-center">{genError}</p>
+        {createError && (
+          <p className="text-red-400 text-xs max-w-md text-center">{createError}</p>
         )}
         <button
           onClick={handleGenerateWorld}
@@ -174,19 +177,12 @@ export default function App() {
     );
   }
 
-  // Generating screen
-  if (generating) {
+  // Creating world (just the DB insert, very fast)
+  if (creating) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full bg-[var(--bg-panel)] gap-4">
         <h1 className="text-[var(--amber)] text-2xl font-bold tracking-wider">pWarf</h1>
-        <p className="text-[var(--text)] text-sm">Generating world...</p>
-        <div className="w-64 h-4 border border-[var(--border)] bg-[var(--bg-panel)]">
-          <div
-            className="h-full bg-[var(--green)] transition-[width] duration-200"
-            style={{ width: `${genProgress}%` }}
-          />
-        </div>
-        <p className="text-[var(--text)] text-xs">{genProgress}%</p>
+        <p className="text-[var(--text)] text-sm">Creating world...</p>
       </div>
     );
   }

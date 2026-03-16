@@ -28,30 +28,35 @@ beforeEach(() => {
   setupChain();
 });
 
-// Need to import after mock setup
 const { loadSession } = await import("../load-session");
 
 describe("loadSession", () => {
-  it("returns null worldId/civId when player has no world", async () => {
+  it("returns nulls when player has no world", async () => {
     mockSingle.mockResolvedValueOnce({ data: { world_id: null }, error: null });
 
     const result = await loadSession("user-1");
 
-    expect(result).toEqual({ worldId: null, civId: null });
+    expect(result).toEqual({ worldId: null, worldSeed: null, civId: null });
     expect(mockFrom).toHaveBeenCalledWith("players");
   });
 
-  it("returns null worldId when player row not found", async () => {
+  it("returns nulls when player row not found", async () => {
     mockSingle.mockResolvedValueOnce({ data: null, error: null });
 
     const result = await loadSession("user-1");
 
-    expect(result).toEqual({ worldId: null, civId: null });
+    expect(result).toEqual({ worldId: null, worldSeed: null, civId: null });
   });
 
-  it("returns worldId and civId when player has an active civilization", async () => {
+  it("returns worldId, seed, and civId when player has an active civilization", async () => {
+    // First call: players query
     mockSingle.mockResolvedValueOnce({
       data: { world_id: "world-abc" },
+      error: null,
+    });
+    // Promise.all: worlds query (seed) + civilizations query
+    mockSingle.mockResolvedValueOnce({
+      data: { seed: "12345" },
       error: null,
     });
     mockSingle.mockResolvedValueOnce({
@@ -61,7 +66,8 @@ describe("loadSession", () => {
 
     const result = await loadSession("user-1");
 
-    expect(result).toEqual({ worldId: "world-abc", civId: "civ-xyz" });
+    expect(result).toEqual({ worldId: "world-abc", worldSeed: 12345n, civId: "civ-xyz" });
+    expect(mockFrom).toHaveBeenCalledWith("worlds");
     expect(mockFrom).toHaveBeenCalledWith("civilizations");
   });
 
@@ -70,10 +76,14 @@ describe("loadSession", () => {
       data: { world_id: "world-abc" },
       error: null,
     });
+    mockSingle.mockResolvedValueOnce({
+      data: { seed: "99999" },
+      error: null,
+    });
     mockSingle.mockResolvedValueOnce({ data: null, error: null });
 
     const result = await loadSession("user-1");
 
-    expect(result).toEqual({ worldId: "world-abc", civId: null });
+    expect(result).toEqual({ worldId: "world-abc", worldSeed: 99999n, civId: null });
   });
 });
