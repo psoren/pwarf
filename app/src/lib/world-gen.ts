@@ -44,9 +44,9 @@ export async function createAndGenerateWorld(
 
   for (let y = 0; y < WORLD_HEIGHT; y++) {
     for (let x = 0; x < WORLD_WIDTH; x++) {
-      const elevation = fbm(elevationNoise, x, y, 6, 0.005, 1.0);
-      const moisture = fbm(moistureNoise, x, y, 4, 0.008, 1.0);
-      const temperature = fbm(temperatureNoise, x, y, 3, 0.004, 1.0);
+      const elevation = fbm(elevationNoise, x, y, 6, 0.003, 1.0);
+      const moisture = fbm(moistureNoise, x, y, 4, 0.005, 1.0);
+      const temperature = fbm(temperatureNoise, x, y, 3, 0.002, 1.0);
 
       let terrain = deriveTerrain(elevation, moisture, temperature);
       const special = deriveSpecialOverlay(specialNoises, x, y, 0.003);
