@@ -1,18 +1,25 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import Toolbar from "./components/Toolbar";
 import LeftPanel from "./components/LeftPanel";
 import RightPanel from "./components/RightPanel";
 import MainViewport from "./components/MainViewport";
 import BottomBar from "./components/BottomBar";
+import AuthScreen from "./components/AuthScreen";
 import { useKeyboard, type KeyAction } from "./hooks/useKeyboard";
 import { useViewport } from "./hooks/useViewport";
 import { useWorldTiles } from "./hooks/useWorldTiles";
+import { useAuth } from "./hooks/useAuth";
 import { createAndGenerateWorld } from "./lib/world-gen";
 import { embark } from "./lib/embark";
+import { ensurePlayer } from "./lib/ensure-player";
+import { supabase } from "./lib/supabase";
 
 type Mode = "fortress" | "world";
 
 export default function App() {
+  const { session, user, loading, signIn, signUp, signOut } = useAuth();
+  const [playerEnsured, setPlayerEnsured] = useState(false);
+
   const [mode, setMode] = useState<Mode>("world");
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
@@ -40,6 +47,19 @@ export default function App() {
   });
 
   const cursorTile = worldId ? getTile(viewport.cursorX, viewport.cursorY) : null;
+
+  // Ensure player profile exists after auth
+  useEffect(() => {
+    if (user && !playerEnsured) {
+      ensurePlayer(supabase, user.id, user.email ?? "unknown").then(
+        () => setPlayerEnsured(true),
+        (err) => console.error("Failed to ensure player:", err),
+      );
+    }
+    if (!user) {
+      setPlayerEnsured(false);
+    }
+  }, [user, playerEnsured]);
 
   const handleKeyAction = useCallback(
     (action: KeyAction) => {
@@ -100,6 +120,21 @@ export default function App() {
     }
   }, [worldId, cursorTile, viewport.cursorX, viewport.cursorY]);
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full bg-[var(--bg-panel)] gap-4">
+        <h1 className="text-[var(--amber)] text-2xl font-bold tracking-wider">pWarf</h1>
+        <p className="text-[var(--text)] text-sm">Loading...</p>
+      </div>
+    );
+  }
+
+  // Auth screen
+  if (!session) {
+    return <AuthScreen onSignIn={signIn} onSignUp={signUp} />;
+  }
+
   // Pre-world screen: generate button
   if (!worldId && !generating) {
     return (
@@ -140,7 +175,7 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <Toolbar mode={mode} />
+      <Toolbar mode={mode} onSignOut={signOut} />
 
       <div className="flex flex-1 min-h-0">
         <LeftPanel
