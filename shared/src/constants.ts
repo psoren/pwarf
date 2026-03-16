@@ -31,6 +31,14 @@ export const MIN_NEED = 0;
 /** Stress level at which a dwarf may enter a tantrum */
 export const STRESS_TANTRUM_THRESHOLD = 80;
 
+// Per-tick decay rates for each dwarf need (subtracted every sim step)
+export const DECAY_FOOD = 0.15;
+export const DECAY_DRINK = 0.2;
+export const DECAY_SLEEP = 0.1;
+export const DECAY_SOCIAL = 0.05;
+export const DECAY_PURPOSE = 0.04;
+export const DECAY_BEAUTY = 0.03;
+
 // ============================================================
 // Skills
 // ============================================================
