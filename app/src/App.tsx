@@ -12,6 +12,7 @@ import { useAuth } from "./hooks/useAuth";
 import { createAndGenerateWorld } from "./lib/world-gen";
 import { embark } from "./lib/embark";
 import { ensurePlayer } from "./lib/ensure-player";
+import { loadSession } from "./lib/load-session";
 import { supabase } from "./lib/supabase";
 
 type Mode = "fortress" | "world";
@@ -48,16 +49,25 @@ export default function App() {
 
   const cursorTile = worldId ? getTile(viewport.cursorX, viewport.cursorY) : null;
 
-  // Ensure player profile exists after auth
+  // Ensure player profile exists after auth, then restore any existing session
   useEffect(() => {
     if (user && !playerEnsured) {
-      ensurePlayer(supabase, user.id, user.email ?? "unknown").then(
-        () => setPlayerEnsured(true),
-        (err) => console.error("Failed to ensure player:", err),
-      );
+      ensurePlayer(supabase, user.id, user.email ?? "unknown")
+        .then(() => loadSession(user.id))
+        .then((session) => {
+          if (session.worldId) setWorldId(session.worldId);
+          if (session.civId) {
+            setCivId(session.civId);
+            setMode("fortress");
+          }
+          setPlayerEnsured(true);
+        })
+        .catch((err) => console.error("Failed to ensure player:", err));
     }
     if (!user) {
       setPlayerEnsured(false);
+      setWorldId(null);
+      setCivId(null);
     }
   }, [user, playerEnsured]);
 
@@ -133,6 +143,16 @@ export default function App() {
   // Auth screen
   if (!session) {
     return <AuthScreen onSignIn={signIn} onSignUp={signUp} />;
+  }
+
+  // Restoring session
+  if (user && !playerEnsured) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full w-full bg-[var(--bg-panel)] gap-4">
+        <h1 className="text-[var(--amber)] text-2xl font-bold tracking-wider">pWarf</h1>
+        <p className="text-[var(--text)] text-sm">Restoring session...</p>
+      </div>
+    );
   }
 
   // Pre-world screen: generate button

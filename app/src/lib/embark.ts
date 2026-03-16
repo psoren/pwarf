@@ -2,11 +2,15 @@ import { supabase } from './supabase';
 import { pickUniqueNames, SURNAMES } from './dwarf-names';
 
 export async function embark(worldId: string, tileX: number, tileY: number) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
   // Create civilization
   const { data: civ, error: civError } = await supabase
     .from('civilizations')
     .insert({
       world_id: worldId,
+      player_id: user.id,
       name: 'Boatmurdered',
       tile_x: tileX,
       tile_y: tileY,
