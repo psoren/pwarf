@@ -199,7 +199,7 @@ export default function App() {
           collapsed={!leftOpen}
           onToggle={() => setLeftOpen((o) => !o)}
           cursorTile={cursorTile}
-          onEmbark={mode === "world" && !civId ? handleEmbark : undefined}
+          onEmbark={mode === "world" ? handleEmbark : undefined}
         />
 
         <MainViewport
