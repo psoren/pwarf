@@ -37,17 +37,17 @@ interface MaterialDef {
 }
 
 const MATERIALS: MaterialDef[] = [
-  { name: "iron",       kind: "ore", minZ: -12, maxZ: -5,  threshold: 0.70, priority: 1 },
-  { name: "copper",     kind: "ore", minZ: -12, maxZ: -5,  threshold: 0.70, priority: 2 },
-  { name: "tin",        kind: "ore", minZ: -14, maxZ: -5,  threshold: 0.72, priority: 3 },
-  { name: "gold",       kind: "ore", minZ: -15, maxZ: -8,  threshold: 0.78, priority: 5 },
-  { name: "silver",     kind: "ore", minZ: -17, maxZ: -10, threshold: 0.78, priority: 4 },
-  { name: "platinum",   kind: "ore", minZ: -18, maxZ: -12, threshold: 0.84, priority: 6 },
-  { name: "ruby",       kind: "gem", minZ: -17, maxZ: -10, threshold: 0.80, priority: 7 },
-  { name: "sapphire",   kind: "gem", minZ: -17, maxZ: -10, threshold: 0.80, priority: 8 },
-  { name: "emerald",    kind: "gem", minZ: -18, maxZ: -12, threshold: 0.84, priority: 9 },
-  { name: "diamond",    kind: "gem", minZ: -19, maxZ: -14, threshold: 0.90, priority: 10 },
-  { name: "adamantine", kind: "ore", minZ: -19, maxZ: -19, threshold: 0.95, priority: 11 },
+  { name: "iron",       kind: "ore", minZ: -12, maxZ: -5,  threshold: 0.94, priority: 1 },
+  { name: "copper",     kind: "ore", minZ: -12, maxZ: -5,  threshold: 0.94, priority: 2 },
+  { name: "tin",        kind: "ore", minZ: -14, maxZ: -5,  threshold: 0.95, priority: 3 },
+  { name: "gold",       kind: "ore", minZ: -15, maxZ: -8,  threshold: 0.97, priority: 5 },
+  { name: "silver",     kind: "ore", minZ: -17, maxZ: -10, threshold: 0.96, priority: 4 },
+  { name: "platinum",   kind: "ore", minZ: -18, maxZ: -12, threshold: 0.98, priority: 6 },
+  { name: "ruby",       kind: "gem", minZ: -17, maxZ: -10, threshold: 0.97, priority: 7 },
+  { name: "sapphire",   kind: "gem", minZ: -17, maxZ: -10, threshold: 0.97, priority: 8 },
+  { name: "emerald",    kind: "gem", minZ: -18, maxZ: -12, threshold: 0.98, priority: 9 },
+  { name: "diamond",    kind: "gem", minZ: -19, maxZ: -14, threshold: 0.99, priority: 10 },
+  { name: "adamantine", kind: "ore", minZ: -19, maxZ: -19, threshold: 0.995, priority: 11 },
 ];
 
 // ============================================================
@@ -357,8 +357,8 @@ export function createFortressDeriver(
           return { tileType: "cavern_floor", material: null };
         }
 
-        // Cavern wall — check for ore/gem with boosted density
-        const mat = checkMaterial(x, y, z, materialNoises, 1.5);
+        // Cavern wall — check for ore/gem with slightly boosted density
+        const mat = checkMaterial(x, y, z, materialNoises, 1.03);
         if (mat) return mat;
 
         return { tileType: "cavern_wall", material: null };
@@ -379,7 +379,7 @@ export function createFortressDeriver(
 
       // z=-5 to -9: Stone with ore/gem veins
       // z=-10 to -14: Deep stone with denser ore/gem veins
-      const densityMultiplier = z <= -10 ? 1.3 : 1.0;
+      const densityMultiplier = z <= -10 ? 1.03 : 1.0;
       const mat = checkMaterial(x, y, z, materialNoises, densityMultiplier);
       if (mat) return mat;
 
