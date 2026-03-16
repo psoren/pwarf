@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { WORLD_WIDTH, WORLD_HEIGHT } from "@pwarf/shared";
 
 export interface ViewportState {
   /** Top-left tile X coordinate */
@@ -8,6 +9,11 @@ export interface ViewportState {
   /** Cursor tile position (relative to world) */
   cursorX: number;
   cursorY: number;
+}
+
+/** Clamp a value to [0, max] (inclusive). Exported for testing. */
+export function clampCoord(value: number, max: number): number {
+  return Math.max(0, Math.min(max, value));
 }
 
 export function useViewport() {
@@ -24,14 +30,18 @@ export function useViewport() {
   const pan = useCallback((dx: number, dy: number) => {
     setState((prev) => ({
       ...prev,
-      offsetX: prev.offsetX + dx,
-      offsetY: prev.offsetY + dy,
+      offsetX: clampCoord(prev.offsetX + dx, WORLD_WIDTH - 1),
+      offsetY: clampCoord(prev.offsetY + dy, WORLD_HEIGHT - 1),
     }));
   }, []);
 
   /** Set cursor position in world tile coords */
   const setCursor = useCallback((x: number, y: number) => {
-    setState((prev) => ({ ...prev, cursorX: x, cursorY: y }));
+    setState((prev) => ({
+      ...prev,
+      cursorX: clampCoord(x, WORLD_WIDTH - 1),
+      cursorY: clampCoord(y, WORLD_HEIGHT - 1),
+    }));
   }, []);
 
   /** Mouse drag handlers — snapped to whole tile offsets */
@@ -58,8 +68,8 @@ export function useViewport() {
       const dy = Math.round((drag.startY - clientY) / charH);
       setState((prev) => ({
         ...prev,
-        offsetX: drag.origOffsetX + dx,
-        offsetY: drag.origOffsetY + dy,
+        offsetX: clampCoord(drag.origOffsetX + dx, WORLD_WIDTH - 1),
+        offsetY: clampCoord(drag.origOffsetY + dy, WORLD_HEIGHT - 1),
       }));
     },
     [],
