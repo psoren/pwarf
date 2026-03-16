@@ -1,7 +1,11 @@
+import type { WorldTile } from "@pwarf/shared";
+
 interface LeftPanelProps {
   mode: "fortress" | "world";
   collapsed: boolean;
   onToggle: () => void;
+  cursorTile?: WorldTile | null;
+  onEmbark?: () => void;
 }
 
 const PLACEHOLDER_DWARVES = [
@@ -14,7 +18,9 @@ const PLACEHOLDER_DWARVES = [
   { name: "Fikod", job: "Hauling" },
 ];
 
-export default function LeftPanel({ mode, collapsed, onToggle }: LeftPanelProps) {
+export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmbark }: LeftPanelProps) {
+  const isOcean = cursorTile?.terrain === "ocean";
+
   return (
     <aside
       className="border-r border-[var(--border)] bg-[var(--bg-panel)] flex flex-col shrink-0 overflow-hidden transition-[width] duration-150"
@@ -46,12 +52,46 @@ export default function LeftPanel({ mode, collapsed, onToggle }: LeftPanelProps)
                 </li>
               ))}
             </ul>
-          ) : (
+          ) : cursorTile ? (
             <div className="space-y-1">
-              <p>Terrain: Plains</p>
-              <p>Biome: Temperate</p>
-              <p>Elevation: 120</p>
-              <p>Rainfall: Medium</p>
+              <p>
+                Terrain:{" "}
+                <span className="text-[var(--green)]">{cursorTile.terrain}</span>
+              </p>
+              <p>
+                Elevation:{" "}
+                <span className="text-[var(--green)]">{cursorTile.elevation}m</span>
+              </p>
+              <p>
+                Biome:{" "}
+                <span className="text-[var(--green)]">
+                  {cursorTile.biome_tags?.join(", ") ?? "unknown"}
+                </span>
+              </p>
+              <p>
+                Explored:{" "}
+                <span className="text-[var(--green)]">
+                  {cursorTile.explored ? "Yes" : "No"}
+                </span>
+              </p>
+              {onEmbark && (
+                <button
+                  onClick={onEmbark}
+                  disabled={isOcean}
+                  className={`mt-2 w-full px-2 py-1 text-xs font-bold border cursor-pointer ${
+                    isOcean
+                      ? "border-[var(--border)] text-[var(--border)] cursor-not-allowed"
+                      : "border-[var(--green)] text-[var(--green)] hover:bg-[var(--green)] hover:text-[var(--bg-panel)]"
+                  }`}
+                  title={isOcean ? "Cannot embark on ocean" : "Embark here"}
+                >
+                  {isOcean ? "Cannot Embark (Ocean)" : "Embark Here"}
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-1 text-[var(--text)]">
+              <p>Hover over a tile to see info</p>
             </div>
           )}
         </div>
