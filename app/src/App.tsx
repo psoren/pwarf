@@ -8,12 +8,14 @@ import AuthScreen from "./components/AuthScreen";
 import { useKeyboard, type KeyAction } from "./hooks/useKeyboard";
 import { useViewport } from "./hooks/useViewport";
 import { useWorldTiles } from "./hooks/useWorldTiles";
+import { useFortressTiles } from "./hooks/useFortressTiles";
 import { useAuth } from "./hooks/useAuth";
 import { createAndGenerateWorld } from "./lib/world-gen";
 import { embark } from "./lib/embark";
 import { ensurePlayer } from "./lib/ensure-player";
 import { loadSession } from "./lib/load-session";
 import { supabase } from "./lib/supabase";
+import { FORTRESS_MAX_Z, FORTRESS_MIN_Z } from "@pwarf/shared";
 
 type Mode = "fortress" | "world";
 
@@ -32,6 +34,9 @@ export default function App() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [civId, setCivId] = useState<string | null>(null);
 
+  // Fortress z-level
+  const [zLevel, setZLevel] = useState(0);
+
   // Viewport size (reported from MainViewport)
   const [vpCols, setVpCols] = useState(120);
   const [vpRows, setVpRows] = useState(44);
@@ -48,7 +53,18 @@ export default function App() {
     viewportRows: vpRows,
   });
 
+  const { tileMap: fortressTileMap, getTile: getFortressTile } = useFortressTiles({
+    civId,
+    worldSeed,
+    offsetX: viewport.offsetX,
+    offsetY: viewport.offsetY,
+    zLevel,
+    viewportCols: vpCols,
+    viewportRows: vpRows,
+  });
+
   const cursorTile = worldId ? getTile(viewport.cursorX, viewport.cursorY) : null;
+  const cursorFortressTile = civId ? getFortressTile(viewport.cursorX, viewport.cursorY) : null;
 
   // Ensure player profile exists after auth, then restore any existing session
   useEffect(() => {
@@ -95,6 +111,12 @@ export default function App() {
           break;
         case "toggle_right_panel":
           setRightOpen((o) => !o);
+          break;
+        case "z_up":
+          setZLevel((z) => Math.min(FORTRESS_MAX_Z, z + 1));
+          break;
+        case "z_down":
+          setZLevel((z) => Math.max(FORTRESS_MIN_Z, z - 1));
           break;
       }
     },
@@ -191,6 +213,9 @@ export default function App() {
   }
 
   const terrainForBar = mode === "world" ? (cursorTile?.terrain ?? null) : null;
+  const fortressTileLabel = mode === "fortress" && cursorFortressTile
+    ? formatFortressTileLabel(cursorFortressTile.tileType, cursorFortressTile.material)
+    : null;
 
   return (
     <div className="flex flex-col h-full w-full">
@@ -216,6 +241,7 @@ export default function App() {
           onDragMove={viewport.onDragMove}
           onDragEnd={viewport.onDragEnd}
           worldTiles={mode === "world" ? tileMap : undefined}
+          fortressTiles={mode === "fortress" ? fortressTileMap : undefined}
           onViewportSize={handleViewportSize}
         />
 
@@ -242,7 +268,20 @@ export default function App() {
         </button>
       </div>
 
-      <BottomBar mode={mode} cursorX={viewport.cursorX} cursorY={viewport.cursorY} terrain={terrainForBar} />
+      <BottomBar
+        mode={mode}
+        cursorX={viewport.cursorX}
+        cursorY={viewport.cursorY}
+        terrain={terrainForBar}
+        zLevel={mode === "fortress" ? zLevel : undefined}
+        fortressTileLabel={fortressTileLabel}
+      />
     </div>
   );
+}
+
+function formatFortressTileLabel(tileType: string, material: string | null): string {
+  const label = tileType.replace(/_/g, " ");
+  if (material) return `${label} (${material})`;
+  return label;
 }
