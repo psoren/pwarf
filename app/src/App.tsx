@@ -126,15 +126,15 @@ export default function App() {
   }, []);
 
   const handleEmbark = useCallback(async () => {
-    if (!worldId || !cursorTile || cursorTile.terrain === "ocean") return;
+    if (!worldId || !worldSeed || !cursorTile || cursorTile.terrain === "ocean") return;
     try {
-      const id = await embark(worldId, viewport.cursorX, viewport.cursorY);
+      const id = await embark(worldId, viewport.cursorX, viewport.cursorY, worldSeed);
       setCivId(id);
       setMode("fortress");
     } catch (err) {
       console.error("Embark failed:", err);
     }
-  }, [worldId, cursorTile, viewport.cursorX, viewport.cursorY]);
+  }, [worldId, worldSeed, cursorTile, viewport.cursorX, viewport.cursorY]);
 
   // Loading state
   if (loading) {

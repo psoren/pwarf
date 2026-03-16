@@ -1,9 +1,40 @@
 import { supabase } from './supabase';
 import { pickUniqueNames, SURNAMES } from './dwarf-names';
+import { createWorldDeriver } from '@pwarf/shared';
 
-export async function embark(worldId: string, tileX: number, tileY: number) {
+export async function embark(worldId: string, tileX: number, tileY: number, worldSeed: bigint) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
+
+  // Derive and upsert embark tile + neighbors into world_tiles.
+  // With lazy world gen, tiles aren't stored until needed. The civilizations
+  // table has a FK on (world_id, tile_x, tile_y) -> world_tiles, so the
+  // embark tile must exist before we can create the civilization.
+  const deriver = createWorldDeriver(worldSeed);
+  const tilesToUpsert = [];
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const x = tileX + dx;
+      const y = tileY + dy;
+      const derived = deriver.deriveTile(x, y);
+      tilesToUpsert.push({
+        world_id: worldId,
+        x,
+        y,
+        coord: `SRID=4326;POINT(${x} ${y})`,
+        terrain: derived.terrain,
+        elevation: derived.elevation,
+        biome_tags: derived.biome_tags,
+        explored: true,
+      });
+    }
+  }
+
+  const { error: tileError } = await supabase
+    .from('world_tiles')
+    .upsert(tilesToUpsert, { onConflict: 'world_id,x,y' });
+
+  if (tileError) throw new Error(`Failed to upsert embark tiles: ${tileError.message}`);
 
   // Create civilization
   const { data: civ, error: civError } = await supabase
@@ -48,18 +79,6 @@ export async function embark(worldId: string, tileX: number, tileY: number) {
 
   const { error: dwarfError } = await supabase.from('dwarves').insert(dwarves);
   if (dwarfError) throw new Error(`Failed to create dwarves: ${dwarfError.message}`);
-
-  // Mark embark tile and neighbors as explored
-  for (let dy = -1; dy <= 1; dy++) {
-    for (let dx = -1; dx <= 1; dx++) {
-      await supabase
-        .from('world_tiles')
-        .update({ explored: true })
-        .eq('world_id', worldId)
-        .eq('x', tileX + dx)
-        .eq('y', tileY + dy);
-    }
-  }
 
   return civ.id;
 }
