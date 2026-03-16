@@ -32,6 +32,25 @@ export const MIN_NEED = 0;
 export const STRESS_TANTRUM_THRESHOLD = 80;
 
 // ============================================================
+// Need decay rates (per tick)
+// ============================================================
+
+export const FOOD_DECAY_PER_TICK = 0.15;
+export const DRINK_DECAY_PER_TICK = 0.2;
+export const SLEEP_DECAY_PER_TICK = 0.12;
+export const SOCIAL_DECAY_PER_TICK = 0.05;
+export const PURPOSE_DECAY_PER_TICK = 0.04;
+export const BEAUTY_DECAY_PER_TICK = 0.03;
+
+// ============================================================
+// Stress severity tiers
+// ============================================================
+
+export const STRESS_TANTRUM_MILD = 80;
+export const STRESS_TANTRUM_MODERATE = 90;
+export const STRESS_TANTRUM_SEVERE = 96;
+
+// ============================================================
 // Skills
 // ============================================================
 
