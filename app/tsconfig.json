@@ -9,5 +9,5 @@
     "composite": true
   },
   "include": ["src", "vite-env.d.ts"],
-  "references": [{ "path": "../shared" }]
+  "references": [{ "path": "../shared" }, { "path": "../sim" }]
 }

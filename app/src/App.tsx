@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import Toolbar from "./components/Toolbar";
 import LeftPanel from "./components/LeftPanel";
 import RightPanel from "./components/RightPanel";
@@ -10,14 +10,18 @@ import { useViewport } from "./hooks/useViewport";
 import { useWorldTiles } from "./hooks/useWorldTiles";
 import { useFortressTiles } from "./hooks/useFortressTiles";
 import { useAuth } from "./hooks/useAuth";
+import { useDwarves } from "./hooks/useDwarves";
+import { useSimRunner } from "./hooks/useSimRunner";
+import { useTasks } from "./hooks/useTasks";
 import { createAndGenerateWorld } from "./lib/world-gen";
 import { embark } from "./lib/embark";
 import { ensurePlayer } from "./lib/ensure-player";
 import { loadSession } from "./lib/load-session";
 import { supabase } from "./lib/supabase";
-import { FORTRESS_MAX_Z, FORTRESS_MIN_Z } from "@pwarf/shared";
+import { FORTRESS_MAX_Z, FORTRESS_MIN_Z, FORTRESS_SIZE, WORK_MINE_BASE } from "@pwarf/shared";
 
 type Mode = "fortress" | "world";
+type DesignationMode = "none" | "mine";
 
 export default function App() {
   const { session, user, loading, signIn, signUp, signOut } = useAuth();
@@ -36,6 +40,9 @@ export default function App() {
 
   // Fortress z-level
   const [zLevel, setZLevel] = useState(0);
+
+  // Designation mode
+  const [designationMode, setDesignationMode] = useState<DesignationMode>("none");
 
   // Viewport size (reported from MainViewport)
   const [vpCols, setVpCols] = useState(120);
@@ -66,6 +73,26 @@ export default function App() {
   const cursorTile = worldId ? getTile(viewport.cursorX, viewport.cursorY) : null;
   const cursorFortressTile = civId ? getFortressTile(viewport.cursorX, viewport.cursorY) : null;
 
+  // Live dwarves from DB
+  const liveDwarves = useDwarves(civId);
+
+  // Build dwarf position map for rendering
+  const dwarfPositions = useMemo(() => {
+    const map = new Map<string, { name: string }>();
+    for (const d of liveDwarves) {
+      if (d.position_z === zLevel) {
+        map.set(`${d.position_x},${d.position_y}`, { name: d.name });
+      }
+    }
+    return map;
+  }, [liveDwarves, zLevel]);
+
+  // Sim runner
+  useSimRunner(civId, worldId);
+
+  // Active tasks
+  const { designatedTiles } = useTasks(civId);
+
   // Ensure player profile exists after auth, then restore any existing session
   useEffect(() => {
     if (user && !playerEnsured) {
@@ -79,9 +106,9 @@ export default function App() {
           if (session.civId) {
             setCivId(session.civId);
             setMode("fortress");
-            // Fortress uses local coordinates starting at (0,0),
-            // not the world embark coordinates.
-            viewport.setOffset(0, 0);
+            // Center viewport on fortress center where dwarves spawn
+            const center = Math.floor(FORTRESS_SIZE / 2);
+            viewport.setOffset(center - Math.floor(vpCols / 2), center - Math.floor(vpRows / 2));
           }
           setPlayerEnsured(true);
         })
@@ -118,9 +145,17 @@ export default function App() {
         case "z_down":
           setZLevel((z) => Math.max(FORTRESS_MIN_Z, z - 1));
           break;
+        case "designate_mine":
+          if (mode === "fortress") {
+            setDesignationMode((m) => (m === "mine" ? "none" : "mine"));
+          }
+          break;
+        case "cancel_designation":
+          setDesignationMode("none");
+          break;
       }
     },
-    [viewport.pan, civId],
+    [viewport.pan, civId, mode],
   );
 
   useKeyboard(handleKeyAction);
@@ -153,11 +188,40 @@ export default function App() {
       const id = await embark(worldId, viewport.cursorX, viewport.cursorY, worldSeed);
       setCivId(id);
       setMode("fortress");
-      viewport.setOffset(0, 0);
+      const center = Math.floor(FORTRESS_SIZE / 2);
+      viewport.setOffset(center - Math.floor(vpCols / 2), center - Math.floor(vpRows / 2));
     } catch (err) {
       console.error("Embark failed:", err);
     }
   }, [worldId, worldSeed, cursorTile, viewport.cursorX, viewport.cursorY]);
+
+  const handleTileClick = useCallback(async (x: number, y: number) => {
+    if (designationMode !== 'mine' || !civId) return;
+
+    // Check that the tile is minable
+    const tile = getFortressTile(x, y);
+    if (!tile) return;
+    const mineable: string[] = ['stone', 'ore', 'gem', 'soil', 'cavern_wall'];
+    if (!mineable.includes(tile.tileType)) return;
+
+    // Don't double-designate
+    if (designatedTiles.has(`${x},${y}`)) return;
+
+    const { error } = await supabase.from('tasks').insert({
+      civilization_id: civId,
+      task_type: 'mine',
+      status: 'pending',
+      priority: 5,
+      target_x: x,
+      target_y: y,
+      target_z: zLevel,
+      work_required: WORK_MINE_BASE,
+    });
+
+    if (error) {
+      console.error('[designate] Failed to create mine task:', error.message);
+    }
+  }, [designationMode, civId, zLevel, getFortressTile, designatedTiles]);
 
   // Loading state
   if (loading) {
@@ -220,7 +284,13 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <Toolbar mode={mode} onSignOut={signOut} />
+      <Toolbar
+        mode={mode}
+        onSignOut={signOut}
+        population={liveDwarves.length}
+        year={1}
+        civName={mode === "fortress" ? "Stonegear" : undefined}
+      />
 
       <div className="flex flex-1 min-h-0">
         <LeftPanel
@@ -229,6 +299,7 @@ export default function App() {
           onToggle={() => setLeftOpen((o) => !o)}
           cursorTile={cursorTile}
           onEmbark={mode === "world" ? handleEmbark : undefined}
+          dwarves={liveDwarves}
         />
 
         <MainViewport
@@ -244,6 +315,10 @@ export default function App() {
           worldTiles={mode === "world" ? tileMap : undefined}
           fortressTiles={mode === "fortress" ? fortressTileMap : undefined}
           onViewportSize={handleViewportSize}
+          dwarfPositions={mode === "fortress" ? dwarfPositions : undefined}
+          designatedTiles={mode === "fortress" ? designatedTiles : undefined}
+          designationMode={mode === "fortress" ? designationMode : undefined}
+          onTileClick={mode === "fortress" ? handleTileClick : undefined}
         />
 
         <RightPanel
@@ -276,6 +351,7 @@ export default function App() {
         terrain={terrainForBar}
         zLevel={mode === "fortress" ? zLevel : undefined}
         fortressTileLabel={fortressTileLabel}
+        designationMode={mode === "fortress" ? designationMode : undefined}
       />
     </div>
   );

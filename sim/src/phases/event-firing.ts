@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import type { SimContext } from "../sim-context.js";
 
 /**
@@ -23,7 +22,7 @@ export async function eventFiring(ctx: SimContext): Promise<void> {
     // Critical food warning at need_food < 10
     if (dwarf.need_food < 10 && dwarf.need_food >= 9.8) {
       state.pendingEvents.push({
-        id: randomUUID(),
+        id: crypto.randomUUID(),
         world_id: '',
         year: ctx.year,
         category: 'death', // Using existing category — will be 'warning' later
@@ -42,7 +41,7 @@ export async function eventFiring(ctx: SimContext): Promise<void> {
     // Critical drink warning
     if (dwarf.need_drink < 10 && dwarf.need_drink >= 9.8) {
       state.pendingEvents.push({
-        id: randomUUID(),
+        id: crypto.randomUUID(),
         world_id: '',
         year: ctx.year,
         category: 'death',

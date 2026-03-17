@@ -168,6 +168,23 @@ describe("bfsNextStep", () => {
     );
     expect(result).toBeNull();
   });
+
+  it("returns null instead of crashing when search space is huge", () => {
+    // Simulate a large open plane with an unreachable goal (different z)
+    const lookup: TileLookup = (x, y, z) => {
+      if (z !== 0) return null;
+      if (x < 0 || x > 200 || y < 0 || y > 200) return null;
+      return "open_air";
+    };
+
+    // Goal at z=-1 is unreachable from z=0 (no stairs)
+    const result = bfsNextStep(
+      { x: 100, y: 100, z: 0 },
+      { x: 100, y: 100, z: -1 },
+      lookup,
+    );
+    expect(result).toBeNull();
+  });
 });
 
 describe("manhattanDistance", () => {

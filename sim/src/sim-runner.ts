@@ -65,10 +65,11 @@ export class SimRunner {
       void this.tick();
     }, intervalMs);
 
-    // Flush dirty state to Supabase every 1 second
+    // Flush dirty state to Supabase every 1 second + poll for new tasks
     this.flushTimer = setInterval(() => {
       if (this.ctx) {
         void flushToSupabase(this.ctx);
+        void this.pollNewTasks();
       }
     }, 1000);
   }
@@ -90,6 +91,28 @@ export class SimRunner {
     }
 
     console.log(`[sim] stopped at step ${this.stepCount}`);
+  }
+
+  /** Poll Supabase for new tasks created by the player (designations). */
+  private async pollNewTasks(): Promise<void> {
+    if (!this.ctx) return;
+    const { state, supabase, civilizationId } = this.ctx;
+
+    const existingIds = new Set(state.tasks.map(t => t.id));
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('civilization_id', civilizationId)
+      .eq('status', 'pending');
+
+    if (error || !data) return;
+
+    for (const task of data) {
+      if (!existingIds.has(task.id)) {
+        state.tasks.push(task);
+      }
+    }
   }
 
   /** Execute one simulation step — all phases run in order. */

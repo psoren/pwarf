@@ -27,10 +27,22 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   const promises: PromiseLike<void>[] = [];
 
   if (dirtyDwarves.length > 0) {
+    // Round need values — DB columns are integer, sim computes fractional decay
+    const rounded = dirtyDwarves.map((d) => ({
+      ...d,
+      need_food: Math.round(d.need_food),
+      need_drink: Math.round(d.need_drink),
+      need_sleep: Math.round(d.need_sleep),
+      need_social: Math.round(d.need_social),
+      need_purpose: Math.round(d.need_purpose),
+      need_beauty: Math.round(d.need_beauty),
+      stress_level: Math.round(d.stress_level),
+      health: Math.round(d.health),
+    }));
     promises.push(
       supabase
         .from("dwarves")
-        .upsert(dirtyDwarves)
+        .upsert(rounded)
         .then(({ error }) => {
           if (error) console.warn(`[flush] dwarves upsert failed: ${error.message}`);
         }),
