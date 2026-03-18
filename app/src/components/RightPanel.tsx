@@ -1,22 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import type { LiveEvent } from "../hooks/useEvents";
 
 interface RightPanelProps {
   collapsed: boolean;
   onToggle: () => void;
+  events: LiveEvent[];
 }
 
 const TABS = ["Log", "Legends"] as const;
 type Tab = (typeof TABS)[number];
-
-const PLACEHOLDER_LOG = [
-  "Urist cancels Mine: tired.",
-  "Kadol has brewed ale.",
-  "Doren constructed a wall.",
-  "Migrants have arrived!",
-  "Aban felled a tree.",
-  "A caravan has arrived.",
-  "Likot harvested plump helmets.",
-];
 
 const PLACEHOLDER_LEGENDS = [
   "Year 201 — Stonegear founded",
@@ -25,8 +17,34 @@ const PLACEHOLDER_LEGENDS = [
   "Year 204 — Great flood",
 ];
 
-export default function RightPanel({ collapsed, onToggle }: RightPanelProps) {
+/** Map event category to a CSS color variable. */
+function categoryColor(category: string): string {
+  switch (category) {
+    case 'death':
+      return 'var(--red, #f87171)';
+    case 'fortress_fallen':
+      return 'var(--red, #f87171)';
+    case 'discovery':
+      return 'var(--green)';
+    case 'migration':
+      return 'var(--cyan)';
+    default:
+      return 'var(--amber)';
+  }
+}
+
+export default function RightPanel({ collapsed, onToggle, events }: RightPanelProps) {
   const [tab, setTab] = useState<Tab>("Log");
+  const logRef = useRef<HTMLDivElement>(null);
+  const prevCountRef = useRef(0);
+
+  // Auto-scroll when new events arrive
+  useEffect(() => {
+    if (events.length > prevCountRef.current && logRef.current) {
+      logRef.current.scrollTop = 0;
+    }
+    prevCountRef.current = events.length;
+  }, [events.length]);
 
   return (
     <aside
@@ -59,16 +77,20 @@ export default function RightPanel({ collapsed, onToggle }: RightPanelProps) {
             ))}
           </div>
 
-          <div className="px-2 py-1 overflow-y-auto text-xs flex-1">
+          <div ref={logRef} className="px-2 py-1 overflow-y-auto text-xs flex-1">
             {tab === "Log" ? (
-              <ul className="space-y-0.5">
-                {PLACEHOLDER_LOG.map((entry, i) => (
-                  <li key={i} className="text-[var(--text)]">
-                    <span className="text-[var(--cyan)] mr-1">*</span>
-                    {entry}
-                  </li>
-                ))}
-              </ul>
+              events.length === 0 ? (
+                <p className="text-[var(--text)] opacity-50 italic">No events yet.</p>
+              ) : (
+                <ul className="space-y-0.5">
+                  {events.map((event) => (
+                    <li key={event.id} className="text-[var(--text)]">
+                      <span style={{ color: categoryColor(event.category) }} className="mr-1">*</span>
+                      {event.description}
+                    </li>
+                  ))}
+                </ul>
+              )
             ) : (
               <ul className="space-y-0.5">
                 {PLACEHOLDER_LEGENDS.map((entry, i) => (

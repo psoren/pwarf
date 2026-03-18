@@ -57,7 +57,7 @@ export async function jobClaiming(ctx: SimContext): Promise<void> {
     }
 
     if (bestTask) {
-      claimTask(dwarf, bestTask, state);
+      claimTask(dwarf, bestTask, ctx);
       claimedTaskIds.add(bestTask.id);
     }
   }
@@ -79,11 +79,33 @@ function scoreTask(dwarf: Dwarf, task: Task, skills: SimContext['state']['dwarfS
     - (distance * SCORE_DISTANCE_WEIGHT);
 }
 
-function claimTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {
+function claimTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  const { state } = ctx;
   task.status = 'claimed';
   task.assigned_dwarf_id = dwarf.id;
   dwarf.current_task_id = task.id;
 
   state.dirtyDwarfIds.add(dwarf.id);
   state.dirtyTaskIds.add(task.id);
+
+  // Only fire events for player-created tasks (not autonomous eat/drink/sleep)
+  if (!isAutonomousTask(task.task_type)) {
+    const dwarfLabel = `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''}`;
+    const taskLabel = task.task_type.replace(/_/g, ' ');
+    state.pendingEvents.push({
+      id: crypto.randomUUID(),
+      world_id: '',
+      year: ctx.year,
+      category: 'discovery',
+      civilization_id: ctx.civilizationId,
+      ruin_id: null,
+      dwarf_id: dwarf.id,
+      item_id: null,
+      faction_id: null,
+      monster_id: null,
+      description: `${dwarfLabel} begins ${taskLabel}.`,
+      event_data: { task_type: task.task_type, task_id: task.id },
+      created_at: new Date().toISOString(),
+    });
+  }
 }

@@ -105,10 +105,13 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   }
 
   if (events.length > 0) {
+    // Stamp world_id on events (phases leave it empty)
+    const worldId = ctx.worldId;
+    const stamped = events.map((e) => ({ ...e, world_id: worldId }));
     promises.push(
       supabase
         .from("world_events")
-        .insert(events)
+        .insert(stamped)
         .then(({ error }) => {
           if (error) console.warn(`[flush] events insert failed: ${error.message}`);
         }),
