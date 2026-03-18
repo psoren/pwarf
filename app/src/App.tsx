@@ -195,31 +195,48 @@ export default function App() {
     }
   }, [worldId, worldSeed, cursorTile, viewport.cursorX, viewport.cursorY]);
 
-  const handleTileClick = useCallback(async (x: number, y: number) => {
+  const handleDesignateArea = useCallback(async (x1: number, y1: number, x2: number, y2: number) => {
     if (designationMode !== 'mine' || !civId) return;
 
-    // Check that the tile is minable
-    const tile = getFortressTile(x, y);
-    if (!tile) return;
     const mineable: string[] = ['stone', 'ore', 'gem', 'soil', 'cavern_wall'];
-    if (!mineable.includes(tile.tileType)) return;
+    const tasks: Array<{
+      civilization_id: string;
+      task_type: string;
+      status: string;
+      priority: number;
+      target_x: number;
+      target_y: number;
+      target_z: number;
+      work_required: number;
+    }> = [];
 
-    // Don't double-designate
-    if (designatedTiles.has(`${x},${y}`)) return;
+    for (let y = y1; y <= y2; y++) {
+      for (let x = x1; x <= x2; x++) {
+        // Skip already designated tiles
+        if (designatedTiles.has(`${x},${y}`)) continue;
 
-    const { error } = await supabase.from('tasks').insert({
-      civilization_id: civId,
-      task_type: 'mine',
-      status: 'pending',
-      priority: 5,
-      target_x: x,
-      target_y: y,
-      target_z: zLevel,
-      work_required: WORK_MINE_BASE,
-    });
+        // Check that the tile is minable
+        const tile = getFortressTile(x, y);
+        if (!tile || !mineable.includes(tile.tileType)) continue;
 
+        tasks.push({
+          civilization_id: civId,
+          task_type: 'mine',
+          status: 'pending',
+          priority: 5,
+          target_x: x,
+          target_y: y,
+          target_z: zLevel,
+          work_required: WORK_MINE_BASE,
+        });
+      }
+    }
+
+    if (tasks.length === 0) return;
+
+    const { error } = await supabase.from('tasks').insert(tasks);
     if (error) {
-      console.error('[designate] Failed to create mine task:', error.message);
+      console.error('[designate] Failed to create mine tasks:', error.message);
     }
   }, [designationMode, civId, zLevel, getFortressTile, designatedTiles]);
 
@@ -318,7 +335,7 @@ export default function App() {
           dwarfPositions={mode === "fortress" ? dwarfPositions : undefined}
           designatedTiles={mode === "fortress" ? designatedTiles : undefined}
           designationMode={mode === "fortress" ? designationMode : undefined}
-          onTileClick={mode === "fortress" ? handleTileClick : undefined}
+          onDesignateArea={mode === "fortress" ? handleDesignateArea : undefined}
         />
 
         <RightPanel
