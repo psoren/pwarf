@@ -1,24 +1,26 @@
 interface ToolbarProps {
   mode: "fortress" | "world";
   onSignOut?: () => void;
+  population?: number;
+  year?: number;
+  civName?: string;
 }
 
-export default function Toolbar({ mode, onSignOut }: ToolbarProps) {
+export default function Toolbar({ mode, onSignOut, population = 0, year = 1, civName }: ToolbarProps) {
   return (
     <header className="flex items-center justify-between px-3 py-1 border-b border-[var(--border)] bg-[var(--bg-panel)] text-xs select-none shrink-0">
       <div className="flex gap-4 items-center">
         <span className="text-[var(--amber)] font-bold tracking-wider">
           pWarf
         </span>
-        <span className="text-[var(--text)]">Year 205</span>
+        <span className="text-[var(--text)]">Year {year}</span>
         <span className="text-[var(--green)]">
-          {mode === "fortress" ? "Stonegear" : "World Map"}
+          {mode === "fortress" ? (civName ?? "Fortress") : "World Map"}
         </span>
       </div>
 
       <div className="flex gap-4 items-center">
-        <span>Pop: 7</span>
-        <span>Wealth: 1240</span>
+        <span>Pop: {population}</span>
         <span className="text-[var(--amber)]">No alerts</span>
         {onSignOut && (
           <button

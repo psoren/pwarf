@@ -1,5 +1,5 @@
 import type { WorldTile } from "@pwarf/shared";
-import { FORTRESS_DWARVES } from "./fortressDwarves";
+import type { LiveDwarf } from "../hooks/useDwarves";
 
 interface LeftPanelProps {
   mode: "fortress" | "world";
@@ -7,9 +7,15 @@ interface LeftPanelProps {
   onToggle: () => void;
   cursorTile?: WorldTile | null;
   onEmbark?: () => void;
+  dwarves?: LiveDwarf[];
 }
 
-export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmbark }: LeftPanelProps) {
+function dwarfJobLabel(d: LiveDwarf): string {
+  if (d.current_task_id) return "Working";
+  return "Idle";
+}
+
+export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmbark, dwarves = [] }: LeftPanelProps) {
   const isOcean = cursorTile?.terrain === "ocean";
 
   return (
@@ -33,15 +39,18 @@ export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmb
 
           {mode === "fortress" ? (
             <ul className="space-y-0.5">
-              {FORTRESS_DWARVES.map((d) => (
+              {dwarves.map((d) => (
                 <li
-                  key={d.name}
+                  key={d.id}
                   className="flex justify-between hover:bg-[var(--bg-hover)] px-1"
                 >
                   <span className="text-[var(--green)]">{d.name}</span>
-                  <span className="text-[var(--text)]">{d.job}</span>
+                  <span className="text-[var(--text)]">{dwarfJobLabel(d)}</span>
                 </li>
               ))}
+              {dwarves.length === 0 && (
+                <li className="text-[var(--text)]">No dwarves</li>
+              )}
             </ul>
           ) : cursorTile ? (
             <div className="space-y-1">

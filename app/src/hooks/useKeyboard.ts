@@ -6,7 +6,9 @@ export type KeyAction =
   | { type: "toggle_left_panel" }
   | { type: "toggle_right_panel" }
   | { type: "z_up" }
-  | { type: "z_down" };
+  | { type: "z_down" }
+  | { type: "designate_mine" }
+  | { type: "cancel_designation" };
 
 export function useKeyboard(onAction: (action: KeyAction) => void) {
   useEffect(() => {
@@ -55,6 +57,12 @@ export function useKeyboard(onAction: (action: KeyAction) => void) {
           break;
         case ">":
           onAction({ type: "z_down" });
+          break;
+        case "m":
+          onAction({ type: "designate_mine" });
+          break;
+        case "Escape":
+          onAction({ type: "cancel_designation" });
           break;
       }
     }

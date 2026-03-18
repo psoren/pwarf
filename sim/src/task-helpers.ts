@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import type { Dwarf, DwarfSkill, Task, TaskType, Item } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 
@@ -62,7 +61,7 @@ export function createTask(
   },
 ): Task {
   const task: Task = {
-    id: randomUUID(),
+    id: crypto.randomUUID(),
     civilization_id: civilizationId,
     task_type: opts.task_type,
     status: 'pending',

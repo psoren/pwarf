@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import {
   BASE_WORK_RATE,
   FOOD_RESTORE_AMOUNT,
@@ -10,6 +9,7 @@ import {
   XP_FARM_HARVEST,
   STARVATION_TICKS,
   DEHYDRATION_TICKS,
+  FORTRESS_SIZE,
 } from "@pwarf/shared";
 import type { Dwarf, Task, Item, TaskType } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -96,35 +96,37 @@ function isAdjacentToTarget(dwarf: Dwarf, task: Task): boolean {
 function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext): boolean {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return true;
 
-  // Create a tile lookup from cached fortress tiles
-  // For Phase 0, we use a simplified approach: all surface tiles (z=0) are walkable,
-  // and mined tiles are walkable. This will be replaced with real tile data later.
+  // Phase 0 simplification: pathfind in 2D only (ignore z-levels since there
+  // are no stairs yet). Once horizontally adjacent, teleport to the target z.
+  // Will be replaced with real 3D pathfinding + stairs later.
   const getTile: TileLookup = (_x, _y, _z) => {
-    // Simplified: treat z=0 surface as open_air (walkable)
-    if (_z === 0) return 'open_air';
-    return null;
+    if (_x < 0 || _x >= FORTRESS_SIZE || _y < 0 || _y >= FORTRESS_SIZE) return null;
+    return 'open_air';
   };
 
   const needsAdjacent = task.task_type === 'mine';
+
+  // Flatten to 2D: pathfind on dwarf's current z-level toward target x,y
+  const goal2d = { x: task.target_x, y: task.target_y, z: dwarf.position_z };
   const nextStep = bfsNextStep(
     { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z },
-    { x: task.target_x, y: task.target_y, z: task.target_z },
+    goal2d,
     getTile,
     needsAdjacent,
   );
 
   if (nextStep === null) {
-    // Either already at target or no path
-    const dist = manhattanDistance(
-      { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z },
-      { x: task.target_x, y: task.target_y, z: task.target_z },
-    );
-    return dist <= 1; // Already close enough
+    // Horizontally at target (or adjacent for mine tasks).
+    // Teleport to the correct z-level if needed.
+    if (dwarf.position_z !== task.target_z) {
+      dwarf.position_z = task.target_z;
+      ctx.state.dirtyDwarfIds.add(dwarf.id);
+    }
+    return true;
   }
 
   dwarf.position_x = nextStep.x;
   dwarf.position_y = nextStep.y;
-  dwarf.position_z = nextStep.z;
   ctx.state.dirtyDwarfIds.add(dwarf.id);
   return true;
 }
@@ -175,7 +177,7 @@ function completeMine(task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
   const stoneItem: Item = {
-    id: randomUUID(),
+    id: crypto.randomUUID(),
     name: 'Stone block',
     category: 'raw_material',
     quality: 'standard',
@@ -210,7 +212,7 @@ function completeHaul(task: Task, _ctx: SimContext): void {
 function completeFarmHarvest(task: Task, ctx: SimContext): void {
   // Create a food item
   const food: Item = {
-    id: randomUUID(),
+    id: crypto.randomUUID(),
     name: 'Plump helmet',
     category: 'food',
     quality: 'standard',
@@ -351,7 +353,7 @@ function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
   if (aliveDwarves.length === 0) {
     // Queue fortress fallen event
     state.pendingEvents.push({
-      id: randomUUID(),
+      id: crypto.randomUUID(),
       world_id: '',  // Will be set by event firing
       year: ctx.year,
       category: 'fortress_fallen',

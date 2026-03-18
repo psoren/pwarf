@@ -1,6 +1,30 @@
 import { supabase } from './supabase';
 import { pickUniqueNames, SURNAMES } from './dwarf-names';
-import { createWorldDeriver } from '@pwarf/shared';
+import { createWorldDeriver, FORTRESS_SIZE } from '@pwarf/shared';
+
+const FORTRESS_CENTER = Math.floor(FORTRESS_SIZE / 2);
+
+/** Starting dwarf roles with their skills */
+const STARTING_ROLES: { job: string; skills: string[] }[] = [
+  { job: 'Miner',      skills: ['mining'] },
+  { job: 'Miner',      skills: ['mining'] },
+  { job: 'Farmer',     skills: ['farming'] },
+  { job: 'Farmer',     skills: ['farming'] },
+  { job: 'Woodcutter', skills: [] },
+  { job: 'Mason',      skills: [] },
+  { job: 'Brewer',     skills: [] },
+];
+
+/** Offsets from fortress center for starting dwarf positions */
+const STARTING_OFFSETS: { dx: number; dy: number }[] = [
+  { dx: -1, dy: -1 },
+  { dx:  1, dy: -1 },
+  { dx: -1, dy:  0 },
+  { dx:  1, dy:  0 },
+  { dx:  0, dy: -1 },
+  { dx:  0, dy:  1 },
+  { dx:  0, dy:  0 },
+];
 
 export async function embark(worldId: string, tileX: number, tileY: number, worldSeed: bigint) {
   const { data: { user } } = await supabase.auth.getUser();
@@ -55,10 +79,11 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
 
   if (civError || !civ) throw new Error(`Failed to create civilization: ${civError?.message}`);
 
-  // Create 7 starting dwarves
+  // Create 7 starting dwarves with positions near fortress center
   const names = pickUniqueNames(7);
-  const dwarves = names.map((name) => {
+  const dwarves = names.map((name, i) => {
     const surname = SURNAMES[Math.floor(Math.random() * SURNAMES.length)];
+    const offset = STARTING_OFFSETS[i];
     return {
       civilization_id: civ.id,
       name,
@@ -74,11 +99,93 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
       stress_level: 0,
       is_in_tantrum: false,
       health: 100,
+      position_x: FORTRESS_CENTER + offset.dx,
+      position_y: FORTRESS_CENTER + offset.dy,
+      position_z: 0,
     };
   });
 
-  const { error: dwarfError } = await supabase.from('dwarves').insert(dwarves);
-  if (dwarfError) throw new Error(`Failed to create dwarves: ${dwarfError.message}`);
+  const { data: insertedDwarves, error: dwarfError } = await supabase
+    .from('dwarves')
+    .insert(dwarves)
+    .select('id');
+  if (dwarfError || !insertedDwarves) throw new Error(`Failed to create dwarves: ${dwarfError?.message}`);
+
+  // Create dwarf skills based on roles
+  const skills: { dwarf_id: string; skill_name: string; level: number; xp: number }[] = [];
+  for (let i = 0; i < insertedDwarves.length; i++) {
+    for (const skillName of STARTING_ROLES[i].skills) {
+      skills.push({
+        dwarf_id: insertedDwarves[i].id,
+        skill_name: skillName,
+        level: 0,
+        xp: 0,
+      });
+    }
+  }
+  if (skills.length > 0) {
+    const { error: skillError } = await supabase.from('dwarf_skills').insert(skills);
+    if (skillError) throw new Error(`Failed to create dwarf skills: ${skillError.message}`);
+  }
+
+  // Create starting items
+  const startingItems = [
+    ...Array.from({ length: 30 }, () => ({
+      name: 'Plump helmet spawn',
+      category: 'food',
+      quality: 'standard',
+      material: 'plant',
+      weight: 1,
+      value: 2,
+      is_artifact: false,
+      located_in_civ_id: civ.id,
+      created_in_civ_id: civ.id,
+      created_year: 1,
+      properties: {},
+    })),
+    ...Array.from({ length: 40 }, () => ({
+      name: 'Dwarven ale',
+      category: 'drink',
+      quality: 'standard',
+      material: 'plant',
+      weight: 1,
+      value: 3,
+      is_artifact: false,
+      located_in_civ_id: civ.id,
+      created_in_civ_id: civ.id,
+      created_year: 1,
+      properties: {},
+    })),
+    ...Array.from({ length: 10 }, () => ({
+      name: 'Plump helmet seed',
+      category: 'raw_material',
+      quality: 'standard',
+      material: 'plant',
+      weight: 1,
+      value: 1,
+      is_artifact: false,
+      located_in_civ_id: civ.id,
+      created_in_civ_id: civ.id,
+      created_year: 1,
+      properties: {},
+    })),
+    ...Array.from({ length: 2 }, () => ({
+      name: 'Stone pickaxe',
+      category: 'tool',
+      quality: 'standard',
+      material: 'stone',
+      weight: 5,
+      value: 10,
+      is_artifact: false,
+      located_in_civ_id: civ.id,
+      created_in_civ_id: civ.id,
+      created_year: 1,
+      properties: {},
+    })),
+  ];
+
+  const { error: itemError } = await supabase.from('items').insert(startingItems);
+  if (itemError) throw new Error(`Failed to create starting items: ${itemError.message}`);
 
   return civ.id;
 }

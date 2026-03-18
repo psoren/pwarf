@@ -5,9 +5,10 @@ interface BottomBarProps {
   terrain?: string | null;
   zLevel?: number;
   fortressTileLabel?: string | null;
+  designationMode?: string;
 }
 
-export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, fortressTileLabel }: BottomBarProps) {
+export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, fortressTileLabel, designationMode }: BottomBarProps) {
   const terrainLabel = terrain ?? fortressTileLabel ?? (mode === "fortress" ? "Floor (stone)" : "Plains");
 
   return (
@@ -24,6 +25,11 @@ export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, for
         <span className="text-[var(--text)]">
           {terrainLabel}
         </span>
+        {designationMode && designationMode !== 'none' && (
+          <span className="text-[#ff6600] font-bold">
+            [{designationMode.toUpperCase()}] click to designate
+          </span>
+        )}
       </div>
 
       <div className="flex gap-3 text-[var(--text)]">
@@ -31,9 +37,14 @@ export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, for
           <kbd className="text-[var(--amber)]">WASD</kbd> pan
         </span>
         {mode === "fortress" && (
-          <span>
-            <kbd className="text-[var(--amber)]">&lt; &gt;</kbd> z-level
-          </span>
+          <>
+            <span>
+              <kbd className="text-[var(--amber)]">&lt; &gt;</kbd> z-level
+            </span>
+            <span>
+              <kbd className="text-[var(--amber)]">m</kbd> mine
+            </span>
+          </>
         )}
         <span>
           <kbd className="text-[var(--amber)]">Tab</kbd> mode

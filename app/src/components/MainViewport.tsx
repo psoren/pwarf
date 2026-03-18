@@ -1,7 +1,6 @@
 import { useRef, useEffect, useCallback } from "react";
 import type { WorldTile, TerrainType, FortressTileType } from "@pwarf/shared";
 import type { FortressViewTile } from "../hooks/useFortressTiles";
-import { DWARF_POSITION_MAP } from "./fortressDwarves";
 
 interface MainViewportProps {
   mode: "fortress" | "world";
@@ -16,6 +15,14 @@ interface MainViewportProps {
   worldTiles?: Map<string, WorldTile>;
   fortressTiles?: Map<string, FortressViewTile>;
   onViewportSize?: (cols: number, rows: number) => void;
+  /** Live dwarf positions keyed by "x,y" */
+  dwarfPositions?: Map<string, { name: string }>;
+  /** Tiles with active designations keyed by "x,y" */
+  designatedTiles?: Set<string>;
+  /** Current designation mode */
+  designationMode?: string;
+  /** Click handler for tile designation */
+  onTileClick?: (x: number, y: number) => void;
 }
 
 // Character cell dimensions (monospace)
@@ -84,13 +91,18 @@ export default function MainViewport({
   worldTiles,
   fortressTiles,
   onViewportSize,
+  dwarfPositions,
+  designatedTiles,
+  designationMode,
+  onTileClick,
 }: MainViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+  const dragMoved = useRef(false);
 
   const getWorldTile = useCallback(
-    (wx: number, wy: number): { ch: string; fg: string } => {
+    (wx: number, wy: number): { ch: string; fg: string; bg?: string } => {
       if (worldTiles) {
         const tile = worldTiles.get(`${wx},${wy}`);
         if (tile) {
@@ -103,20 +115,30 @@ export default function MainViewport({
   );
 
   const getFortressTile = useCallback(
-    (wx: number, wy: number): { ch: string; fg: string } => {
+    (wx: number, wy: number): { ch: string; fg: string; bg?: string } => {
+      const key = `${wx},${wy}`;
+
       // Check for dwarf at this position
-      const dwarf = DWARF_POSITION_MAP.get(`${wx},${wy}`);
-      if (dwarf) return { ch: "\u263A", fg: "#00cccc" };
+      if (dwarfPositions?.has(key)) {
+        return { ch: "\u263A", fg: "#00cccc" };
+      }
+
+      // Check for designation overlay
+      const isDesignated = designatedTiles?.has(key);
 
       if (fortressTiles) {
-        const tile = fortressTiles.get(`${wx},${wy}`);
+        const tile = fortressTiles.get(key);
         if (tile) {
-          return FORTRESS_GLYPHS[tile.tileType] ?? { ch: "?", fg: "#f00" };
+          const glyph = FORTRESS_GLYPHS[tile.tileType] ?? { ch: "?", fg: "#f00" };
+          if (isDesignated) {
+            return { ...glyph, bg: "#442200" };
+          }
+          return glyph;
         }
       }
       return { ch: " ", fg: "#000" };
     },
-    [fortressTiles],
+    [fortressTiles, dwarfPositions, designatedTiles],
   );
 
   const getTile = mode === "fortress" ? getFortressTile : getWorldTile;
@@ -159,19 +181,25 @@ export default function MainViewport({
       for (let col = 0; col < cols; col++) {
         const wx = offsetX + col;
         const wy = offsetY + row;
-        const { ch, fg } = getTile(wx, wy);
+        const tileData = getTile(wx, wy);
 
         const px = col * CHAR_W;
         const py = row * CHAR_H;
 
-        // Highlight cursor tile
-        if (wx === cursorX && wy === cursorY) {
-          ctx.fillStyle = "#333";
+        // Background for designation overlay
+        if (tileData.bg) {
+          ctx.fillStyle = tileData.bg;
           ctx.fillRect(px, py, CHAR_W, CHAR_H);
         }
 
-        ctx.fillStyle = fg;
-        ctx.fillText(ch, px + 1, py + 2);
+        // Highlight cursor tile
+        if (wx === cursorX && wy === cursorY) {
+          ctx.fillStyle = designationMode && designationMode !== 'none' ? "#442244" : "#333";
+          ctx.fillRect(px, py, CHAR_W, CHAR_H);
+        }
+
+        ctx.fillStyle = tileData.fg;
+        ctx.fillText(tileData.ch, px + 1, py + 2);
       }
     }
 
@@ -179,11 +207,11 @@ export default function MainViewport({
     const cx = (cursorX - offsetX) * CHAR_W;
     const cy = (cursorY - offsetY) * CHAR_H;
     if (cx >= 0 && cx < w && cy >= 0 && cy < h) {
-      ctx.strokeStyle = "#4af626";
+      ctx.strokeStyle = designationMode && designationMode !== 'none' ? "#ff6600" : "#4af626";
       ctx.lineWidth = 1;
       ctx.strokeRect(cx + 0.5, cy + 0.5, CHAR_W - 1, CHAR_H - 1);
     }
-  }, [offsetX, offsetY, cursorX, cursorY, getTile, onViewportSize]);
+  }, [offsetX, offsetY, cursorX, cursorY, getTile, onViewportSize, designationMode]);
 
   // Re-render on state change
   useEffect(() => {
@@ -206,6 +234,7 @@ export default function MainViewport({
       onCursorMove(offsetX + col, offsetY + row);
 
       if (dragging.current) {
+        dragMoved.current = true;
         onDragMove(e.clientX, e.clientY, CHAR_W, CHAR_H);
       }
     },
@@ -216,16 +245,28 @@ export default function MainViewport({
     (e: React.MouseEvent) => {
       if (e.button === 0) {
         dragging.current = true;
+        dragMoved.current = false;
         onDragStart(e.clientX, e.clientY, CHAR_W, CHAR_H);
       }
     },
     [onDragStart],
   );
 
-  const handleMouseUp = useCallback(() => {
-    dragging.current = false;
-    onDragEnd();
-  }, [onDragEnd]);
+  const handleMouseUp = useCallback(
+    (e: React.MouseEvent) => {
+      if (dragging.current && !dragMoved.current && onTileClick && designationMode && designationMode !== 'none') {
+        // Click without drag in designation mode → designate tile
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+        const col = Math.floor((e.clientX - rect.left) / CHAR_W);
+        const row = Math.floor((e.clientY - rect.top) / CHAR_H);
+        onTileClick(offsetX + col, offsetY + row);
+      }
+      dragging.current = false;
+      dragMoved.current = false;
+      onDragEnd();
+    },
+    [onDragEnd, onTileClick, designationMode, offsetX, offsetY],
+  );
 
   return (
     <div

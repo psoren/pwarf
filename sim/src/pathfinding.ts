@@ -85,6 +85,9 @@ function posKey(p: Position): string {
  *   to the goal (used for mining — you stand next to the wall, not inside it).
  *   If false, the path ends at the goal tile itself.
  */
+/** Safety limit — abort BFS after visiting this many nodes. */
+const MAX_BFS_NODES = 10_000;
+
 export function bfsNextStep(
   start: Position,
   goal: Position,
@@ -108,6 +111,10 @@ export function bfsNextStep(
   visited.add(posKey(start));
 
   while (queue.length > 0) {
+    if (visited.size >= MAX_BFS_NODES) {
+      return null; // Search space exhausted — no path
+    }
+
     const current = queue.shift()!;
     const neighbors = getNeighbors(current, getTile);
 
