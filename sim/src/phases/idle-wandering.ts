@@ -1,6 +1,8 @@
 import { WORK_WANDER, WANDER_RADIUS, FORTRESS_SIZE } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createTask, isDwarfIdle } from "../task-helpers.js";
+import { isWalkable } from "../pathfinding.js";
+import { buildTileLookup } from "../tile-lookup.js";
 
 /**
  * Idle Wandering Phase
@@ -11,6 +13,7 @@ import { createTask, isDwarfIdle } from "../task-helpers.js";
  */
 export async function idleWandering(ctx: SimContext): Promise<void> {
   const { state } = ctx;
+  const getTile = buildTileLookup(ctx);
 
   for (const dwarf of state.dwarves) {
     if (!isDwarfIdle(dwarf)) continue;
@@ -32,6 +35,10 @@ export async function idleWandering(ctx: SimContext): Promise<void> {
 
     // Skip if it's the same spot
     if (targetX === dwarf.position_x && targetY === dwarf.position_y) continue;
+
+    // Only pick walkable targets so BFS can actually path to them
+    const targetTile = getTile(targetX, targetY, dwarf.position_z);
+    if (!isWalkable(targetTile)) continue;
 
     createTask(state, ctx.civilizationId, {
       task_type: 'wander',

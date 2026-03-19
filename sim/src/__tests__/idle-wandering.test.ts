@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { FortressDeriver } from "@pwarf/shared";
 import { makeDwarf, makeContext } from "./test-helpers.js";
 import { idleWandering } from "../phases/idle-wandering.js";
 
@@ -45,6 +46,24 @@ describe("idle wandering", () => {
     await idleWandering(ctx);
 
     expect(ctx.state.tasks).toHaveLength(0);
+  });
+
+  it("skips non-walkable target tiles", async () => {
+    const dwarf = makeDwarf({ position_x: 128, position_y: 128, position_z: 0 });
+    // Deriver that returns stone (non-walkable) for everything
+    const stoneDeriver = {
+      deriveTile: () => ({ tileType: 'stone' as const, material: 'granite' }),
+    } as unknown as FortressDeriver;
+    const ctx = makeContext({ dwarves: [dwarf] });
+    ctx.fortressDeriver = stoneDeriver;
+
+    // Run many times — should never create a task since all targets are stone
+    for (let i = 0; i < 20; i++) {
+      await idleWandering(ctx);
+    }
+
+    const wanderTasks = ctx.state.tasks.filter(t => t.task_type === "wander");
+    expect(wanderTasks).toHaveLength(0);
   });
 
   it("wander target stays within fortress bounds", async () => {
