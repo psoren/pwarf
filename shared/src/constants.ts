@@ -133,6 +133,15 @@ export const WORK_DRINK = 10;
 /** Work required for sleeping */
 export const WORK_SLEEP = 50;
 
+/** Work required to build a wall */
+export const WORK_BUILD_WALL = 80;
+
+/** Work required to build a floor */
+export const WORK_BUILD_FLOOR = 50;
+
+/** Work required to build stairs */
+export const WORK_BUILD_STAIRS = 60;
+
 // ============================================================
 // Material hardness multipliers (for mining)
 // ============================================================
@@ -151,6 +160,7 @@ export const XP_MINE = 15;
 export const XP_FARM_TILL = 10;
 export const XP_FARM_PLANT = 10;
 export const XP_FARM_HARVEST = 10;
+export const XP_BUILD = 12;
 
 // ============================================================
 // Scoring weights (job claiming)

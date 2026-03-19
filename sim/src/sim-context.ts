@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Dwarf,
   DwarfSkill,
+  FortressTile,
   Item,
   Structure,
   Monster,
@@ -32,6 +33,10 @@ export interface CachedState {
   /** Events queued during a tick, flushed by the event-firing phase. */
   pendingEvents: WorldEvent[];
 
+  /** Fortress tile overrides created by mining/building. Keyed by "x,y,z". */
+  fortressTileOverrides: Map<string, FortressTile>;
+  dirtyFortressTileKeys: Set<string>;
+
   /** Tracks ticks at zero need for starvation/dehydration death. */
   zeroFoodTicks: Map<string, number>;
   zeroDrinkTicks: Map<string, number>;
@@ -54,6 +59,8 @@ export function createEmptyCachedState(): CachedState {
     dirtyTaskIds: new Set(),
     newTasks: [],
     pendingEvents: [],
+    fortressTileOverrides: new Map(),
+    dirtyFortressTileKeys: new Set(),
     zeroFoodTicks: new Map(),
     zeroDrinkTicks: new Map(),
   };

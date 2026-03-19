@@ -75,6 +75,8 @@ export async function loadStateFromSupabase(
     dirtyTaskIds: new Set(),
     newTasks: [],
     pendingEvents: [],
+    fortressTileOverrides: new Map(),
+    dirtyFortressTileKeys: new Set(),
     zeroFoodTicks: new Map(),
     zeroDrinkTicks: new Map(),
   };
