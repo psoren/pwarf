@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { STEPS_PER_SECOND, STEPS_PER_YEAR } from "@pwarf/shared";
+import { STEPS_PER_SECOND, STEPS_PER_YEAR, createFortressDeriver } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { loadStateFromSupabase } from "./load-state.js";
@@ -47,10 +47,24 @@ export class SimRunner {
       cached = createEmptyCachedState();
     }
 
+    // Fetch world seed to create fortress deriver
+    let fortressDeriver = null;
+    if (worldId) {
+      const { data: world } = await this.supabase
+        .from('worlds')
+        .select('seed')
+        .eq('id', worldId)
+        .single();
+      if (world) {
+        fortressDeriver = createFortressDeriver(BigInt(world.seed), civilizationId);
+      }
+    }
+
     this.ctx = {
       supabase: this.supabase,
       civilizationId,
       worldId: worldId ?? '',
+      fortressDeriver,
       step: this.stepCount,
       year: this.currentYear,
       day: this.currentDay,

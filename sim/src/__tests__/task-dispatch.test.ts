@@ -701,11 +701,11 @@ describe("build tasks", () => {
 
     expect(task.status).toBe("completed");
 
-    // Mining should create an open_air tile override
+    // Mining at z=0 should create a grass tile override (surface)
     const key = "3,5,0";
     expect(ctx.state.fortressTileOverrides.has(key)).toBe(true);
     const tile = ctx.state.fortressTileOverrides.get(key)!;
-    expect(tile.tile_type).toBe("open_air");
+    expect(tile.tile_type).toBe("grass");
     expect(tile.is_mined).toBe(true);
 
     // Should also create a stone item

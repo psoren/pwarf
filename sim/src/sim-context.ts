@@ -3,6 +3,7 @@ import type {
   Dwarf,
   DwarfSkill,
   FortressTile,
+  FortressDeriver,
   Item,
   Structure,
   Monster,
@@ -80,6 +81,9 @@ export interface SimContext {
 
   /** The world this civilization belongs to. */
   worldId: string;
+
+  /** Fortress tile deriver for looking up procedurally generated tile types. */
+  fortressDeriver: FortressDeriver | null;
 
   /** Monotonically increasing step counter since sim start. */
   step: number;

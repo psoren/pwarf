@@ -98,30 +98,63 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
 function completeMine(task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
-  const stoneItem: Item = {
-    id: crypto.randomUUID(),
-    name: 'Stone block',
-    category: 'raw_material',
-    quality: 'standard',
-    material: 'stone',
-    weight: 10,
-    value: 1,
-    is_artifact: false,
-    created_by_dwarf_id: null,
-    created_in_civ_id: ctx.civilizationId,
-    created_year: ctx.year,
-    held_by_dwarf_id: null,
-    located_in_civ_id: ctx.civilizationId,
-    located_in_ruin_id: null,
-    lore: null,
-    properties: {},
-    created_at: new Date().toISOString(),
-  };
+  // Look up the tile type being mined (check overrides first, then deriver)
+  const key = `${task.target_x},${task.target_y},${task.target_z}`;
+  const override = ctx.state.fortressTileOverrides.get(key);
+  let tileType = override?.tile_type ?? null;
+  if (!tileType && ctx.fortressDeriver) {
+    tileType = ctx.fortressDeriver.deriveTile(task.target_x, task.target_y, task.target_z).tileType;
+  }
 
-  ctx.state.items.push(stoneItem);
-  ctx.state.dirtyItemIds.add(stoneItem.id);
+  const { itemName, itemMaterial, itemWeight, itemValue } = getMineProduct(tileType);
 
-  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'open_air', null, true);
+  if (itemName) {
+    const minedItem: Item = {
+      id: crypto.randomUUID(),
+      name: itemName,
+      category: 'raw_material',
+      quality: 'standard',
+      material: itemMaterial,
+      weight: itemWeight,
+      value: itemValue,
+      is_artifact: false,
+      created_by_dwarf_id: null,
+      created_in_civ_id: ctx.civilizationId,
+      created_year: ctx.year,
+      held_by_dwarf_id: null,
+      located_in_civ_id: ctx.civilizationId,
+      located_in_ruin_id: null,
+      lore: null,
+      properties: {},
+      created_at: new Date().toISOString(),
+    };
+
+    ctx.state.items.push(minedItem);
+    ctx.state.dirtyItemIds.add(minedItem.id);
+  }
+
+  // Surface features (z=0) become grass; underground becomes open_air
+  const resultTile: FortressTileType = task.target_z === 0 ? 'grass' : 'open_air';
+  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, resultTile, null, true);
+}
+
+/** Returns the item produced when mining a given tile type. */
+export function getMineProduct(tileType: string | null): {
+  itemName: string | null;
+  itemMaterial: string;
+  itemWeight: number;
+  itemValue: number;
+} {
+  switch (tileType) {
+    case 'tree':
+      return { itemName: 'Wood log', itemMaterial: 'wood', itemWeight: 8, itemValue: 2 };
+    case 'rock':
+      return { itemName: 'Stone block', itemMaterial: 'stone', itemWeight: 10, itemValue: 1 };
+    case 'bush':
+      return { itemName: null, itemMaterial: '', itemWeight: 0, itemValue: 0 };
+    default:
+      return { itemName: 'Stone block', itemMaterial: 'stone', itemWeight: 10, itemValue: 1 };
+  }
 }
 
 function completeBuild(task: Task, ctx: SimContext): void {
