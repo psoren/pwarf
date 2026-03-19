@@ -1,8 +1,10 @@
-import { render, screen, fireEvent } from "@testing-library/react";
-import { describe, it, expect, vi } from "vitest";
+// @vitest-environment jsdom
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import AuthScreen from "./AuthScreen";
 
 describe("AuthScreen", () => {
+  afterEach(cleanup);
   const noop = vi.fn().mockResolvedValue(undefined);
 
   function getSubmitButton(name: string): HTMLElement {
