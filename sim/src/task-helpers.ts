@@ -50,6 +50,19 @@ export function isAutonomousTask(taskType: TaskType): boolean {
   return AUTONOMOUS_TASKS.has(taskType);
 }
 
+/** Get the skill name a dwarf is best at (highest level). Returns null if dwarf has no skills. */
+export function getBestSkill(dwarfId: string, skills: DwarfSkill[]): string | null {
+  let best: string | null = null;
+  let bestLevel = -1;
+  for (const s of skills) {
+    if (s.dwarf_id === dwarfId && s.level > bestLevel) {
+      bestLevel = s.level;
+      best = s.skill_name;
+    }
+  }
+  return best;
+}
+
 /** Create a new task and add it to the cached state. */
 export function createTask(
   state: CachedState,

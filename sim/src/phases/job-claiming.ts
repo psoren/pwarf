@@ -2,6 +2,7 @@ import {
   SCORE_PRIORITY_WEIGHT,
   SCORE_SKILL_WEIGHT,
   SCORE_DISTANCE_WEIGHT,
+  SCORE_BEST_SKILL_BONUS,
 } from "@pwarf/shared";
 import type { Dwarf, Task } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -11,6 +12,7 @@ import {
   getDwarfSkillLevel,
   getRequiredSkill,
   isAutonomousTask,
+  getBestSkill,
 } from "../task-helpers.js";
 import { manhattanDistance } from "../pathfinding.js";
 
@@ -74,8 +76,14 @@ function scoreTask(dwarf: Dwarf, task: Task, skills: SimContext['state']['dwarfS
       )
     : 0;
 
+  // Bonus when the task matches the dwarf's best skill — makes specialists gravitate
+  // toward their specialty even when a different task is slightly closer.
+  const bestSkill = getBestSkill(dwarf.id, skills);
+  const bestSkillBonus = (requiredSkill && bestSkill === requiredSkill) ? SCORE_BEST_SKILL_BONUS : 0;
+
   return (task.priority * SCORE_PRIORITY_WEIGHT)
     + (skillLevel * SCORE_SKILL_WEIGHT)
+    + bestSkillBonus
     - (distance * SCORE_DISTANCE_WEIGHT);
 }
 
