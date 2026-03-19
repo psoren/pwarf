@@ -397,12 +397,77 @@ This is the exact starvation scenario from `docs/CORE_GAME_LOOP.md`. Every miles
 
 ---
 
+## Construction & Furniture
+
+### Current State
+
+Phase 0 supports building walls, floors, and stairs (`build_wall`, `build_floor`, `build_stairs_up`, `build_stairs_down`, `build_stairs_both`). These are structural — they reshape the fortress layout. But a fortress needs more than corridors and rooms. Dwarves need *things in the rooms*.
+
+### Furniture
+
+Furniture items are placed inside rooms to give them purpose. A bedroom isn't a bedroom without a bed. A dining hall isn't a dining hall without tables and chairs. Furniture directly affects dwarf needs — sleeping in a bed vs. on the floor, eating at a table vs. standing, the beauty of a well-furnished room.
+
+| Furniture | Glyph | Materials | Work Required | Effect |
+|-----------|-------|-----------|---------------|--------|
+| Bed | `π` | Wood (3) | 60 | Dwarves sleep here. No floor-sleep stress penalty. |
+| Table | `╥` | Wood (2) or Stone (2) | 50 | Required for dining room. Eating at a table: small stress reduction. |
+| Chair | `╤` | Wood (1) or Stone (1) | 40 | Paired with tables. Dwarves sit while eating. |
+| Door | `+` | Wood (2) or Stone (3) | 50 | Placed in walls. Controls movement. Can be locked. |
+| Chest | `■` | Wood (3) | 60 | Personal storage. Dwarves with a chest in their bedroom get a small happiness boost. |
+| Statue | `Ω` | Stone (5) | 100 | Beauty object. Increases beauty need satisfaction for dwarves who see it. |
+| Weapon rack | `╫` | Wood (3) + Metal (1) | 80 | Required for barracks. Military dwarves train here. |
+| Armor stand | `╪` | Wood (2) + Metal (1) | 70 | Required for barracks. Stores military equipment. |
+| Lever | `╧` | Stone (1) + Mechanism (1) | 40 | Links to doors, bridges, traps. Player assigns connections. |
+| Coffin | `□` | Stone (4) | 80 | Required for proper burial. Unburied dead increase stress fortress-wide. |
+
+### Workshops
+
+Workshops are multi-tile structures (3x3) where dwarves perform crafting tasks. A workshop must be built before its associated crafting tasks become available.
+
+| Workshop | Glyph (center) | Materials | Work Required | Unlocks |
+|----------|----------------|-----------|---------------|---------|
+| Carpenter's workshop | `C` | Wood (5) | 120 | Beds, tables, chairs, chests, barrels |
+| Mason's workshop | `M` | Stone (5) | 120 | Stone tables, chairs, statues, coffins, doors |
+| Craftsdwarf's workshop | `c` | Wood (3) + Stone (2) | 100 | Mechanisms, crafts, trade goods |
+| Kitchen | `K` | Stone (4) + Wood (2) | 100 | Cooked meals (better food quality, higher need_food restore) |
+| Brewery | `B` | Wood (4) + Stone (2) | 100 | Brewed drinks (better than water, higher need_drink restore) |
+| Smelter | `S` | Stone (8) | 150 | Bars from ore (required before smithing) |
+| Forge | `F` | Stone (6) + Metal bars (2) | 180 | Weapons, armor, metal furniture, mechanisms |
+
+### Room Designation
+
+Players designate rooms by selecting an enclosed area and assigning a type. The room type determines which furniture is required and what bonuses dwarves receive.
+
+| Room Type | Required Furniture | Bonus |
+|-----------|--------------------|-------|
+| Bedroom | Bed | Proper sleep (no stress). Chest adds happiness. |
+| Dining hall | Table + Chair | Eating comfort. Reduces stress while eating. |
+| Meeting hall | Table + Chair (multiple) | Social need satisfaction for idle dwarves. |
+| Barracks | Weapon rack + Armor stand | Military training. Combat skill gain while idle. |
+| Temple | Statue | Purpose and beauty need satisfaction. |
+| Tomb | Coffin | Proper burial reduces fortress-wide death stress. |
+| Hospital | Bed + Table | Wounded dwarves recover faster. |
+
+### Construction Task Type
+
+Furniture and workshop construction uses the same task lifecycle as mining:
+
+```
+task_type: 'build_furniture' | 'build_workshop'
+work_required: varies by item (see tables above)
+materials_required: checked at claim time, consumed at completion
+eligible_skill: 'construction' (furniture), specific craft skill (workshops)
+```
+
+A dwarf claims the build task, walks to the site, works until progress hits 100%, then the structure/furniture appears. If materials run out mid-build, the task fails and returns to pending.
+
+---
+
 ## Future Extensions (Not Phase 0)
 
 These build on the task system but are explicitly out of scope:
 
 - **Crafting tasks** (brew, cook, smith, engrave, smooth) — same lifecycle, different completion effects
-- **Construction tasks** — build walls, doors, furniture from materials
 - **Military tasks** — patrol, train, station, attack
 - **Hauling optimization** — zone-based stockpile priority, dedicated hauler assignments
 - **Task priorities UI** — player adjusts priorities per task type

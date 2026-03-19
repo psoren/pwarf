@@ -239,3 +239,64 @@ For events that need to feel instant (designation acknowledgment, dwarf selectio
 5. Next session → sim loads persisted state and resumes from where it left off
 
 No sim runs while the player is offline. Time does not advance. This is intentional — like actual Dwarf Fortress, you play in real time when you're at the keyboard.
+
+---
+
+## Day/Night Cycle
+
+### Time of Day
+
+Each in-game day (49 ticks) is divided into phases based on the tick within the day:
+
+| Phase | Ticks | Portion | Description |
+|-------|-------|---------|-------------|
+| Dawn | 0–5 | ~12% | Sky brightens. Nocturnal creatures retreat. |
+| Day | 6–30 | ~51% | Full light. Normal activity. Surface is safe(r). |
+| Dusk | 31–36 | ~12% | Sky dims. Creatures begin stirring. |
+| Night | 37–48 | ~25% | Darkness. Surface danger increases. |
+
+The current phase is derived from `ctx.step % STEPS_PER_DAY`. No additional state needed — it's purely a function of the tick counter.
+
+### Sim Effects
+
+**Light level** — A float from 0.0 (pitch dark) to 1.0 (full daylight). Underground levels are always 0.0 unless torches or magma provide light. Surface z=0 follows the day/night curve:
+
+| Phase | Light Level |
+|-------|-------------|
+| Dawn | 0.3 → 0.8 (ramps up) |
+| Day | 1.0 |
+| Dusk | 0.8 → 0.3 (ramps down) |
+| Night | 0.1 |
+
+**Monster behavior** — Nocturnal monsters (goblins, undead, night creatures) only spawn or become aggressive at night. Territorial animals may be passive during the day but hostile at night. The `monster-pathfinding` phase checks the time-of-day when evaluating behavior transitions.
+
+**Dwarf sleep pressure** — Dwarves who work through the night get a faster `need_sleep` decay rate (1.5× normal). Dwarves who sleep during night hours (37–48) get a bonus to sleep restoration (1.25× normal). This creates a natural circadian rhythm without forcing it — dwarves *can* work all night, they'll just need sleep sooner.
+
+**Surface work** — Farming, surface hauling, and other outdoor tasks have a small productivity penalty at night (0.8× work rate) representing poor visibility. Underground work is unaffected.
+
+### Rendering Effects
+
+The canvas renderer tints the surface level based on light level:
+
+| Phase | Surface Tint | Sky Color (if visible) |
+|-------|-------------|----------------------|
+| Dawn | Warm amber overlay, 20% opacity | #ffcc66 |
+| Day | No tint (default colors) | #87ceeb |
+| Dusk | Orange-red overlay, 20% opacity | #cc6633 |
+| Night | Dark blue overlay, 40% opacity | #1a1a3e |
+
+Underground levels are unaffected by the cycle — they're always lit by whatever light sources exist (torches, magma glow). The transition between phases is smooth (interpolated over the phase's tick range), not a hard cut.
+
+**Glyph visibility** — At night on the surface, tiles beyond a radius of 3 from a light source (torch, campfire, magma) or a dwarf carrying a torch are dimmed (drawn at 50% alpha). This doesn't affect gameplay — dwarves can still path and work — but it creates a visual sense of danger and the unknown at the edges of the fortress.
+
+### Light Sources
+
+| Source | Radius | Color | Notes |
+|--------|--------|-------|-------|
+| Torch (wall-mounted) | 4 tiles | #ffaa44 | Craftable, placed like furniture |
+| Campfire | 6 tiles | #ff6622 | Surface only, burns out after 2 days without fuel |
+| Magma | 3 tiles | #ff4400 | Permanent, natural |
+| Forge (active) | 5 tiles | #ff8833 | Only while a dwarf is working |
+| Glowing mushroom | 2 tiles | #44ff88 | Found in caverns, natural |
+
+Torches are a key early-game construction. A fortress with no torches has dark corridors — dwarves don't mind (they can see in the dark underground, lore-wise), but the *player* sees dimmed tiles. Placing torches is about the player's experience, not the dwarves'.
