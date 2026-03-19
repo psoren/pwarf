@@ -653,3 +653,200 @@ describe("starvation scenario", () => {
     expect(fallenEvents.length).toBeGreaterThanOrEqual(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Build task tests
+// ---------------------------------------------------------------------------
+
+describe("build tasks", () => {
+  it("completeBuild creates a fortress tile override for build_wall", async () => {
+    const dwarf = makeDwarf({ position_x: 5, position_y: 6, position_z: 0 });
+    const task: Task = {
+      id: randomUUID(),
+      civilization_id: "civ-1",
+      task_type: "build_wall",
+      status: "in_progress",
+      priority: 5,
+      assigned_dwarf_id: dwarf.id,
+      target_x: 5,
+      target_y: 7,
+      target_z: 0,
+      target_item_id: null,
+      work_progress: 79,
+      work_required: 80,
+      created_at: new Date().toISOString(),
+      completed_at: null,
+    };
+    dwarf.current_task_id = task.id;
+
+    const ctx = makeContext({
+      dwarves: [dwarf],
+      tasks: [task],
+      skills: [makeSkill(dwarf.id, "building", 0)],
+    });
+
+    await taskExecution(ctx);
+
+    // Task should be completed
+    expect(task.status).toBe("completed");
+
+    // Fortress tile override should be created
+    const key = "5,7,0";
+    expect(ctx.state.fortressTileOverrides.has(key)).toBe(true);
+    const tile = ctx.state.fortressTileOverrides.get(key)!;
+    expect(tile.tile_type).toBe("constructed_wall");
+    expect(tile.material).toBe("stone");
+    expect(tile.is_mined).toBe(false);
+
+    // Should be marked dirty
+    expect(ctx.state.dirtyFortressTileKeys.has(key)).toBe(true);
+  });
+
+  it("completeBuild creates correct tile type for build_floor", async () => {
+    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const task: Task = {
+      id: randomUUID(),
+      civilization_id: "civ-1",
+      task_type: "build_floor",
+      status: "in_progress",
+      priority: 5,
+      assigned_dwarf_id: dwarf.id,
+      target_x: 10,
+      target_y: 10,
+      target_z: 0,
+      target_item_id: null,
+      work_progress: 49,
+      work_required: 50,
+      created_at: new Date().toISOString(),
+      completed_at: null,
+    };
+    dwarf.current_task_id = task.id;
+
+    const ctx = makeContext({
+      dwarves: [dwarf],
+      tasks: [task],
+      skills: [makeSkill(dwarf.id, "building", 0)],
+    });
+
+    await taskExecution(ctx);
+
+    expect(task.status).toBe("completed");
+    const tile = ctx.state.fortressTileOverrides.get("10,10,0")!;
+    expect(tile.tile_type).toBe("constructed_floor");
+  });
+
+  it("completeBuild creates correct tile type for stairs", async () => {
+    const types: Array<{ taskType: "build_stairs_up" | "build_stairs_down" | "build_stairs_both"; expected: string }> = [
+      { taskType: "build_stairs_up", expected: "stair_up" },
+      { taskType: "build_stairs_down", expected: "stair_down" },
+      { taskType: "build_stairs_both", expected: "stair_both" },
+    ];
+
+    for (const { taskType, expected } of types) {
+      const dwarf = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
+      const task: Task = {
+        id: randomUUID(),
+        civilization_id: "civ-1",
+        task_type: taskType,
+        status: "in_progress",
+        priority: 5,
+        assigned_dwarf_id: dwarf.id,
+        target_x: 0,
+        target_y: 0,
+        target_z: 0,
+        target_item_id: null,
+        work_progress: 59,
+        work_required: 60,
+        created_at: new Date().toISOString(),
+        completed_at: null,
+      };
+      dwarf.current_task_id = task.id;
+
+      const ctx = makeContext({
+        dwarves: [dwarf],
+        tasks: [task],
+        skills: [makeSkill(dwarf.id, "building", 0)],
+      });
+
+      await taskExecution(ctx);
+
+      expect(task.status).toBe("completed");
+      const tile = ctx.state.fortressTileOverrides.get("0,0,0")!;
+      expect(tile.tile_type).toBe(expected);
+    }
+  });
+
+  it("completeMine creates a fortress tile override with open_air", async () => {
+    const dwarf = makeDwarf({ position_x: 3, position_y: 4, position_z: 0 });
+    const task: Task = {
+      id: randomUUID(),
+      civilization_id: "civ-1",
+      task_type: "mine",
+      status: "in_progress",
+      priority: 5,
+      assigned_dwarf_id: dwarf.id,
+      target_x: 3,
+      target_y: 5,
+      target_z: 0,
+      target_item_id: null,
+      work_progress: 99,
+      work_required: 100,
+      created_at: new Date().toISOString(),
+      completed_at: null,
+    };
+    dwarf.current_task_id = task.id;
+
+    const ctx = makeContext({
+      dwarves: [dwarf],
+      tasks: [task],
+      skills: [makeSkill(dwarf.id, "mining", 0)],
+    });
+
+    await taskExecution(ctx);
+
+    expect(task.status).toBe("completed");
+
+    // Mining should create an open_air tile override
+    const key = "3,5,0";
+    expect(ctx.state.fortressTileOverrides.has(key)).toBe(true);
+    const tile = ctx.state.fortressTileOverrides.get(key)!;
+    expect(tile.tile_type).toBe("open_air");
+    expect(tile.is_mined).toBe(true);
+
+    // Should also create a stone item
+    expect(ctx.state.items.length).toBe(1);
+    expect(ctx.state.items[0]!.category).toBe("raw_material");
+  });
+
+  it("build tasks award building XP", async () => {
+    const dwarf = makeDwarf({ position_x: 1, position_y: 1, position_z: 0 });
+    const skill = makeSkill(dwarf.id, "building", 0, 0);
+    const task: Task = {
+      id: randomUUID(),
+      civilization_id: "civ-1",
+      task_type: "build_floor",
+      status: "in_progress",
+      priority: 5,
+      assigned_dwarf_id: dwarf.id,
+      target_x: 1,
+      target_y: 1,
+      target_z: 0,
+      target_item_id: null,
+      work_progress: 49,
+      work_required: 50,
+      created_at: new Date().toISOString(),
+      completed_at: null,
+    };
+    dwarf.current_task_id = task.id;
+
+    const ctx = makeContext({
+      dwarves: [dwarf],
+      tasks: [task],
+      skills: [skill],
+    });
+
+    await taskExecution(ctx);
+
+    expect(skill.xp).toBe(12); // XP_BUILD = 12
+  });
+});

@@ -155,7 +155,12 @@ export type TaskType =
   | 'farm_harvest'
   | 'eat'
   | 'drink'
-  | 'sleep';
+  | 'sleep'
+  | 'build_wall'
+  | 'build_floor'
+  | 'build_stairs_up'
+  | 'build_stairs_down'
+  | 'build_stairs_both';
 
 export type TaskStatus =
   | 'pending'

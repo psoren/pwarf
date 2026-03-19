@@ -104,6 +104,22 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
     );
   }
 
+  if (state.dirtyFortressTileKeys.size > 0) {
+    const dirtyTiles = [...state.dirtyFortressTileKeys]
+      .map((key) => state.fortressTileOverrides.get(key))
+      .filter(Boolean);
+    if (dirtyTiles.length > 0) {
+      promises.push(
+        supabase
+          .from("fortress_tiles")
+          .upsert(dirtyTiles, { onConflict: "civilization_id,x,y,z" })
+          .then(({ error }) => {
+            if (error) console.warn(`[flush] fortress_tiles upsert failed: ${error.message}`);
+          }),
+      );
+    }
+  }
+
   if (events.length > 0) {
     // Stamp world_id on events (phases leave it empty)
     const worldId = ctx.worldId;
@@ -126,6 +142,7 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   state.dirtyStructureIds.clear();
   state.dirtyMonsterIds.clear();
   state.dirtyTaskIds.clear();
+  state.dirtyFortressTileKeys.clear();
   state.newTasks = [];
   state.pendingEvents = [];
 }

@@ -19,10 +19,28 @@ import { embark } from "./lib/embark";
 import { ensurePlayer } from "./lib/ensure-player";
 import { loadSession } from "./lib/load-session";
 import { supabase } from "./lib/supabase";
-import { FORTRESS_MAX_Z, FORTRESS_MIN_Z, FORTRESS_SIZE, WORK_MINE_BASE } from "@pwarf/shared";
+import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
+import type { TaskType } from "@pwarf/shared";
+import {
+  FORTRESS_MAX_Z,
+  FORTRESS_MIN_Z,
+  FORTRESS_SIZE,
+  WORK_MINE_BASE,
+  WORK_BUILD_WALL,
+  WORK_BUILD_FLOOR,
+  WORK_BUILD_STAIRS,
+} from "@pwarf/shared";
 
 type Mode = "fortress" | "world";
-type DesignationMode = "none" | "mine";
+type DesignationMode = "none" | "mine" | "build_wall" | "build_floor" | "build_stairs_up" | "build_stairs_down" | "build_stairs_both";
+
+const BUILD_WORK: Record<string, number> = {
+  build_wall: WORK_BUILD_WALL,
+  build_floor: WORK_BUILD_FLOOR,
+  build_stairs_up: WORK_BUILD_STAIRS,
+  build_stairs_down: WORK_BUILD_STAIRS,
+  build_stairs_both: WORK_BUILD_STAIRS,
+};
 
 export default function App() {
   const { session, user, loading, signIn, signUp, signOut } = useAuth();
@@ -44,6 +62,7 @@ export default function App() {
 
   // Designation mode
   const [designationMode, setDesignationMode] = useState<DesignationMode>("none");
+  const [buildMenuOpen, setBuildMenuOpen] = useState(false);
 
   // Viewport size (reported from MainViewport)
   const [vpCols, setVpCols] = useState(120);
@@ -151,11 +170,19 @@ export default function App() {
           break;
         case "designate_mine":
           if (mode === "fortress") {
+            setBuildMenuOpen(false);
             setDesignationMode((m) => (m === "mine" ? "none" : "mine"));
+          }
+          break;
+        case "open_build_menu":
+          if (mode === "fortress") {
+            setDesignationMode("none");
+            setBuildMenuOpen((o) => !o);
           }
           break;
         case "cancel_designation":
           setDesignationMode("none");
+          setBuildMenuOpen(false);
           break;
       }
     },
@@ -200,9 +227,14 @@ export default function App() {
   }, [worldId, worldSeed, cursorTile, viewport.cursorX, viewport.cursorY]);
 
   const handleDesignateArea = useCallback(async (x1: number, y1: number, x2: number, y2: number) => {
-    if (designationMode !== 'mine' || !civId) return;
+    if (designationMode === 'none' || !civId) return;
 
     const mineable: string[] = ['stone', 'ore', 'gem', 'soil', 'cavern_wall'];
+    const buildable: string[] = ['open_air', 'constructed_floor', 'cavern_floor'];
+    const isMine = designationMode === 'mine';
+    const taskType = designationMode as TaskType;
+    const workRequired = isMine ? WORK_MINE_BASE : (BUILD_WORK[designationMode] ?? WORK_BUILD_WALL);
+
     const tasks: Array<{
       civilization_id: string;
       task_type: string;
@@ -216,22 +248,26 @@ export default function App() {
 
     for (let y = y1; y <= y2; y++) {
       for (let x = x1; x <= x2; x++) {
-        // Skip already designated tiles
         if (designatedTiles.has(`${x},${y}`)) continue;
 
-        // Check that the tile is minable
         const tile = getFortressTile(x, y);
-        if (!tile || !mineable.includes(tile.tileType)) continue;
+        if (!tile) continue;
+
+        if (isMine) {
+          if (!mineable.includes(tile.tileType)) continue;
+        } else {
+          if (!buildable.includes(tile.tileType)) continue;
+        }
 
         tasks.push({
           civilization_id: civId,
-          task_type: 'mine',
+          task_type: taskType,
           status: 'pending',
           priority: 5,
           target_x: x,
           target_y: y,
           target_z: zLevel,
-          work_required: WORK_MINE_BASE,
+          work_required: workRequired,
         });
       }
     }
@@ -240,9 +276,30 @@ export default function App() {
 
     const { error } = await supabase.from('tasks').insert(tasks);
     if (error) {
-      console.error('[designate] Failed to create mine tasks:', error.message);
+      console.error('[designate] Failed to create tasks:', error.message);
     }
   }, [designationMode, civId, zLevel, getFortressTile, designatedTiles]);
+
+  const handleBuildSelect = useCallback((taskType: TaskType) => {
+    setBuildMenuOpen(false);
+    setDesignationMode(taskType as DesignationMode);
+  }, []);
+
+  // Keyboard shortcuts for build menu items when the menu is open
+  useEffect(() => {
+    if (!buildMenuOpen) return;
+    function handleBuildKey(e: KeyboardEvent) {
+      const opt = BUILD_OPTIONS.find((o) => o.key === e.key);
+      if (opt) {
+        e.preventDefault();
+        e.stopPropagation();
+        setBuildMenuOpen(false);
+        setDesignationMode(opt.taskType as DesignationMode);
+      }
+    }
+    window.addEventListener("keydown", handleBuildKey, true);
+    return () => window.removeEventListener("keydown", handleBuildKey, true);
+  }, [buildMenuOpen]);
 
   // Loading state
   if (loading) {
@@ -299,8 +356,10 @@ export default function App() {
   }
 
   const terrainForBar = mode === "world" ? (cursorTile?.terrain ?? null) : null;
+  const cursorKey = `${viewport.cursorX},${viewport.cursorY}`;
+  const cursorDesignation = mode === "fortress" ? designatedTiles.get(cursorKey) : undefined;
   const fortressTileLabel = mode === "fortress" && cursorFortressTile
-    ? formatFortressTileLabel(cursorFortressTile.tileType, cursorFortressTile.material)
+    ? formatFortressTileLabel(cursorFortressTile.tileType, cursorFortressTile.material, cursorDesignation)
     : null;
 
   return (
@@ -313,7 +372,13 @@ export default function App() {
         civName={mode === "fortress" ? "Stonegear" : undefined}
       />
 
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 relative">
+        {buildMenuOpen && (
+          <BuildMenu
+            onSelect={handleBuildSelect}
+            onClose={() => setBuildMenuOpen(false)}
+          />
+        )}
         <LeftPanel
           mode={mode}
           collapsed={!leftOpen}
@@ -379,8 +444,12 @@ export default function App() {
   );
 }
 
-function formatFortressTileLabel(tileType: string, material: string | null): string {
+function formatFortressTileLabel(tileType: string, material: string | null, designation?: string): string {
   const label = tileType.replace(/_/g, " ");
-  if (material) return `${label} (${material})`;
-  return label;
+  const base = material ? `${label} (${material})` : label;
+  if (designation) {
+    const desLabel = designation.replace(/_/g, " ");
+    return `${base} [designated: ${desLabel}]`;
+  }
+  return base;
 }

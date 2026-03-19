@@ -45,15 +45,15 @@ export function useTasks(civId: string | null) {
     };
   }, [civId]);
 
-  /** Set of "x,y" keys for tiles with active mine designations at a given z-level */
+  /** Map of "x,y" → task_type for tiles with active designations */
   const designatedTiles = useMemo(() => {
-    const set = new Set<string>();
+    const map = new Map<string, string>();
     for (const task of tasks) {
       if (task.target_x !== null && task.target_y !== null) {
-        set.add(`${task.target_x},${task.target_y}`);
+        map.set(`${task.target_x},${task.target_y}`, task.task_type);
       }
     }
-    return set;
+    return map;
   }, [tasks]);
 
   return { tasks, designatedTiles };

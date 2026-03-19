@@ -17,8 +17,8 @@ interface MainViewportProps {
   onViewportSize?: (cols: number, rows: number) => void;
   /** Live dwarf positions keyed by "x,y" */
   dwarfPositions?: Map<string, { name: string }>;
-  /** Tiles with active designations keyed by "x,y" */
-  designatedTiles?: Set<string>;
+  /** Tiles with active designations keyed by "x,y" → task_type */
+  designatedTiles?: Map<string, string>;
   /** Current designation mode */
   designationMode?: string;
   /** Area designation handler — called with rectangle bounds */
@@ -47,6 +47,16 @@ const FORTRESS_GLYPHS: Record<FortressTileType, { ch: string; fg: string }> = {
   stair_down:         { ch: ">",  fg: "#4af626" },
   stair_both:         { ch: "X",  fg: "#4af626" },
   empty:              { ch: " ",  fg: "#000" },
+};
+
+// --- Designation preview glyphs (shown on designated tiles before construction) ---
+const DESIGNATION_PREVIEW: Record<string, { ch: string; fg: string }> = {
+  mine:              { ch: "X", fg: "#cc6600" },
+  build_wall:        { ch: "#", fg: "#cc8844" },
+  build_floor:       { ch: "+", fg: "#cc8844" },
+  build_stairs_up:   { ch: "<", fg: "#cc8844" },
+  build_stairs_down: { ch: ">", fg: "#cc8844" },
+  build_stairs_both: { ch: "X", fg: "#cc8844" },
 };
 
 // --- World tile palette (terrain -> glyph + color) ---
@@ -129,13 +139,18 @@ export default function MainViewport({
       }
 
       // Check for designation overlay
-      const isDesignated = designatedTiles?.has(key);
+      const taskType = designatedTiles?.get(key);
 
       if (fortressTiles) {
         const tile = fortressTiles.get(key);
         if (tile) {
           const glyph = FORTRESS_GLYPHS[tile.tileType] ?? { ch: "?", fg: "#f00" };
-          if (isDesignated) {
+          if (taskType) {
+            // Show a preview glyph of what will be built
+            const preview = DESIGNATION_PREVIEW[taskType];
+            if (preview) {
+              return { ch: preview.ch, fg: preview.fg, bg: "#442200" };
+            }
             return { ...glyph, bg: "#442200" };
           }
           return glyph;

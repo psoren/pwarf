@@ -7,15 +7,28 @@ import {
   XP_FARM_TILL,
   XP_FARM_PLANT,
   XP_FARM_HARVEST,
+  XP_BUILD,
   STARVATION_TICKS,
   DEHYDRATION_TICKS,
   FORTRESS_SIZE,
 } from "@pwarf/shared";
-import type { Dwarf, Task, Item, TaskType } from "@pwarf/shared";
+import type { Dwarf, FortressTile, FortressTileType, Task, Item, TaskType } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { getDwarfSkillLevel, getRequiredSkill } from "../task-helpers.js";
 import { bfsNextStep, manhattanDistance } from "../pathfinding.js";
 import type { TileLookup } from "../pathfinding.js";
+
+/** Task types where the dwarf stands adjacent to (not on) the target tile. */
+const ADJACENT_TASK_TYPES: ReadonlySet<string> = new Set(['mine', 'build_wall']);
+
+/** Build task type → resulting fortress tile type. */
+const BUILD_TILE_MAP: Record<string, FortressTileType> = {
+  build_wall: 'constructed_wall',
+  build_floor: 'constructed_floor',
+  build_stairs_up: 'stair_up',
+  build_stairs_down: 'stair_down',
+  build_stairs_both: 'stair_both',
+};
 
 /**
  * Task Execution Phase
@@ -53,7 +66,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
 
     // Check if dwarf needs to move to the task site
     if (task.target_x !== null && task.target_y !== null && task.target_z !== null) {
-      const needsAdjacent = task.task_type === 'mine'; // Stand next to wall, not inside it
+      const needsAdjacent = ADJACENT_TASK_TYPES.has(task.task_type);
       const atSite = needsAdjacent
         ? isAdjacentToTarget(dwarf, task)
         : (dwarf.position_x === task.target_x && dwarf.position_y === task.target_y && dwarf.position_z === task.target_z);
@@ -104,7 +117,7 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext): boolean {
     return 'open_air';
   };
 
-  const needsAdjacent = task.task_type === 'mine';
+  const needsAdjacent = ADJACENT_TASK_TYPES.has(task.task_type);
 
   // Flatten to 2D: pathfind on dwarf's current z-level toward target x,y
   const goal2d = { x: task.target_x, y: task.target_y, z: dwarf.position_z };
@@ -191,13 +204,21 @@ function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'sleep':
       completeSleep(dwarf, ctx);
       break;
+    case 'build_wall':
+    case 'build_floor':
+    case 'build_stairs_up':
+    case 'build_stairs_down':
+    case 'build_stairs_both':
+      completeBuild(task, ctx);
+      awardXp(dwarf.id, 'building', XP_BUILD, state);
+      break;
   }
 }
 
 function completeMine(task: Task, ctx: SimContext): void {
-  // Create a stone item at the mined tile
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
+  // Create a stone item at the mined tile
   const stoneItem: Item = {
     id: crypto.randomUUID(),
     name: 'Stone block',
@@ -220,6 +241,49 @@ function completeMine(task: Task, ctx: SimContext): void {
 
   ctx.state.items.push(stoneItem);
   ctx.state.dirtyItemIds.add(stoneItem.id);
+
+  // Update the fortress tile: mined tile becomes open_air
+  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'open_air', null, true);
+}
+
+function completeBuild(task: Task, ctx: SimContext): void {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+
+  const tileType = BUILD_TILE_MAP[task.task_type];
+  if (!tileType) return;
+
+  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, tileType, 'stone', false);
+}
+
+function upsertFortressTile(
+  ctx: SimContext,
+  x: number, y: number, z: number,
+  tileType: FortressTileType,
+  material: string | null,
+  isMined: boolean,
+): void {
+  const key = `${x},${y},${z}`;
+  const existing = ctx.state.fortressTileOverrides.get(key);
+
+  if (existing) {
+    existing.tile_type = tileType;
+    existing.material = material;
+    existing.is_mined = isMined;
+  } else {
+    const tile: FortressTile = {
+      id: crypto.randomUUID(),
+      civilization_id: ctx.civilizationId,
+      x, y, z,
+      tile_type: tileType,
+      material,
+      is_revealed: true,
+      is_mined: isMined,
+      created_at: new Date().toISOString(),
+    };
+    ctx.state.fortressTileOverrides.set(key, tile);
+  }
+
+  ctx.state.dirtyFortressTileKeys.add(key);
 }
 
 function completeHaul(task: Task, _ctx: SimContext): void {

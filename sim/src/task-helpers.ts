@@ -11,6 +11,11 @@ const TASK_SKILL_MAP: Record<TaskType, string | null> = {
   eat: null,
   drink: null,
   sleep: null,
+  build_wall: 'building',
+  build_floor: 'building',
+  build_stairs_up: 'building',
+  build_stairs_down: 'building',
+  build_stairs_both: 'building',
 };
 
 /** Get the skill name required for a task type, or null if no skill needed. */
