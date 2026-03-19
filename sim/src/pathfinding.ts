@@ -17,6 +17,8 @@ const WALKABLE_TILES: ReadonlySet<FortressTileType> = new Set([
   'stair_both',
   'open_air',
   'soil',
+  'well',
+  'mushroom_garden',
 ]);
 
 /** Check if a tile type is walkable. */

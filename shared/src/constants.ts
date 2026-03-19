@@ -151,6 +151,12 @@ export const WORK_BUILD_FLOOR = 50;
 /** Work required to build stairs */
 export const WORK_BUILD_STAIRS = 60;
 
+/** Work required to wander (just walking, instant once arrived) */
+export const WORK_WANDER = 1;
+
+/** Max distance a dwarf will wander from current position */
+export const WANDER_RADIUS = 8;
+
 // ============================================================
 // Material hardness multipliers (for mining)
 // ============================================================

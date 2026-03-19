@@ -38,6 +38,8 @@ export const FORTRESS_GLYPHS: Record<FortressTileType, { ch: string; fg: string 
   stair_up:           { ch: "<",  fg: "#4af626" },
   stair_down:         { ch: ">",  fg: "#4af626" },
   stair_both:         { ch: "X",  fg: "#4af626" },
+  well:               { ch: "O",  fg: "#5599dd" },
+  mushroom_garden:    { ch: "\u2261", fg: "#aa66cc" },
   sand:               { ch: "≡",  fg: "#cc9944" },
   ice:                { ch: "≈",  fg: "#aaddff" },
   mud:                { ch: "≈",  fg: "#665533" },

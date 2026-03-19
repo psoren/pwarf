@@ -16,6 +16,7 @@ import {
   jobClaiming,
   eventFiring,
   yearlyRollup,
+  idleWandering,
 } from "./phases/index.js";
 
 /**
@@ -149,6 +150,7 @@ export class SimRunner {
     await monsterPathfinding(this.ctx);
     await combatResolution(this.ctx);
     await constructionProgress(this.ctx);
+    await idleWandering(this.ctx);
     await jobClaiming(this.ctx);
     await eventFiring(this.ctx);
 
