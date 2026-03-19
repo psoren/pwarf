@@ -187,3 +187,22 @@ export const SCORE_DISTANCE_WEIGHT = 0.5;
 
 /** Bonus added when a task matches the dwarf's highest-level skill */
 export const SCORE_BEST_SKILL_BONUS = 5;
+
+// ============================================================
+// Polling / flush intervals (milliseconds)
+// ============================================================
+
+/** How often the sim engine flushes dirty state to Supabase and polls for new tasks */
+export const SIM_FLUSH_INTERVAL_MS = 15_000;
+
+/** How often the frontend polls for dwarf updates */
+export const POLL_DWARVES_MS = 2_000;
+
+/** How often the frontend polls for task updates */
+export const POLL_TASKS_MS = 2_000;
+
+/** How often the frontend polls for event updates */
+export const POLL_EVENTS_MS = 3_000;
+
+/** How often the frontend polls for fortress tile overrides */
+export const POLL_FORTRESS_TILES_MS = 3_000;

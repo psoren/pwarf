@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { STEPS_PER_SECOND, STEPS_PER_YEAR, createFortressDeriver } from "@pwarf/shared";
+import { STEPS_PER_SECOND, STEPS_PER_YEAR, SIM_FLUSH_INTERVAL_MS, createFortressDeriver } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { loadStateFromSupabase } from "./load-state.js";
@@ -81,13 +81,13 @@ export class SimRunner {
       void this.tick();
     }, intervalMs);
 
-    // Flush dirty state to Supabase every 1 second + poll for new tasks
+    // Flush dirty state to Supabase + poll for new tasks
     this.flushTimer = setInterval(() => {
       if (this.ctx) {
         void flushToSupabase(this.ctx);
         void this.pollNewTasks();
       }
-    }, 1000);
+    }, SIM_FLUSH_INTERVAL_MS);
   }
 
   /** Pause the loop and persist state. */
