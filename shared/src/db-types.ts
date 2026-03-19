@@ -197,6 +197,7 @@ export type FortressTileType =
   | 'sand'
   | 'ice'
   | 'mud'
+  | 'cave_entrance'
   | 'empty';
 
 // ============================================================

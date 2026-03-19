@@ -7,8 +7,12 @@ import type { FortressTileType, TerrainType } from "./db-types.js";
 // ============================================================
 
 export const FORTRESS_SIZE = 512;
-export const FORTRESS_MIN_Z = -19;
-export const FORTRESS_MAX_Z = 0;
+
+/** Surface level — the only level generated at embark. */
+export const SURFACE_Z = 0;
+
+/** First cave level — generated when a cave entrance exists. */
+export const CAVE_Z = -1;
 
 // ============================================================
 // Derived tile interface
@@ -24,50 +28,20 @@ export interface FortressDeriver {
 }
 
 // ============================================================
-// Ore / gem material definitions
+// Cave generation (cellular automata)
 // ============================================================
 
-interface MaterialDef {
-  name: string;
-  kind: "ore" | "gem";
-  minZ: number;
-  maxZ: number;
-  threshold: number;
-  priority: number; // higher = rarer = wins ties
-}
-
-const MATERIALS: MaterialDef[] = [
-  { name: "iron",       kind: "ore", minZ: -12, maxZ: -5,  threshold: 0.94, priority: 1 },
-  { name: "copper",     kind: "ore", minZ: -12, maxZ: -5,  threshold: 0.94, priority: 2 },
-  { name: "tin",        kind: "ore", minZ: -14, maxZ: -5,  threshold: 0.95, priority: 3 },
-  { name: "gold",       kind: "ore", minZ: -15, maxZ: -8,  threshold: 0.97, priority: 5 },
-  { name: "silver",     kind: "ore", minZ: -17, maxZ: -10, threshold: 0.96, priority: 4 },
-  { name: "platinum",   kind: "ore", minZ: -18, maxZ: -12, threshold: 0.98, priority: 6 },
-  { name: "ruby",       kind: "gem", minZ: -17, maxZ: -10, threshold: 0.97, priority: 7 },
-  { name: "sapphire",   kind: "gem", minZ: -17, maxZ: -10, threshold: 0.97, priority: 8 },
-  { name: "emerald",    kind: "gem", minZ: -18, maxZ: -12, threshold: 0.98, priority: 9 },
-  { name: "diamond",    kind: "gem", minZ: -19, maxZ: -14, threshold: 0.99, priority: 10 },
-  { name: "adamantine", kind: "ore", minZ: -19, maxZ: -19, threshold: 0.995, priority: 11 },
-];
-
-// ============================================================
-// Cavern cellular automata
-// ============================================================
-
-const CAVERN_SIZE = FORTRESS_SIZE;
-const CAVERN_MIN_Z = -18;
-const CAVERN_MAX_Z = -15;
 const CA_INITIAL_OPEN = 0.45;
 const CA_SMOOTHING_ITERATIONS = 5;
 const CA_SOLID_NEIGHBOR_THRESHOLD = 5;
 const MIN_REGION_SIZE = 50;
 
-function buildCavernGrid(
+function buildCaveGrid(
   noise: NoiseFunction2D,
   z: number,
   frequency: number,
 ): boolean[] {
-  const size = CAVERN_SIZE;
+  const size = FORTRESS_SIZE;
   // Initialize from noise
   let grid = new Array<boolean>(size * size);
   for (let y = 0; y < size; y++) {
@@ -141,7 +115,6 @@ function buildCavernGrid(
   }
 
   if (surviving.size > 1) {
-    // Find representative point for each region
     const reps = new Map<number, number>();
     for (let i = 0; i < grid.length; i++) {
       if (grid[i] && surviving.has(labels[i]) && !reps.has(labels[i])) {
@@ -158,7 +131,6 @@ function buildCavernGrid(
       const tx = toIdx % size;
       const ty = (toIdx - tx) / size;
 
-      // Carve straight-line corridor (horizontal then vertical)
       const xStep = tx > fx ? 1 : -1;
       for (let x = fx; x !== tx; x += xStep) {
         grid[fy * size + x] = true;
@@ -187,30 +159,42 @@ function combineSeed(worldSeed: bigint, civId: string): bigint {
 }
 
 // ============================================================
-// Stair position generation
+// Cave entrance placement
 // ============================================================
 
-function pickStairColumns(
-  stairNoise: NoiseFunction2D,
+/**
+ * Pick cave entrance positions on the surface. Uses noise to place
+ * entrances at natural-looking locations, biased toward rocky/hilly areas.
+ * Returns positions where cave_entrance tiles should appear at z=0,
+ * each connecting to an open cavern_floor tile at z=-1.
+ */
+function pickCaveEntrances(
+  entranceNoise: NoiseFunction2D,
+  caveGrid: boolean[],
 ): Array<{ x: number; y: number }> {
-  // Pick 3 global stair columns that span all z-levels
   const candidates: Array<{ x: number; y: number; val: number }> = [];
-  const step = 64;
+  const step = 32; // Sample grid at regular intervals
 
   for (let sy = step; sy < FORTRESS_SIZE - step; sy += step) {
     for (let sx = step; sx < FORTRESS_SIZE - step; sx += step) {
-      const val = (stairNoise(sx * 0.01, sy * 0.01) + 1) / 2;
-      candidates.push({ x: sx, y: sy, val });
+      // Only place an entrance if the cave below is open
+      if (!caveGrid[sy * FORTRESS_SIZE + sx]) continue;
+
+      const val = (entranceNoise(sx * 0.01, sy * 0.01) + 1) / 2;
+      if (val > 0.7) {
+        candidates.push({ x: sx, y: sy, val });
+      }
     }
   }
 
   candidates.sort((a, b) => b.val - a.val);
 
+  // Pick up to 5 entrances, spaced apart
   const positions: Array<{ x: number; y: number }> = [];
-  const minDist = 100;
+  const minDist = 80;
 
   for (const c of candidates) {
-    if (positions.length >= 3) break;
+    if (positions.length >= 5) break;
     const tooClose = positions.some(
       (p) => Math.abs(p.x - c.x) + Math.abs(p.y - c.y) < minDist,
     );
@@ -221,175 +205,54 @@ function pickStairColumns(
   return positions;
 }
 
-function isWaterTile(
-  x: number,
-  y: number,
-  z: number,
-  aquiferNoise: NoiseFunction2D,
-): boolean {
-  if (z < -3 || z > -1) return false;
-  const region = (aquiferNoise(x * 0.008, y * 0.008) + 1) / 2;
-  if (region < 0.6) return false;
-  const density = (aquiferNoise(x * 0.05 + 500, y * 0.05 + 500) + 1) / 2;
-  return density > 0.7;
-}
-
-function isMagmaTile(
-  x: number,
-  y: number,
-  z: number,
-  magmaIslandNoise: NoiseFunction2D,
-): boolean {
-  if (z !== -19) return false;
-  const val = (magmaIslandNoise(x * 0.01, y * 0.01) + 1) / 2;
-  return val < 0.8; // 80% magma, 20% islands
-}
-
 // ============================================================
-// Main deriver factory
+// Ore / gem material definitions
 // ============================================================
 
-export function createFortressDeriver(
-  worldSeed: bigint,
-  civId: string,
-  terrain: TerrainType = "plains",
-): FortressDeriver {
-  const seed = combineSeed(worldSeed, civId);
-  const rng = createAleaRng(seed);
+interface MaterialDef {
+  name: string;
+  kind: "ore" | "gem";
+  threshold: number;
+  priority: number; // higher = rarer = wins ties
+}
 
-  // Noise fields
-  const cavernNoise = createNoise2D(rng);
-  const aquiferNoise = createNoise2D(rng);
-  const magmaIslandNoise = createNoise2D(rng);
-  const magmaPipeNoise = createNoise2D(rng);
-  const stairNoise = createNoise2D(rng);
-  const surfaceTreeNoise = createNoise2D(rng);
-  const surfaceRockNoise = createNoise2D(rng);
-  const surfacePondNoise = createNoise2D(rng);
+/** Materials found in cave walls at z=-1. */
+const CAVE_MATERIALS: MaterialDef[] = [
+  { name: "iron",   kind: "ore", threshold: 0.94, priority: 1 },
+  { name: "copper", kind: "ore", threshold: 0.94, priority: 2 },
+  { name: "tin",    kind: "ore", threshold: 0.95, priority: 3 },
+  { name: "gold",   kind: "ore", threshold: 0.97, priority: 5 },
+  { name: "silver", kind: "ore", threshold: 0.96, priority: 4 },
+  { name: "ruby",   kind: "gem", threshold: 0.97, priority: 7 },
+  { name: "sapphire", kind: "gem", threshold: 0.97, priority: 8 },
+];
 
-  // Per-material noise
-  const materialNoises: NoiseFunction2D[] = MATERIALS.map(() => createNoise2D(rng));
+function checkCaveMaterial(
+  x: number,
+  y: number,
+  materialNoises: NoiseFunction2D[],
+): DerivedFortressTile | null {
+  let bestMatch: MaterialDef | null = null;
 
-  // Pre-compute cavern grids
-  const cavernGrids = new Map<number, boolean[]>();
-  for (let z = CAVERN_MIN_Z; z <= CAVERN_MAX_Z; z++) {
-    cavernGrids.set(z, buildCavernGrid(cavernNoise, z, 0.03));
-  }
+  for (let i = 0; i < CAVE_MATERIALS.length; i++) {
+    const mat = CAVE_MATERIALS[i];
+    const noise = materialNoises[i];
+    const val = (noise(x * 0.05, y * 0.05) + 1) / 2;
 
-  // Pre-compute stair columns (global positions that span all z-levels)
-  const stairColumns = pickStairColumns(stairNoise);
-  const stairSet = new Set<string>();
-
-  // Every stair column gets a stair at every z-level
-  for (const col of stairColumns) {
-    for (let z = FORTRESS_MAX_Z; z >= FORTRESS_MIN_Z; z--) {
-      const key = `${col.x},${col.y},${z}`;
-      if (z === FORTRESS_MAX_Z) {
-        stairSet.add(key + ",stair_down");
-      } else if (z === FORTRESS_MIN_Z) {
-        stairSet.add(key + ",stair_up");
-      } else {
-        stairSet.add(key + ",stair_both");
+    if (val > mat.threshold) {
+      if (!bestMatch || mat.priority > bestMatch.priority) {
+        bestMatch = mat;
       }
     }
   }
 
-  // Build lookup: "x,y,z" -> FortressTileType
-  const stairTypes = new Map<string, FortressTileType>();
-  for (const entry of stairSet) {
-    const parts = entry.split(",");
-    const stType = parts[3] as FortressTileType;
-    const posKey = `${parts[0]},${parts[1]},${parts[2]}`;
-    stairTypes.set(posKey, stType);
+  if (bestMatch) {
+    return {
+      tileType: bestMatch.kind === "gem" ? "gem" : "ore",
+      material: bestMatch.name,
+    };
   }
-
-  return {
-    deriveTile(x: number, y: number, z: number): DerivedFortressTile {
-      // Clamp z
-      if (z > FORTRESS_MAX_Z || z < FORTRESS_MIN_Z) {
-        return { tileType: "empty", material: null };
-      }
-
-      // Check for stairs first
-      const stairKey = `${x},${y},${z}`;
-      const stairType = stairTypes.get(stairKey);
-      if (stairType) {
-        return { tileType: stairType, material: null };
-      }
-
-      // z=0: Surface with features varying by biome
-      if (z === 0) {
-        return deriveSurfaceTile(x, y, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise, terrain);
-      }
-
-      // z=-19: Magma sea
-      if (z === -19) {
-        // Check for magma pipes extending upward
-        const pipeVal = (magmaPipeNoise(x * 0.02, y * 0.02) + 1) / 2;
-        const isIsland = (magmaIslandNoise(x * 0.01, y * 0.01) + 1) / 2 > 0.8;
-
-        if (isIsland) {
-          // Check for adamantine in lava_stone islands
-          const mat = checkMaterial(x, y, z, materialNoises, 1.0);
-          if (mat) return mat;
-          return { tileType: "lava_stone", material: null };
-        }
-
-        // Check magma pipe spots at z=-19 — these define pipes
-        if (pipeVal > 0.92) {
-          return { tileType: "magma", material: null };
-        }
-
-        return { tileType: "magma", material: null };
-      }
-
-      // Magma pipes: z=-15 to -18, high pipe noise
-      if (z >= -18 && z <= -15) {
-        const pipeVal = (magmaPipeNoise(x * 0.02, y * 0.02) + 1) / 2;
-        if (pipeVal > 0.92) {
-          return { tileType: "magma", material: null };
-        }
-      }
-
-      // z=-15 to -18: Cavern zone
-      if (z >= CAVERN_MIN_Z && z <= CAVERN_MAX_Z) {
-        const grid = cavernGrids.get(z)!;
-        const inBounds = x >= 0 && x < CAVERN_SIZE && y >= 0 && y < CAVERN_SIZE;
-        const isOpen = inBounds && grid[y * CAVERN_SIZE + x];
-
-        if (isOpen) {
-          return { tileType: "cavern_floor", material: null };
-        }
-
-        // Cavern wall — check for ore/gem with slightly boosted density
-        const mat = checkMaterial(x, y, z, materialNoises, 1.03);
-        if (mat) return mat;
-
-        return { tileType: "cavern_wall", material: null };
-      }
-
-      // z=-1 to -3: Soil with aquifer
-      if (z >= -3 && z <= -1) {
-        if (isWaterTile(x, y, z, aquiferNoise)) {
-          return { tileType: "water", material: null };
-        }
-        return { tileType: "soil", material: null };
-      }
-
-      // z=-4: Soil (no aquifer)
-      if (z === -4) {
-        return { tileType: "soil", material: null };
-      }
-
-      // z=-5 to -9: Stone with ore/gem veins
-      // z=-10 to -14: Deep stone with denser ore/gem veins
-      const densityMultiplier = z <= -10 ? 1.03 : 1.0;
-      const mat = checkMaterial(x, y, z, materialNoises, densityMultiplier);
-      if (mat) return mat;
-
-      return { tileType: "stone", material: null };
-    },
-  };
+  return null;
 }
 
 // ============================================================
@@ -429,51 +292,51 @@ const DEFAULT_PROFILE: SurfaceProfile = {
 const SURFACE_PROFILES: Partial<Record<TerrainType, Partial<SurfaceProfile>>> = {
   mountain: {
     base: "stone", baseMaterial: null,
-    treeRegion: 0.75, treeDetail: 0.7,       // sparse trees
+    treeRegion: 0.75, treeDetail: 0.7,
     bushRegionMin: 0.65, bushRegionMax: 0.8, bushDetail: 0.8,
-    rockThreshold: 0.6,                       // lots of rocks
-    pondRegion: 0.85, pondDetail: 0.85,       // rare ponds
+    rockThreshold: 0.6,
+    pondRegion: 0.85, pondDetail: 0.85,
   },
   forest: {
-    treeRegion: 0.25, treeDetail: 0.4,        // dense trees
+    treeRegion: 0.25, treeDetail: 0.4,
     bushRegionMin: 0.15, bushRegionMax: 0.35, bushDetail: 0.55,
-    rockThreshold: 0.93,                       // few rocks
-    pondRegion: 0.6, pondDetail: 0.7,          // some ponds
+    rockThreshold: 0.93,
+    pondRegion: 0.6, pondDetail: 0.7,
   },
   plains: {
-    treeRegion: 0.7, treeDetail: 0.65,         // sparse trees
+    treeRegion: 0.7, treeDetail: 0.65,
     bushRegionMin: 0.6, bushRegionMax: 0.75, bushDetail: 0.75,
-    rockThreshold: 0.92,                       // few rocks
+    rockThreshold: 0.92,
     pondRegion: 0.65, pondDetail: 0.75,
   },
   desert: {
     base: "sand", baseMaterial: null,
-    treeRegion: 2, treeDetail: 2,              // no trees
+    treeRegion: 2, treeDetail: 2,
     bushRegionMin: 2, bushRegionMax: 2, bushDetail: 2,
-    rockThreshold: 0.85,                       // some rocks
-    pondRegion: 2, pondDetail: 2,              // no water
+    rockThreshold: 0.85,
+    pondRegion: 2, pondDetail: 2,
   },
   tundra: {
     base: "grass", baseMaterial: null,
-    treeRegion: 0.85, treeDetail: 0.8,         // very sparse trees
+    treeRegion: 0.85, treeDetail: 0.8,
     bushRegionMin: 0.8, bushRegionMax: 0.9, bushDetail: 0.85,
-    rockThreshold: 0.82,                       // scattered rocks
-    pondRegion: 0.55, pondDetail: 0.65,        // ice patches
+    rockThreshold: 0.82,
+    pondRegion: 0.55, pondDetail: 0.65,
     pondTile: "ice",
   },
   swamp: {
     base: "mud", baseMaterial: null,
-    treeRegion: 0.55, treeDetail: 0.6,         // moderate trees
+    treeRegion: 0.55, treeDetail: 0.6,
     bushRegionMin: 0.4, bushRegionMax: 0.6, bushDetail: 0.6,
-    rockThreshold: 0.95,                       // rare rocks
-    pondRegion: 0.35, pondDetail: 0.5,         // lots of water
+    rockThreshold: 0.95,
+    pondRegion: 0.35, pondDetail: 0.5,
   },
   volcano: {
     base: "lava_stone", baseMaterial: null,
-    treeRegion: 2, treeDetail: 2,              // no trees
+    treeRegion: 2, treeDetail: 2,
     bushRegionMin: 2, bushRegionMax: 2, bushDetail: 2,
-    rockThreshold: 0.65,                       // lots of rocks
-    pondRegion: 0.55, pondDetail: 0.6,         // magma pools
+    rockThreshold: 0.65,
+    pondRegion: 0.55, pondDetail: 0.6,
     pondTile: "magma",
   },
 };
@@ -523,36 +386,67 @@ export function deriveSurfaceTile(
   return { tileType: p.base, material: p.baseMaterial };
 }
 
-function checkMaterial(
-  x: number,
-  y: number,
-  z: number,
-  materialNoises: NoiseFunction2D[],
-  densityMultiplier: number,
-): DerivedFortressTile | null {
-  let bestMatch: MaterialDef | null = null;
+// ============================================================
+// Main deriver factory
+// ============================================================
 
-  for (let i = 0; i < MATERIALS.length; i++) {
-    const mat = MATERIALS[i];
-    if (z < mat.minZ || z > mat.maxZ) continue;
+export function createFortressDeriver(
+  worldSeed: bigint,
+  civId: string,
+  terrain: TerrainType = "plains",
+): FortressDeriver {
+  const seed = combineSeed(worldSeed, civId);
+  const rng = createAleaRng(seed);
 
-    const noise = materialNoises[i];
-    const val = (noise(x * 0.05, y * 0.05) + 1) / 2;
-    // Lower threshold = more generous with densityMultiplier
-    const adjustedThreshold = mat.threshold / densityMultiplier;
+  // Noise fields
+  const caveNoise = createNoise2D(rng);
+  const entranceNoise = createNoise2D(rng);
+  const surfaceTreeNoise = createNoise2D(rng);
+  const surfaceRockNoise = createNoise2D(rng);
+  const surfacePondNoise = createNoise2D(rng);
 
-    if (val > adjustedThreshold) {
-      if (!bestMatch || mat.priority > bestMatch.priority) {
-        bestMatch = mat;
+  // Per-material noise for cave walls
+  const materialNoises: NoiseFunction2D[] = CAVE_MATERIALS.map(() => createNoise2D(rng));
+
+  // Pre-compute cave grid for z=-1
+  const caveGrid = buildCaveGrid(caveNoise, CAVE_Z, 0.03);
+
+  // Pre-compute cave entrance positions
+  const entrancePositions = pickCaveEntrances(entranceNoise, caveGrid);
+  const entranceSet = new Set<string>(
+    entrancePositions.map(p => `${p.x},${p.y}`),
+  );
+
+  return {
+    deriveTile(x: number, y: number, z: number): DerivedFortressTile {
+      // Only z=0 (surface) and z=-1 (caves) are valid
+      if (z !== SURFACE_Z && z !== CAVE_Z) {
+        return { tileType: "empty", material: null };
       }
-    }
-  }
 
-  if (bestMatch) {
-    return {
-      tileType: bestMatch.kind === "gem" ? "gem" : "ore",
-      material: bestMatch.name,
-    };
-  }
-  return null;
+      // z=0: Surface with cave entrances
+      if (z === SURFACE_Z) {
+        // Check for cave entrance
+        if (entranceSet.has(`${x},${y}`)) {
+          return { tileType: "cave_entrance", material: null };
+        }
+
+        return deriveSurfaceTile(x, y, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise, terrain);
+      }
+
+      // z=-1: Cave level
+      const inBounds = x >= 0 && x < FORTRESS_SIZE && y >= 0 && y < FORTRESS_SIZE;
+      const isOpen = inBounds && caveGrid[y * FORTRESS_SIZE + x];
+
+      if (isOpen) {
+        return { tileType: "cavern_floor", material: null };
+      }
+
+      // Cave wall — check for ore/gem veins
+      const mat = checkCaveMaterial(x, y, materialNoises);
+      if (mat) return mat;
+
+      return { tileType: "cavern_wall", material: null };
+    },
+  };
 }

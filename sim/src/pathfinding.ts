@@ -23,6 +23,7 @@ const WALKABLE_TILES: ReadonlySet<FortressTileType> = new Set([
   'sand',
   'mud',
   'ice',
+  'cave_entrance',
 ]);
 
 /** Check if a tile type is walkable. */
@@ -68,6 +69,21 @@ export function getNeighbors(pos: Position, getTile: TileLookup): Position[] {
     const below = getTile(x, y, z - 1);
     if (below === 'stair_up' || below === 'stair_both') {
       neighbors.push({ x, y, z: z - 1 });
+    }
+  }
+
+  // Cave entrance connections: surface cave_entrance ↔ cavern_floor below
+  if (currentTile === 'cave_entrance') {
+    const below = getTile(x, y, z - 1);
+    if (isWalkable(below)) {
+      neighbors.push({ x, y, z: z - 1 });
+    }
+  }
+  // From underground, can go up through a cave entrance above
+  if (z < 0) {
+    const above = getTile(x, y, z + 1);
+    if (above === 'cave_entrance') {
+      neighbors.push({ x, y, z: z + 1 });
     }
   }
 

@@ -18,7 +18,7 @@ import { useWorldState } from "./hooks/useWorldState";
 import { useDesignation, type DesignationMode } from "./hooks/useDesignation";
 import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
 import TaskPriorities from "./components/TaskPriorities";
-import { FORTRESS_MAX_Z, FORTRESS_MIN_Z } from "@pwarf/shared";
+import { SURFACE_Z, CAVE_Z } from "@pwarf/shared";
 import type { LiveDwarf } from "./hooks/useDwarves";
 
 export default function App() {
@@ -117,10 +117,10 @@ export default function App() {
           setRightOpen((o) => !o);
           break;
         case "z_up":
-          setZLevel((z) => Math.min(FORTRESS_MAX_Z, z + 1));
+          setZLevel((z) => Math.min(SURFACE_Z, z + 1));
           break;
         case "z_down":
-          setZLevel((z) => Math.max(FORTRESS_MIN_Z, z - 1));
+          setZLevel((z) => Math.max(CAVE_Z, z - 1));
           break;
         case "designate_mine":
           if (world.mode === "fortress") designation.toggleMine();

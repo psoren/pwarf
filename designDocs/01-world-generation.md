@@ -6,7 +6,7 @@ The game uses a **two-tier world generation** system:
 
 1. **Overworld (512x512 tiles)** — A minimap/world map generated with coherent noise. Multiple noise octaves for elevation, moisture, and temperature produce smooth biome transitions. Mountains form ranges, forests cluster, and oceans are contiguous bodies. Each tile maps to a `terrain_type` enum value.
 
-2. **Fortress map (512x512 x 20 z-levels)** — When a player picks an overworld tile and embarks, a detailed local map is generated for that single tile. The surface terrain derives from the overworld biome, while subsurface layers contain soil, stone, ore veins, caverns, aquifers, and magma.
+2. **Fortress map (512x512, surface + caves)** — When a player picks an overworld tile and embarks, a detailed local map is generated for that single tile. Only the surface (z=0) is generated at embark time. Underground caves are discovered organically through cave entrances on the surface.
 
 All world state lives in the `worlds`, `world_tiles`, and `fortress_tiles` Supabase tables.
 
@@ -71,22 +71,18 @@ Each world has a unique `bigint` seed stored in `worlds.seed`. The generation al
 
 ### Embark Trigger
 
-When a player selects an overworld tile and embarks, the server generates a **512x512 x 20 z-level** fortress map for that tile. The fortress map is tied to the player's civilization. Generation is a one-time operation; the resulting tiles are persisted and mutated by gameplay (mining, building, flooding, etc.).
+When a player selects an overworld tile and embarks, the server generates a **512x512 surface map (z=0)** for that tile. The fortress map is tied to the player's civilization. The underground is not generated upfront — instead, cave entrances on the surface lead to cave levels that are generated deterministically from the seed when first accessed.
 
 ### Z-Level Layout
 
-Z-levels use a top-down indexing scheme:
+The fortress uses a discovery-based vertical layout:
 
-| Z-Level | Description              |
-|---------|--------------------------|
-| z = 0   | Surface                  |
-| z = -1  | Shallow subsurface       |
-| z = -2 to -4   | Soil layers       |
-| z = -5 to -9   | Stone layers      |
-| z = -10 to -14 | Deep stone layers |
-| z = -15 to -17 | Cavern zone       |
-| z = -18        | Deep caverns      |
-| z = -19        | Magma sea         |
+| Z-Level | Description                              |
+|---------|------------------------------------------|
+| z = 0   | Surface — generated at embark            |
+| z = -1  | Cave level — accessed via cave entrances |
+
+Cave entrances (`cave_entrance` tiles) appear on the surface at noise-determined positions. Each entrance connects to an open `cavern_floor` tile at z=-1. The cave level is a cellular-automata-generated cave system with ore and gem veins in its walls.
 
 ### Surface Level (z = 0)
 
@@ -103,66 +99,54 @@ The surface terrain is derived from the overworld biome of the embarked tile:
 | ocean             | Entirely water (cannot embark)                    |
 | volcano           | Lava stone, magma pools on surface                |
 
-### Layer Types by Depth
+### Cave Entrances
 
-Each z-level is generated with a primary material composition:
+Cave entrances are placed on the surface using a noise field. Placement rules:
 
-**Soil (z = -1 to -4):** Mostly `soil` tiles with occasional `water` (aquifer pockets). Easy to dig through. No significant ore.
+- Up to 5 entrances per fortress, spaced at least 80 tiles apart
+- Only placed where the cave below has open floor (ensuring the entrance actually leads somewhere)
+- Noise threshold > 0.7 determines candidate positions
+- Rendered as `▼` in earthy brown (#886644)
 
-**Stone (z = -5 to -9):** Transition to `stone` tiles. Ore veins begin appearing. Common ores (iron, copper, tin) are placed here. Occasional small cavern pockets.
+### Cave Level (z = -1)
 
-**Deep Stone (z = -10 to -14):** Dense `stone` with rarer ores (gold, silver, platinum) and gem veins (ruby, sapphire, emerald, diamond). Larger cavern systems possible.
+The cave level is generated using **cellular automata**:
 
-**Cavern Zone (z = -15 to -18):** Open `cavern_floor` and `cavern_wall` tiles forming large connected cave systems. Underground water bodies. Rare ores and gems at higher density. Dangerous creatures inhabit these levels.
+1. Seed the grid with random `open` / `solid` tiles (45% open probability) using noise
+2. Run 5 smoothing iterations: a tile becomes solid if it has >= 5 solid neighbors (Moore neighborhood), otherwise open
+3. Flood-fill to identify connected regions; discard regions smaller than 50 tiles
+4. Connect disjoint surviving regions with straight-line corridors
 
-**Magma Sea (z = -19):** The deepest level. Dominated by `magma` tiles with `lava_stone` islands. Contains adamantine veins (the rarest material). Extremely dangerous.
+Cave walls may contain ore and gem veins:
 
-### Ore and Gem Vein Generation
+| Material    | Rarity   |
+|-------------|----------|
+| Iron ore    | Common   |
+| Copper ore  | Common   |
+| Tin ore     | Common   |
+| Gold ore    | Uncommon |
+| Silver ore  | Uncommon |
+| Ruby        | Uncommon |
+| Sapphire    | Uncommon |
 
-Ore and gem deposits are placed using a separate noise field per material type, seeded from the world seed plus the civilization id. Each material has:
+### Pathfinding Between Levels
 
-- **Depth range:** Minimum and maximum z-level where it can appear
-- **Rarity:** Threshold on the noise value (higher = rarer)
-- **Vein size:** Number of connected tiles when a vein spawns
+Cave entrances act as z-level transitions in pathfinding:
 
-| Material    | Depth Range    | Rarity   |
-|-------------|---------------|----------|
-| Iron ore    | -5 to -14     | Common   |
-| Copper ore  | -5 to -12     | Common   |
-| Tin ore     | -5 to -12     | Common   |
-| Gold ore    | -10 to -17    | Uncommon |
-| Silver ore  | -8 to -15     | Uncommon |
-| Platinum    | -12 to -18    | Rare     |
-| Ruby        | -10 to -17    | Uncommon |
-| Sapphire    | -10 to -17    | Uncommon |
-| Emerald     | -12 to -18    | Rare     |
-| Diamond     | -14 to -19    | Very rare|
-| Adamantine  | -19           | Legendary|
+- Standing on a `cave_entrance` at z=0 allows moving to z=-1 (if the tile below is walkable)
+- Standing at z=-1 directly below a `cave_entrance` allows moving up to z=0
 
-### Cavern Generation Algorithm
+This replaces the old stair column system. Dwarves discover caves by wandering near entrances or being assigned tasks in the cave.
 
-Caverns are generated using a **cellular automata** approach:
+### Future: Deeper Caves
 
-1. Seed the cavern zone z-levels with random `open` / `solid` tiles (45% open probability)
-2. Run 4-5 smoothing iterations: a tile becomes solid if it has >= 5 solid neighbors (Moore neighborhood), otherwise open
-3. Flood-fill to identify connected regions; keep only regions above a minimum size threshold
-4. Connect disjoint regions with tunneled corridors (A* or straight-line carving)
-5. Place `stair_down` / `stair_up` / `stair_both` tiles at the edges of cavern floors to connect z-levels
+In a future phase, caves will support multiple depths:
 
-### Aquifer and Magma Placement
-
-**Aquifers (z = -1 to -3):** A low-frequency noise layer marks aquifer regions. Within these regions, `water` tiles are placed at ~30% density. Aquifers create flooding hazards when mined into.
-
-**Magma (z = -19):** The entire level defaults to `magma` tiles. A secondary noise field carves out `lava_stone` islands (solid ground) at ~20% coverage. Magma also appears in narrow vertical columns ("magma pipes") that can extend from z = -19 up to z = -15 in rare cases.
-
-### Stair Connections
-
-Every z-level pair is connected by stair tiles:
-
-- `stair_down` at z = n connects to `stair_up` at z = n-1
-- `stair_both` is placed when a tile connects both up and down
-
-Stairs are placed at 2-4 locations per z-level, biased toward the edges of open areas. The surface level (z = 0) only has `stair_down` tiles. The deepest level (z = -19) only has `stair_up` tiles.
+- Cave passages at z=-1 may contain **deep cave entrances** leading to z=-2
+- Deeper caves (z=-2, z=-3, ...) have rarer resources and greater danger
+- Each deeper level is generated on-demand with the same cellular automata approach
+- Material tables expand at depth: platinum, emerald, diamond, adamantine appear only in deep caves
+- Multi-room cave systems with branching passages
 
 ### Database Persistence
 
@@ -181,7 +165,7 @@ fortress_tiles (
 
 The table has a unique constraint on `(civilization_id, x, y, z)` and indexes for per-level queries and tile type lookups.
 
-A full fortress contains up to 512 x 512 x 20 = 5,242,880 tiles. To manage this volume, tiles can be generated lazily per z-level (only materialize rows when the player first visits or mines toward a level) or bulk-inserted at embark time with batch inserts.
+The deriver generates all tile layouts deterministically from the seed, so only **modified** tiles (mined, built) need database rows. This sparse override pattern means a fortress with no player modifications has zero rows — the frontend and sim derive tiles on-the-fly. Cave tiles at z=-1 follow the same pattern: derived from the seed, with DB rows only for player modifications.
 
 ## Rendering
 
@@ -209,11 +193,12 @@ The viewport is a sliding window over the world grid. State tracked in `useViewp
 | `#`   | Wall             | #888    |
 | `≈`   | Water            | #4488ff |
 | `~`   | Magma            | #ff4400 |
-| `▲`   | Stair up         | #4af626 |
-| `▼`   | Stair down       | #4af626 |
-| `♦`   | Stair up+down    | #4af626 |
+| `▼`   | Cave entrance    | #886644 |
+| `<`   | Stair up         | #4af626 |
+| `>`   | Stair down       | #4af626 |
+| `X`   | Stair up+down    | #4af626 |
 | `$`   | Ore vein         | #ffbf00 |
-| `*`   | Gem deposit      | #ff77ff |
+| `♦`   | Gem deposit      | #ff44ff |
 | `@`   | Dwarf            | #4af626 |
 | `D`   | Dragon           | #ff4444 |
 | `B`   | Beast            | #ff8800 |

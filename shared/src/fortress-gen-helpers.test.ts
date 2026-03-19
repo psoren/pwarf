@@ -2,8 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   createFortressDeriver,
   deriveSurfaceTile,
-  FORTRESS_MIN_Z,
-  FORTRESS_MAX_Z,
+  SURFACE_Z,
+  CAVE_Z,
+  FORTRESS_SIZE,
 } from "./fortress-gen-helpers.js";
 import { createNoise2D } from "simplex-noise";
 import { createAleaRng } from "./world-gen-helpers.js";
@@ -16,7 +17,7 @@ describe("createFortressDeriver", () => {
     const d1 = createFortressDeriver(SEED, CIV_ID);
     const d2 = createFortressDeriver(SEED, CIV_ID);
 
-    for (let z = FORTRESS_MAX_Z; z >= FORTRESS_MIN_Z; z -= 3) {
+    for (const z of [SURFACE_Z, CAVE_Z]) {
       for (let x = 100; x < 110; x++) {
         for (let y = 100; y < 110; y++) {
           const t1 = d1.deriveTile(x, y, z);
@@ -28,15 +29,15 @@ describe("createFortressDeriver", () => {
     }
   });
 
-  it("different seeds produce different layouts", () => {
+  it("different seeds produce different cave layouts", () => {
     const d1 = createFortressDeriver(SEED, CIV_ID);
     const d2 = createFortressDeriver(99n, "other-civ");
 
     let differences = 0;
     for (let x = 100; x < 120; x++) {
       for (let y = 100; y < 120; y++) {
-        const t1 = d1.deriveTile(x, y, -7);
-        const t2 = d2.deriveTile(x, y, -7);
+        const t1 = d1.deriveTile(x, y, CAVE_Z);
+        const t2 = d2.deriveTile(x, y, CAVE_Z);
         if (t1.tileType !== t2.tileType || t1.material !== t2.material) {
           differences++;
         }
@@ -45,15 +46,15 @@ describe("createFortressDeriver", () => {
     expect(differences).toBeGreaterThan(0);
   });
 
-  it("different civId with same worldSeed produces different layouts", () => {
+  it("different civId with same worldSeed produces different cave layouts", () => {
     const d1 = createFortressDeriver(SEED, "civ-alpha");
     const d2 = createFortressDeriver(SEED, "civ-beta");
 
     let differences = 0;
     for (let x = 100; x < 120; x++) {
       for (let y = 100; y < 120; y++) {
-        const t1 = d1.deriveTile(x, y, -7);
-        const t2 = d2.deriveTile(x, y, -7);
+        const t1 = d1.deriveTile(x, y, CAVE_Z);
+        const t2 = d2.deriveTile(x, y, CAVE_Z);
         if (t1.tileType !== t2.tileType || t1.material !== t2.material) {
           differences++;
         }
@@ -62,12 +63,14 @@ describe("createFortressDeriver", () => {
     expect(differences).toBeGreaterThan(0);
   });
 
-  it("z=0 has surface features (grass, tree, rock, bush, pond) or stairs", () => {
+  it("z=0 has surface features (grass, tree, rock, bush, pond) or cave_entrance", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
-    const surfaceTypes = new Set(["grass", "tree", "rock", "bush", "pond", "stair_down"]);
+    const surfaceTypes = new Set([
+      "grass", "tree", "rock", "bush", "pond", "cave_entrance",
+    ]);
     for (let x = 0; x < 50; x++) {
       for (let y = 0; y < 50; y++) {
-        const tile = d.deriveTile(x, y, 0);
+        const tile = d.deriveTile(x, y, SURFACE_Z);
         expect(surfaceTypes.has(tile.tileType)).toBe(true);
       }
     }
@@ -78,116 +81,62 @@ describe("createFortressDeriver", () => {
     const tileTypes = new Set<string>();
     for (let x = 0; x < 200; x += 2) {
       for (let y = 0; y < 200; y += 2) {
-        const tile = d.deriveTile(x, y, 0);
+        const tile = d.deriveTile(x, y, SURFACE_Z);
         tileTypes.add(tile.tileType);
       }
     }
-    // Should have at least grass, tree, and one more type
     expect(tileTypes.size).toBeGreaterThanOrEqual(3);
   });
 
-  it("z=-19 is magma or lava_stone (or stairs/ore)", () => {
-    const d = createFortressDeriver(SEED, CIV_ID);
-    const validTypes = new Set([
-      "magma",
-      "lava_stone",
-      "stair_up",
-      "stair_both",
-      "ore",
-      "gem",
-    ]);
-    for (let x = 100; x < 150; x++) {
-      for (let y = 100; y < 150; y++) {
-        const tile = d.deriveTile(x, y, -19);
-        expect(validTypes.has(tile.tileType)).toBe(true);
-      }
-    }
-  });
-
-  it("soil layer at z=-1 to -4", () => {
-    const d = createFortressDeriver(SEED, CIV_ID);
-    const validTypes = new Set(["soil", "water", "stair_down", "stair_up", "stair_both"]);
-    for (let z = -1; z >= -4; z--) {
-      for (let x = 200; x < 210; x++) {
-        for (let y = 200; y < 210; y++) {
-          const tile = d.deriveTile(x, y, z);
-          expect(validTypes.has(tile.tileType)).toBe(true);
-        }
-      }
-    }
-  });
-
-  it("iron never appears above z=-5", () => {
-    const d = createFortressDeriver(SEED, CIV_ID);
-    for (let z = 0; z >= -4; z--) {
-      for (let x = 0; x < 200; x++) {
-        for (let y = 0; y < 200; y++) {
-          const tile = d.deriveTile(x, y, z);
-          if (tile.material === "iron") {
-            // This should never happen
-            expect(tile.material).not.toBe("iron");
-          }
-        }
-      }
-    }
-  });
-
-  it("cavern zone z=-15 to -18 has cavern_floor and cavern_wall tiles", () => {
+  it("z=-1 cave has cavern_floor and cavern_wall tiles", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
     const tileTypes = new Set<string>();
-    for (let z = -15; z >= -18; z--) {
-      for (let x = 0; x < 300; x += 3) {
-        for (let y = 0; y < 300; y += 3) {
-          const tile = d.deriveTile(x, y, z);
-          tileTypes.add(tile.tileType);
-        }
+    for (let x = 0; x < 300; x += 3) {
+      for (let y = 0; y < 300; y += 3) {
+        const tile = d.deriveTile(x, y, CAVE_Z);
+        tileTypes.add(tile.tileType);
       }
     }
     expect(tileTypes.has("cavern_floor")).toBe(true);
     expect(tileTypes.has("cavern_wall")).toBe(true);
   });
 
-  it("stair_down at z=n pairs with stair_up or stair_both at z=n-1", () => {
+  it("cave entrances exist on the surface", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
-    // Check several z-levels for stair pairing
-    for (let z = 0; z >= FORTRESS_MIN_Z + 1; z--) {
-      for (let x = 0; x < 512; x += 64) {
-        for (let y = 0; y < 512; y += 64) {
-          const upper = d.deriveTile(x, y, z);
-          if (upper.tileType === "stair_down" || upper.tileType === "stair_both") {
-            const lower = d.deriveTile(x, y, z - 1);
-            const validBelow = lower.tileType === "stair_up" || lower.tileType === "stair_both";
-            expect(validBelow).toBe(true);
-          }
+    let found = false;
+    for (let x = 0; x < FORTRESS_SIZE; x += 4) {
+      for (let y = 0; y < FORTRESS_SIZE; y += 4) {
+        const tile = d.deriveTile(x, y, SURFACE_Z);
+        if (tile.tileType === "cave_entrance") {
+          found = true;
+          break;
+        }
+      }
+      if (found) break;
+    }
+    expect(found).toBe(true);
+  });
+
+  it("cave entrance positions connect to open cave floor below", () => {
+    const d = createFortressDeriver(SEED, CIV_ID);
+    for (let x = 0; x < FORTRESS_SIZE; x += 4) {
+      for (let y = 0; y < FORTRESS_SIZE; y += 4) {
+        const surface = d.deriveTile(x, y, SURFACE_Z);
+        if (surface.tileType === "cave_entrance") {
+          const below = d.deriveTile(x, y, CAVE_Z);
+          expect(below.tileType).toBe("cavern_floor");
         }
       }
     }
   });
 
-  it("aquifer water tiles only in z=-1 to -3", () => {
+  it("ore/gem tiles in caves have non-null material", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
-    for (let z = FORTRESS_MAX_Z; z >= FORTRESS_MIN_Z; z--) {
-      for (let x = 0; x < 200; x += 2) {
-        for (let y = 0; y < 200; y += 2) {
-          const tile = d.deriveTile(x, y, z);
-          if (tile.tileType === "water") {
-            expect(z).toBeGreaterThanOrEqual(-3);
-            expect(z).toBeLessThanOrEqual(-1);
-          }
-        }
-      }
-    }
-  });
-
-  it("ore/gem tiles have non-null material", () => {
-    const d = createFortressDeriver(SEED, CIV_ID);
-    for (let z = -5; z >= -19; z--) {
-      for (let x = 100; x < 200; x += 2) {
-        for (let y = 100; y < 200; y += 2) {
-          const tile = d.deriveTile(x, y, z);
-          if (tile.tileType === "ore" || tile.tileType === "gem") {
-            expect(tile.material).not.toBeNull();
-          }
+    for (let x = 100; x < 200; x += 2) {
+      for (let y = 100; y < 200; y += 2) {
+        const tile = d.deriveTile(x, y, CAVE_Z);
+        if (tile.tileType === "ore" || tile.tileType === "gem") {
+          expect(tile.material).not.toBeNull();
         }
       }
     }
@@ -196,6 +145,7 @@ describe("createFortressDeriver", () => {
   it("out-of-range z returns empty", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
     expect(d.deriveTile(100, 100, 1).tileType).toBe("empty");
+    expect(d.deriveTile(100, 100, -2).tileType).toBe("empty");
     expect(d.deriveTile(100, 100, -20).tileType).toBe("empty");
   });
 
@@ -203,7 +153,7 @@ describe("createFortressDeriver", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
     for (let x = 0; x < 300; x += 3) {
       for (let y = 0; y < 300; y += 3) {
-        const tile = d.deriveTile(x, y, 0);
+        const tile = d.deriveTile(x, y, SURFACE_Z);
         if (tile.tileType === "tree") {
           expect(tile.material).toBe("wood");
         }
@@ -215,12 +165,41 @@ describe("createFortressDeriver", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
     for (let x = 0; x < 300; x += 3) {
       for (let y = 0; y < 300; y += 3) {
-        const tile = d.deriveTile(x, y, 0);
+        const tile = d.deriveTile(x, y, SURFACE_Z);
         if (tile.tileType === "rock") {
           expect(tile.material).toBe("stone");
         }
       }
     }
+  });
+
+  it("terrain does not affect cave level", () => {
+    const forestD = createFortressDeriver(SEED, CIV_ID, "forest");
+    const desertD = createFortressDeriver(SEED, CIV_ID, "desert");
+
+    for (let x = 100; x < 120; x++) {
+      for (let y = 100; y < 120; y++) {
+        const t1 = forestD.deriveTile(x, y, CAVE_Z);
+        const t2 = desertD.deriveTile(x, y, CAVE_Z);
+        expect(t1.tileType).toBe(t2.tileType);
+        expect(t1.material).toBe(t2.material);
+      }
+    }
+  });
+
+  it("createFortressDeriver with terrain affects z=0", () => {
+    const forestD = createFortressDeriver(SEED, CIV_ID, "forest");
+    const desertD = createFortressDeriver(SEED, CIV_ID, "desert");
+
+    let differences = 0;
+    for (let x = 100; x < 200; x += 2) {
+      for (let y = 100; y < 200; y += 2) {
+        const t1 = forestD.deriveTile(x, y, SURFACE_Z);
+        const t2 = desertD.deriveTile(x, y, SURFACE_Z);
+        if (t1.tileType !== t2.tileType) differences++;
+      }
+    }
+    expect(differences).toBeGreaterThan(0);
   });
 });
 
@@ -260,7 +239,6 @@ describe("deriveSurfaceTile", () => {
     expect(types.has("grass")).toBe(true);
     expect(types.has("tree")).toBe(true);
     expect(types.has("rock")).toBe(true);
-    // bush and pond may or may not appear with this seed, but grass/tree/rock are guaranteed
   });
 
   it("different terrains produce different tile distributions", () => {
@@ -329,38 +307,6 @@ describe("deriveSurfaceTile", () => {
         total++;
       }
     }
-    // Mountain should be at least 40% stone/rock
     expect(stoneOrRock / total).toBeGreaterThan(0.4);
-  });
-
-  it("createFortressDeriver with terrain affects z=0", () => {
-    const forestD = createFortressDeriver(SEED, CIV_ID, "forest");
-    const desertD = createFortressDeriver(SEED, CIV_ID, "desert");
-
-    let differences = 0;
-    for (let x = 100; x < 200; x += 2) {
-      for (let y = 100; y < 200; y += 2) {
-        const t1 = forestD.deriveTile(x, y, 0);
-        const t2 = desertD.deriveTile(x, y, 0);
-        if (t1.tileType !== t2.tileType) differences++;
-      }
-    }
-    expect(differences).toBeGreaterThan(0);
-  });
-
-  it("createFortressDeriver terrain does not affect subsurface layers", () => {
-    const forestD = createFortressDeriver(SEED, CIV_ID, "forest");
-    const desertD = createFortressDeriver(SEED, CIV_ID, "desert");
-
-    for (let z = -1; z >= -5; z--) {
-      for (let x = 100; x < 120; x++) {
-        for (let y = 100; y < 120; y++) {
-          const t1 = forestD.deriveTile(x, y, z);
-          const t2 = desertD.deriveTile(x, y, z);
-          expect(t1.tileType).toBe(t2.tileType);
-          expect(t1.material).toBe(t2.material);
-        }
-      }
-    }
   });
 });
