@@ -9,6 +9,7 @@ export type KeyAction =
   | { type: "z_down" }
   | { type: "designate_mine" }
   | { type: "open_build_menu" }
+  | { type: "open_priorities" }
   | { type: "cancel_designation" };
 
 export function useKeyboard(onAction: (action: KeyAction) => void) {
@@ -64,6 +65,9 @@ export function useKeyboard(onAction: (action: KeyAction) => void) {
           break;
         case "b":
           onAction({ type: "open_build_menu" });
+          break;
+        case "p":
+          onAction({ type: "open_priorities" });
           break;
         case "Escape":
           onAction({ type: "cancel_designation" });

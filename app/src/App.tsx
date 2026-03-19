@@ -20,6 +20,7 @@ import { ensurePlayer } from "./lib/ensure-player";
 import { loadSession } from "./lib/load-session";
 import { supabase } from "./lib/supabase";
 import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
+import TaskPriorities from "./components/TaskPriorities";
 import type { TaskType } from "@pwarf/shared";
 import {
   FORTRESS_MAX_Z,
@@ -66,6 +67,8 @@ export default function App() {
   // Designation mode
   const [designationMode, setDesignationMode] = useState<DesignationMode>("none");
   const [buildMenuOpen, setBuildMenuOpen] = useState(false);
+  const [prioritiesOpen, setPrioritiesOpen] = useState(false);
+  const [taskPriorities, setTaskPriorities] = useState<Record<string, number>>({});
 
   // Viewport size (reported from MainViewport)
   const [vpCols, setVpCols] = useState(120);
@@ -183,12 +186,21 @@ export default function App() {
         case "open_build_menu":
           if (mode === "fortress") {
             setDesignationMode("none");
+            setPrioritiesOpen(false);
             setBuildMenuOpen((o) => !o);
+          }
+          break;
+        case "open_priorities":
+          if (mode === "fortress") {
+            setDesignationMode("none");
+            setBuildMenuOpen(false);
+            setPrioritiesOpen((o) => !o);
           }
           break;
         case "cancel_designation":
           setDesignationMode("none");
           setBuildMenuOpen(false);
+          setPrioritiesOpen(false);
           break;
       }
     },
@@ -240,6 +252,7 @@ export default function App() {
     const isMine = designationMode === 'mine';
     const taskType = designationMode as TaskType;
     const workRequired = isMine ? WORK_MINE_BASE : (BUILD_WORK[designationMode] ?? WORK_BUILD_WALL);
+    const priority = taskPriorities[taskType] ?? 5;
 
     const tasks: Array<{
       civilization_id: string;
@@ -269,7 +282,7 @@ export default function App() {
           civilization_id: civId,
           task_type: taskType,
           status: 'pending',
-          priority: 5,
+          priority,
           target_x: x,
           target_y: y,
           target_z: zLevel,
@@ -284,11 +297,15 @@ export default function App() {
     if (error) {
       console.error('[designate] Failed to create tasks:', error.message);
     }
-  }, [designationMode, civId, zLevel, getFortressTile, designatedTiles]);
+  }, [designationMode, civId, zLevel, getFortressTile, designatedTiles, taskPriorities]);
 
   const handleBuildSelect = useCallback((taskType: TaskType) => {
     setBuildMenuOpen(false);
     setDesignationMode(taskType as DesignationMode);
+  }, []);
+
+  const handlePriorityChange = useCallback((taskType: TaskType, priority: number) => {
+    setTaskPriorities((prev) => ({ ...prev, [taskType]: priority }));
   }, []);
 
   // Keyboard shortcuts for build menu items when the menu is open
@@ -320,6 +337,8 @@ export default function App() {
     setMode("world");
     setDesignationMode("none");
     setBuildMenuOpen(false);
+    setPrioritiesOpen(false);
+    setTaskPriorities({});
     setSelectedWorldTile(null);
     setZLevel(0);
     viewport.setOffset(0, 0);
@@ -402,6 +421,13 @@ export default function App() {
           <BuildMenu
             onSelect={handleBuildSelect}
             onClose={() => setBuildMenuOpen(false)}
+          />
+        )}
+        {prioritiesOpen && (
+          <TaskPriorities
+            priorities={taskPriorities}
+            onChangePriority={handlePriorityChange}
+            onClose={() => setPrioritiesOpen(false)}
           />
         )}
         <LeftPanel

@@ -169,3 +169,6 @@ export const XP_BUILD = 12;
 export const SCORE_PRIORITY_WEIGHT = 3;
 export const SCORE_SKILL_WEIGHT = 2;
 export const SCORE_DISTANCE_WEIGHT = 0.5;
+
+/** Bonus added when a task matches the dwarf's highest-level skill */
+export const SCORE_BEST_SKILL_BONUS = 5;

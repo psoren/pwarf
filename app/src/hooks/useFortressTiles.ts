@@ -37,7 +37,6 @@ export function useFortressTiles({
   viewportRows,
 }: UseFortressTilesOptions) {
   const [dbOverrides, setDbOverrides] = useState<Map<string, Partial<FortressTile>>>(new Map());
-  const fetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastFetchKey = useRef<string>('');
 
   // Create deriver once per seed + civId
@@ -47,7 +46,7 @@ export function useFortressTiles({
   }, [worldSeed, civId]);
 
   // Fetch modified tiles from DB
-  useEffect(() => {
+  const fetchOverrides = useCallback(async (force = false) => {
     if (!civId) return;
 
     const buffer = Math.max(viewportCols, viewportRows);
@@ -57,41 +56,46 @@ export function useFortressTiles({
     const y1 = Math.min(FORTRESS_SIZE, offsetY + viewportRows + buffer);
 
     const key = `${civId}:${zLevel}:${x0}:${y0}:${x1}:${y1}`;
-    if (key === lastFetchKey.current) return;
+    if (!force && key === lastFetchKey.current) return;
+    lastFetchKey.current = key;
 
-    if (fetchTimer.current) clearTimeout(fetchTimer.current);
-    fetchTimer.current = setTimeout(async () => {
-      lastFetchKey.current = key;
+    const { data, error } = await supabase
+      .from('fortress_tiles')
+      .select('x, y, z, tile_type, material, is_revealed, is_mined')
+      .eq('civilization_id', civId)
+      .eq('z', zLevel)
+      .gte('x', x0)
+      .lt('x', x1)
+      .gte('y', y0)
+      .lt('y', y1)
+      .limit(5000);
 
-      const { data, error } = await supabase
-        .from('fortress_tiles')
-        .select('x, y, z, tile_type, material, is_revealed, is_mined')
-        .eq('civilization_id', civId)
-        .eq('z', zLevel)
-        .gte('x', x0)
-        .lt('x', x1)
-        .gte('y', y0)
-        .lt('y', y1)
-        .limit(5000);
+    if (error) {
+      console.error('[useFortressTiles] fetch error:', error.message);
+      return;
+    }
 
-      if (error) {
-        console.error('[useFortressTiles] fetch error:', error.message);
-        return;
+    if (data) {
+      const newOverrides = new Map<string, Partial<FortressTile>>();
+      for (const tile of data) {
+        newOverrides.set(`${tile.x},${tile.y}`, tile as Partial<FortressTile>);
       }
-
-      if (data) {
-        const newOverrides = new Map<string, Partial<FortressTile>>();
-        for (const tile of data) {
-          newOverrides.set(`${tile.x},${tile.y}`, tile as Partial<FortressTile>);
-        }
-        setDbOverrides(newOverrides);
-      }
-    }, 100);
-
-    return () => {
-      if (fetchTimer.current) clearTimeout(fetchTimer.current);
-    };
+      setDbOverrides(newOverrides);
+    }
   }, [civId, zLevel, offsetX, offsetY, viewportCols, viewportRows]);
+
+  // Fetch on viewport/z-level change
+  useEffect(() => {
+    if (!civId) return;
+    void fetchOverrides();
+  }, [civId, fetchOverrides]);
+
+  // Poll for tile changes (e.g. mining/building completions)
+  useEffect(() => {
+    if (!civId) return;
+    const interval = setInterval(() => void fetchOverrides(true), 2000);
+    return () => clearInterval(interval);
+  }, [civId, fetchOverrides]);
 
   // Build tile map
   const tileMap = useMemo(() => {
