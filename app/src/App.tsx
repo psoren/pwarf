@@ -292,6 +292,7 @@ export default function App() {
           designatedTiles={world.mode === "fortress" ? designatedTiles : undefined}
           designationMode={world.mode === "fortress" ? designation.designationMode : undefined}
           onDesignateArea={world.mode === "fortress" ? designation.handleDesignateArea : undefined}
+          onCancelArea={world.mode === "fortress" ? designation.handleCancelArea : undefined}
           onTileClick={world.mode === "world" ? (x: number, y: number) => setSelectedWorldTile({ x, y }) : undefined}
           selectedTile={world.mode === "world" ? selectedWorldTile : undefined}
         />
