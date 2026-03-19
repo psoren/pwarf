@@ -14,61 +14,19 @@ import { useDwarves } from "./hooks/useDwarves";
 import { useSimRunner } from "./hooks/useSimRunner";
 import { useTasks } from "./hooks/useTasks";
 import { useEvents } from "./hooks/useEvents";
-import { createAndGenerateWorld } from "./lib/world-gen";
-import { embark } from "./lib/embark";
-import { ensurePlayer } from "./lib/ensure-player";
-import { loadSession } from "./lib/load-session";
-import { supabase } from "./lib/supabase";
+import { useWorldState } from "./hooks/useWorldState";
+import { useDesignation, type DesignationMode } from "./hooks/useDesignation";
 import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
 import TaskPriorities from "./components/TaskPriorities";
-import type { TaskType } from "@pwarf/shared";
-import {
-  FORTRESS_MAX_Z,
-  FORTRESS_MIN_Z,
-  FORTRESS_SIZE,
-  WORK_MINE_BASE,
-  WORK_BUILD_WALL,
-  WORK_BUILD_FLOOR,
-  WORK_BUILD_STAIRS,
-} from "@pwarf/shared";
-
-type Mode = "fortress" | "world";
-type DesignationMode = "none" | "mine" | "build_wall" | "build_floor" | "build_stairs_up" | "build_stairs_down" | "build_stairs_both";
-
-const BUILD_WORK: Record<string, number> = {
-  build_wall: WORK_BUILD_WALL,
-  build_floor: WORK_BUILD_FLOOR,
-  build_stairs_up: WORK_BUILD_STAIRS,
-  build_stairs_down: WORK_BUILD_STAIRS,
-  build_stairs_both: WORK_BUILD_STAIRS,
-};
+import { FORTRESS_MAX_Z, FORTRESS_MIN_Z } from "@pwarf/shared";
 
 export default function App() {
   const { session, user, loading, signIn, signUp, signOut } = useAuth();
-  const [playerEnsured, setPlayerEnsured] = useState(false);
 
-  const [mode, setMode] = useState<Mode>("world");
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
-
-  // World state
-  const [worldId, setWorldId] = useState<string | null>(null);
-  const [worldSeed, setWorldSeed] = useState<bigint | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [civId, setCivId] = useState<string | null>(null);
-
-  // Fortress z-level
   const [zLevel, setZLevel] = useState(0);
-
-  // Selected world tile (persists on click)
   const [selectedWorldTile, setSelectedWorldTile] = useState<{ x: number; y: number } | null>(null);
-
-  // Designation mode
-  const [designationMode, setDesignationMode] = useState<DesignationMode>("none");
-  const [buildMenuOpen, setBuildMenuOpen] = useState(false);
-  const [prioritiesOpen, setPrioritiesOpen] = useState(false);
-  const [taskPriorities, setTaskPriorities] = useState<Record<string, number>>({});
 
   // Viewport size (reported from MainViewport)
   const [vpCols, setVpCols] = useState(120);
@@ -77,9 +35,16 @@ export default function App() {
 
   const viewport = useViewport();
 
+  const world = useWorldState({
+    user: user ?? null,
+    vpCols,
+    vpRows,
+    setOffset: viewport.setOffset,
+  });
+
   const { tileMap, getTile } = useWorldTiles({
-    worldId,
-    worldSeed,
+    worldId: world.worldId,
+    worldSeed: world.worldSeed,
     offsetX: viewport.offsetX,
     offsetY: viewport.offsetY,
     viewportCols: vpCols,
@@ -87,8 +52,8 @@ export default function App() {
   });
 
   const { tileMap: fortressTileMap, getTile: getFortressTile } = useFortressTiles({
-    civId,
-    worldSeed,
+    civId: world.civId,
+    worldSeed: world.worldSeed,
     offsetX: viewport.offsetX,
     offsetY: viewport.offsetY,
     zLevel,
@@ -96,14 +61,24 @@ export default function App() {
     viewportRows: vpRows,
   });
 
-  const cursorTile = worldId ? getTile(viewport.cursorX, viewport.cursorY) : null;
-  const selectedTileData = worldId && selectedWorldTile
+  const cursorTile = world.worldId ? getTile(viewport.cursorX, viewport.cursorY) : null;
+  const selectedTileData = world.worldId && selectedWorldTile
     ? getTile(selectedWorldTile.x, selectedWorldTile.y)
     : null;
-  const cursorFortressTile = civId ? getFortressTile(viewport.cursorX, viewport.cursorY) : null;
+  const cursorFortressTile = world.civId ? getFortressTile(viewport.cursorX, viewport.cursorY) : null;
+
+  // Active tasks
+  const { designatedTiles } = useTasks(world.civId);
+
+  const designation = useDesignation({
+    civId: world.civId,
+    zLevel,
+    getFortressTile,
+    designatedTiles,
+  });
 
   // Live dwarves from DB
-  const liveDwarves = useDwarves(civId);
+  const liveDwarves = useDwarves(world.civId);
 
   // Build dwarf position map for rendering
   const dwarfPositions = useMemo(() => {
@@ -117,42 +92,10 @@ export default function App() {
   }, [liveDwarves, zLevel]);
 
   // Sim runner
-  useSimRunner(civId, worldId);
-
-  // Active tasks
-  const { designatedTiles } = useTasks(civId);
+  useSimRunner(world.civId, world.worldId);
 
   // Live activity log
-  const events = useEvents(civId);
-
-  // Ensure player profile exists after auth, then restore any existing session
-  useEffect(() => {
-    if (user && !playerEnsured) {
-      ensurePlayer(supabase, user.id, user.email ?? "unknown")
-        .then(() => loadSession(user.id))
-        .then((session) => {
-          if (session.worldId) {
-            setWorldId(session.worldId);
-            setWorldSeed(session.worldSeed);
-          }
-          if (session.civId) {
-            setCivId(session.civId);
-            setMode("fortress");
-            // Center viewport on fortress center where dwarves spawn
-            const center = Math.floor(FORTRESS_SIZE / 2);
-            viewport.setOffset(center - Math.floor(vpCols / 2), center - Math.floor(vpRows / 2));
-          }
-          setPlayerEnsured(true);
-        })
-        .catch((err) => console.error("Failed to ensure player:", err));
-    }
-    if (!user) {
-      setPlayerEnsured(false);
-      setWorldId(null);
-      setWorldSeed(null);
-      setCivId(null);
-    }
-  }, [user, playerEnsured, viewport.setOffset]);
+  const events = useEvents(world.civId);
 
   const handleKeyAction = useCallback(
     (action: KeyAction) => {
@@ -161,8 +104,8 @@ export default function App() {
           viewport.pan(action.dx, action.dy);
           break;
         case "toggle_mode":
-          if (civId) {
-            setMode((m) => (m === "fortress" ? "world" : "fortress"));
+          if (world.civId) {
+            world.setMode((m) => (m === "fortress" ? "world" : "fortress"));
           }
           break;
         case "toggle_left_panel":
@@ -178,33 +121,20 @@ export default function App() {
           setZLevel((z) => Math.max(FORTRESS_MIN_Z, z - 1));
           break;
         case "designate_mine":
-          if (mode === "fortress") {
-            setBuildMenuOpen(false);
-            setDesignationMode((m) => (m === "mine" ? "none" : "mine"));
-          }
+          if (world.mode === "fortress") designation.toggleMine();
           break;
         case "open_build_menu":
-          if (mode === "fortress") {
-            setDesignationMode("none");
-            setPrioritiesOpen(false);
-            setBuildMenuOpen((o) => !o);
-          }
+          if (world.mode === "fortress") designation.toggleBuildMenu();
           break;
         case "open_priorities":
-          if (mode === "fortress") {
-            setDesignationMode("none");
-            setBuildMenuOpen(false);
-            setPrioritiesOpen((o) => !o);
-          }
+          if (world.mode === "fortress") designation.togglePriorities();
           break;
         case "cancel_designation":
-          setDesignationMode("none");
-          setBuildMenuOpen(false);
-          setPrioritiesOpen(false);
+          designation.cancelDesignation();
           break;
       }
     },
-    [viewport.pan, civId, mode],
+    [viewport.pan, world.civId, world.mode, designation],
   );
 
   useKeyboard(handleKeyAction);
@@ -217,132 +147,27 @@ export default function App() {
     }
   }, []);
 
-  const handleGenerateWorld = useCallback(async () => {
-    setCreating(true);
-    setCreateError(null);
-    try {
-      const { worldId: wid, seed } = await createAndGenerateWorld("New World");
-      setWorldId(wid);
-      setWorldSeed(seed);
-    } catch (err) {
-      setCreateError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setCreating(false);
-    }
-  }, []);
-
   const handleEmbark = useCallback(async () => {
-    if (!worldId || !worldSeed || !selectedWorldTile || !selectedTileData || selectedTileData.terrain === "ocean") return;
-    try {
-      const id = await embark(worldId, selectedWorldTile.x, selectedWorldTile.y, worldSeed);
-      setCivId(id);
-      setMode("fortress");
-      const center = Math.floor(FORTRESS_SIZE / 2);
-      viewport.setOffset(center - Math.floor(vpCols / 2), center - Math.floor(vpRows / 2));
-    } catch (err) {
-      console.error("Embark failed:", err);
-    }
-  }, [worldId, worldSeed, selectedWorldTile, selectedTileData]);
-
-  const handleDesignateArea = useCallback(async (x1: number, y1: number, x2: number, y2: number) => {
-    if (designationMode === 'none' || !civId) return;
-
-    const mineable: string[] = ['stone', 'ore', 'gem', 'soil', 'cavern_wall'];
-    const buildable: string[] = ['open_air', 'constructed_floor', 'cavern_floor'];
-    const isMine = designationMode === 'mine';
-    const taskType = designationMode as TaskType;
-    const workRequired = isMine ? WORK_MINE_BASE : (BUILD_WORK[designationMode] ?? WORK_BUILD_WALL);
-    const priority = taskPriorities[taskType] ?? 5;
-
-    const tasks: Array<{
-      civilization_id: string;
-      task_type: string;
-      status: string;
-      priority: number;
-      target_x: number;
-      target_y: number;
-      target_z: number;
-      work_required: number;
-    }> = [];
-
-    for (let y = y1; y <= y2; y++) {
-      for (let x = x1; x <= x2; x++) {
-        if (designatedTiles.has(`${x},${y}`)) continue;
-
-        const tile = getFortressTile(x, y);
-        if (!tile) continue;
-
-        if (isMine) {
-          if (!mineable.includes(tile.tileType)) continue;
-        } else {
-          if (!buildable.includes(tile.tileType)) continue;
-        }
-
-        tasks.push({
-          civilization_id: civId,
-          task_type: taskType,
-          status: 'pending',
-          priority,
-          target_x: x,
-          target_y: y,
-          target_z: zLevel,
-          work_required: workRequired,
-        });
-      }
-    }
-
-    if (tasks.length === 0) return;
-
-    const { error } = await supabase.from('tasks').insert(tasks);
-    if (error) {
-      console.error('[designate] Failed to create tasks:', error.message);
-    }
-  }, [designationMode, civId, zLevel, getFortressTile, designatedTiles, taskPriorities]);
-
-  const handleBuildSelect = useCallback((taskType: TaskType) => {
-    setBuildMenuOpen(false);
-    setDesignationMode(taskType as DesignationMode);
-  }, []);
-
-  const handlePriorityChange = useCallback((taskType: TaskType, priority: number) => {
-    setTaskPriorities((prev) => ({ ...prev, [taskType]: priority }));
-  }, []);
+    if (!selectedWorldTile || !selectedTileData || selectedTileData.terrain === "ocean") return;
+    await world.handleEmbark(selectedWorldTile.x, selectedWorldTile.y);
+    designation.cancelDesignation();
+  }, [selectedWorldTile, selectedTileData, world, designation]);
 
   // Keyboard shortcuts for build menu items when the menu is open
   useEffect(() => {
-    if (!buildMenuOpen) return;
+    if (!designation.buildMenuOpen) return;
     function handleBuildKey(e: KeyboardEvent) {
       const opt = BUILD_OPTIONS.find((o) => o.key === e.key);
       if (opt) {
         e.preventDefault();
         e.stopPropagation();
-        setBuildMenuOpen(false);
-        setDesignationMode(opt.taskType as DesignationMode);
+        designation.setBuildMenuOpen(false);
+        designation.setDesignationMode(opt.taskType as DesignationMode);
       }
     }
     window.addEventListener("keydown", handleBuildKey, true);
     return () => window.removeEventListener("keydown", handleBuildKey, true);
-  }, [buildMenuOpen]);
-
-  const handleRestart = useCallback(async () => {
-    // Clear the player's world_id so they get the world gen screen
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (currentUser) {
-      await supabase.from('players').update({ world_id: null }).eq('id', currentUser.id);
-    }
-    // Reset all local state
-    setWorldId(null);
-    setWorldSeed(null);
-    setCivId(null);
-    setMode("world");
-    setDesignationMode("none");
-    setBuildMenuOpen(false);
-    setPrioritiesOpen(false);
-    setTaskPriorities({});
-    setSelectedWorldTile(null);
-    setZLevel(0);
-    viewport.setOffset(0, 0);
-  }, [viewport.setOffset]);
+  }, [designation.buildMenuOpen]);
 
   // Loading state
   if (loading) {
@@ -360,7 +185,7 @@ export default function App() {
   }
 
   // Restoring session
-  if (user && !playerEnsured) {
+  if (user && !world.playerEnsured) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full bg-[var(--bg-panel)] gap-4">
         <h1 className="text-[var(--amber)] text-2xl font-bold tracking-wider">pWarf</h1>
@@ -370,16 +195,16 @@ export default function App() {
   }
 
   // Pre-world screen: generate button
-  if (!worldId && !creating) {
+  if (!world.worldId && !world.creating) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full bg-[var(--bg-panel)] gap-4">
         <h1 className="text-[var(--amber)] text-2xl font-bold tracking-wider">pWarf</h1>
         <p className="text-[var(--text)] text-sm">A dwarf fortress adventure awaits.</p>
-        {createError && (
-          <p className="text-red-400 text-xs max-w-md text-center">{createError}</p>
+        {world.createError && (
+          <p className="text-red-400 text-xs max-w-md text-center">{world.createError}</p>
         )}
         <button
-          onClick={handleGenerateWorld}
+          onClick={world.handleGenerateWorld}
           className="px-6 py-2 border border-[var(--green)] text-[var(--green)] font-bold text-sm hover:bg-[var(--green)] hover:text-[var(--bg-panel)] cursor-pointer"
         >
           Generate World
@@ -388,8 +213,8 @@ export default function App() {
     );
   }
 
-  // Creating world (just the DB insert, very fast)
-  if (creating) {
+  // Creating world
+  if (world.creating) {
     return (
       <div className="flex flex-col items-center justify-center h-full w-full bg-[var(--bg-panel)] gap-4">
         <h1 className="text-[var(--amber)] text-2xl font-bold tracking-wider">pWarf</h1>
@@ -398,49 +223,49 @@ export default function App() {
     );
   }
 
-  const terrainForBar = mode === "world" ? (cursorTile?.terrain ?? null) : null;
+  const terrainForBar = world.mode === "world" ? (cursorTile?.terrain ?? null) : null;
   const cursorKey = `${viewport.cursorX},${viewport.cursorY}`;
-  const cursorDesignation = mode === "fortress" ? designatedTiles.get(cursorKey) : undefined;
-  const fortressTileLabel = mode === "fortress" && cursorFortressTile
+  const cursorDesignation = world.mode === "fortress" ? designatedTiles.get(cursorKey) : undefined;
+  const fortressTileLabel = world.mode === "fortress" && cursorFortressTile
     ? formatFortressTileLabel(cursorFortressTile.tileType, cursorFortressTile.material, cursorDesignation)
     : null;
 
   return (
     <div className="flex flex-col h-full w-full">
       <Toolbar
-        mode={mode}
+        mode={world.mode}
         onSignOut={signOut}
-        onRestart={handleRestart}
+        onRestart={world.handleRestart}
         population={liveDwarves.length}
         year={1}
-        civName={mode === "fortress" ? "Stonegear" : undefined}
+        civName={world.mode === "fortress" ? "Stonegear" : undefined}
       />
 
       <div className="flex flex-1 min-h-0 relative">
-        {buildMenuOpen && (
+        {designation.buildMenuOpen && (
           <BuildMenu
-            onSelect={handleBuildSelect}
-            onClose={() => setBuildMenuOpen(false)}
+            onSelect={designation.handleBuildSelect}
+            onClose={() => designation.setBuildMenuOpen(false)}
           />
         )}
-        {prioritiesOpen && (
+        {designation.prioritiesOpen && (
           <TaskPriorities
-            priorities={taskPriorities}
-            onChangePriority={handlePriorityChange}
-            onClose={() => setPrioritiesOpen(false)}
+            priorities={designation.taskPriorities}
+            onChangePriority={designation.handlePriorityChange}
+            onClose={() => designation.setBuildMenuOpen(false)}
           />
         )}
         <LeftPanel
-          mode={mode}
+          mode={world.mode}
           collapsed={!leftOpen}
           onToggle={() => setLeftOpen((o) => !o)}
-          cursorTile={mode === "world" ? (selectedTileData ?? cursorTile) : cursorTile}
-          onEmbark={mode === "world" && selectedWorldTile ? handleEmbark : undefined}
+          cursorTile={world.mode === "world" ? (selectedTileData ?? cursorTile) : cursorTile}
+          onEmbark={world.mode === "world" && selectedWorldTile ? handleEmbark : undefined}
           dwarves={liveDwarves}
         />
 
         <MainViewport
-          mode={mode}
+          mode={world.mode}
           offsetX={viewport.offsetX}
           offsetY={viewport.offsetY}
           cursorX={viewport.cursorX}
@@ -449,15 +274,15 @@ export default function App() {
           onDragStart={viewport.onDragStart}
           onDragMove={viewport.onDragMove}
           onDragEnd={viewport.onDragEnd}
-          worldTiles={mode === "world" ? tileMap : undefined}
-          fortressTiles={mode === "fortress" ? fortressTileMap : undefined}
+          worldTiles={world.mode === "world" ? tileMap : undefined}
+          fortressTiles={world.mode === "fortress" ? fortressTileMap : undefined}
           onViewportSize={handleViewportSize}
-          dwarfPositions={mode === "fortress" ? dwarfPositions : undefined}
-          designatedTiles={mode === "fortress" ? designatedTiles : undefined}
-          designationMode={mode === "fortress" ? designationMode : undefined}
-          onDesignateArea={mode === "fortress" ? handleDesignateArea : undefined}
-          onTileClick={mode === "world" ? (x: number, y: number) => setSelectedWorldTile({ x, y }) : undefined}
-          selectedTile={mode === "world" ? selectedWorldTile : undefined}
+          dwarfPositions={world.mode === "fortress" ? dwarfPositions : undefined}
+          designatedTiles={world.mode === "fortress" ? designatedTiles : undefined}
+          designationMode={world.mode === "fortress" ? designation.designationMode : undefined}
+          onDesignateArea={world.mode === "fortress" ? designation.handleDesignateArea : undefined}
+          onTileClick={world.mode === "world" ? (x: number, y: number) => setSelectedWorldTile({ x, y }) : undefined}
+          selectedTile={world.mode === "world" ? selectedWorldTile : undefined}
         />
 
         <RightPanel
@@ -469,29 +294,29 @@ export default function App() {
 
       <div className="flex items-center justify-center gap-2 py-0.5 bg-[var(--bg-panel)] border-t border-[var(--border)] text-xs select-none">
         <button
-          onClick={() => civId && setMode("fortress")}
-          className={`px-2 py-0.5 cursor-pointer ${mode === "fortress" ? "text-[var(--green)]" : "text-[var(--text)] hover:text-[var(--amber)]"} ${!civId ? "opacity-50 cursor-not-allowed" : ""}`}
-          disabled={!civId}
+          onClick={() => world.civId && world.setMode("fortress")}
+          className={`px-2 py-0.5 cursor-pointer ${world.mode === "fortress" ? "text-[var(--green)]" : "text-[var(--text)] hover:text-[var(--amber)]"} ${!world.civId ? "opacity-50 cursor-not-allowed" : ""}`}
+          disabled={!world.civId}
         >
           Fortress
         </button>
         <span className="text-[var(--border)]">|</span>
         <button
-          onClick={() => setMode("world")}
-          className={`px-2 py-0.5 cursor-pointer ${mode === "world" ? "text-[var(--green)]" : "text-[var(--text)] hover:text-[var(--amber)]"}`}
+          onClick={() => world.setMode("world")}
+          className={`px-2 py-0.5 cursor-pointer ${world.mode === "world" ? "text-[var(--green)]" : "text-[var(--text)] hover:text-[var(--amber)]"}`}
         >
           World
         </button>
       </div>
 
       <BottomBar
-        mode={mode}
+        mode={world.mode}
         cursorX={viewport.cursorX}
         cursorY={viewport.cursorY}
         terrain={terrainForBar}
-        zLevel={mode === "fortress" ? zLevel : undefined}
+        zLevel={world.mode === "fortress" ? zLevel : undefined}
         fortressTileLabel={fortressTileLabel}
-        designationMode={mode === "fortress" ? designationMode : undefined}
+        designationMode={world.mode === "fortress" ? designation.designationMode : undefined}
       />
     </div>
   );

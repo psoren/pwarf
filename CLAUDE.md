@@ -45,6 +45,18 @@ Before merging any new sim system:
 - ESM modules (`"type": "module"`)
 - No default exports — use named exports
 
+### Code health rules
+
+Follow these when writing or modifying code to keep the codebase clean:
+
+- **No dead code.** Don't leave unused modules, components, or functions. If nothing imports it (other than its own test), delete it.
+- **No duplicated constants.** Glyph maps, magic numbers, config objects — define once, import everywhere. If you need a value in two places, extract it to a shared module.
+- **Keep files under ~300 LOC.** If a file grows beyond that, split it into focused modules. Sim phases, React hooks, and utility functions should each be in their own file.
+- **Extract React hooks.** `App.tsx` is for layout and orchestration. State logic (data fetching, designation handling, world lifecycle) belongs in custom hooks under `hooks/`.
+- **Extract sim phases.** Each sim concern (deprivation, task completion, needs decay) gets its own file under `sim/src/phases/`. Don't let `task-execution.ts` become a catch-all.
+- **Shared test helpers.** Test factory functions (`makeDwarf`, `makeContext`, etc.) live in `sim/src/__tests__/test-helpers.ts`. Don't duplicate them across test files.
+- **Name test files after what they test.** `dwarf-names.test.ts` tests `dwarf-names.ts`, not `embark.test.ts`.
+
 ## Playtesting
 
 - **Every PR must include a playtest.** After implementing a feature or fix, run the game in Chrome and verify it works end-to-end.

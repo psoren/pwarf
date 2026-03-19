@@ -1,7 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { randomUUID } from "node:crypto";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Dwarf } from "@pwarf/shared";
 import {
   FOOD_DECAY_PER_TICK,
   DRINK_DECAY_PER_TICK,
@@ -10,76 +7,13 @@ import {
   PURPOSE_DECAY_PER_TICK,
   BEAUTY_DECAY_PER_TICK,
 } from "@pwarf/shared";
-import type { SimContext } from "../sim-context.js";
-import { createEmptyCachedState } from "../sim-context.js";
 import { needsDecay } from "../phases/needs-decay.js";
-
-// ---------------------------------------------------------------------------
-// Test helpers
-// ---------------------------------------------------------------------------
-
-function makeDwarf(overrides?: Partial<Dwarf>): Dwarf {
-  return {
-    id: randomUUID(),
-    civilization_id: "civ-1",
-    name: "Urist",
-    surname: null,
-    status: "alive",
-    age: 30,
-    gender: "male",
-    need_food: 80,
-    need_drink: 80,
-    need_sleep: 80,
-    need_social: 50,
-    need_purpose: 50,
-    need_beauty: 50,
-    stress_level: 0,
-    is_in_tantrum: false,
-    health: 100,
-    injuries: [],
-    memories: [],
-    trait_openness: null,
-    trait_conscientiousness: null,
-    trait_extraversion: null,
-    trait_agreeableness: null,
-    trait_neuroticism: null,
-    religious_devotion: 0,
-    faction_id: null,
-    born_year: null,
-    died_year: null,
-    cause_of_death: null,
-    current_task_id: null,
-    position_x: 0,
-    position_y: 0,
-    position_z: 0,
-    created_at: new Date().toISOString(),
-    ...overrides,
-  };
-}
-
-function makeSimContext(dwarves: Dwarf[]): SimContext {
-  const state = createEmptyCachedState();
-  state.dwarves = dwarves;
-
-  return {
-    supabase: null as unknown as SupabaseClient,
-    civilizationId: "civ-1",
-    worldId: "world-1",
-    step: 0,
-    year: 1,
-    day: 1,
-    state,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+import { makeDwarf, makeContext } from "./test-helpers.js";
 
 describe("needs decay", () => {
   it("needs decay over 100 ticks", async () => {
     const dwarves = Array.from({ length: 7 }, () => makeDwarf());
-    const ctx = makeSimContext(dwarves);
+    const ctx = makeContext({ dwarves });
 
     for (let i = 0; i < 100; i++) {
       await needsDecay(ctx);
@@ -125,7 +59,7 @@ describe("needs decay", () => {
     const originalPurpose = deadDwarf.need_purpose;
     const originalBeauty = deadDwarf.need_beauty;
 
-    const ctx = makeSimContext([deadDwarf]);
+    const ctx = makeContext({ dwarves: [deadDwarf] });
 
     for (let i = 0; i < 10; i++) {
       await needsDecay(ctx);
@@ -151,7 +85,7 @@ describe("needs decay", () => {
       need_beauty: 1,
     });
 
-    const ctx = makeSimContext([dwarf]);
+    const ctx = makeContext({ dwarves: [dwarf] });
 
     for (let i = 0; i < 100; i++) {
       await needsDecay(ctx);
