@@ -1,5 +1,7 @@
 export { needsDecay } from "./needs-decay.js";
 export { taskExecution } from "./task-execution.js";
+export { completeTask } from "./task-completion.js";
+export { handleDeprivationDeaths, killDwarf } from "./deprivation.js";
 export { needSatisfaction } from "./need-satisfaction.js";
 export { stressUpdate } from "./stress-update.js";
 export { tantrumCheck } from "./tantrum-check.js";
