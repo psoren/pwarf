@@ -2,8 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Dwarf,
   DwarfSkill,
-  FortressTile,
   FortressDeriver,
+  FortressTile,
   Item,
   Structure,
   Monster,
