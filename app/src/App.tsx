@@ -82,12 +82,13 @@ export default function App() {
     for (const t of tasks) {
       const tx = 'target_x' in t ? t.target_x : null;
       const ty = 'target_y' in t ? t.target_y : null;
-      if (tx !== null && ty !== null && !AUTONOMOUS.has(t.task_type) && ['pending', 'claimed', 'in_progress'].includes(t.status)) {
+      const tz = 'target_z' in t ? t.target_z : null;
+      if (tx !== null && ty !== null && tz === zLevel && !AUTONOMOUS.has(t.task_type) && ['pending', 'claimed', 'in_progress'].includes(t.status)) {
         map.set(`${tx},${ty}`, t.task_type);
       }
     }
     return map;
-  }, [snapshot?.tasks, polledTasks.tasks]);
+  }, [snapshot?.tasks, polledTasks.tasks, zLevel]);
 
   const designation = useDesignation({
     civId: world.civId,
@@ -95,6 +96,16 @@ export default function App() {
     getFortressTile,
     designatedTiles,
   });
+
+  // Merge optimistic designations into the map for immediate feedback
+  const mergedDesignatedTiles = useMemo(() => {
+    if (designation.optimisticTiles.size === 0) return designatedTiles;
+    const merged = new Map(designatedTiles);
+    for (const [key, val] of designation.optimisticTiles) {
+      merged.set(key, val);
+    }
+    return merged;
+  }, [designatedTiles, designation.optimisticTiles]);
 
   // Live dwarves — prefer sim snapshot over DB polling
   const polledDwarves = useDwarves(world.civId);
@@ -296,7 +307,7 @@ export default function App() {
 
   const terrainForBar = world.mode === "world" ? (cursorTile?.terrain ?? null) : null;
   const cursorKey = `${viewport.cursorX},${viewport.cursorY}`;
-  const cursorDesignation = world.mode === "fortress" ? designatedTiles.get(cursorKey) : undefined;
+  const cursorDesignation = world.mode === "fortress" ? mergedDesignatedTiles.get(cursorKey) : undefined;
   const fortressTileLabel = world.mode === "fortress" && cursorFortressTile
     ? formatFortressTileLabel(cursorFortressTile.tileType, cursorFortressTile.material, cursorDesignation)
     : null;
@@ -350,7 +361,7 @@ export default function App() {
           getFortressTileData={world.mode === "fortress" ? getFortressTile : undefined}
           onViewportSize={handleViewportSize}
           dwarfPositions={world.mode === "fortress" ? dwarfPositions : undefined}
-          designatedTiles={world.mode === "fortress" ? designatedTiles : undefined}
+          designatedTiles={world.mode === "fortress" ? mergedDesignatedTiles : undefined}
           designationMode={world.mode === "fortress" ? designation.designationMode : undefined}
           onDesignateArea={world.mode === "fortress" ? designation.handleDesignateArea : undefined}
           onCancelArea={world.mode === "fortress" ? designation.handleCancelArea : undefined}
