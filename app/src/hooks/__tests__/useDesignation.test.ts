@@ -52,7 +52,12 @@ function makeHook(overrides: Partial<Parameters<typeof useDesignation>[0]> = {})
   const designatedTiles = new Map<string, string>();
   const getFortressTile = (): FortressViewTile | null => ({
     tileType: "stone",
-    glyph: { ch: ".", fg: "#888" },
+    material: null,
+    x: 0,
+    y: 0,
+    z: 0,
+    isRevealed: false,
+    isMined: false,
   });
 
   return renderHook(() =>
