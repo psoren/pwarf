@@ -62,6 +62,10 @@ describe("isWalkable", () => {
   it("ice is walkable", () => {
     expect(isWalkable("ice")).toBe(true);
   });
+
+  it("cave_entrance is walkable", () => {
+    expect(isWalkable("cave_entrance")).toBe(true);
+  });
 });
 
 describe("getNeighbors", () => {
@@ -100,6 +104,46 @@ describe("getNeighbors", () => {
 
     const neighbors = getNeighbors({ x: 0, y: 0, z: 0 }, lookup);
     expect(neighbors).toHaveLength(2); // right and down
+  });
+});
+
+describe("getNeighbors — cave entrance transitions", () => {
+  it("cave_entrance at z=0 connects to walkable tile at z=-1", () => {
+    const lookup: TileLookup = (x, y, z) => {
+      if (x === 5 && y === 5 && z === 0) return "cave_entrance";
+      if (x === 5 && y === 5 && z === -1) return "cavern_floor";
+      if (z === 0) return "grass";
+      return null;
+    };
+
+    const neighbors = getNeighbors({ x: 5, y: 5, z: 0 }, lookup);
+    const zMinus1 = neighbors.find((n) => n.z === -1);
+    expect(zMinus1).toEqual({ x: 5, y: 5, z: -1 });
+  });
+
+  it("cavern_floor at z=-1 connects up through cave_entrance at z=0", () => {
+    const lookup: TileLookup = (x, y, z) => {
+      if (x === 5 && y === 5 && z === 0) return "cave_entrance";
+      if (x === 5 && y === 5 && z === -1) return "cavern_floor";
+      if (z === -1) return "cavern_wall";
+      return null;
+    };
+
+    const neighbors = getNeighbors({ x: 5, y: 5, z: -1 }, lookup);
+    const z0 = neighbors.find((n) => n.z === 0);
+    expect(z0).toEqual({ x: 5, y: 5, z: 0 });
+  });
+
+  it("regular tile at z=-1 without cave_entrance above does not connect up", () => {
+    const lookup: TileLookup = (x, y, z) => {
+      if (z === 0) return "grass";
+      if (z === -1) return "cavern_floor";
+      return null;
+    };
+
+    const neighbors = getNeighbors({ x: 5, y: 5, z: -1 }, lookup);
+    const z0 = neighbors.find((n) => n.z === 0);
+    expect(z0).toBeUndefined();
   });
 });
 
@@ -193,6 +237,33 @@ describe("bfsNextStep", () => {
       true,
     );
     expect(result).toBeNull();
+  });
+
+  it("finds path through cave entrance from surface to cave", () => {
+    const lookup: TileLookup = (x, y, z) => {
+      // Surface: grass with a cave entrance at (2,0)
+      if (z === 0) {
+        if (x >= 0 && x <= 4 && y === 0) {
+          return x === 2 ? "cave_entrance" : "grass";
+        }
+        return null;
+      }
+      // Cave: cavern_floor at z=-1
+      if (z === -1) {
+        if (x >= 0 && x <= 4 && y === 0) return "cavern_floor";
+        return null;
+      }
+      return null;
+    };
+
+    // Start at surface (0,0,0), goal at cave (4,0,-1)
+    const result = bfsNextStep(
+      { x: 0, y: 0, z: 0 },
+      { x: 4, y: 0, z: -1 },
+      lookup,
+    );
+    // First step should move toward the cave entrance at (2,0)
+    expect(result).toEqual({ x: 1, y: 0, z: 0 });
   });
 
   it("returns null instead of crashing when search space is huge", () => {
