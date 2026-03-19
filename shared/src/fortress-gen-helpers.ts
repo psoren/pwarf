@@ -262,6 +262,9 @@ export function createFortressDeriver(
   const magmaIslandNoise = createNoise2D(rng);
   const magmaPipeNoise = createNoise2D(rng);
   const stairNoise = createNoise2D(rng);
+  const surfaceTreeNoise = createNoise2D(rng);
+  const surfaceRockNoise = createNoise2D(rng);
+  const surfacePondNoise = createNoise2D(rng);
 
   // Per-material noise
   const materialNoises: NoiseFunction2D[] = MATERIALS.map(() => createNoise2D(rng));
@@ -313,9 +316,9 @@ export function createFortressDeriver(
         return { tileType: stairType, material: null };
       }
 
-      // z=0: Surface (open air)
+      // z=0: Surface with features (trees, rocks, grass, bushes, ponds)
       if (z === 0) {
-        return { tileType: "open_air", material: null };
+        return deriveSurfaceTile(x, y, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise);
       }
 
       // z=-19: Magma sea
@@ -386,6 +389,46 @@ export function createFortressDeriver(
       return { tileType: "stone", material: null };
     },
   };
+}
+
+// ============================================================
+// Surface feature generation (z=0)
+// ============================================================
+
+export function deriveSurfaceTile(
+  x: number,
+  y: number,
+  treeNoise: NoiseFunction2D,
+  rockNoise: NoiseFunction2D,
+  pondNoise: NoiseFunction2D,
+): DerivedFortressTile {
+  // Ponds: small clusters using high-frequency noise
+  const pondVal = (pondNoise(x * 0.04, y * 0.04) + 1) / 2;
+  const pondRegion = (pondNoise(x * 0.008 + 300, y * 0.008 + 300) + 1) / 2;
+  if (pondRegion > 0.65 && pondVal > 0.75) {
+    return { tileType: "pond", material: null };
+  }
+
+  // Trees: dense forests using low-frequency for regions, high for individual placement
+  const treeRegion = (treeNoise(x * 0.006, y * 0.006) + 1) / 2;
+  const treeDetail = (treeNoise(x * 0.08 + 500, y * 0.08 + 500) + 1) / 2;
+  if (treeRegion > 0.45 && treeDetail > 0.55) {
+    return { tileType: "tree", material: "wood" };
+  }
+
+  // Bushes: appear at forest edges (moderate tree region)
+  if (treeRegion > 0.35 && treeRegion < 0.55 && treeDetail > 0.7) {
+    return { tileType: "bush", material: null };
+  }
+
+  // Rocks: scattered boulders, slightly clustered
+  const rockVal = (rockNoise(x * 0.05, y * 0.05) + 1) / 2;
+  if (rockVal > 0.88) {
+    return { tileType: "rock", material: "stone" };
+  }
+
+  // Default: grass
+  return { tileType: "grass", material: null };
 }
 
 function checkMaterial(

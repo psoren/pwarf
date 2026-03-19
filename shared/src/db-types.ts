@@ -172,6 +172,11 @@ export type TaskStatus =
 
 export type FortressTileType =
   | 'open_air'
+  | 'grass'
+  | 'tree'
+  | 'rock'
+  | 'bush'
+  | 'pond'
   | 'soil'
   | 'stone'
   | 'ore'

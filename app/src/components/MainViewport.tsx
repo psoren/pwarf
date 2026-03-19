@@ -36,6 +36,11 @@ const CHAR_H = 18;
 // --- Fortress tile glyph map ---
 const FORTRESS_GLYPHS: Record<FortressTileType, { ch: string; fg: string }> = {
   open_air:           { ch: ".",  fg: "#446" },
+  grass:              { ch: ".",  fg: "#4a8b3f" },
+  tree:               { ch: "\u2663", fg: "#228B22" },
+  rock:               { ch: "\u2022", fg: "#999" },
+  bush:               { ch: "\u2698", fg: "#5a9b40" },
+  pond:               { ch: "~",  fg: "#5599dd" },
   soil:               { ch: "\u2592", fg: "#8B6914" },
   stone:              { ch: "\u2593", fg: "#888" },
   ore:                { ch: "$",  fg: "#ffbf00" },
