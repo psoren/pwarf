@@ -1,12 +1,13 @@
 interface ToolbarProps {
   mode: "fortress" | "world";
   onSignOut?: () => void;
+  onRestart?: () => void;
   population?: number;
   year?: number;
   civName?: string;
 }
 
-export default function Toolbar({ mode, onSignOut, population = 0, year = 1, civName }: ToolbarProps) {
+export default function Toolbar({ mode, onSignOut, onRestart, population = 0, year = 1, civName }: ToolbarProps) {
   return (
     <header className="flex items-center justify-between px-3 py-1 border-b border-[var(--border)] bg-[var(--bg-panel)] text-xs select-none shrink-0">
       <div className="flex gap-4 items-center">
@@ -22,6 +23,14 @@ export default function Toolbar({ mode, onSignOut, population = 0, year = 1, civ
       <div className="flex gap-4 items-center">
         <span>Pop: {population}</span>
         <span className="text-[var(--amber)]">No alerts</span>
+        {onRestart && (
+          <button
+            onClick={onRestart}
+            className="px-2 py-0.5 border border-[var(--border)] text-[var(--text)] hover:text-[var(--red,#f87171)] hover:border-[var(--red,#f87171)] cursor-pointer"
+          >
+            New Game
+          </button>
+        )}
         {onSignOut && (
           <button
             onClick={onSignOut}
