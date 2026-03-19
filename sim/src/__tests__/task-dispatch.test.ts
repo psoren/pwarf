@@ -7,8 +7,11 @@ import {
   STARVATION_TICKS,
   FOOD_RESTORE_AMOUNT,
   DRINK_RESTORE_AMOUNT,
+  SLEEP_RESTORE_AMOUNT,
+  SLEEP_RESTORE_PER_TICK,
   BASE_WORK_RATE,
   WORK_EAT,
+  WORK_SLEEP,
   MAX_NEED,
 } from "@pwarf/shared";
 import { needsDecay } from "../phases/needs-decay.js";
@@ -246,7 +249,7 @@ describe("task execution", () => {
     expect(dwarf.need_drink).toBe(Math.min(MAX_NEED, 15 + DRINK_RESTORE_AMOUNT));
   });
 
-  it("sleeping restores sleep to 100", async () => {
+  it("sleeping restores sleep gradually each tick", async () => {
     const dwarf = makeDwarf({
       position_x: 0, position_y: 0, position_z: 0,
       need_sleep: 10,
@@ -258,16 +261,22 @@ describe("task execution", () => {
       target_x: 0,
       target_y: 0,
       target_z: 0,
-      work_required: 1,
+      work_required: WORK_SLEEP,
       assigned_dwarf_id: dwarf.id,
     });
     task.status = "in_progress";
     task.assigned_dwarf_id = dwarf.id;
     dwarf.current_task_id = task.id;
 
+    // After 1 tick, only a fraction of sleep should be restored
     await taskExecution(ctx);
+    expect(dwarf.need_sleep).toBeCloseTo(10 + SLEEP_RESTORE_PER_TICK, 5);
 
-    expect(dwarf.need_sleep).toBe(MAX_NEED);
+    // After all ticks, full SLEEP_RESTORE_AMOUNT should be restored
+    for (let i = 1; i < WORK_SLEEP; i++) {
+      await taskExecution(ctx);
+    }
+    expect(dwarf.need_sleep).toBeCloseTo(10 + SLEEP_RESTORE_AMOUNT, 5);
   });
 
   it("mining creates a stone item", async () => {

@@ -18,6 +18,7 @@ import { useWorldState } from "./hooks/useWorldState";
 import { useDesignation, type DesignationMode } from "./hooks/useDesignation";
 import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
 import TaskPriorities from "./components/TaskPriorities";
+import { DwarfModal } from "./components/DwarfModal";
 import { SURFACE_Z, CAVE_Z } from "@pwarf/shared";
 import type { LiveDwarf } from "./hooks/useDwarves";
 
@@ -213,6 +214,16 @@ export default function App() {
     );
   }, [viewport.setOffset, vpCols, vpRows]);
 
+  // Dwarf info modal
+  const [modalDwarfId, setModalDwarfId] = useState<string | null>(null);
+  const modalDwarf = modalDwarfId ? liveDwarves.find(d => d.id === modalDwarfId) ?? null : null;
+
+  const handleDwarfClick = useCallback((x: number, y: number) => {
+    const key = `${x},${y}`;
+    const dwarf = liveDwarves.find(d => d.position_x === x && d.position_y === y && d.position_z === zLevel);
+    if (dwarf) setModalDwarfId(dwarf.id);
+  }, [liveDwarves, zLevel]);
+
   // Keyboard shortcuts for build menu items when the menu is open
   useEffect(() => {
     if (!designation.buildMenuOpen) return;
@@ -345,7 +356,16 @@ export default function App() {
           onCancelArea={world.mode === "fortress" ? designation.handleCancelArea : undefined}
           onTileClick={world.mode === "world" ? (x: number, y: number) => setSelectedWorldTile({ x, y }) : undefined}
           selectedTile={world.mode === "world" ? selectedWorldTile : undefined}
+          onDwarfClick={world.mode === "fortress" ? handleDwarfClick : undefined}
         />
+
+        {modalDwarf && (
+          <DwarfModal
+            dwarf={modalDwarf}
+            onClose={() => setModalDwarfId(null)}
+            onGoTo={handleGoToDwarf}
+          />
+        )}
 
         <RightPanel
           collapsed={!rightOpen}

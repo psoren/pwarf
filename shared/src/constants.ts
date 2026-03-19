@@ -102,6 +102,9 @@ export const FOOD_RESTORE_AMOUNT = 40;
 /** Amount need_drink is restored when drinking basic drink */
 export const DRINK_RESTORE_AMOUNT = 50;
 
+/** Total amount need_sleep is restored over the course of one sleep task */
+export const SLEEP_RESTORE_AMOUNT = 60;
+
 /** Stress penalty per tick for sleeping on the floor instead of a bed */
 export const FLOOR_SLEEP_STRESS = 5;
 
@@ -139,8 +142,11 @@ export const WORK_EAT = 10;
 /** Work required for drinking */
 export const WORK_DRINK = 10;
 
-/** Work required for sleeping */
-export const WORK_SLEEP = 50;
+/** Work required for sleeping (~8 in-game hours ≈ 16 ticks) */
+export const WORK_SLEEP = 16;
+
+/** Amount need_sleep is restored per tick while sleeping (SLEEP_RESTORE_AMOUNT / WORK_SLEEP) */
+export const SLEEP_RESTORE_PER_TICK = SLEEP_RESTORE_AMOUNT / WORK_SLEEP;
 
 /** Work required to build a wall */
 export const WORK_BUILD_WALL = 80;
