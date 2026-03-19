@@ -12,3 +12,4 @@ export { jobClaiming } from "./job-claiming.js";
 export { eventFiring } from "./event-firing.js";
 export { yearlyRollup } from "./yearly-rollup.js";
 export { idleWandering } from "./idle-wandering.js";
+export { thoughtGeneration } from "./thought-generation.js";

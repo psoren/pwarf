@@ -17,6 +17,7 @@ import {
   eventFiring,
   yearlyRollup,
   idleWandering,
+  thoughtGeneration,
 } from "./phases/index.js";
 
 /**
@@ -153,6 +154,7 @@ export class SimRunner {
     await idleWandering(this.ctx);
     await jobClaiming(this.ctx);
     await eventFiring(this.ctx);
+    await thoughtGeneration(this.ctx);
 
     // Yearly rollup only fires once every STEPS_PER_YEAR steps
     if (this.stepCount % STEPS_PER_YEAR === 0) {
