@@ -141,6 +141,28 @@ function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   dwarf.current_task_id = null;
   state.dirtyDwarfIds.add(dwarf.id);
 
+  // Fire completion event for player-created tasks
+  const autonomousTypes: string[] = ['eat', 'drink', 'sleep'];
+  if (!autonomousTypes.includes(task.task_type)) {
+    const dwarfLabel = `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''}`;
+    const taskLabel = task.task_type.replace(/_/g, ' ');
+    state.pendingEvents.push({
+      id: crypto.randomUUID(),
+      world_id: '',
+      year: ctx.year,
+      category: 'discovery',
+      civilization_id: ctx.civilizationId,
+      ruin_id: null,
+      dwarf_id: dwarf.id,
+      item_id: null,
+      faction_id: null,
+      monster_id: null,
+      description: `${dwarfLabel} has finished ${taskLabel}.`,
+      event_data: { task_type: task.task_type, task_id: task.id },
+      created_at: new Date().toISOString(),
+    });
+  }
+
   // Apply completion effects based on task type
   switch (task.task_type) {
     case 'mine':

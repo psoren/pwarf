@@ -71,6 +71,9 @@ export interface SimContext {
   /** The civilization this sim instance is driving. */
   civilizationId: string;
 
+  /** The world this civilization belongs to. */
+  worldId: string;
+
   /** Monotonically increasing step counter since sim start. */
   step: number;
 

@@ -50,6 +50,7 @@ export class SimRunner {
     this.ctx = {
       supabase: this.supabase,
       civilizationId,
+      worldId: worldId ?? '',
       step: this.stepCount,
       year: this.currentYear,
       day: this.currentDay,

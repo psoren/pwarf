@@ -64,6 +64,7 @@ function makeSimContext(dwarves: Dwarf[]): SimContext {
   return {
     supabase: null as unknown as SupabaseClient,
     civilizationId: "civ-1",
+    worldId: "world-1",
     step: 0,
     year: 1,
     day: 1,

@@ -13,6 +13,7 @@ import { useAuth } from "./hooks/useAuth";
 import { useDwarves } from "./hooks/useDwarves";
 import { useSimRunner } from "./hooks/useSimRunner";
 import { useTasks } from "./hooks/useTasks";
+import { useEvents } from "./hooks/useEvents";
 import { createAndGenerateWorld } from "./lib/world-gen";
 import { embark } from "./lib/embark";
 import { ensurePlayer } from "./lib/ensure-player";
@@ -92,6 +93,9 @@ export default function App() {
 
   // Active tasks
   const { designatedTiles } = useTasks(civId);
+
+  // Live activity log
+  const events = useEvents(civId);
 
   // Ensure player profile exists after auth, then restore any existing session
   useEffect(() => {
@@ -324,6 +328,7 @@ export default function App() {
         <RightPanel
           collapsed={!rightOpen}
           onToggle={() => setRightOpen((o) => !o)}
+          events={events}
         />
       </div>
 
