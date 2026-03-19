@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   createFortressDeriver,
+  deriveSurfaceTile,
   FORTRESS_MIN_Z,
   FORTRESS_MAX_Z,
 } from "./fortress-gen-helpers.js";
+import { createNoise2D } from "simplex-noise";
+import { createAleaRng } from "./world-gen-helpers.js";
 
 const SEED = 42n;
 const CIV_ID = "test-civ-001";
@@ -59,17 +62,28 @@ describe("createFortressDeriver", () => {
     expect(differences).toBeGreaterThan(0);
   });
 
-  it("z=0 is always open_air", () => {
+  it("z=0 has surface features (grass, tree, rock, bush, pond) or stairs", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
+    const surfaceTypes = new Set(["grass", "tree", "rock", "bush", "pond", "stair_down"]);
     for (let x = 0; x < 50; x++) {
       for (let y = 0; y < 50; y++) {
         const tile = d.deriveTile(x, y, 0);
-        // Stairs are allowed at z=0
-        if (tile.tileType !== "stair_down") {
-          expect(tile.tileType).toBe("open_air");
-        }
+        expect(surfaceTypes.has(tile.tileType)).toBe(true);
       }
     }
+  });
+
+  it("z=0 surface has variety (at least 3 different tile types)", () => {
+    const d = createFortressDeriver(SEED, CIV_ID);
+    const tileTypes = new Set<string>();
+    for (let x = 0; x < 200; x += 2) {
+      for (let y = 0; y < 200; y += 2) {
+        const tile = d.deriveTile(x, y, 0);
+        tileTypes.add(tile.tileType);
+      }
+    }
+    // Should have at least grass, tree, and one more type
+    expect(tileTypes.size).toBeGreaterThanOrEqual(3);
   });
 
   it("z=-19 is magma or lava_stone (or stairs/ore)", () => {
@@ -183,5 +197,69 @@ describe("createFortressDeriver", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
     expect(d.deriveTile(100, 100, 1).tileType).toBe("empty");
     expect(d.deriveTile(100, 100, -20).tileType).toBe("empty");
+  });
+
+  it("tree tiles have wood material", () => {
+    const d = createFortressDeriver(SEED, CIV_ID);
+    for (let x = 0; x < 300; x += 3) {
+      for (let y = 0; y < 300; y += 3) {
+        const tile = d.deriveTile(x, y, 0);
+        if (tile.tileType === "tree") {
+          expect(tile.material).toBe("wood");
+        }
+      }
+    }
+  });
+
+  it("rock tiles have stone material", () => {
+    const d = createFortressDeriver(SEED, CIV_ID);
+    for (let x = 0; x < 300; x += 3) {
+      for (let y = 0; y < 300; y += 3) {
+        const tile = d.deriveTile(x, y, 0);
+        if (tile.tileType === "rock") {
+          expect(tile.material).toBe("stone");
+        }
+      }
+    }
+  });
+});
+
+describe("deriveSurfaceTile", () => {
+  it("is deterministic for same noise functions", () => {
+    const rng1 = createAleaRng(42n);
+    const rng2 = createAleaRng(42n);
+    const tree1 = createNoise2D(rng1);
+    const rock1 = createNoise2D(rng1);
+    const pond1 = createNoise2D(rng1);
+    const tree2 = createNoise2D(rng2);
+    const rock2 = createNoise2D(rng2);
+    const pond2 = createNoise2D(rng2);
+
+    for (let x = 0; x < 50; x++) {
+      for (let y = 0; y < 50; y++) {
+        const t1 = deriveSurfaceTile(x, y, tree1, rock1, pond1);
+        const t2 = deriveSurfaceTile(x, y, tree2, rock2, pond2);
+        expect(t1.tileType).toBe(t2.tileType);
+        expect(t1.material).toBe(t2.material);
+      }
+    }
+  });
+
+  it("produces all expected tile types over a large area", () => {
+    const rng = createAleaRng(42n);
+    const treeN = createNoise2D(rng);
+    const rockN = createNoise2D(rng);
+    const pondN = createNoise2D(rng);
+
+    const types = new Set<string>();
+    for (let x = 0; x < 512; x += 2) {
+      for (let y = 0; y < 512; y += 2) {
+        types.add(deriveSurfaceTile(x, y, treeN, rockN, pondN).tileType);
+      }
+    }
+    expect(types.has("grass")).toBe(true);
+    expect(types.has("tree")).toBe(true);
+    expect(types.has("rock")).toBe(true);
+    // bush and pond may or may not appear with this seed, but grass/tree/rock are guaranteed
   });
 });
