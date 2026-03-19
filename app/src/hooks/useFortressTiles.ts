@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import {
   createFortressDeriver,
   FORTRESS_SIZE,
+  POLL_FORTRESS_TILES_MS,
   type FortressDeriver,
   type DerivedFortressTile,
   type FortressTile,
@@ -96,7 +97,7 @@ export function useFortressTiles({
   // Poll for tile changes (e.g. mining/building completions)
   useEffect(() => {
     if (!civId) return;
-    const interval = setInterval(() => void fetchOverrides(true), 2000);
+    const interval = setInterval(() => void fetchOverrides(true), POLL_FORTRESS_TILES_MS);
     return () => clearInterval(interval);
   }, [civId, fetchOverrides]);
 

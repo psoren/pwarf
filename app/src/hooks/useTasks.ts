@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import { POLL_TASKS_MS } from '@pwarf/shared';
 
 export interface ActiveTask {
   id: string;
@@ -50,7 +51,7 @@ export function useTasks(civId: string | null) {
     }
 
     void fetchTasks();
-    pollRef.current = setInterval(() => void fetchTasks(), 2000);
+    pollRef.current = setInterval(() => void fetchTasks(), POLL_TASKS_MS);
 
     return () => {
       if (pollRef.current) {

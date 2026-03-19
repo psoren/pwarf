@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { WorldTile } from "@pwarf/shared";
-import type { LiveDwarf } from "../hooks/useDwarves";
+import type { LiveDwarf, DwarfThought } from "../hooks/useDwarves";
 
 interface LeftPanelProps {
   mode: "fortress" | "world";
@@ -106,6 +106,26 @@ export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmb
                   <div className="text-[var(--amber)] font-bold mb-0.5">Health</div>
                   {needBar("HP", selectedDwarf.health, "var(--green)")}
                 </div>
+
+                {selectedDwarf.memories && selectedDwarf.memories.length > 0 && (
+                  <div className="border-t border-[var(--border)] pt-1 mt-1">
+                    <div className="text-[var(--amber)] font-bold mb-0.5">Thoughts</div>
+                    <ul className="space-y-0.5">
+                      {[...selectedDwarf.memories].reverse().slice(0, 5).map((thought: DwarfThought, i: number) => (
+                        <li key={i} className="flex items-start gap-1">
+                          <span className={
+                            thought.sentiment === "positive" ? "text-[var(--green)]" :
+                            thought.sentiment === "negative" ? "text-[#f87171]" :
+                            "text-[var(--text)]"
+                          }>
+                            {thought.sentiment === "positive" ? "+" : thought.sentiment === "negative" ? "-" : "·"}
+                          </span>
+                          <span className="text-[var(--text)]">{thought.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             ) : (
               // Dwarf roster

@@ -102,6 +102,12 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
       position_x: FORTRESS_CENTER + offset.dx,
       position_y: FORTRESS_CENTER + offset.dy,
       position_z: 0,
+      // Personality traits: -3 to +3 (Big Five)
+      trait_openness: Math.floor(Math.random() * 7) - 3,
+      trait_conscientiousness: Math.floor(Math.random() * 7) - 3,
+      trait_extraversion: Math.floor(Math.random() * 7) - 3,
+      trait_agreeableness: Math.floor(Math.random() * 7) - 3,
+      trait_neuroticism: Math.floor(Math.random() * 7) - 3,
     };
   });
 
@@ -186,6 +192,33 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
 
   const { error: itemError } = await supabase.from('items').insert(startingItems);
   if (itemError) throw new Error(`Failed to create starting items: ${itemError.message}`);
+
+  // Place a well and mushroom garden near fortress center
+  const fortressTiles = [
+    {
+      civilization_id: civ.id,
+      x: FORTRESS_CENTER + 3,
+      y: FORTRESS_CENTER,
+      z: 0,
+      tile_type: 'well',
+      material: 'stone',
+      is_revealed: true,
+      is_mined: false,
+    },
+    {
+      civilization_id: civ.id,
+      x: FORTRESS_CENTER - 3,
+      y: FORTRESS_CENTER,
+      z: 0,
+      tile_type: 'mushroom_garden',
+      material: 'plant',
+      is_revealed: true,
+      is_mined: false,
+    },
+  ];
+
+  const { error: tileOverrideError } = await supabase.from('fortress_tiles').insert(fortressTiles);
+  if (tileOverrideError) throw new Error(`Failed to place starting structures: ${tileOverrideError.message}`);
 
   return civ.id;
 }

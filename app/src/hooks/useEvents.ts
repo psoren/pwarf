@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { POLL_EVENTS_MS } from '@pwarf/shared';
 
 export interface LiveEvent {
   id: string;
@@ -8,7 +9,7 @@ export interface LiveEvent {
   created_at: string;
 }
 
-const POLL_INTERVAL = 3000;
+const POLL_INTERVAL = POLL_EVENTS_MS;
 const MAX_EVENTS = 50;
 
 export function useEvents(civId: string | null): LiveEvent[] {

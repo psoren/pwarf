@@ -160,7 +160,8 @@ export type TaskType =
   | 'build_floor'
   | 'build_stairs_up'
   | 'build_stairs_down'
-  | 'build_stairs_both';
+  | 'build_stairs_both'
+  | 'wander';
 
 export type TaskStatus =
   | 'pending'
@@ -191,6 +192,8 @@ export type FortressTileType =
   | 'stair_up'
   | 'stair_down'
   | 'stair_both'
+  | 'well'
+  | 'mushroom_garden'
   | 'sand'
   | 'ice'
   | 'mud'

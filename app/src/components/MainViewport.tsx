@@ -24,7 +24,7 @@ interface MainViewportProps {
   designationMode?: string;
   /** Area designation handler — called with rectangle bounds */
   onDesignateArea?: (x1: number, y1: number, x2: number, y2: number) => void;
-  /** Area cancellation handler — called with rectangle bounds when Shift+dragging */
+  /** Cancel designation handler — shift+drag to cancel pending tasks in area */
   onCancelArea?: (x1: number, y1: number, x2: number, y2: number) => void;
   /** Click handler for world map tile selection */
   onTileClick?: (x: number, y: number) => void;
@@ -74,24 +74,13 @@ export default function MainViewport({
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   const dragMoved = useRef(false);
+  const shiftHeld = useRef(false);
 
   // Designation drag-select state
   const [selStart, setSelStart] = useState<{ x: number; y: number } | null>(null);
   const [selEnd, setSelEnd] = useState<{ x: number; y: number } | null>(null);
-  const [shiftHeld, setShiftHeld] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
   const isDesignating = designationMode && designationMode !== 'none';
-
-  // Track Shift key state globally
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Shift") setShiftHeld(true); };
-    const onKeyUp = (e: KeyboardEvent) => { if (e.key === "Shift") setShiftHeld(false); };
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-    };
-  }, []);
 
   const getWorldTile = useCallback(
     (wx: number, wy: number): { ch: string; fg: string; bg?: string } => {
@@ -213,7 +202,6 @@ export default function MainViewport({
       const sx2 = Math.max(selStart.x, selEnd.x);
       const sy2 = Math.max(selStart.y, selEnd.y);
 
-      const isCancelling = shiftHeld;
       ctx.fillStyle = isCancelling ? "rgba(255, 0, 0, 0.25)" : "rgba(255, 102, 0, 0.25)";
       for (let sy = sy1; sy <= sy2; sy++) {
         for (let sx = sx1; sx <= sx2; sx++) {
@@ -243,7 +231,7 @@ export default function MainViewport({
       ctx.lineWidth = 1;
       ctx.strokeRect(cx + 0.5, cy + 0.5, CHAR_W - 1, CHAR_H - 1);
     }
-  }, [offsetX, offsetY, cursorX, cursorY, getTile, onViewportSize, isDesignating, selStart, selEnd, selectedTile, shiftHeld]);
+  }, [offsetX, offsetY, cursorX, cursorY, getTile, onViewportSize, isDesignating, selStart, selEnd, selectedTile, isCancelling]);
 
   // Re-render on state change
   useEffect(() => {
@@ -267,6 +255,12 @@ export default function MainViewport({
       const wy = offsetY + row;
       onCursorMove(wx, wy);
 
+      // Track shift state for cancel mode visual feedback
+      if (dragging.current && isDesignating) {
+        shiftHeld.current = e.shiftKey;
+        setIsCancelling(e.shiftKey);
+      }
+
       if (dragging.current) {
         dragMoved.current = true;
         if (isDesignating) {
@@ -285,8 +279,10 @@ export default function MainViewport({
       if (e.button === 0) {
         dragging.current = true;
         dragMoved.current = false;
+        shiftHeld.current = e.shiftKey;
 
         if (isDesignating) {
+          setIsCancelling(e.shiftKey);
           // Start designation selection
           const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
           const col = Math.floor((e.clientX - rect.left) / CHAR_W);
@@ -304,13 +300,13 @@ export default function MainViewport({
   );
 
   const handleMouseUp = useCallback(
-    (e: React.MouseEvent) => {
+    (_e: React.MouseEvent) => {
       if (dragging.current && isDesignating && selStart && selEnd) {
         const x1 = Math.min(selStart.x, selEnd.x);
         const y1 = Math.min(selStart.y, selEnd.y);
         const x2 = Math.max(selStart.x, selEnd.x);
         const y2 = Math.max(selStart.y, selEnd.y);
-        if (e.shiftKey && onCancelArea) {
+        if (shiftHeld.current && onCancelArea) {
           onCancelArea(x1, y1, x2, y2);
         } else if (onDesignateArea) {
           onDesignateArea(x1, y1, x2, y2);
@@ -322,8 +318,10 @@ export default function MainViewport({
       }
       dragging.current = false;
       dragMoved.current = false;
+      shiftHeld.current = false;
       setSelStart(null);
       setSelEnd(null);
+      setIsCancelling(false);
       if (!isDesignating) {
         onDragEnd();
       }
