@@ -13,9 +13,6 @@ const TASK_SKILL_MAP: Record<TaskType, string | null> = {
   sleep: null,
   build_wall: 'building',
   build_floor: 'building',
-  build_stairs_up: 'building',
-  build_stairs_down: 'building',
-  build_stairs_both: 'building',
   wander: null,
 };
 

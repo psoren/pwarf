@@ -294,56 +294,6 @@ describe("task execution", () => {
     expect(stoneItems[0]!.name).toBe("Stone block");
   });
 
-  it("dwarf moves through stairs to reach a task on a different z-level", async () => {
-    // Dwarf at (5, 5, z=0), task at (5, 5, z=-1). Stairs at (5, 6).
-    const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
-    const skill = makeSkill(dwarf.id, "mining", 5);
-
-    // Create a deriver that has stairs at (5,6) and open air elsewhere
-    const stairDeriver: FortressDeriver = {
-      deriveTile(x: number, y: number, z: number) {
-        if (x === 5 && y === 6 && z === 0) return { tileType: "stair_down" as FortressTileType, material: null };
-        if (x === 5 && y === 6 && z === -1) return { tileType: "stair_up" as FortressTileType, material: null };
-        if (z === -1) {
-          // Underground: mix of stone and open air
-          if (x === 5 && y === 5) return { tileType: "stone" as FortressTileType, material: "granite" };
-          return { tileType: "open_air" as FortressTileType, material: null };
-        }
-        return { tileType: "open_air" as FortressTileType, material: null };
-      },
-    };
-
-    const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
-    ctx.fortressDeriver = stairDeriver;
-
-    // Create a mine task at (5, 5, z=-1) — adjacent task, dwarf needs to be next to it
-    const task = createTask(ctx.state, "civ-1", {
-      task_type: "mine",
-      target_x: 5,
-      target_y: 5,
-      target_z: -1,
-      work_required: 1,
-    });
-    task.status = "in_progress";
-    task.assigned_dwarf_id = dwarf.id;
-    dwarf.current_task_id = task.id;
-
-    // Tick 1: dwarf at (5,5,0) should move toward stairs at (5,6,0)
-    await taskExecution(ctx);
-    expect(dwarf.position_y).toBe(6);
-    expect(dwarf.position_z).toBe(0);
-
-    // Tick 2: dwarf at (5,6,0) on stair_down, should descend to (5,6,-1)
-    await taskExecution(ctx);
-    expect(dwarf.position_z).toBe(-1);
-    expect(dwarf.position_x).toBe(5);
-    expect(dwarf.position_y).toBe(6);
-
-    // Tick 3: dwarf at (5,6,-1) adjacent to mine target (5,5,-1) — should do work
-    await taskExecution(ctx);
-    expect(task.status).toBe("completed");
-  });
-
   it("dwarf moves on same z-level using real tile lookup", async () => {
     // Dwarf at (3, 3, 0), task at (3, 3, 0) — haul task, dwarf needs to be on tile
     const dwarf = makeDwarf({ position_x: 3, position_y: 3, position_z: 0 });
@@ -382,7 +332,7 @@ describe("task execution", () => {
   });
 
   it("fails task when no path exists through solid rock", async () => {
-    // Dwarf at (0, 0, 0), task at (0, 0, -1), no stairs anywhere
+    // Dwarf at (0, 0, 0), task at (0, 0, -1), no cave entrance
     const dwarf = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
     const skill = makeSkill(dwarf.id, "mining", 5);
     const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
@@ -723,47 +673,6 @@ describe("build tasks", () => {
     expect(task.status).toBe("completed");
     const tile = ctx.state.fortressTileOverrides.get("10,10,0")!;
     expect(tile.tile_type).toBe("constructed_floor");
-  });
-
-  it("completeBuild creates correct tile type for stairs", async () => {
-    const types: Array<{ taskType: "build_stairs_up" | "build_stairs_down" | "build_stairs_both"; expected: string }> = [
-      { taskType: "build_stairs_up", expected: "stair_up" },
-      { taskType: "build_stairs_down", expected: "stair_down" },
-      { taskType: "build_stairs_both", expected: "stair_both" },
-    ];
-
-    for (const { taskType, expected } of types) {
-      const dwarf = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
-      const task: Task = {
-        id: randomUUID(),
-        civilization_id: "civ-1",
-        task_type: taskType,
-        status: "in_progress",
-        priority: 5,
-        assigned_dwarf_id: dwarf.id,
-        target_x: 0,
-        target_y: 0,
-        target_z: 0,
-        target_item_id: null,
-        work_progress: 59,
-        work_required: 60,
-        created_at: new Date().toISOString(),
-        completed_at: null,
-      };
-      dwarf.current_task_id = task.id;
-
-      const ctx = makeContext({
-        dwarves: [dwarf],
-        tasks: [task],
-        skills: [makeSkill(dwarf.id, "building", 0)],
-      });
-
-      await taskExecution(ctx);
-
-      expect(task.status).toBe("completed");
-      const tile = ctx.state.fortressTileOverrides.get("0,0,0")!;
-      expect(tile.tile_type).toBe(expected);
-    }
   });
 
   it("completeMine creates a fortress tile override with open_air", async () => {

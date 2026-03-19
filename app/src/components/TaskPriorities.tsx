@@ -9,9 +9,6 @@ const PRIORITY_TASK_TYPES: Array<{ label: string; taskType: TaskType }> = [
   { label: "Farm (harvest)", taskType: "farm_harvest" },
   { label: "Build Wall", taskType: "build_wall" },
   { label: "Build Floor", taskType: "build_floor" },
-  { label: "Build Stairs Up", taskType: "build_stairs_up" },
-  { label: "Build Stairs Down", taskType: "build_stairs_down" },
-  { label: "Build Stairs Both", taskType: "build_stairs_both" },
 ];
 
 interface TaskPrioritiesProps {

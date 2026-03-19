@@ -12,7 +12,7 @@ const ALL_FORTRESS_TILES: FortressTileType[] = [
   "open_air", "grass", "tree", "rock", "bush", "pond",
   "soil", "stone", "ore", "gem", "water", "magma",
   "lava_stone", "cavern_floor", "cavern_wall", "constructed_wall",
-  "constructed_floor", "stair_up", "stair_down", "stair_both",
+  "constructed_floor",
   "sand", "ice", "mud", "cave_entrance", "empty",
 ];
 
@@ -38,7 +38,7 @@ describe("FORTRESS_GLYPHS", () => {
 
 describe("DESIGNATION_PREVIEW", () => {
   it("has entries for all designation types", () => {
-    const expected = ["mine", "build_wall", "build_floor", "build_stairs_up", "build_stairs_down", "build_stairs_both"];
+    const expected = ["mine", "build_wall", "build_floor"];
     for (const key of expected) {
       expect(DESIGNATION_PREVIEW[key]).toBeDefined();
     }
