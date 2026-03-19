@@ -61,11 +61,14 @@ export function useTasks(civId: string | null) {
     };
   }, [civId]);
 
+  /** Task types that are autonomous (not player-designated) — don't show as designations. */
+  const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
+
   /** Map of "x,y" → task_type for tiles with active designations */
   const designatedTiles = useMemo(() => {
     const map = new Map<string, string>();
     for (const task of tasks) {
-      if (task.target_x !== null && task.target_y !== null) {
+      if (task.target_x !== null && task.target_y !== null && !AUTONOMOUS_TASK_TYPES.has(task.task_type)) {
         map.set(`${task.target_x},${task.target_y}`, task.task_type);
       }
     }

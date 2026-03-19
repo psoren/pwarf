@@ -1,9 +1,9 @@
-import { BASE_WORK_RATE, FORTRESS_SIZE } from "@pwarf/shared";
+import { BASE_WORK_RATE } from "@pwarf/shared";
 import type { Dwarf, Task } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { getDwarfSkillLevel, getRequiredSkill } from "../task-helpers.js";
 import { bfsNextStep } from "../pathfinding.js";
-import type { TileLookup } from "../pathfinding.js";
+import { buildTileLookup } from "../tile-lookup.js";
 import { handleDeprivationDeaths } from "./deprivation.js";
 import { completeTask } from "./task-completion.js";
 
@@ -82,28 +82,6 @@ function isAdjacentToTarget(dwarf: Dwarf, task: Task): boolean {
   return (dx + dy) === 1;
 }
 
-/** Build a TileLookup that checks overrides first, then falls back to the deriver. */
-function buildTileLookup(ctx: SimContext): TileLookup {
-  const { fortressDeriver } = ctx;
-  const { fortressTileOverrides } = ctx.state;
-
-  return (x: number, y: number, z: number) => {
-    if (x < 0 || x >= FORTRESS_SIZE || y < 0 || y >= FORTRESS_SIZE) return null;
-
-    // Check overrides first (mined/built tiles)
-    const override = fortressTileOverrides.get(`${x},${y},${z}`);
-    if (override) return override.tile_type;
-
-    // Fall back to deterministic deriver
-    if (fortressDeriver) {
-      return fortressDeriver.deriveTile(x, y, z).tileType;
-    }
-
-    // No deriver available — treat as open_air (legacy fallback)
-    return 'open_air';
-  };
-}
-
 function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext): boolean {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return true;
 
@@ -135,9 +113,16 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext): boolean {
 }
 
 function failTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {
-  task.status = 'pending';
-  task.assigned_dwarf_id = null;
-  task.work_progress = 0;
+  // Wander tasks should be cancelled outright — resetting them to pending
+  // with no assignee creates orphaned autonomous tasks that can never be reclaimed.
+  if (task.task_type === 'wander') {
+    task.status = 'completed';
+    task.completed_at = new Date().toISOString();
+  } else {
+    task.status = 'pending';
+    task.assigned_dwarf_id = null;
+    task.work_progress = 0;
+  }
   state.dirtyTaskIds.add(task.id);
 
   dwarf.current_task_id = null;

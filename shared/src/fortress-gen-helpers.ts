@@ -319,6 +319,14 @@ export function createFortressDeriver(
 
       // z=0: Surface with features varying by biome
       if (z === 0) {
+        // Clear surface features near stair columns and fortress center so
+        // dwarves aren't trapped by trees on spawn or unable to reach stairs
+        const center = Math.floor(FORTRESS_SIZE / 2);
+        const nearCenter = Math.abs(x - center) <= 3 && Math.abs(y - center) <= 3;
+        if (nearCenter || isAdjacentToStair(x, y, stairTypes)) {
+          const p = getProfile(terrain);
+          return { tileType: p.base, material: p.baseMaterial };
+        }
         return deriveSurfaceTile(x, y, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise, terrain);
       }
 
@@ -482,6 +490,14 @@ function getProfile(terrain: TerrainType): SurfaceProfile {
   const overrides = SURFACE_PROFILES[terrain];
   if (!overrides) return DEFAULT_PROFILE;
   return { ...DEFAULT_PROFILE, ...overrides };
+}
+
+/** Check if a tile is cardinally adjacent to a stair column on the surface. */
+function isAdjacentToStair(x: number, y: number, stairTypes: Map<string, FortressTileType>): boolean {
+  return stairTypes.has(`${x + 1},${y},0`)
+    || stairTypes.has(`${x - 1},${y},0`)
+    || stairTypes.has(`${x},${y + 1},0`)
+    || stairTypes.has(`${x},${y - 1},0`);
 }
 
 export function deriveSurfaceTile(
