@@ -90,6 +90,16 @@ Or run the SQL files in `supabase/migrations/` manually in the Supabase SQL edit
 | `npm test` | Run all tests |
 | `npm test --workspace=sim` | Run sim tests only |
 
+## Claude Code Skills
+
+This project uses [Claude Code skills](https://docs.anthropic.com/en/docs/claude-code) for development workflows. To install the screenshot upload skill:
+
+```bash
+npx skills add tonkotsuboy/github-upload-image-to-pr
+```
+
+This skill allows publishing screenshots to GitHub PRs during playtesting.
+
 ## Controls
 
 | Key | Action |
