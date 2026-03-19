@@ -60,6 +60,9 @@ export default function App() {
   // Fortress z-level
   const [zLevel, setZLevel] = useState(0);
 
+  // Selected world tile (persists on click)
+  const [selectedWorldTile, setSelectedWorldTile] = useState<{ x: number; y: number } | null>(null);
+
   // Designation mode
   const [designationMode, setDesignationMode] = useState<DesignationMode>("none");
   const [buildMenuOpen, setBuildMenuOpen] = useState(false);
@@ -91,6 +94,9 @@ export default function App() {
   });
 
   const cursorTile = worldId ? getTile(viewport.cursorX, viewport.cursorY) : null;
+  const selectedTileData = worldId && selectedWorldTile
+    ? getTile(selectedWorldTile.x, selectedWorldTile.y)
+    : null;
   const cursorFortressTile = civId ? getFortressTile(viewport.cursorX, viewport.cursorY) : null;
 
   // Live dwarves from DB
@@ -214,9 +220,9 @@ export default function App() {
   }, []);
 
   const handleEmbark = useCallback(async () => {
-    if (!worldId || !worldSeed || !cursorTile || cursorTile.terrain === "ocean") return;
+    if (!worldId || !worldSeed || !selectedWorldTile || !selectedTileData || selectedTileData.terrain === "ocean") return;
     try {
-      const id = await embark(worldId, viewport.cursorX, viewport.cursorY, worldSeed);
+      const id = await embark(worldId, selectedWorldTile.x, selectedWorldTile.y, worldSeed);
       setCivId(id);
       setMode("fortress");
       const center = Math.floor(FORTRESS_SIZE / 2);
@@ -224,7 +230,7 @@ export default function App() {
     } catch (err) {
       console.error("Embark failed:", err);
     }
-  }, [worldId, worldSeed, cursorTile, viewport.cursorX, viewport.cursorY]);
+  }, [worldId, worldSeed, selectedWorldTile, selectedTileData]);
 
   const handleDesignateArea = useCallback(async (x1: number, y1: number, x2: number, y2: number) => {
     if (designationMode === 'none' || !civId) return;
@@ -301,6 +307,24 @@ export default function App() {
     return () => window.removeEventListener("keydown", handleBuildKey, true);
   }, [buildMenuOpen]);
 
+  const handleRestart = useCallback(async () => {
+    // Clear the player's world_id so they get the world gen screen
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    if (currentUser) {
+      await supabase.from('players').update({ world_id: null }).eq('id', currentUser.id);
+    }
+    // Reset all local state
+    setWorldId(null);
+    setWorldSeed(null);
+    setCivId(null);
+    setMode("world");
+    setDesignationMode("none");
+    setBuildMenuOpen(false);
+    setSelectedWorldTile(null);
+    setZLevel(0);
+    viewport.setOffset(0, 0);
+  }, [viewport.setOffset]);
+
   // Loading state
   if (loading) {
     return (
@@ -367,6 +391,7 @@ export default function App() {
       <Toolbar
         mode={mode}
         onSignOut={signOut}
+        onRestart={handleRestart}
         population={liveDwarves.length}
         year={1}
         civName={mode === "fortress" ? "Stonegear" : undefined}
@@ -383,8 +408,8 @@ export default function App() {
           mode={mode}
           collapsed={!leftOpen}
           onToggle={() => setLeftOpen((o) => !o)}
-          cursorTile={cursorTile}
-          onEmbark={mode === "world" ? handleEmbark : undefined}
+          cursorTile={mode === "world" ? (selectedTileData ?? cursorTile) : cursorTile}
+          onEmbark={mode === "world" && selectedWorldTile ? handleEmbark : undefined}
           dwarves={liveDwarves}
         />
 
@@ -405,6 +430,8 @@ export default function App() {
           designatedTiles={mode === "fortress" ? designatedTiles : undefined}
           designationMode={mode === "fortress" ? designationMode : undefined}
           onDesignateArea={mode === "fortress" ? handleDesignateArea : undefined}
+          onTileClick={mode === "world" ? (x: number, y: number) => setSelectedWorldTile({ x, y }) : undefined}
+          selectedTile={mode === "world" ? selectedWorldTile : undefined}
         />
 
         <RightPanel

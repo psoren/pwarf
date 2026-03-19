@@ -23,6 +23,10 @@ interface MainViewportProps {
   designationMode?: string;
   /** Area designation handler — called with rectangle bounds */
   onDesignateArea?: (x1: number, y1: number, x2: number, y2: number) => void;
+  /** Click handler for world map tile selection */
+  onTileClick?: (x: number, y: number) => void;
+  /** Selected world tile position */
+  selectedTile?: { x: number; y: number } | null;
 }
 
 // Character cell dimensions (monospace)
@@ -105,6 +109,8 @@ export default function MainViewport({
   designatedTiles,
   designationMode,
   onDesignateArea,
+  onTileClick,
+  selectedTile,
 }: MainViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -212,6 +218,12 @@ export default function MainViewport({
           ctx.fillRect(px, py, CHAR_W, CHAR_H);
         }
 
+        // Highlight selected world tile
+        if (selectedTile && wx === selectedTile.x && wy === selectedTile.y) {
+          ctx.fillStyle = "rgba(74, 246, 38, 0.25)";
+          ctx.fillRect(px, py, CHAR_W, CHAR_H);
+        }
+
         // Highlight cursor tile
         if (wx === cursorX && wy === cursorY) {
           ctx.fillStyle = designationMode && designationMode !== 'none' ? "#442244" : "#333";
@@ -259,7 +271,7 @@ export default function MainViewport({
       ctx.lineWidth = 1;
       ctx.strokeRect(cx + 0.5, cy + 0.5, CHAR_W - 1, CHAR_H - 1);
     }
-  }, [offsetX, offsetY, cursorX, cursorY, getTile, onViewportSize, isDesignating, selStart, selEnd]);
+  }, [offsetX, offsetY, cursorX, cursorY, getTile, onViewportSize, isDesignating, selStart, selEnd, selectedTile]);
 
   // Re-render on state change
   useEffect(() => {
@@ -328,6 +340,10 @@ export default function MainViewport({
         const y2 = Math.max(selStart.y, selEnd.y);
         onDesignateArea(x1, y1, x2, y2);
       }
+      // Fire tile click if user clicked without dragging (world map selection)
+      if (dragging.current && !dragMoved.current && !isDesignating && onTileClick) {
+        onTileClick(cursorX, cursorY);
+      }
       dragging.current = false;
       dragMoved.current = false;
       setSelStart(null);
@@ -336,7 +352,7 @@ export default function MainViewport({
         onDragEnd();
       }
     },
-    [onDragEnd, onDesignateArea, isDesignating, selStart, selEnd],
+    [onDragEnd, onDesignateArea, onTileClick, isDesignating, selStart, selEnd, cursorX, cursorY],
   );
 
   return (
