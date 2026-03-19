@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { POLL_TASKS_MS } from '@pwarf/shared';
 
@@ -13,6 +13,12 @@ export interface ActiveTask {
   work_required: number;
 }
 
+export interface OptimisticDesignation {
+  x: number;
+  y: number;
+  taskType: string;
+}
+
 /** Build a compact fingerprint for diffing. */
 function fingerprint(tasks: ActiveTask[]): string {
   let s = '';
@@ -24,12 +30,14 @@ function fingerprint(tasks: ActiveTask[]): string {
 
 export function useTasks(civId: string | null) {
   const [tasks, setTasks] = useState<ActiveTask[]>([]);
+  const [optimistic, setOptimistic] = useState<OptimisticDesignation[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastFingerprint = useRef<string>('');
 
   useEffect(() => {
     if (!civId) {
       setTasks([]);
+      setOptimistic([]);
       lastFingerprint.current = '';
       return;
     }
@@ -46,6 +54,8 @@ export function useTasks(civId: string | null) {
         if (fp !== lastFingerprint.current) {
           lastFingerprint.current = fp;
           setTasks(data);
+          // Clear optimistic entries once real data arrives
+          setOptimistic([]);
         }
       }
     }
@@ -64,6 +74,11 @@ export function useTasks(civId: string | null) {
   /** Task types that are autonomous (not player-designated) — don't show as designations. */
   const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
 
+  /** Add optimistic designations that show immediately before the next poll. */
+  const addOptimistic = useCallback((tiles: OptimisticDesignation[]) => {
+    setOptimistic((prev) => [...prev, ...tiles]);
+  }, []);
+
   /** Map of "x,y" → task_type for tiles with active designations */
   const designatedTiles = useMemo(() => {
     const map = new Map<string, string>();
@@ -72,8 +87,15 @@ export function useTasks(civId: string | null) {
         map.set(`${task.target_x},${task.target_y}`, task.task_type);
       }
     }
+    // Layer optimistic designations on top (only for keys not already in real data)
+    for (const o of optimistic) {
+      const key = `${o.x},${o.y}`;
+      if (!map.has(key)) {
+        map.set(key, o.taskType);
+      }
+    }
     return map;
-  }, [tasks]);
+  }, [tasks, optimistic]);
 
-  return { tasks, designatedTiles };
+  return { tasks, designatedTiles, addOptimistic };
 }

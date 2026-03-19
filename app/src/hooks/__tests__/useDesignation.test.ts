@@ -66,6 +66,7 @@ function makeHook(overrides: Partial<Parameters<typeof useDesignation>[0]> = {})
       zLevel: 0,
       getFortressTile,
       designatedTiles,
+      addOptimistic: () => {},
       ...overrides,
     }),
   );

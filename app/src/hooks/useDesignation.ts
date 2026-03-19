@@ -10,6 +10,7 @@ import {
 } from "@pwarf/shared";
 import { supabase } from "../lib/supabase";
 import type { FortressViewTile } from "./useFortressTiles";
+import type { OptimisticDesignation } from "./useTasks";
 
 export type DesignationMode = "none" | "mine" | "build_wall" | "build_floor";
 
@@ -23,8 +24,9 @@ export function useDesignation(opts: {
   zLevel: number;
   getFortressTile: (x: number, y: number) => FortressViewTile | null;
   designatedTiles: Map<string, string>;
+  addOptimistic: (tiles: OptimisticDesignation[]) => void;
 }) {
-  const { civId, zLevel, getFortressTile, designatedTiles } = opts;
+  const { civId, zLevel, getFortressTile, designatedTiles, addOptimistic } = opts;
 
   const [designationMode, setDesignationMode] = useState<DesignationMode>("none");
   const [buildMenuOpen, setBuildMenuOpen] = useState(false);
@@ -104,6 +106,9 @@ export function useDesignation(opts: {
 
     if (tasks.length === 0) return;
 
+    // Show blueprints immediately — the next poll will reconcile with real data
+    addOptimistic(tasks.map((t) => ({ x: t.target_x, y: t.target_y, taskType: t.task_type })));
+
     const { error } = await supabase.from('tasks').insert(tasks);
     if (error) {
       console.error('[designate] Failed to create tasks:', error.message);
@@ -117,7 +122,7 @@ export function useDesignation(opts: {
         return next;
       });
     }
-  }, [designationMode, civId, zLevel, getFortressTile, designatedTiles, taskPriorities]);
+  }, [designationMode, civId, zLevel, getFortressTile, designatedTiles, taskPriorities, addOptimistic]);
 
   const handleCancelArea = useCallback(async (x1: number, y1: number, x2: number, y2: number) => {
     if (!civId) return;
