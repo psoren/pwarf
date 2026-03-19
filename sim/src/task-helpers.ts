@@ -1,5 +1,4 @@
-import type { Dwarf, DwarfSkill, Task, TaskType, Item, FortressDeriver, FortressTileType, FortressTile } from "@pwarf/shared";
-import { FORTRESS_SIZE } from "@pwarf/shared";
+import type { Dwarf, DwarfSkill, Task, TaskType, Item } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 
 /** Map task types to the skill name required. null means any dwarf can do it. */
@@ -100,45 +99,6 @@ export function createTask(
   state.tasks.push(task);
   state.newTasks.push(task);
   return task;
-}
-
-/**
- * Find the nearest tile of a given type by spiraling outward from the dwarf's position.
- * Checks overrides first, then the deriver. Returns the position or null.
- */
-export function findNearestTileOfType(
-  tileType: FortressTileType,
-  fromX: number,
-  fromY: number,
-  fromZ: number,
-  overrides: Map<string, FortressTile>,
-  deriver: FortressDeriver | null,
-  maxRadius = 30,
-): { x: number; y: number; z: number } | null {
-  // Spiral search outward from current position
-  for (let r = 0; r <= maxRadius; r++) {
-    for (let dy = -r; dy <= r; dy++) {
-      for (let dx = -r; dx <= r; dx++) {
-        if (Math.abs(dx) !== r && Math.abs(dy) !== r) continue; // only ring edges
-        const x = fromX + dx;
-        const y = fromY + dy;
-        if (x < 0 || x >= FORTRESS_SIZE || y < 0 || y >= FORTRESS_SIZE) continue;
-
-        const key = `${x},${y},${fromZ}`;
-        const override = overrides.get(key);
-        if (override && override.tile_type === tileType) {
-          return { x, y, z: fromZ };
-        }
-        if (!override && deriver) {
-          const derived = deriver.deriveTile(x, y, fromZ);
-          if (derived.tileType === tileType) {
-            return { x, y, z: fromZ };
-          }
-        }
-      }
-    }
-  }
-  return null;
 }
 
 /** Find the nearest item of a given category in the fortress. */

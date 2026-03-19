@@ -136,32 +136,7 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
 
   // Create starting items
   const startingItems = [
-    ...Array.from({ length: 30 }, () => ({
-      name: 'Plump helmet spawn',
-      category: 'food',
-      quality: 'standard',
-      material: 'plant',
-      weight: 1,
-      value: 2,
-      is_artifact: false,
-      located_in_civ_id: civ.id,
-      created_in_civ_id: civ.id,
-      created_year: 1,
-      properties: {},
-    })),
-    ...Array.from({ length: 40 }, () => ({
-      name: 'Dwarven ale',
-      category: 'drink',
-      quality: 'standard',
-      material: 'plant',
-      weight: 1,
-      value: 3,
-      is_artifact: false,
-      located_in_civ_id: civ.id,
-      created_in_civ_id: civ.id,
-      created_year: 1,
-      properties: {},
-    })),
+    // Food and drink are provided by infinite sources (meat roast / beer fountain)
     ...Array.from({ length: 10 }, () => ({
       name: 'Plump helmet seed',
       category: 'raw_material',

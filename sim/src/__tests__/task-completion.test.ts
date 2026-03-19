@@ -58,7 +58,22 @@ describe("completeTask", () => {
     expect(events).toHaveLength(0);
   });
 
-  it("eating consumes food item and restores need", () => {
+  it("eating from infinite source restores need without consuming items", () => {
+    const dwarf = makeDwarf({ need_food: 20 });
+    const ctx = makeContext({ dwarves: [dwarf] });
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "eat",
+      work_required: 1,
+    });
+    task.status = "in_progress";
+    dwarf.current_task_id = task.id;
+
+    completeTask(dwarf, task, ctx);
+
+    expect(dwarf.need_food).toBe(Math.min(MAX_NEED, 20 + FOOD_RESTORE_AMOUNT));
+  });
+
+  it("eating with target item still consumes it", () => {
     const dwarf = makeDwarf({ need_food: 20 });
     const food = makeItem({ category: "food" });
     const ctx = makeContext({ dwarves: [dwarf], items: [food] });
@@ -76,13 +91,11 @@ describe("completeTask", () => {
     expect(ctx.state.items.find(i => i.id === food.id)).toBeUndefined();
   });
 
-  it("drinking consumes drink item and restores need", () => {
+  it("drinking from infinite source restores need without consuming items", () => {
     const dwarf = makeDwarf({ need_drink: 15 });
-    const drink = makeItem({ category: "drink", name: "Ale" });
-    const ctx = makeContext({ dwarves: [dwarf], items: [drink] });
+    const ctx = makeContext({ dwarves: [dwarf] });
     const task = createTask(ctx.state, "civ-1", {
       task_type: "drink",
-      target_item_id: drink.id,
       work_required: 1,
     });
     task.status = "in_progress";
