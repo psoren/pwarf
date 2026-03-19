@@ -7,6 +7,7 @@ import {
   type DerivedFortressTile,
   type FortressTile,
   type FortressTileType,
+  type TerrainType,
 } from '@pwarf/shared';
 
 export interface FortressViewTile extends DerivedFortressTile {
@@ -20,6 +21,7 @@ export interface FortressViewTile extends DerivedFortressTile {
 interface UseFortressTilesOptions {
   civId: string | null;
   worldSeed: bigint | null;
+  terrain: TerrainType | null;
   offsetX: number;
   offsetY: number;
   zLevel: number;
@@ -27,18 +29,10 @@ interface UseFortressTilesOptions {
   viewportRows: number;
 }
 
-/** Build a fingerprint from override data to detect actual changes. */
-function overrideFingerprint(data: Array<{ x: number; y: number; tile_type: string; is_revealed: boolean; is_mined: boolean }>): string {
-  let s = '';
-  for (const t of data) {
-    s += `${t.x},${t.y}:${t.tile_type}:${t.is_revealed}:${t.is_mined};`;
-  }
-  return s;
-}
-
 export function useFortressTiles({
   civId,
   worldSeed,
+  terrain,
   offsetX,
   offsetY,
   zLevel,
@@ -47,13 +41,12 @@ export function useFortressTiles({
 }: UseFortressTilesOptions) {
   const [dbOverrides, setDbOverrides] = useState<Map<string, Partial<FortressTile>>>(new Map());
   const lastFetchKey = useRef<string>('');
-  const lastOverrideFingerprint = useRef<string>('');
 
   // Create deriver once per seed + civId
   const deriver = useMemo<FortressDeriver | null>(() => {
     if (worldSeed == null || !civId) return null;
-    return createFortressDeriver(worldSeed, civId);
-  }, [worldSeed, civId]);
+    return createFortressDeriver(worldSeed, civId, terrain ?? "plains");
+  }, [worldSeed, civId, terrain]);
 
   // Fetch modified tiles from DB
   const fetchOverrides = useCallback(async (force = false) => {
@@ -86,10 +79,6 @@ export function useFortressTiles({
     }
 
     if (data) {
-      const fp = overrideFingerprint(data as Array<{ x: number; y: number; tile_type: string; is_revealed: boolean; is_mined: boolean }>);
-      if (fp === lastOverrideFingerprint.current) return;
-      lastOverrideFingerprint.current = fp;
-
       const newOverrides = new Map<string, Partial<FortressTile>>();
       for (const tile of data) {
         newOverrides.set(`${tile.x},${tile.y}`, tile as Partial<FortressTile>);
@@ -107,7 +96,7 @@ export function useFortressTiles({
   // Poll for tile changes (e.g. mining/building completions)
   useEffect(() => {
     if (!civId) return;
-    const interval = setInterval(() => void fetchOverrides(true), 3000);
+    const interval = setInterval(() => void fetchOverrides(true), 2000);
     return () => clearInterval(interval);
   }, [civId, fetchOverrides]);
 

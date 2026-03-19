@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { FORTRESS_SIZE } from "@pwarf/shared";
+import { FORTRESS_SIZE, createWorldDeriver, type TerrainType } from "@pwarf/shared";
 import { createAndGenerateWorld } from "../lib/world-gen";
 import { embark } from "../lib/embark";
 import { ensurePlayer } from "../lib/ensure-player";
@@ -21,6 +21,7 @@ export function useWorldState(opts: {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [civId, setCivId] = useState<string | null>(null);
+  const [embarkTerrain, setEmbarkTerrain] = useState<TerrainType | null>(null);
   const [mode, setMode] = useState<"fortress" | "world">("world");
 
   // Ensure player profile exists after auth, then restore any existing session
@@ -35,6 +36,7 @@ export function useWorldState(opts: {
           }
           if (session.civId) {
             setCivId(session.civId);
+            setEmbarkTerrain(session.embarkTerrain);
             setMode("fortress");
             const center = Math.floor(FORTRESS_SIZE / 2);
             setOffset(center - Math.floor(vpCols / 2), center - Math.floor(vpRows / 2));
@@ -48,6 +50,7 @@ export function useWorldState(opts: {
       setWorldId(null);
       setWorldSeed(null);
       setCivId(null);
+      setEmbarkTerrain(null);
     }
   }, [user, playerEnsured, setOffset]);
 
@@ -72,7 +75,10 @@ export function useWorldState(opts: {
     if (!worldId || !worldSeed) return;
     try {
       const id = await embark(worldId, selectedX, selectedY, worldSeed);
+      const deriver = createWorldDeriver(worldSeed);
+      const derived = deriver.deriveTile(selectedX, selectedY);
       setCivId(id);
+      setEmbarkTerrain(derived.terrain);
       setMode("fortress");
       const center = Math.floor(FORTRESS_SIZE / 2);
       setOffset(center - Math.floor(vpCols / 2), center - Math.floor(vpRows / 2));
@@ -89,6 +95,7 @@ export function useWorldState(opts: {
     setWorldId(null);
     setWorldSeed(null);
     setCivId(null);
+    setEmbarkTerrain(null);
     setMode("world");
     setOffset(0, 0);
   }, [setOffset]);
@@ -100,6 +107,7 @@ export function useWorldState(opts: {
     creating,
     createError,
     civId,
+    embarkTerrain,
     mode,
     setMode,
     handleGenerateWorld,

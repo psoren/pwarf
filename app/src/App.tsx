@@ -55,6 +55,7 @@ export default function App() {
   const { tileMap: fortressTileMap, getTile: getFortressTile } = useFortressTiles({
     civId: world.civId,
     worldSeed: world.worldSeed,
+    terrain: world.embarkTerrain,
     offsetX: viewport.offsetX,
     offsetY: viewport.offsetY,
     zLevel,

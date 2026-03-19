@@ -262,4 +262,105 @@ describe("deriveSurfaceTile", () => {
     expect(types.has("rock")).toBe(true);
     // bush and pond may or may not appear with this seed, but grass/tree/rock are guaranteed
   });
+
+  it("different terrains produce different tile distributions", () => {
+    const terrains = ["mountain", "forest", "plains", "desert", "tundra", "swamp", "volcano"] as const;
+    const distributions = new Map<string, Map<string, number>>();
+
+    for (const terrain of terrains) {
+      const rng = createAleaRng(42n);
+      const treeN = createNoise2D(rng);
+      const rockN = createNoise2D(rng);
+      const pondN = createNoise2D(rng);
+
+      const counts = new Map<string, number>();
+      for (let x = 0; x < 256; x += 2) {
+        for (let y = 0; y < 256; y += 2) {
+          const tile = deriveSurfaceTile(x, y, treeN, rockN, pondN, terrain);
+          counts.set(tile.tileType, (counts.get(tile.tileType) ?? 0) + 1);
+        }
+      }
+      distributions.set(terrain, counts);
+    }
+
+    // Mountain should have more rock than plains
+    const mtnRock = distributions.get("mountain")!.get("rock") ?? 0;
+    const plainsRock = distributions.get("plains")!.get("rock") ?? 0;
+    expect(mtnRock).toBeGreaterThan(plainsRock);
+
+    // Forest should have more trees than plains
+    const forestTrees = distributions.get("forest")!.get("tree") ?? 0;
+    const plainsTrees = distributions.get("plains")!.get("tree") ?? 0;
+    expect(forestTrees).toBeGreaterThan(plainsTrees);
+
+    // Desert base tile should be sand
+    const desertSand = distributions.get("desert")!.get("sand") ?? 0;
+    expect(desertSand).toBeGreaterThan(0);
+    expect(distributions.get("desert")!.has("tree")).toBe(false);
+    expect(distributions.get("desert")!.has("pond")).toBe(false);
+
+    // Tundra water features should be ice, not pond
+    expect(distributions.get("tundra")!.has("pond")).toBe(false);
+    const tundraIce = distributions.get("tundra")!.get("ice") ?? 0;
+    expect(tundraIce).toBeGreaterThan(0);
+
+    // Swamp base tile should be mud
+    const swampMud = distributions.get("swamp")!.get("mud") ?? 0;
+    expect(swampMud).toBeGreaterThan(0);
+
+    // Volcano base tile should be lava_stone, water features should be magma
+    const volcanoLava = distributions.get("volcano")!.get("lava_stone") ?? 0;
+    expect(volcanoLava).toBeGreaterThan(0);
+    expect(distributions.get("volcano")!.has("tree")).toBe(false);
+  });
+
+  it("mountain surface is mostly stone and rock", () => {
+    const rng = createAleaRng(42n);
+    const treeN = createNoise2D(rng);
+    const rockN = createNoise2D(rng);
+    const pondN = createNoise2D(rng);
+
+    let stoneOrRock = 0;
+    let total = 0;
+    for (let x = 0; x < 256; x += 2) {
+      for (let y = 0; y < 256; y += 2) {
+        const tile = deriveSurfaceTile(x, y, treeN, rockN, pondN, "mountain");
+        if (tile.tileType === "stone" || tile.tileType === "rock") stoneOrRock++;
+        total++;
+      }
+    }
+    // Mountain should be at least 40% stone/rock
+    expect(stoneOrRock / total).toBeGreaterThan(0.4);
+  });
+
+  it("createFortressDeriver with terrain affects z=0", () => {
+    const forestD = createFortressDeriver(SEED, CIV_ID, "forest");
+    const desertD = createFortressDeriver(SEED, CIV_ID, "desert");
+
+    let differences = 0;
+    for (let x = 100; x < 200; x += 2) {
+      for (let y = 100; y < 200; y += 2) {
+        const t1 = forestD.deriveTile(x, y, 0);
+        const t2 = desertD.deriveTile(x, y, 0);
+        if (t1.tileType !== t2.tileType) differences++;
+      }
+    }
+    expect(differences).toBeGreaterThan(0);
+  });
+
+  it("createFortressDeriver terrain does not affect subsurface layers", () => {
+    const forestD = createFortressDeriver(SEED, CIV_ID, "forest");
+    const desertD = createFortressDeriver(SEED, CIV_ID, "desert");
+
+    for (let z = -1; z >= -5; z--) {
+      for (let x = 100; x < 120; x++) {
+        for (let y = 100; y < 120; y++) {
+          const t1 = forestD.deriveTile(x, y, z);
+          const t2 = desertD.deriveTile(x, y, z);
+          expect(t1.tileType).toBe(t2.tileType);
+          expect(t1.material).toBe(t2.material);
+        }
+      }
+    }
+  });
 });
