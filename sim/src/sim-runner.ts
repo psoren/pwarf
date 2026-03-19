@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { STEPS_PER_SECOND, STEPS_PER_YEAR } from "@pwarf/shared";
+import { STEPS_PER_SECOND, STEPS_PER_YEAR, createFortressDeriver } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { loadStateFromSupabase } from "./load-state.js";
@@ -16,6 +16,7 @@ import {
   jobClaiming,
   eventFiring,
   yearlyRollup,
+  idleWandering,
 } from "./phases/index.js";
 
 /**
@@ -47,6 +48,19 @@ export class SimRunner {
       cached = createEmptyCachedState();
     }
 
+    // Fetch world seed to create the fortress tile deriver
+    let fortressDeriver = null;
+    if (worldId) {
+      const { data: worldData } = await this.supabase
+        .from('worlds')
+        .select('seed')
+        .eq('id', worldId)
+        .single();
+      if (worldData?.seed != null) {
+        fortressDeriver = createFortressDeriver(BigInt(worldData.seed), civilizationId);
+      }
+    }
+
     this.ctx = {
       supabase: this.supabase,
       civilizationId,
@@ -55,6 +69,7 @@ export class SimRunner {
       year: this.currentYear,
       day: this.currentDay,
       state: cached,
+      fortressDeriver,
     };
 
     console.log(
@@ -135,6 +150,7 @@ export class SimRunner {
     await monsterPathfinding(this.ctx);
     await combatResolution(this.ctx);
     await constructionProgress(this.ctx);
+    await idleWandering(this.ctx);
     await jobClaiming(this.ctx);
     await eventFiring(this.ctx);
 

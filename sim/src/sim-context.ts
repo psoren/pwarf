@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   Dwarf,
   DwarfSkill,
+  FortressDeriver,
   FortressTile,
   Item,
   Structure,
@@ -92,4 +93,7 @@ export interface SimContext {
 
   /** Mutable cached world state, loaded at start and patched each tick. */
   state: CachedState;
+
+  /** Deterministic fortress tile deriver (seeded from world seed + civ ID). */
+  fortressDeriver: FortressDeriver | null;
 }

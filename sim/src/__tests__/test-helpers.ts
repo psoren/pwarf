@@ -97,5 +97,6 @@ export function makeContext(opts?: {
     year: 1,
     day: 1,
     state,
+    fortressDeriver: null,
   };
 }

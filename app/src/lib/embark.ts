@@ -187,5 +187,32 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
   const { error: itemError } = await supabase.from('items').insert(startingItems);
   if (itemError) throw new Error(`Failed to create starting items: ${itemError.message}`);
 
+  // Place a well and mushroom garden near fortress center
+  const fortressTiles = [
+    {
+      civilization_id: civ.id,
+      x: FORTRESS_CENTER + 3,
+      y: FORTRESS_CENTER,
+      z: 0,
+      tile_type: 'well',
+      material: 'stone',
+      is_revealed: true,
+      is_mined: false,
+    },
+    {
+      civilization_id: civ.id,
+      x: FORTRESS_CENTER - 3,
+      y: FORTRESS_CENTER,
+      z: 0,
+      tile_type: 'mushroom_garden',
+      material: 'plant',
+      is_revealed: true,
+      is_mined: false,
+    },
+  ];
+
+  const { error: tileOverrideError } = await supabase.from('fortress_tiles').insert(fortressTiles);
+  if (tileOverrideError) throw new Error(`Failed to place starting structures: ${tileOverrideError.message}`);
+
   return civ.id;
 }

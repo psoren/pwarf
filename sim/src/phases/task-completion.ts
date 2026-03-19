@@ -35,7 +35,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   state.dirtyDwarfIds.add(dwarf.id);
 
   // Fire completion event for player-created tasks
-  const autonomousTypes: string[] = ['eat', 'drink', 'sleep'];
+  const autonomousTypes: string[] = ['eat', 'drink', 'sleep', 'wander'];
   if (!autonomousTypes.includes(task.task_type)) {
     const dwarfLabel = `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''}`;
     const taskLabel = task.task_type.replace(/_/g, ' ');
