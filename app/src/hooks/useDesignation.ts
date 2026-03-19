@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { TaskType } from "@pwarf/shared";
 import {
   WORK_MINE_BASE,
@@ -30,6 +30,20 @@ export function useDesignation(opts: {
   const [buildMenuOpen, setBuildMenuOpen] = useState(false);
   const [prioritiesOpen, setPrioritiesOpen] = useState(false);
   const [taskPriorities, setTaskPriorities] = useState<Record<string, number>>({});
+
+  // Optimistic designations — shown immediately before poll picks them up
+  const [optimisticTiles, setOptimisticTiles] = useState<Map<string, string>>(new Map());
+  const prevDesignatedTiles = useRef(designatedTiles);
+
+  // Clear optimistic tiles once the real data arrives (designatedTiles changes)
+  useEffect(() => {
+    if (designatedTiles !== prevDesignatedTiles.current) {
+      prevDesignatedTiles.current = designatedTiles;
+      if (optimisticTiles.size > 0) {
+        setOptimisticTiles(new Map());
+      }
+    }
+  }, [designatedTiles, optimisticTiles.size]);
 
   const handleDesignateArea = useCallback(async (x1: number, y1: number, x2: number, y2: number) => {
     if (designationMode === 'none' || !civId) return;
@@ -93,6 +107,15 @@ export function useDesignation(opts: {
     const { error } = await supabase.from('tasks').insert(tasks);
     if (error) {
       console.error('[designate] Failed to create tasks:', error.message);
+    } else {
+      // Optimistically show the new designations immediately
+      setOptimisticTiles((prev) => {
+        const next = new Map(prev);
+        for (const t of tasks) {
+          next.set(`${t.target_x},${t.target_y}`, t.task_type);
+        }
+        return next;
+      });
     }
   }, [designationMode, civId, zLevel, getFortressTile, designatedTiles, taskPriorities]);
 
@@ -154,6 +177,7 @@ export function useDesignation(opts: {
     setBuildMenuOpen,
     prioritiesOpen,
     taskPriorities,
+    optimisticTiles,
     handleDesignateArea,
     handleCancelArea,
     handleBuildSelect,
