@@ -19,6 +19,10 @@ const WALKABLE_TILES: ReadonlySet<FortressTileType> = new Set([
   'soil',
   'well',
   'mushroom_garden',
+  'grass',
+  'sand',
+  'mud',
+  'ice',
 ]);
 
 /** Check if a tile type is walkable. */

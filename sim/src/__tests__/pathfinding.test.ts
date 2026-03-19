@@ -46,6 +46,22 @@ describe("isWalkable", () => {
   it("soil is walkable", () => {
     expect(isWalkable("soil")).toBe(true);
   });
+
+  it("grass is walkable", () => {
+    expect(isWalkable("grass")).toBe(true);
+  });
+
+  it("sand is walkable", () => {
+    expect(isWalkable("sand")).toBe(true);
+  });
+
+  it("mud is walkable", () => {
+    expect(isWalkable("mud")).toBe(true);
+  });
+
+  it("ice is walkable", () => {
+    expect(isWalkable("ice")).toBe(true);
+  });
 });
 
 describe("getNeighbors", () => {
@@ -123,6 +139,16 @@ describe("bfsNextStep", () => {
     const result = bfsNextStep({ x: 0, y: 0, z: 0 }, { x: 2, y: 0, z: 0 }, lookup);
     // First step should be downward (0,1) to go around
     expect(result).toEqual({ x: 0, y: 1, z: 0 });
+  });
+
+  it("finds path across grass tiles (surface wandering)", () => {
+    const grid: FortressTileType[][] = [
+      ["grass", "grass", "grass", "grass", "grass"],
+    ];
+    const lookup = gridLookup(grid);
+
+    const result = bfsNextStep({ x: 0, y: 0, z: 0 }, { x: 4, y: 0, z: 0 }, lookup);
+    expect(result).toEqual({ x: 1, y: 0, z: 0 });
   });
 
   it("returns null when no path exists", () => {
