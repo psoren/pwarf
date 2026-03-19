@@ -191,6 +191,9 @@ export type FortressTileType =
   | 'stair_up'
   | 'stair_down'
   | 'stair_both'
+  | 'sand'
+  | 'ice'
+  | 'mud'
   | 'empty';
 
 // ============================================================

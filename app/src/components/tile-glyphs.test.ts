@@ -9,9 +9,11 @@ const ALL_TERRAINS: TerrainType[] = [
 ];
 
 const ALL_FORTRESS_TILES: FortressTileType[] = [
-  "open_air", "soil", "stone", "ore", "gem", "water", "magma",
+  "open_air", "grass", "tree", "rock", "bush", "pond",
+  "soil", "stone", "ore", "gem", "water", "magma",
   "lava_stone", "cavern_floor", "cavern_wall", "constructed_wall",
-  "constructed_floor", "stair_up", "stair_down", "stair_both", "empty",
+  "constructed_floor", "stair_up", "stair_down", "stair_both",
+  "sand", "ice", "mud", "empty",
 ];
 
 describe("TERRAIN_GLYPHS", () => {

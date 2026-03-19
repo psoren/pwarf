@@ -36,7 +36,7 @@ describe("loadSession", () => {
 
     const result = await loadSession("user-1");
 
-    expect(result).toEqual({ worldId: null, worldSeed: null, civId: null, fortressX: null, fortressY: null });
+    expect(result).toEqual({ worldId: null, worldSeed: null, civId: null, fortressX: null, fortressY: null, embarkTerrain: null });
     expect(mockFrom).toHaveBeenCalledWith("players");
   });
 
@@ -45,7 +45,7 @@ describe("loadSession", () => {
 
     const result = await loadSession("user-1");
 
-    expect(result).toEqual({ worldId: null, worldSeed: null, civId: null, fortressX: null, fortressY: null });
+    expect(result).toEqual({ worldId: null, worldSeed: null, civId: null, fortressX: null, fortressY: null, embarkTerrain: null });
   });
 
   it("returns worldId, seed, and civId when player has an active civilization", async () => {
@@ -63,12 +63,18 @@ describe("loadSession", () => {
       data: { id: "civ-xyz", tile_x: 100, tile_y: 200 },
       error: null,
     });
+    // world_tiles query for embark terrain
+    mockSingle.mockResolvedValueOnce({
+      data: { terrain: "mountain" },
+      error: null,
+    });
 
     const result = await loadSession("user-1");
 
-    expect(result).toEqual({ worldId: "world-abc", worldSeed: 12345n, civId: "civ-xyz", fortressX: 100, fortressY: 200 });
+    expect(result).toEqual({ worldId: "world-abc", worldSeed: 12345n, civId: "civ-xyz", fortressX: 100, fortressY: 200, embarkTerrain: "mountain" });
     expect(mockFrom).toHaveBeenCalledWith("worlds");
     expect(mockFrom).toHaveBeenCalledWith("civilizations");
+    expect(mockFrom).toHaveBeenCalledWith("world_tiles");
   });
 
   it("returns worldId with null civId when no active civilization", async () => {
@@ -84,6 +90,6 @@ describe("loadSession", () => {
 
     const result = await loadSession("user-1");
 
-    expect(result).toEqual({ worldId: "world-abc", worldSeed: 99999n, civId: null, fortressX: null, fortressY: null });
+    expect(result).toEqual({ worldId: "world-abc", worldSeed: 99999n, civId: null, fortressX: null, fortressY: null, embarkTerrain: null });
   });
 });
