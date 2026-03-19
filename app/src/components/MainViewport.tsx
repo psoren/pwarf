@@ -24,6 +24,8 @@ interface MainViewportProps {
   designationMode?: string;
   /** Area designation handler — called with rectangle bounds */
   onDesignateArea?: (x1: number, y1: number, x2: number, y2: number) => void;
+  /** Area cancellation handler — called with rectangle bounds when Shift+dragging */
+  onCancelArea?: (x1: number, y1: number, x2: number, y2: number) => void;
   /** Click handler for world map tile selection */
   onTileClick?: (x: number, y: number) => void;
   /** Selected world tile position */
@@ -64,6 +66,7 @@ export default function MainViewport({
   designatedTiles,
   designationMode,
   onDesignateArea,
+  onCancelArea,
   onTileClick,
   selectedTile,
 }: MainViewportProps) {
@@ -75,7 +78,20 @@ export default function MainViewport({
   // Designation drag-select state
   const [selStart, setSelStart] = useState<{ x: number; y: number } | null>(null);
   const [selEnd, setSelEnd] = useState<{ x: number; y: number } | null>(null);
+  const [shiftHeld, setShiftHeld] = useState(false);
   const isDesignating = designationMode && designationMode !== 'none';
+
+  // Track Shift key state globally
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Shift") setShiftHeld(true); };
+    const onKeyUp = (e: KeyboardEvent) => { if (e.key === "Shift") setShiftHeld(false); };
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, []);
 
   const getWorldTile = useCallback(
     (wx: number, wy: number): { ch: string; fg: string; bg?: string } => {
@@ -197,7 +213,8 @@ export default function MainViewport({
       const sx2 = Math.max(selStart.x, selEnd.x);
       const sy2 = Math.max(selStart.y, selEnd.y);
 
-      ctx.fillStyle = "rgba(255, 102, 0, 0.25)";
+      const isCancelling = shiftHeld;
+      ctx.fillStyle = isCancelling ? "rgba(255, 0, 0, 0.25)" : "rgba(255, 102, 0, 0.25)";
       for (let sy = sy1; sy <= sy2; sy++) {
         for (let sx = sx1; sx <= sx2; sx++) {
           const px = (sx - offsetX) * CHAR_W;
@@ -213,7 +230,7 @@ export default function MainViewport({
       const ry = (sy1 - offsetY) * CHAR_H;
       const rw = (sx2 - sx1 + 1) * CHAR_W;
       const rh = (sy2 - sy1 + 1) * CHAR_H;
-      ctx.strokeStyle = "#ff6600";
+      ctx.strokeStyle = isCancelling ? "#ff0000" : "#ff6600";
       ctx.lineWidth = 2;
       ctx.strokeRect(rx + 0.5, ry + 0.5, rw - 1, rh - 1);
     }
@@ -226,7 +243,7 @@ export default function MainViewport({
       ctx.lineWidth = 1;
       ctx.strokeRect(cx + 0.5, cy + 0.5, CHAR_W - 1, CHAR_H - 1);
     }
-  }, [offsetX, offsetY, cursorX, cursorY, getTile, onViewportSize, isDesignating, selStart, selEnd, selectedTile]);
+  }, [offsetX, offsetY, cursorX, cursorY, getTile, onViewportSize, isDesignating, selStart, selEnd, selectedTile, shiftHeld]);
 
   // Re-render on state change
   useEffect(() => {
@@ -287,13 +304,17 @@ export default function MainViewport({
   );
 
   const handleMouseUp = useCallback(
-    (_e: React.MouseEvent) => {
-      if (dragging.current && isDesignating && selStart && selEnd && onDesignateArea) {
+    (e: React.MouseEvent) => {
+      if (dragging.current && isDesignating && selStart && selEnd) {
         const x1 = Math.min(selStart.x, selEnd.x);
         const y1 = Math.min(selStart.y, selEnd.y);
         const x2 = Math.max(selStart.x, selEnd.x);
         const y2 = Math.max(selStart.y, selEnd.y);
-        onDesignateArea(x1, y1, x2, y2);
+        if (e.shiftKey && onCancelArea) {
+          onCancelArea(x1, y1, x2, y2);
+        } else if (onDesignateArea) {
+          onDesignateArea(x1, y1, x2, y2);
+        }
       }
       // Fire tile click if user clicked without dragging (world map selection)
       if (dragging.current && !dragMoved.current && !isDesignating && onTileClick) {
@@ -307,7 +328,7 @@ export default function MainViewport({
         onDragEnd();
       }
     },
-    [onDragEnd, onDesignateArea, onTileClick, isDesignating, selStart, selEnd, cursorX, cursorY],
+    [onDragEnd, onDesignateArea, onCancelArea, onTileClick, isDesignating, selStart, selEnd, cursorX, cursorY],
   );
 
   return (
