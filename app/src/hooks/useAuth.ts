@@ -7,13 +7,16 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth
-      .getSession()
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("timeout")), 5000),
+    );
+
+    Promise.race([supabase.auth.getSession(), timeout])
       .then(({ data: { session: s } }) => {
         setSession(s);
       })
       .catch(() => {
-        // Token refresh failed — clear stale session so login screen shows
+        // getSession hung or failed — show login screen
         setSession(null);
       })
       .finally(() => {
