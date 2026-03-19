@@ -100,6 +100,25 @@ export function useDesignation(opts: {
     }
   }, [designationMode, civId, zLevel, getFortressTile, designatedTiles, taskPriorities]);
 
+  const handleCancelArea = useCallback(async (x1: number, y1: number, x2: number, y2: number) => {
+    if (!civId) return;
+
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('civilization_id', civId)
+      .eq('status', 'pending')
+      .eq('target_z', zLevel)
+      .gte('target_x', x1)
+      .lte('target_x', x2)
+      .gte('target_y', y1)
+      .lte('target_y', y2);
+
+    if (error) {
+      console.error('[designate] Failed to cancel tasks:', error.message);
+    }
+  }, [civId, zLevel]);
+
   const handleBuildSelect = useCallback((taskType: TaskType) => {
     setBuildMenuOpen(false);
     setDesignationMode(taskType as DesignationMode);
@@ -140,6 +159,7 @@ export function useDesignation(opts: {
     prioritiesOpen,
     taskPriorities,
     handleDesignateArea,
+    handleCancelArea,
     handleBuildSelect,
     handlePriorityChange,
     toggleMine,
