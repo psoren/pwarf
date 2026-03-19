@@ -75,6 +75,7 @@ export default function App() {
 
   // Active tasks — prefer live snapshot, fall back to DB polling
   const polledTasks = useTasks(world.civId);
+  const { addOptimistic } = polledTasks;
   const designatedTiles = useMemo(() => {
     const AUTONOMOUS: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
     const tasks = snapshot?.tasks ?? polledTasks.tasks;
@@ -95,6 +96,7 @@ export default function App() {
     zLevel,
     getFortressTile,
     designatedTiles,
+    addOptimistic,
   });
 
   // Merge optimistic designations into the map for immediate feedback
