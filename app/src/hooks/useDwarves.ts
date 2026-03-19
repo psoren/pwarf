@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Dwarf } from '@pwarf/shared';
 
 export interface LiveDwarf {
   id: string;
@@ -18,13 +17,24 @@ export interface LiveDwarf {
   health: number;
 }
 
+/** Build a compact fingerprint string for diffing without deep comparison. */
+function fingerprint(dwarves: LiveDwarf[]): string {
+  let s = '';
+  for (const d of dwarves) {
+    s += `${d.id}:${d.position_x},${d.position_y},${d.position_z}:${d.current_task_id}:${d.need_food}:${d.need_drink}:${d.need_sleep}:${d.stress_level}:${d.health};`;
+  }
+  return s;
+}
+
 export function useDwarves(civId: string | null) {
   const [dwarves, setDwarves] = useState<LiveDwarf[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastFingerprint = useRef<string>('');
 
   useEffect(() => {
     if (!civId) {
       setDwarves([]);
+      lastFingerprint.current = '';
       return;
     }
 
@@ -36,17 +46,19 @@ export function useDwarves(civId: string | null) {
         .eq('status', 'alive');
 
       if (!error && data) {
-        setDwarves(data);
+        const fp = fingerprint(data);
+        if (fp !== lastFingerprint.current) {
+          lastFingerprint.current = fp;
+          setDwarves(data);
+        }
       }
     }
 
-    // Initial fetch
     void fetchDwarves();
 
-    // Poll every 1 second for position updates
     pollRef.current = setInterval(() => {
       void fetchDwarves();
-    }, 1000);
+    }, 2000);
 
     return () => {
       if (pollRef.current) {

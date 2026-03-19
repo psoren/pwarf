@@ -8,7 +8,7 @@ export interface LiveEvent {
   created_at: string;
 }
 
-const POLL_INTERVAL = 2000;
+const POLL_INTERVAL = 3000;
 const MAX_EVENTS = 50;
 
 export function useEvents(civId: string | null): LiveEvent[] {

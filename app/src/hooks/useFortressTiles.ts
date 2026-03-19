@@ -27,6 +27,15 @@ interface UseFortressTilesOptions {
   viewportRows: number;
 }
 
+/** Build a fingerprint from override data to detect actual changes. */
+function overrideFingerprint(data: Array<{ x: number; y: number; tile_type: string; is_revealed: boolean; is_mined: boolean }>): string {
+  let s = '';
+  for (const t of data) {
+    s += `${t.x},${t.y}:${t.tile_type}:${t.is_revealed}:${t.is_mined};`;
+  }
+  return s;
+}
+
 export function useFortressTiles({
   civId,
   worldSeed,
@@ -38,6 +47,7 @@ export function useFortressTiles({
 }: UseFortressTilesOptions) {
   const [dbOverrides, setDbOverrides] = useState<Map<string, Partial<FortressTile>>>(new Map());
   const lastFetchKey = useRef<string>('');
+  const lastOverrideFingerprint = useRef<string>('');
 
   // Create deriver once per seed + civId
   const deriver = useMemo<FortressDeriver | null>(() => {
@@ -76,6 +86,10 @@ export function useFortressTiles({
     }
 
     if (data) {
+      const fp = overrideFingerprint(data as Array<{ x: number; y: number; tile_type: string; is_revealed: boolean; is_mined: boolean }>);
+      if (fp === lastOverrideFingerprint.current) return;
+      lastOverrideFingerprint.current = fp;
+
       const newOverrides = new Map<string, Partial<FortressTile>>();
       for (const tile of data) {
         newOverrides.set(`${tile.x},${tile.y}`, tile as Partial<FortressTile>);
@@ -93,7 +107,7 @@ export function useFortressTiles({
   // Poll for tile changes (e.g. mining/building completions)
   useEffect(() => {
     if (!civId) return;
-    const interval = setInterval(() => void fetchOverrides(true), 2000);
+    const interval = setInterval(() => void fetchOverrides(true), 3000);
     return () => clearInterval(interval);
   }, [civId, fetchOverrides]);
 
