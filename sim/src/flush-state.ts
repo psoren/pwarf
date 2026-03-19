@@ -24,6 +24,19 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   const newTasks = [...state.newTasks];
   const events = [...state.pendingEvents];
 
+  // Flush tasks BEFORE dwarves — dwarves.current_task_id has a FK to tasks,
+  // so the referenced task row must exist first.
+  if (newTasks.length > 0) {
+    const { error } = await supabase.from("tasks").insert(newTasks);
+    if (error) console.warn(`[flush] tasks insert failed: ${error.message}`);
+  }
+
+  if (dirtyTasks.length > 0) {
+    const { error } = await supabase.from("tasks").upsert(dirtyTasks);
+    if (error) console.warn(`[flush] tasks upsert failed: ${error.message}`);
+  }
+
+  // Now flush everything else in parallel
   const promises: PromiseLike<void>[] = [];
 
   if (dirtyDwarves.length > 0) {
@@ -78,28 +91,6 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
         .upsert(dirtyMonsters)
         .then(({ error }) => {
           if (error) console.warn(`[flush] monsters upsert failed: ${error.message}`);
-        }),
-    );
-  }
-
-  if (dirtyTasks.length > 0) {
-    promises.push(
-      supabase
-        .from("tasks")
-        .upsert(dirtyTasks)
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] tasks upsert failed: ${error.message}`);
-        }),
-    );
-  }
-
-  if (newTasks.length > 0) {
-    promises.push(
-      supabase
-        .from("tasks")
-        .insert(newTasks)
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] tasks insert failed: ${error.message}`);
         }),
     );
   }

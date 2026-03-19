@@ -69,8 +69,24 @@ export default function App() {
     : null;
   const cursorFortressTile = world.civId ? getFortressTile(viewport.cursorX, viewport.cursorY) : null;
 
-  // Active tasks
-  const { designatedTiles } = useTasks(world.civId);
+  // Sim runner — provides live in-memory state
+  const { snapshot } = useSimRunner(world.civId, world.worldId);
+
+  // Active tasks — prefer live snapshot, fall back to DB polling
+  const polledTasks = useTasks(world.civId);
+  const designatedTiles = useMemo(() => {
+    const AUTONOMOUS: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
+    const tasks = snapshot?.tasks ?? polledTasks.tasks;
+    const map = new Map<string, string>();
+    for (const t of tasks) {
+      const tx = 'target_x' in t ? t.target_x : null;
+      const ty = 'target_y' in t ? t.target_y : null;
+      if (tx !== null && ty !== null && !AUTONOMOUS.has(t.task_type) && ['pending', 'claimed', 'in_progress'].includes(t.status)) {
+        map.set(`${tx},${ty}`, t.task_type);
+      }
+    }
+    return map;
+  }, [snapshot?.tasks, polledTasks.tasks]);
 
   const designation = useDesignation({
     civId: world.civId,
@@ -79,8 +95,31 @@ export default function App() {
     designatedTiles,
   });
 
-  // Live dwarves from DB
-  const liveDwarves = useDwarves(world.civId);
+  // Live dwarves — prefer sim snapshot over DB polling
+  const polledDwarves = useDwarves(world.civId);
+  const liveDwarves: LiveDwarf[] = useMemo(() => {
+    if (snapshot) {
+      return snapshot.dwarves
+        .filter((d) => d.status === 'alive')
+        .map((d) => ({
+          id: d.id,
+          name: d.name,
+          surname: d.surname,
+          status: d.status,
+          position_x: d.position_x,
+          position_y: d.position_y,
+          position_z: d.position_z,
+          current_task_id: d.current_task_id,
+          need_food: d.need_food,
+          need_drink: d.need_drink,
+          need_sleep: d.need_sleep,
+          stress_level: d.stress_level,
+          health: d.health,
+          memories: d.memories as LiveDwarf['memories'],
+        }));
+    }
+    return polledDwarves;
+  }, [snapshot, polledDwarves]);
 
   // Build dwarf position map for rendering
   const dwarfPositions = useMemo(() => {
@@ -93,11 +132,22 @@ export default function App() {
     return map;
   }, [liveDwarves, zLevel]);
 
-  // Sim runner
-  useSimRunner(world.civId, world.worldId);
-
-  // Live activity log
-  const events = useEvents(world.civId);
+  // Live activity log — prefer snapshot, fall back to DB polling
+  const polledEvents = useEvents(world.civId);
+  const events = useMemo(() => {
+    if (snapshot && snapshot.events.length > 0) {
+      return snapshot.events
+        .slice(-50)
+        .reverse()
+        .map((e) => ({
+          id: e.id,
+          description: e.description,
+          category: e.category,
+          created_at: e.created_at ?? new Date().toISOString(),
+        }));
+    }
+    return polledEvents;
+  }, [snapshot, polledEvents]);
 
   const handleKeyAction = useCallback(
     (action: KeyAction) => {

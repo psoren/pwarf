@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { STEPS_PER_SECOND, STEPS_PER_YEAR, SIM_FLUSH_INTERVAL_MS, createFortressDeriver } from "@pwarf/shared";
+import type { Dwarf, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { loadStateFromSupabase } from "./load-state.js";
@@ -20,6 +21,13 @@ import {
   thoughtGeneration,
 } from "./phases/index.js";
 
+/** Snapshot of sim state emitted after every tick for live UI rendering. */
+export interface SimSnapshot {
+  dwarves: Dwarf[];
+  tasks: Task[];
+  events: WorldEvent[];
+}
+
 /**
  * Main simulation loop.
  *
@@ -31,6 +39,9 @@ export class SimRunner {
   private timer: ReturnType<typeof setInterval> | null = null;
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private ctx: SimContext | null = null;
+
+  /** Called after every tick with the current in-memory state. */
+  onTick: ((snapshot: SimSnapshot) => void) | null = null;
 
   stepCount = 0;
   currentYear = 1;
@@ -163,6 +174,15 @@ export class SimRunner {
       this.ctx.year = this.currentYear;
       this.ctx.day = this.currentDay;
       await yearlyRollup(this.ctx);
+    }
+
+    // Emit snapshot for live UI rendering
+    if (this.onTick) {
+      this.onTick({
+        dwarves: this.ctx.state.dwarves,
+        tasks: this.ctx.state.tasks,
+        events: this.ctx.state.worldEvents,
+      });
     }
   }
 }
