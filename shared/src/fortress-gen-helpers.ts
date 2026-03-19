@@ -431,6 +431,15 @@ export function createFortressDeriver(
           return { tileType: "cave_entrance", material: null };
         }
 
+        // Clear surface features near fortress center so dwarves aren't
+        // trapped by trees on spawn
+        const center = Math.floor(FORTRESS_SIZE / 2);
+        const nearCenter = Math.abs(x - center) <= 3 && Math.abs(y - center) <= 3;
+        if (nearCenter) {
+          const p = getProfile(terrain);
+          return { tileType: p.base, material: p.baseMaterial };
+        }
+
         return deriveSurfaceTile(x, y, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise, terrain);
       }
 
