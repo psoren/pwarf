@@ -2,6 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { POLL_DWARVES_MS } from '@pwarf/shared';
 
+export interface DwarfThought {
+  text: string;
+  tick: number;
+  sentiment: "positive" | "negative" | "neutral";
+}
+
 export interface LiveDwarf {
   id: string;
   name: string;
@@ -16,6 +22,7 @@ export interface LiveDwarf {
   need_sleep: number;
   stress_level: number;
   health: number;
+  memories: DwarfThought[];
 }
 
 /** Build a compact fingerprint string for diffing without deep comparison. */
@@ -42,7 +49,7 @@ export function useDwarves(civId: string | null) {
     async function fetchDwarves() {
       const { data, error } = await supabase
         .from('dwarves')
-        .select('id, name, surname, status, position_x, position_y, position_z, current_task_id, need_food, need_drink, need_sleep, stress_level, health')
+        .select('id, name, surname, status, position_x, position_y, position_z, current_task_id, need_food, need_drink, need_sleep, stress_level, health, memories')
         .eq('civilization_id', civId!)
         .eq('status', 'alive');
 
