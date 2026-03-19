@@ -66,6 +66,26 @@ describe("isWalkable", () => {
   it("cave_entrance is walkable", () => {
     expect(isWalkable("cave_entrance")).toBe(true);
   });
+
+  it("tree is walkable (surface feature)", () => {
+    expect(isWalkable("tree")).toBe(true);
+  });
+
+  it("bush is walkable (surface feature)", () => {
+    expect(isWalkable("bush")).toBe(true);
+  });
+
+  it("rock is walkable (surface feature)", () => {
+    expect(isWalkable("rock")).toBe(true);
+  });
+
+  it("ore is not walkable (underground wall)", () => {
+    expect(isWalkable("ore")).toBe(false);
+  });
+
+  it("gem is not walkable (underground wall)", () => {
+    expect(isWalkable("gem")).toBe(false);
+  });
 });
 
 describe("getNeighbors", () => {
@@ -185,6 +205,16 @@ describe("bfsNextStep", () => {
     expect(result).toEqual({ x: 0, y: 1, z: 0 });
   });
 
+  it("finds path through trees (surface features are walkable)", () => {
+    const grid: FortressTileType[][] = [
+      ["grass", "tree", "tree", "rock", "grass"],
+    ];
+    const lookup = gridLookup(grid);
+
+    const result = bfsNextStep({ x: 0, y: 0, z: 0 }, { x: 4, y: 0, z: 0 }, lookup);
+    expect(result).toEqual({ x: 1, y: 0, z: 0 });
+  });
+
   it("finds path across grass tiles (surface wandering)", () => {
     const grid: FortressTileType[][] = [
       ["grass", "grass", "grass", "grass", "grass"],
@@ -274,7 +304,7 @@ describe("bfsNextStep", () => {
       return "open_air";
     };
 
-    // Goal at z=-1 is unreachable from z=0 (no stairs)
+    // Goal at z=-1 is unreachable from z=0 (no cave entrance)
     const result = bfsNextStep(
       { x: 100, y: 100, z: 0 },
       { x: 100, y: 100, z: -1 },

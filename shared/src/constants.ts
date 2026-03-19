@@ -154,9 +154,6 @@ export const WORK_BUILD_WALL = 80;
 /** Work required to build a floor */
 export const WORK_BUILD_FLOOR = 50;
 
-/** Work required to build stairs */
-export const WORK_BUILD_STAIRS = 60;
-
 /** Work required to wander (just walking, instant once arrived) */
 export const WORK_WANDER = 1;
 

@@ -158,9 +158,6 @@ export type TaskType =
   | 'sleep'
   | 'build_wall'
   | 'build_floor'
-  | 'build_stairs_up'
-  | 'build_stairs_down'
-  | 'build_stairs_both'
   | 'wander';
 
 export type TaskStatus =
@@ -189,9 +186,6 @@ export type FortressTileType =
   | 'cavern_wall'
   | 'constructed_wall'
   | 'constructed_floor'
-  | 'stair_up'
-  | 'stair_down'
-  | 'stair_both'
   | 'well'
   | 'mushroom_garden'
   | 'sand'

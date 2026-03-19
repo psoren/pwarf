@@ -15,9 +15,6 @@ import type { SimContext } from "../sim-context.js";
 const BUILD_TILE_MAP: Record<string, FortressTileType> = {
   build_wall: 'constructed_wall',
   build_floor: 'constructed_floor',
-  build_stairs_up: 'stair_up',
-  build_stairs_down: 'stair_down',
-  build_stairs_both: 'stair_both',
 };
 
 /**
@@ -86,9 +83,6 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       break;
     case 'build_wall':
     case 'build_floor':
-    case 'build_stairs_up':
-    case 'build_stairs_down':
-    case 'build_stairs_both':
       completeBuild(task, ctx);
       awardXp(dwarf.id, 'building', XP_BUILD, state);
       break;

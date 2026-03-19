@@ -12,9 +12,6 @@ export type TileLookup = (x: number, y: number, z: number) => FortressTileType |
 const WALKABLE_TILES: ReadonlySet<FortressTileType> = new Set([
   'constructed_floor',
   'cavern_floor',
-  'stair_up',
-  'stair_down',
-  'stair_both',
   'open_air',
   'soil',
   'well',
@@ -24,6 +21,9 @@ const WALKABLE_TILES: ReadonlySet<FortressTileType> = new Set([
   'mud',
   'ice',
   'cave_entrance',
+  'tree',
+  'bush',
+  'rock',
 ]);
 
 /** Check if a tile type is walkable. */
@@ -33,8 +33,8 @@ export function isWalkable(tileType: FortressTileType | null): boolean {
 }
 
 /**
- * Get the 2D + stair neighbors of a position.
- * Returns adjacent tiles on the same z-level plus stair connections.
+ * Get walkable neighbors of a position.
+ * Returns adjacent tiles on the same z-level plus cave entrance transitions.
  */
 export function getNeighbors(pos: Position, getTile: TileLookup): Position[] {
   const neighbors: Position[] = [];
@@ -57,22 +57,8 @@ export function getNeighbors(pos: Position, getTile: TileLookup): Position[] {
     }
   }
 
-  // Stair connections between z-levels
-  const currentTile = getTile(x, y, z);
-  if (currentTile === 'stair_up' || currentTile === 'stair_both') {
-    const above = getTile(x, y, z + 1);
-    if (above === 'stair_down' || above === 'stair_both') {
-      neighbors.push({ x, y, z: z + 1 });
-    }
-  }
-  if (currentTile === 'stair_down' || currentTile === 'stair_both') {
-    const below = getTile(x, y, z - 1);
-    if (below === 'stair_up' || below === 'stair_both') {
-      neighbors.push({ x, y, z: z - 1 });
-    }
-  }
-
   // Cave entrance connections: surface cave_entrance ↔ cavern_floor below
+  const currentTile = getTile(x, y, z);
   if (currentTile === 'cave_entrance') {
     const below = getTile(x, y, z - 1);
     if (isWalkable(below)) {

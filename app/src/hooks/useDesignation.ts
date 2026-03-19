@@ -7,19 +7,15 @@ import {
   WORK_CLEAR_BUSH,
   WORK_BUILD_WALL,
   WORK_BUILD_FLOOR,
-  WORK_BUILD_STAIRS,
 } from "@pwarf/shared";
 import { supabase } from "../lib/supabase";
 import type { FortressViewTile } from "./useFortressTiles";
 
-export type DesignationMode = "none" | "mine" | "build_wall" | "build_floor" | "build_stairs_up" | "build_stairs_down" | "build_stairs_both";
+export type DesignationMode = "none" | "mine" | "build_wall" | "build_floor";
 
 const BUILD_WORK: Record<string, number> = {
   build_wall: WORK_BUILD_WALL,
   build_floor: WORK_BUILD_FLOOR,
-  build_stairs_up: WORK_BUILD_STAIRS,
-  build_stairs_down: WORK_BUILD_STAIRS,
-  build_stairs_both: WORK_BUILD_STAIRS,
 };
 
 export function useDesignation(opts: {
