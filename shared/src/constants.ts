@@ -82,10 +82,10 @@ export const MAX_SKILL_LEVEL = 20;
 export const BASE_WORK_RATE = 1;
 
 /** Need threshold below which a dwarf interrupts work to drink */
-export const NEED_INTERRUPT_DRINK = 25;
+export const NEED_INTERRUPT_DRINK = 30;
 
 /** Need threshold below which a dwarf interrupts work to eat */
-export const NEED_INTERRUPT_FOOD = 25;
+export const NEED_INTERRUPT_FOOD = 30;
 
 /** Need threshold below which a dwarf interrupts work to sleep */
 export const NEED_INTERRUPT_SLEEP = 20;

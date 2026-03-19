@@ -17,7 +17,7 @@ import { taskExecution } from "../phases/task-execution.js";
 import { needSatisfaction } from "../phases/need-satisfaction.js";
 import { stressUpdate } from "../phases/stress-update.js";
 import { createTask, isDwarfIdle, getBestSkill } from "../task-helpers.js";
-import { makeDwarf, makeSkill, makeItem, makeContext } from "./test-helpers.js";
+import { makeDwarf, makeSkill, makeContext } from "./test-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Task helper tests
@@ -196,20 +196,18 @@ describe("task execution", () => {
     expect(dwarf.current_task_id).toBeNull();
   });
 
-  it("eating restores food need", async () => {
+  it("eating restores food need (infinite source)", async () => {
     const dwarf = makeDwarf({
       position_x: 0, position_y: 0, position_z: 0,
       need_food: 20,
     });
-    const food = makeItem({ category: "food" });
-    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
+    const ctx = makeContext({ dwarves: [dwarf] });
 
     const task = createTask(ctx.state, "civ-1", {
       task_type: "eat",
       target_x: 0,
       target_y: 0,
       target_z: 0,
-      target_item_id: food.id,
       work_required: 1,
       assigned_dwarf_id: dwarf.id,
     });
@@ -221,24 +219,20 @@ describe("task execution", () => {
 
     expect(task.status).toBe("completed");
     expect(dwarf.need_food).toBe(Math.min(MAX_NEED, 20 + FOOD_RESTORE_AMOUNT));
-    // Food item should be consumed
-    expect(ctx.state.items.find(i => i.id === food.id)).toBeUndefined();
   });
 
-  it("drinking restores drink need", async () => {
+  it("drinking restores drink need (infinite source)", async () => {
     const dwarf = makeDwarf({
       position_x: 0, position_y: 0, position_z: 0,
       need_drink: 15,
     });
-    const drink = makeItem({ category: "drink", name: "Dwarven ale" });
-    const ctx = makeContext({ dwarves: [dwarf], items: [drink] });
+    const ctx = makeContext({ dwarves: [dwarf] });
 
     const task = createTask(ctx.state, "civ-1", {
       task_type: "drink",
       target_x: 0,
       target_y: 0,
       target_z: 0,
-      target_item_id: drink.id,
       work_required: 1,
       assigned_dwarf_id: dwarf.id,
     });
@@ -424,43 +418,32 @@ describe("task execution", () => {
 // ---------------------------------------------------------------------------
 
 describe("need satisfaction", () => {
-  it("creates eat task when food need is low", async () => {
+  it("creates eat task when food need is low (infinite source)", async () => {
     const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1 });
-    const food = makeItem({ category: "food" });
-    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
+    const ctx = makeContext({ dwarves: [dwarf] });
 
     await needSatisfaction(ctx);
 
     const eatTasks = ctx.state.tasks.filter(t => t.task_type === "eat");
     expect(eatTasks).toHaveLength(1);
     expect(eatTasks[0]!.assigned_dwarf_id).toBe(dwarf.id);
+    expect(eatTasks[0]!.target_item_id).toBeNull();
   });
 
-  it("creates drink task when drink need is low", async () => {
+  it("creates drink task when drink need is low (infinite source)", async () => {
     const dwarf = makeDwarf({ need_drink: NEED_INTERRUPT_DRINK - 1 });
-    const drink = makeItem({ category: "drink", name: "Ale" });
-    const ctx = makeContext({ dwarves: [dwarf], items: [drink] });
+    const ctx = makeContext({ dwarves: [dwarf] });
 
     await needSatisfaction(ctx);
 
     const drinkTasks = ctx.state.tasks.filter(t => t.task_type === "drink");
     expect(drinkTasks).toHaveLength(1);
-  });
-
-  it("does not create eat task if no food exists", async () => {
-    const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1 });
-    const ctx = makeContext({ dwarves: [dwarf], items: [] });
-
-    await needSatisfaction(ctx);
-
-    const eatTasks = ctx.state.tasks.filter(t => t.task_type === "eat");
-    expect(eatTasks).toHaveLength(0);
+    expect(drinkTasks[0]!.target_item_id).toBeNull();
   });
 
   it("drops current task when need is critical", async () => {
     const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1 });
-    const food = makeItem({ category: "food" });
-    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
+    const ctx = makeContext({ dwarves: [dwarf] });
 
     // Give dwarf a haul task
     const haulTask = createTask(ctx.state, "civ-1", {
@@ -487,9 +470,7 @@ describe("need satisfaction", () => {
 
   it("does not interrupt an existing autonomous task", async () => {
     const dwarf = makeDwarf({ need_food: 10, need_drink: 10 });
-    const food = makeItem({ category: "food" });
-    const drink = makeItem({ category: "drink", name: "Ale" });
-    const ctx = makeContext({ dwarves: [dwarf], items: [food, drink] });
+    const ctx = makeContext({ dwarves: [dwarf] });
 
     // Dwarf is already eating
     const eatTask = createTask(ctx.state, "civ-1", {
@@ -497,7 +478,6 @@ describe("need satisfaction", () => {
       target_x: 0,
       target_y: 0,
       target_z: 0,
-      target_item_id: food.id,
       assigned_dwarf_id: dwarf.id,
     });
     eatTask.status = "in_progress";
@@ -574,8 +554,7 @@ describe("starvation scenario", () => {
 
   it("dwarf survives if food is available before starvation", async () => {
     const dwarf = makeDwarf({ need_food: 0, need_drink: 80 });
-    const food = makeItem({ category: "food" });
-    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
+    const ctx = makeContext({ dwarves: [dwarf] });
 
     // Run partway through starvation window
     for (let i = 0; i < STARVATION_TICKS / 2; i++) {
@@ -585,13 +564,12 @@ describe("starvation scenario", () => {
 
     expect(dwarf.status).toBe("alive");
 
-    // Now eat
+    // Now eat (infinite source — no target item needed)
     const eatTask = createTask(ctx.state, "civ-1", {
       task_type: "eat",
       target_x: 0,
       target_y: 0,
       target_z: 0,
-      target_item_id: food.id,
       work_required: 1,
       assigned_dwarf_id: dwarf.id,
     });
@@ -612,8 +590,7 @@ describe("starvation scenario", () => {
       need_drink: 80,
       need_sleep: 80,
     });
-    const food = makeItem({ category: "food" });
-    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
+    const ctx = makeContext({ dwarves: [dwarf] });
 
     // Run needs decay until food drops below interrupt threshold
     let ticks = 0;
