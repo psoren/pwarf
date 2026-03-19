@@ -82,6 +82,9 @@ export interface SimContext {
   /** The world this civilization belongs to. */
   worldId: string;
 
+  /** Fortress tile deriver for looking up procedurally generated tile types. */
+  fortressDeriver: FortressDeriver | null;
+
   /** Monotonically increasing step counter since sim start. */
   step: number;
 
@@ -93,7 +96,4 @@ export interface SimContext {
 
   /** Mutable cached world state, loaded at start and patched each tick. */
   state: CachedState;
-
-  /** Deterministic fortress tile deriver (seeded from world seed + civ ID). */
-  fortressDeriver: FortressDeriver | null;
 }

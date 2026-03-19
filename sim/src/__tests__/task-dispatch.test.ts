@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { randomUUID } from "node:crypto";
-import type { Task } from "@pwarf/shared";
+import type { Task, FortressTileType, FortressDeriver } from "@pwarf/shared";
 import {
   NEED_INTERRUPT_FOOD,
   NEED_INTERRUPT_DRINK,
@@ -298,6 +298,124 @@ describe("task execution", () => {
     const stoneItems = ctx.state.items.filter(i => i.category === "raw_material");
     expect(stoneItems.length).toBe(1);
     expect(stoneItems[0]!.name).toBe("Stone block");
+  });
+
+  it("dwarf moves through stairs to reach a task on a different z-level", async () => {
+    // Dwarf at (5, 5, z=0), task at (5, 5, z=-1). Stairs at (5, 6).
+    const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
+    const skill = makeSkill(dwarf.id, "mining", 5);
+
+    // Create a deriver that has stairs at (5,6) and open air elsewhere
+    const stairDeriver: FortressDeriver = {
+      deriveTile(x: number, y: number, z: number) {
+        if (x === 5 && y === 6 && z === 0) return { tileType: "stair_down" as FortressTileType, material: null };
+        if (x === 5 && y === 6 && z === -1) return { tileType: "stair_up" as FortressTileType, material: null };
+        if (z === -1) {
+          // Underground: mix of stone and open air
+          if (x === 5 && y === 5) return { tileType: "stone" as FortressTileType, material: "granite" };
+          return { tileType: "open_air" as FortressTileType, material: null };
+        }
+        return { tileType: "open_air" as FortressTileType, material: null };
+      },
+    };
+
+    const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
+    ctx.fortressDeriver = stairDeriver;
+
+    // Create a mine task at (5, 5, z=-1) — adjacent task, dwarf needs to be next to it
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "mine",
+      target_x: 5,
+      target_y: 5,
+      target_z: -1,
+      work_required: 1,
+    });
+    task.status = "in_progress";
+    task.assigned_dwarf_id = dwarf.id;
+    dwarf.current_task_id = task.id;
+
+    // Tick 1: dwarf at (5,5,0) should move toward stairs at (5,6,0)
+    await taskExecution(ctx);
+    expect(dwarf.position_y).toBe(6);
+    expect(dwarf.position_z).toBe(0);
+
+    // Tick 2: dwarf at (5,6,0) on stair_down, should descend to (5,6,-1)
+    await taskExecution(ctx);
+    expect(dwarf.position_z).toBe(-1);
+    expect(dwarf.position_x).toBe(5);
+    expect(dwarf.position_y).toBe(6);
+
+    // Tick 3: dwarf at (5,6,-1) adjacent to mine target (5,5,-1) — should do work
+    await taskExecution(ctx);
+    expect(task.status).toBe("completed");
+  });
+
+  it("dwarf moves on same z-level using real tile lookup", async () => {
+    // Dwarf at (3, 3, 0), task at (3, 3, 0) — haul task, dwarf needs to be on tile
+    const dwarf = makeDwarf({ position_x: 3, position_y: 3, position_z: 0 });
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    // Deriver that returns open_air everywhere at z=0
+    ctx.fortressDeriver = {
+      deriveTile() {
+        return { tileType: "open_air" as FortressTileType, material: null };
+      },
+    };
+
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "haul",
+      target_x: 5,
+      target_y: 3,
+      target_z: 0,
+      work_required: 1,
+    });
+    task.status = "in_progress";
+    task.assigned_dwarf_id = dwarf.id;
+    dwarf.current_task_id = task.id;
+
+    // Tick 1: move one step toward target
+    await taskExecution(ctx);
+    expect(dwarf.position_x).toBe(4);
+    expect(dwarf.position_y).toBe(3);
+
+    // Tick 2: move another step
+    await taskExecution(ctx);
+    expect(dwarf.position_x).toBe(5);
+
+    // Tick 3: at target — do work
+    await taskExecution(ctx);
+    expect(task.status).toBe("completed");
+  });
+
+  it("fails task when no path exists through solid rock", async () => {
+    // Dwarf at (0, 0, 0), task at (0, 0, -1), no stairs anywhere
+    const dwarf = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
+    const skill = makeSkill(dwarf.id, "mining", 5);
+    const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
+
+    ctx.fortressDeriver = {
+      deriveTile(_x: number, _y: number, z: number) {
+        if (z === 0) return { tileType: "open_air" as FortressTileType, material: null };
+        return { tileType: "stone" as FortressTileType, material: "granite" };
+      },
+    };
+
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "mine",
+      target_x: 0,
+      target_y: 0,
+      target_z: -1,
+      work_required: 100,
+    });
+    task.status = "in_progress";
+    task.assigned_dwarf_id = dwarf.id;
+    dwarf.current_task_id = task.id;
+
+    await taskExecution(ctx);
+
+    // Task should be failed (reset to pending) since no path exists
+    expect(task.status).toBe("pending");
+    expect(dwarf.current_task_id).toBeNull();
   });
 });
 
@@ -701,11 +819,11 @@ describe("build tasks", () => {
 
     expect(task.status).toBe("completed");
 
-    // Mining should create an open_air tile override
+    // Mining at z=0 should create a grass tile override (surface)
     const key = "3,5,0";
     expect(ctx.state.fortressTileOverrides.has(key)).toBe(true);
     const tile = ctx.state.fortressTileOverrides.get(key)!;
-    expect(tile.tile_type).toBe("open_air");
+    expect(tile.tile_type).toBe("grass");
     expect(tile.is_mined).toBe(true);
 
     // Should also create a stone item

@@ -7,6 +7,7 @@ import {
   type DerivedFortressTile,
   type FortressTile,
   type FortressTileType,
+  type TerrainType,
 } from '@pwarf/shared';
 
 export interface FortressViewTile extends DerivedFortressTile {
@@ -20,6 +21,7 @@ export interface FortressViewTile extends DerivedFortressTile {
 interface UseFortressTilesOptions {
   civId: string | null;
   worldSeed: bigint | null;
+  terrain: TerrainType | null;
   offsetX: number;
   offsetY: number;
   zLevel: number;
@@ -30,6 +32,7 @@ interface UseFortressTilesOptions {
 export function useFortressTiles({
   civId,
   worldSeed,
+  terrain,
   offsetX,
   offsetY,
   zLevel,
@@ -42,8 +45,8 @@ export function useFortressTiles({
   // Create deriver once per seed + civId
   const deriver = useMemo<FortressDeriver | null>(() => {
     if (worldSeed == null || !civId) return null;
-    return createFortressDeriver(worldSeed, civId);
-  }, [worldSeed, civId]);
+    return createFortressDeriver(worldSeed, civId, terrain ?? "plains");
+  }, [worldSeed, civId, terrain]);
 
   // Fetch modified tiles from DB
   const fetchOverrides = useCallback(async (force = false) => {

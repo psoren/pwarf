@@ -19,6 +19,7 @@ import { useDesignation, type DesignationMode } from "./hooks/useDesignation";
 import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
 import TaskPriorities from "./components/TaskPriorities";
 import { FORTRESS_MAX_Z, FORTRESS_MIN_Z } from "@pwarf/shared";
+import type { LiveDwarf } from "./hooks/useDwarves";
 
 export default function App() {
   const { session, user, loading, signIn, signUp, signOut } = useAuth();
@@ -54,6 +55,7 @@ export default function App() {
   const { tileMap: fortressTileMap, getTile: getFortressTile } = useFortressTiles({
     civId: world.civId,
     worldSeed: world.worldSeed,
+    terrain: world.embarkTerrain,
     offsetX: viewport.offsetX,
     offsetY: viewport.offsetY,
     zLevel,
@@ -152,6 +154,14 @@ export default function App() {
     await world.handleEmbark(selectedWorldTile.x, selectedWorldTile.y);
     designation.cancelDesignation();
   }, [selectedWorldTile, selectedTileData, world, designation]);
+
+  const handleGoToDwarf = useCallback((dwarf: LiveDwarf) => {
+    setZLevel(dwarf.position_z);
+    viewport.setOffset(
+      dwarf.position_x - Math.floor(vpCols / 2),
+      dwarf.position_y - Math.floor(vpRows / 2),
+    );
+  }, [viewport.setOffset, vpCols, vpRows]);
 
   // Keyboard shortcuts for build menu items when the menu is open
   useEffect(() => {
@@ -262,6 +272,7 @@ export default function App() {
           cursorTile={world.mode === "world" ? (selectedTileData ?? cursorTile) : cursorTile}
           onEmbark={world.mode === "world" && selectedWorldTile ? handleEmbark : undefined}
           dwarves={liveDwarves}
+          onGoToDwarf={world.mode === "fortress" ? handleGoToDwarf : undefined}
         />
 
         <MainViewport

@@ -48,7 +48,7 @@ export class SimRunner {
       cached = createEmptyCachedState();
     }
 
-    // Fetch world seed to create the fortress tile deriver
+    // Fetch world seed to create fortress deriver
     let fortressDeriver = null;
     if (worldId) {
       const { data: worldData } = await this.supabase
@@ -65,11 +65,11 @@ export class SimRunner {
       supabase: this.supabase,
       civilizationId,
       worldId: worldId ?? '',
+      fortressDeriver,
       step: this.stepCount,
       year: this.currentYear,
       day: this.currentDay,
       state: cached,
-      fortressDeriver,
     };
 
     console.log(

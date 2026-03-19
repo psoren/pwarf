@@ -93,10 +93,10 @@ export function makeContext(opts?: {
     supabase: null as unknown as SupabaseClient,
     civilizationId: "civ-1",
     worldId: "world-1",
+    fortressDeriver: null,
     step: 0,
     year: 1,
     day: 1,
     state,
-    fortressDeriver: null,
   };
 }

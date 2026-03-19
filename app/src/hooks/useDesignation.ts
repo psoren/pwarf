@@ -2,6 +2,9 @@ import { useState, useCallback } from "react";
 import type { TaskType } from "@pwarf/shared";
 import {
   WORK_MINE_BASE,
+  WORK_CHOP_TREE,
+  WORK_CLEAR_ROCK,
+  WORK_CLEAR_BUSH,
   WORK_BUILD_WALL,
   WORK_BUILD_FLOOR,
   WORK_BUILD_STAIRS,
@@ -35,11 +38,11 @@ export function useDesignation(opts: {
   const handleDesignateArea = useCallback(async (x1: number, y1: number, x2: number, y2: number) => {
     if (designationMode === 'none' || !civId) return;
 
-    const mineable: string[] = ['stone', 'ore', 'gem', 'soil', 'cavern_wall'];
-    const buildable: string[] = ['open_air', 'constructed_floor', 'cavern_floor'];
+    const mineable: string[] = ['stone', 'ore', 'gem', 'soil', 'cavern_wall', 'tree', 'rock', 'bush'];
+    const buildable: string[] = ['open_air', 'grass', 'constructed_floor', 'cavern_floor'];
     const isMine = designationMode === 'mine';
     const taskType = designationMode as TaskType;
-    const workRequired = isMine ? WORK_MINE_BASE : (BUILD_WORK[designationMode] ?? WORK_BUILD_WALL);
+    const baseBuildWork = BUILD_WORK[designationMode] ?? WORK_BUILD_WALL;
     const priority = taskPriorities[taskType] ?? 5;
 
     const tasks: Array<{
@@ -64,6 +67,16 @@ export function useDesignation(opts: {
           if (!mineable.includes(tile.tileType)) continue;
         } else {
           if (!buildable.includes(tile.tileType)) continue;
+        }
+
+        let workRequired = baseBuildWork;
+        if (isMine) {
+          switch (tile.tileType) {
+            case 'tree': workRequired = WORK_CHOP_TREE; break;
+            case 'rock': workRequired = WORK_CLEAR_ROCK; break;
+            case 'bush': workRequired = WORK_CLEAR_BUSH; break;
+            default: workRequired = WORK_MINE_BASE; break;
+          }
         }
 
         tasks.push({

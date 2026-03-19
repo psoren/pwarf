@@ -112,6 +112,15 @@ export const FLOOR_SLEEP_STRESS = 5;
 /** Base work required to mine a tile */
 export const WORK_MINE_BASE = 100;
 
+/** Work required to chop a tree */
+export const WORK_CHOP_TREE = 60;
+
+/** Work required to clear a rock */
+export const WORK_CLEAR_ROCK = 40;
+
+/** Work required to clear a bush */
+export const WORK_CLEAR_BUSH = 20;
+
 /** Base work required to haul an item */
 export const WORK_HAUL_BASE = 20;
 

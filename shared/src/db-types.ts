@@ -194,6 +194,9 @@ export type FortressTileType =
   | 'stair_both'
   | 'well'
   | 'mushroom_garden'
+  | 'sand'
+  | 'ice'
+  | 'mud'
   | 'empty';
 
 // ============================================================

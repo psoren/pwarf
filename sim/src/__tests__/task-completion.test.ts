@@ -108,7 +108,7 @@ describe("completeTask", () => {
     expect(dwarf.need_sleep).toBe(MAX_NEED);
   });
 
-  it("mining creates stone item and open_air tile", () => {
+  it("mining at z=0 creates stone item and grass tile", () => {
     const dwarf = makeDwarf();
     const skill = makeSkill(dwarf.id, "mining", 0);
     const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
@@ -126,7 +126,8 @@ describe("completeTask", () => {
 
     const stones = ctx.state.items.filter(i => i.category === "raw_material");
     expect(stones).toHaveLength(1);
-    expect(ctx.state.fortressTileOverrides.get("10,10,0")!.tile_type).toBe("open_air");
+    // Surface mining (z=0) produces grass, not open_air
+    expect(ctx.state.fortressTileOverrides.get("10,10,0")!.tile_type).toBe("grass");
   });
 
   it("build_wall creates constructed_wall tile", () => {

@@ -1,6 +1,6 @@
 import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
 import { createAleaRng, fbm } from "./world-gen-helpers.js";
-import type { FortressTileType } from "./db-types.js";
+import type { FortressTileType, TerrainType } from "./db-types.js";
 
 // ============================================================
 // Constants
@@ -252,6 +252,7 @@ function isMagmaTile(
 export function createFortressDeriver(
   worldSeed: bigint,
   civId: string,
+  terrain: TerrainType = "plains",
 ): FortressDeriver {
   const seed = combineSeed(worldSeed, civId);
   const rng = createAleaRng(seed);
@@ -316,9 +317,9 @@ export function createFortressDeriver(
         return { tileType: stairType, material: null };
       }
 
-      // z=0: Surface with features (trees, rocks, grass, bushes, ponds)
+      // z=0: Surface with features varying by biome
       if (z === 0) {
-        return deriveSurfaceTile(x, y, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise);
+        return deriveSurfaceTile(x, y, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise, terrain);
       }
 
       // z=-19: Magma sea
@@ -395,40 +396,131 @@ export function createFortressDeriver(
 // Surface feature generation (z=0)
 // ============================================================
 
+/** Per-biome thresholds controlling surface tile distribution. */
+interface SurfaceProfile {
+  /** Base tile when nothing else matches */
+  base: FortressTileType;
+  baseMaterial: string | null;
+  /** Tree region threshold (lower = more trees). Set > 1 to disable. */
+  treeRegion: number;
+  treeDetail: number;
+  /** Bush region range + detail threshold */
+  bushRegionMin: number;
+  bushRegionMax: number;
+  bushDetail: number;
+  /** Rock threshold (lower = more rocks) */
+  rockThreshold: number;
+  /** Pond region + detail thresholds. Set > 1 to disable. */
+  pondRegion: number;
+  pondDetail: number;
+  /** Optional water tile type override (e.g. ice for tundra) */
+  pondTile: FortressTileType;
+}
+
+const DEFAULT_PROFILE: SurfaceProfile = {
+  base: "grass", baseMaterial: null,
+  treeRegion: 0.45, treeDetail: 0.55,
+  bushRegionMin: 0.35, bushRegionMax: 0.55, bushDetail: 0.7,
+  rockThreshold: 0.88,
+  pondRegion: 0.65, pondDetail: 0.75,
+  pondTile: "pond",
+};
+
+const SURFACE_PROFILES: Partial<Record<TerrainType, Partial<SurfaceProfile>>> = {
+  mountain: {
+    base: "stone", baseMaterial: null,
+    treeRegion: 0.75, treeDetail: 0.7,       // sparse trees
+    bushRegionMin: 0.65, bushRegionMax: 0.8, bushDetail: 0.8,
+    rockThreshold: 0.6,                       // lots of rocks
+    pondRegion: 0.85, pondDetail: 0.85,       // rare ponds
+  },
+  forest: {
+    treeRegion: 0.25, treeDetail: 0.4,        // dense trees
+    bushRegionMin: 0.15, bushRegionMax: 0.35, bushDetail: 0.55,
+    rockThreshold: 0.93,                       // few rocks
+    pondRegion: 0.6, pondDetail: 0.7,          // some ponds
+  },
+  plains: {
+    treeRegion: 0.7, treeDetail: 0.65,         // sparse trees
+    bushRegionMin: 0.6, bushRegionMax: 0.75, bushDetail: 0.75,
+    rockThreshold: 0.92,                       // few rocks
+    pondRegion: 0.65, pondDetail: 0.75,
+  },
+  desert: {
+    base: "sand", baseMaterial: null,
+    treeRegion: 2, treeDetail: 2,              // no trees
+    bushRegionMin: 2, bushRegionMax: 2, bushDetail: 2,
+    rockThreshold: 0.85,                       // some rocks
+    pondRegion: 2, pondDetail: 2,              // no water
+  },
+  tundra: {
+    base: "grass", baseMaterial: null,
+    treeRegion: 0.85, treeDetail: 0.8,         // very sparse trees
+    bushRegionMin: 0.8, bushRegionMax: 0.9, bushDetail: 0.85,
+    rockThreshold: 0.82,                       // scattered rocks
+    pondRegion: 0.55, pondDetail: 0.65,        // ice patches
+    pondTile: "ice",
+  },
+  swamp: {
+    base: "mud", baseMaterial: null,
+    treeRegion: 0.55, treeDetail: 0.6,         // moderate trees
+    bushRegionMin: 0.4, bushRegionMax: 0.6, bushDetail: 0.6,
+    rockThreshold: 0.95,                       // rare rocks
+    pondRegion: 0.35, pondDetail: 0.5,         // lots of water
+  },
+  volcano: {
+    base: "lava_stone", baseMaterial: null,
+    treeRegion: 2, treeDetail: 2,              // no trees
+    bushRegionMin: 2, bushRegionMax: 2, bushDetail: 2,
+    rockThreshold: 0.65,                       // lots of rocks
+    pondRegion: 0.55, pondDetail: 0.6,         // magma pools
+    pondTile: "magma",
+  },
+};
+
+function getProfile(terrain: TerrainType): SurfaceProfile {
+  const overrides = SURFACE_PROFILES[terrain];
+  if (!overrides) return DEFAULT_PROFILE;
+  return { ...DEFAULT_PROFILE, ...overrides };
+}
+
 export function deriveSurfaceTile(
   x: number,
   y: number,
   treeNoise: NoiseFunction2D,
   rockNoise: NoiseFunction2D,
   pondNoise: NoiseFunction2D,
+  terrain: TerrainType = "plains",
 ): DerivedFortressTile {
-  // Ponds: small clusters using high-frequency noise
+  const p = getProfile(terrain);
+
+  // Ponds / water features
   const pondVal = (pondNoise(x * 0.04, y * 0.04) + 1) / 2;
   const pondRegion = (pondNoise(x * 0.008 + 300, y * 0.008 + 300) + 1) / 2;
-  if (pondRegion > 0.65 && pondVal > 0.75) {
-    return { tileType: "pond", material: null };
+  if (pondRegion > p.pondRegion && pondVal > p.pondDetail) {
+    return { tileType: p.pondTile, material: null };
   }
 
-  // Trees: dense forests using low-frequency for regions, high for individual placement
+  // Trees
   const treeRegion = (treeNoise(x * 0.006, y * 0.006) + 1) / 2;
   const treeDetail = (treeNoise(x * 0.08 + 500, y * 0.08 + 500) + 1) / 2;
-  if (treeRegion > 0.45 && treeDetail > 0.55) {
+  if (treeRegion > p.treeRegion && treeDetail > p.treeDetail) {
     return { tileType: "tree", material: "wood" };
   }
 
-  // Bushes: appear at forest edges (moderate tree region)
-  if (treeRegion > 0.35 && treeRegion < 0.55 && treeDetail > 0.7) {
+  // Bushes
+  if (treeRegion > p.bushRegionMin && treeRegion < p.bushRegionMax && treeDetail > p.bushDetail) {
     return { tileType: "bush", material: null };
   }
 
-  // Rocks: scattered boulders, slightly clustered
+  // Rocks
   const rockVal = (rockNoise(x * 0.05, y * 0.05) + 1) / 2;
-  if (rockVal > 0.88) {
+  if (rockVal > p.rockThreshold) {
     return { tileType: "rock", material: "stone" };
   }
 
-  // Default: grass
-  return { tileType: "grass", material: null };
+  // Base tile (grass, sand, mud, stone, lava_stone depending on biome)
+  return { tileType: p.base, material: p.baseMaterial };
 }
 
 function checkMaterial(
