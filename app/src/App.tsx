@@ -43,7 +43,7 @@ export default function App() {
     setOffset: viewport.setOffset,
   });
 
-  const { tileMap, getTile } = useWorldTiles({
+  const { getTile } = useWorldTiles({
     worldId: world.worldId,
     worldSeed: world.worldSeed,
     offsetX: viewport.offsetX,
@@ -52,7 +52,7 @@ export default function App() {
     viewportRows: vpRows,
   });
 
-  const { tileMap: fortressTileMap, getTile: getFortressTile } = useFortressTiles({
+  const { getTile: getFortressTile } = useFortressTiles({
     civId: world.civId,
     worldSeed: world.worldSeed,
     terrain: world.embarkTerrain,
@@ -335,8 +335,8 @@ export default function App() {
           onDragStart={viewport.onDragStart}
           onDragMove={viewport.onDragMove}
           onDragEnd={viewport.onDragEnd}
-          worldTiles={world.mode === "world" ? tileMap : undefined}
-          fortressTiles={world.mode === "fortress" ? fortressTileMap : undefined}
+          getWorldTileData={world.mode === "world" ? getTile : undefined}
+          getFortressTileData={world.mode === "fortress" ? getFortressTile : undefined}
           onViewportSize={handleViewportSize}
           dwarfPositions={world.mode === "fortress" ? dwarfPositions : undefined}
           designatedTiles={world.mode === "fortress" ? designatedTiles : undefined}

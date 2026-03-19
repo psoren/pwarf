@@ -13,8 +13,8 @@ interface MainViewportProps {
   onDragStart: (clientX: number, clientY: number, charW: number, charH: number) => void;
   onDragMove: (clientX: number, clientY: number, charW: number, charH: number) => void;
   onDragEnd: () => void;
-  worldTiles?: Map<string, WorldTile>;
-  fortressTiles?: Map<string, FortressViewTile>;
+  getWorldTileData?: (x: number, y: number) => WorldTile | null;
+  getFortressTileData?: (x: number, y: number) => FortressViewTile | null;
   onViewportSize?: (cols: number, rows: number) => void;
   /** Live dwarf positions keyed by "x,y" */
   dwarfPositions?: Map<string, { name: string }>;
@@ -59,8 +59,8 @@ export default function MainViewport({
   onDragStart,
   onDragMove,
   onDragEnd,
-  worldTiles,
-  fortressTiles,
+  getWorldTileData,
+  getFortressTileData,
   onViewportSize,
   dwarfPositions,
   designatedTiles,
@@ -76,43 +76,81 @@ export default function MainViewport({
   const dragMoved = useRef(false);
   const shiftHeld = useRef(false);
 
+  // Track canvas dimensions to avoid unnecessary resets
+  const canvasSizeRef = useRef({ w: 0, h: 0 });
+
   // Designation drag-select state
   const [selStart, setSelStart] = useState<{ x: number; y: number } | null>(null);
   const [selEnd, setSelEnd] = useState<{ x: number; y: number } | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
   const isDesignating = designationMode && designationMode !== 'none';
 
-  const getWorldTile = useCallback(
+  // Store onViewportSize in a ref so render doesn't depend on it
+  const onViewportSizeRef = useRef(onViewportSize);
+  onViewportSizeRef.current = onViewportSize;
+
+  // Store tile data getters in refs so render doesn't depend on their identity
+  const getWorldTileDataRef = useRef(getWorldTileData);
+  getWorldTileDataRef.current = getWorldTileData;
+  const getFortressTileDataRef = useRef(getFortressTileData);
+  getFortressTileDataRef.current = getFortressTileData;
+  const dwarfPositionsRef = useRef(dwarfPositions);
+  dwarfPositionsRef.current = dwarfPositions;
+  const designatedTilesRef = useRef(designatedTiles);
+  designatedTilesRef.current = designatedTiles;
+
+  // Increment to force re-render when data (not offset) changes
+  const [dataVersion, setDataVersion] = useState(0);
+  const prevGetWorldTileData = useRef(getWorldTileData);
+  const prevGetFortressTileData = useRef(getFortressTileData);
+  const prevDwarfPositions = useRef(dwarfPositions);
+  const prevDesignatedTiles = useRef(designatedTiles);
+
+  if (
+    getWorldTileData !== prevGetWorldTileData.current ||
+    getFortressTileData !== prevGetFortressTileData.current ||
+    dwarfPositions !== prevDwarfPositions.current ||
+    designatedTiles !== prevDesignatedTiles.current
+  ) {
+    prevGetWorldTileData.current = getWorldTileData;
+    prevGetFortressTileData.current = getFortressTileData;
+    prevDwarfPositions.current = dwarfPositions;
+    prevDesignatedTiles.current = designatedTiles;
+    setDataVersion((v) => v + 1);
+  }
+
+  const getWorldTileGlyph = useCallback(
     (wx: number, wy: number): { ch: string; fg: string; bg?: string } => {
-      if (worldTiles) {
-        const tile = worldTiles.get(`${wx},${wy}`);
+      const fn = getWorldTileDataRef.current;
+      if (fn) {
+        const tile = fn(wx, wy);
         if (tile) {
           return TERRAIN_GLYPHS[tile.terrain] ?? worldTileFallback(wx, wy);
         }
       }
       return worldTileFallback(wx, wy);
     },
-    [worldTiles],
+    [],
   );
 
-  const getFortressTile = useCallback(
+  const getFortressTileGlyph = useCallback(
     (wx: number, wy: number): { ch: string; fg: string; bg?: string } => {
       const key = `${wx},${wy}`;
 
       // Check for dwarf at this position
-      if (dwarfPositions?.has(key)) {
+      if (dwarfPositionsRef.current?.has(key)) {
         return { ch: "\u263A", fg: "#00cccc" };
       }
 
       // Check for designation overlay
-      const taskType = designatedTiles?.get(key);
+      const taskType = designatedTilesRef.current?.get(key);
 
-      if (fortressTiles) {
-        const tile = fortressTiles.get(key);
+      const fn = getFortressTileDataRef.current;
+      if (fn) {
+        const tile = fn(wx, wy);
         if (tile) {
           const glyph = FORTRESS_GLYPHS[tile.tileType] ?? { ch: "?", fg: "#f00" };
           if (taskType) {
-            // Show a preview glyph of what will be built
             const preview = DESIGNATION_PREVIEW[taskType];
             if (preview) {
               return { ch: preview.ch, fg: preview.fg, bg: "#442200" };
@@ -124,10 +162,10 @@ export default function MainViewport({
       }
       return { ch: " ", fg: "#000" };
     },
-    [fortressTiles, dwarfPositions, designatedTiles],
+    [],
   );
 
-  const getTile = mode === "fortress" ? getFortressTile : getWorldTile;
+  const getTileGlyph = mode === "fortress" ? getFortressTileGlyph : getWorldTileGlyph;
 
   // Render the grid
   const render = useCallback(() => {
@@ -140,15 +178,20 @@ export default function MainViewport({
     const w = rect.width;
     const h = rect.height;
 
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = `${w}px`;
-    canvas.style.height = `${h}px`;
+    // Only resize canvas when container dimensions actually change
+    const targetW = w * dpr;
+    const targetH = h * dpr;
+    if (canvas.width !== targetW || canvas.height !== targetH) {
+      canvas.width = targetW;
+      canvas.height = targetH;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+    }
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.scale(dpr, dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // Clear
     ctx.fillStyle = "#1a1a1a";
@@ -157,8 +200,11 @@ export default function MainViewport({
     const cols = Math.ceil(w / CHAR_W);
     const rows = Math.ceil(h / CHAR_H);
 
-    // Report viewport size for tile fetching
-    onViewportSize?.(cols, rows);
+    // Report viewport size only on actual change
+    if (canvasSizeRef.current.w !== cols || canvasSizeRef.current.h !== rows) {
+      canvasSizeRef.current = { w: cols, h: rows };
+      onViewportSizeRef.current?.(cols, rows);
+    }
 
     ctx.font = `${CHAR_H - 2}px "IBM Plex Mono", "Fira Code", monospace`;
     ctx.textBaseline = "top";
@@ -167,7 +213,7 @@ export default function MainViewport({
       for (let col = 0; col < cols; col++) {
         const wx = offsetX + col;
         const wy = offsetY + row;
-        const tileData = getTile(wx, wy);
+        const tileData = getTileGlyph(wx, wy);
 
         const px = col * CHAR_W;
         const py = row * CHAR_H;
@@ -231,7 +277,7 @@ export default function MainViewport({
       ctx.lineWidth = 1;
       ctx.strokeRect(cx + 0.5, cy + 0.5, CHAR_W - 1, CHAR_H - 1);
     }
-  }, [offsetX, offsetY, cursorX, cursorY, getTile, onViewportSize, isDesignating, selStart, selEnd, selectedTile, isCancelling]);
+  }, [offsetX, offsetY, cursorX, cursorY, getTileGlyph, isDesignating, selStart, selEnd, selectedTile, dataVersion, isCancelling]);
 
   // Re-render on state change
   useEffect(() => {

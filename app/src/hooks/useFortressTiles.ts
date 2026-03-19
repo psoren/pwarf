@@ -30,6 +30,8 @@ interface UseFortressTilesOptions {
   viewportRows: number;
 }
 
+const CACHE_MAX = 20_000;
+
 export function useFortressTiles({
   civId,
   worldSeed,
@@ -49,15 +51,31 @@ export function useFortressTiles({
     return createFortressDeriver(worldSeed, civId, terrain ?? "plains");
   }, [worldSeed, civId, terrain]);
 
-  // Fetch modified tiles from DB
+  // Tile cache
+  const cacheRef = useRef(new Map<string, FortressViewTile>());
+
+  // Clear cache when underlying data changes
+  useEffect(() => {
+    cacheRef.current.clear();
+  }, [deriver, dbOverrides, zLevel]);
+
+  // Use refs for offset/viewport so fetchOverrides stays stable
+  const offsetRef = useRef({ x: offsetX, y: offsetY });
+  offsetRef.current = { x: offsetX, y: offsetY };
+  const vpRef = useRef({ cols: viewportCols, rows: viewportRows });
+  vpRef.current = { cols: viewportCols, rows: viewportRows };
+
+  // Stable fetch function — reads offset/viewport from refs
   const fetchOverrides = useCallback(async (force = false) => {
     if (!civId) return;
 
-    const buffer = Math.max(viewportCols, viewportRows);
-    const x0 = Math.max(0, offsetX - buffer);
-    const y0 = Math.max(0, offsetY - buffer);
-    const x1 = Math.min(FORTRESS_SIZE, offsetX + viewportCols + buffer);
-    const y1 = Math.min(FORTRESS_SIZE, offsetY + viewportRows + buffer);
+    const { x: ox, y: oy } = offsetRef.current;
+    const { cols, rows } = vpRef.current;
+    const buffer = Math.max(cols, rows);
+    const x0 = Math.max(0, ox - buffer);
+    const y0 = Math.max(0, oy - buffer);
+    const x1 = Math.min(FORTRESS_SIZE, ox + cols + buffer);
+    const y1 = Math.min(FORTRESS_SIZE, oy + rows + buffer);
 
     const key = `${civId}:${zLevel}:${x0}:${y0}:${x1}:${y1}`;
     if (!force && key === lastFetchKey.current) return;
@@ -86,58 +104,53 @@ export function useFortressTiles({
       }
       setDbOverrides(newOverrides);
     }
-  }, [civId, zLevel, offsetX, offsetY, viewportCols, viewportRows]);
+  }, [civId, zLevel]); // stable — no offset/viewport deps
 
   // Fetch on viewport/z-level change
   useEffect(() => {
     if (!civId) return;
     void fetchOverrides();
-  }, [civId, fetchOverrides]);
+  }, [civId, fetchOverrides, offsetX, offsetY]);
 
-  // Poll for tile changes (e.g. mining/building completions)
+  // Poll for tile changes (e.g. mining/building completions) — stable interval
   useEffect(() => {
     if (!civId) return;
     const interval = setInterval(() => void fetchOverrides(true), POLL_FORTRESS_TILES_MS);
     return () => clearInterval(interval);
   }, [civId, fetchOverrides]);
 
-  // Build tile map
-  const tileMap = useMemo(() => {
-    if (!deriver || !civId) return new Map<string, FortressViewTile>();
-
-    const map = new Map<string, FortressViewTile>();
-    const buffer = Math.max(viewportCols, viewportRows);
-    const x0 = Math.max(0, offsetX - buffer);
-    const y0 = Math.max(0, offsetY - buffer);
-    const x1 = Math.min(FORTRESS_SIZE, offsetX + viewportCols + buffer);
-    const y1 = Math.min(FORTRESS_SIZE, offsetY + viewportRows + buffer);
-
-    for (let y = y0; y < y1; y++) {
-      for (let x = x0; x < x1; x++) {
-        const key = `${x},${y}`;
-        const derived = deriver.deriveTile(x, y, zLevel);
-        const override = dbOverrides.get(key);
-
-        map.set(key, {
-          x,
-          y,
-          z: zLevel,
-          tileType: (override?.tile_type as FortressTileType) ?? derived.tileType,
-          material: override?.material ?? derived.material,
-          isRevealed: override?.is_revealed ?? false,
-          isMined: override?.is_mined ?? false,
-        });
-      }
-    }
-    return map;
-  }, [deriver, civId, zLevel, offsetX, offsetY, viewportCols, viewportRows, dbOverrides]);
-
+  // On-demand tile derivation with cache
   const getTile = useCallback(
     (x: number, y: number): FortressViewTile | null => {
-      return tileMap.get(`${x},${y}`) ?? null;
+      if (!deriver || !civId) return null;
+
+      const key = `${x},${y}`;
+      const cached = cacheRef.current.get(key);
+      if (cached) return cached;
+
+      // Evict if cache is too large
+      if (cacheRef.current.size >= CACHE_MAX) {
+        cacheRef.current.clear();
+      }
+
+      const derived = deriver.deriveTile(x, y, zLevel);
+      const override = dbOverrides.get(key);
+
+      const tile: FortressViewTile = {
+        x,
+        y,
+        z: zLevel,
+        tileType: (override?.tile_type as FortressTileType) ?? derived.tileType,
+        material: override?.material ?? derived.material,
+        isRevealed: override?.is_revealed ?? false,
+        isMined: override?.is_mined ?? false,
+      };
+
+      cacheRef.current.set(key, tile);
+      return tile;
     },
-    [tileMap],
+    [deriver, civId, zLevel, dbOverrides],
   );
 
-  return { tileMap, getTile, deriver };
+  return { getTile, deriver };
 }

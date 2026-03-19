@@ -26,13 +26,25 @@ export function useViewport() {
 
   const dragRef = useRef<{ startX: number; startY: number; origOffsetX: number; origOffsetY: number } | null>(null);
 
-  /** Move viewport by delta tiles (integers only — grid-snapped) */
+  // rAF-batched panning: accumulate deltas, apply once per frame
+  const pendingPan = useRef({ dx: 0, dy: 0 });
+  const panRaf = useRef<number | null>(null);
+
+  /** Move viewport by delta tiles — batched via requestAnimationFrame */
   const pan = useCallback((dx: number, dy: number) => {
-    setState((prev) => ({
-      ...prev,
-      offsetX: clampCoord(prev.offsetX + dx, WORLD_WIDTH - 1),
-      offsetY: clampCoord(prev.offsetY + dy, WORLD_HEIGHT - 1),
-    }));
+    pendingPan.current.dx += dx;
+    pendingPan.current.dy += dy;
+    if (panRaf.current != null) return;
+    panRaf.current = requestAnimationFrame(() => {
+      const { dx: totalDx, dy: totalDy } = pendingPan.current;
+      pendingPan.current = { dx: 0, dy: 0 };
+      panRaf.current = null;
+      setState((prev) => ({
+        ...prev,
+        offsetX: clampCoord(prev.offsetX + totalDx, WORLD_WIDTH - 1),
+        offsetY: clampCoord(prev.offsetY + totalDy, WORLD_HEIGHT - 1),
+      }));
+    });
   }, []);
 
   /** Jump viewport to an absolute offset (and optionally set cursor) */
