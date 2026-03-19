@@ -2,6 +2,8 @@
 
 A Dwarf Fortress-inspired strategy sim with ASCII canvas rendering, procedural world generation, and a Supabase backend.
 
+**Play it live:** https://psoren.github.io/pwarf/
+
 ## Prerequisites
 
 - Node.js 18+
