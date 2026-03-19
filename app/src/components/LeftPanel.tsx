@@ -9,6 +9,7 @@ interface LeftPanelProps {
   cursorTile?: WorldTile | null;
   onEmbark?: () => void;
   dwarves?: LiveDwarf[];
+  onGoToDwarf?: (dwarf: LiveDwarf) => void;
 }
 
 function dwarfJobLabel(d: LiveDwarf): string {
@@ -33,7 +34,7 @@ function needBar(label: string, value: number, color: string) {
   );
 }
 
-export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmbark, dwarves = [] }: LeftPanelProps) {
+export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmbark, dwarves = [], onGoToDwarf }: LeftPanelProps) {
   const isOcean = cursorTile?.terrain === "ocean";
   const [selectedDwarfId, setSelectedDwarfId] = useState<string | null>(null);
 
@@ -74,8 +75,19 @@ export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmb
                   Status: <span className="text-[var(--green)]">{dwarfJobLabel(selectedDwarf)}</span>
                 </div>
 
-                <div className="text-[var(--text)]">
-                  Position: <span className="text-[var(--green)]">({selectedDwarf.position_x}, {selectedDwarf.position_y})</span>
+                <div className="text-[var(--text)] flex items-center justify-between">
+                  <span>
+                    Pos: <span className="text-[var(--green)]">({selectedDwarf.position_x}, {selectedDwarf.position_y}, z{selectedDwarf.position_z})</span>
+                  </span>
+                  {onGoToDwarf && (
+                    <button
+                      onClick={() => onGoToDwarf(selectedDwarf)}
+                      className="text-[var(--amber)] hover:text-[var(--green)] cursor-pointer"
+                      title="Jump camera to this dwarf"
+                    >
+                      Go to
+                    </button>
+                  )}
                 </div>
 
                 <div className="border-t border-[var(--border)] pt-1 mt-1 space-y-1">
@@ -107,7 +119,10 @@ export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmb
                       onClick={() => setSelectedDwarfId(d.id)}
                     >
                       <span className="text-[var(--green)]">{d.name}</span>
-                      <span className="text-[var(--text)]">{dwarfJobLabel(d)}</span>
+                      <span className="text-[var(--text)]">
+                        <span className="text-[var(--border)] mr-1">z{d.position_z}</span>
+                        {dwarfJobLabel(d)}
+                      </span>
                     </li>
                   ))}
                   {dwarves.length === 0 && (

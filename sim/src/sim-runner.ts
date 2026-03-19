@@ -50,13 +50,13 @@ export class SimRunner {
     // Fetch world seed to create fortress deriver
     let fortressDeriver = null;
     if (worldId) {
-      const { data: world } = await this.supabase
+      const { data: worldData } = await this.supabase
         .from('worlds')
         .select('seed')
         .eq('id', worldId)
         .single();
-      if (world) {
-        fortressDeriver = createFortressDeriver(BigInt(world.seed), civilizationId);
+      if (worldData?.seed != null) {
+        fortressDeriver = createFortressDeriver(BigInt(worldData.seed), civilizationId);
       }
     }
 

@@ -82,34 +82,54 @@ function isAdjacentToTarget(dwarf: Dwarf, task: Task): boolean {
   return (dx + dy) === 1;
 }
 
+/** Build a TileLookup that checks overrides first, then falls back to the deriver. */
+function buildTileLookup(ctx: SimContext): TileLookup {
+  const { fortressDeriver } = ctx;
+  const { fortressTileOverrides } = ctx.state;
+
+  return (x: number, y: number, z: number) => {
+    if (x < 0 || x >= FORTRESS_SIZE || y < 0 || y >= FORTRESS_SIZE) return null;
+
+    // Check overrides first (mined/built tiles)
+    const override = fortressTileOverrides.get(`${x},${y},${z}`);
+    if (override) return override.tile_type;
+
+    // Fall back to deterministic deriver
+    if (fortressDeriver) {
+      return fortressDeriver.deriveTile(x, y, z).tileType;
+    }
+
+    // No deriver available — treat as open_air (legacy fallback)
+    return 'open_air';
+  };
+}
+
 function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext): boolean {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return true;
 
-  const getTile: TileLookup = (_x, _y, _z) => {
-    if (_x < 0 || _x >= FORTRESS_SIZE || _y < 0 || _y >= FORTRESS_SIZE) return null;
-    return 'open_air';
-  };
-
+  // Already at the task site — no movement needed
   const needsAdjacent = ADJACENT_TASK_TYPES.has(task.task_type);
+  const atSite = needsAdjacent
+    ? isAdjacentToTarget(dwarf, task)
+    : (dwarf.position_x === task.target_x && dwarf.position_y === task.target_y && dwarf.position_z === task.target_z);
+  if (atSite) return true;
 
-  const goal2d = { x: task.target_x, y: task.target_y, z: dwarf.position_z };
+  const getTile = buildTileLookup(ctx);
+
   const nextStep = bfsNextStep(
     { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z },
-    goal2d,
+    { x: task.target_x, y: task.target_y, z: task.target_z },
     getTile,
     needsAdjacent,
   );
 
   if (nextStep === null) {
-    if (dwarf.position_z !== task.target_z) {
-      dwarf.position_z = task.target_z;
-      ctx.state.dirtyDwarfIds.add(dwarf.id);
-    }
-    return true;
+    return false; // No path found
   }
 
   dwarf.position_x = nextStep.x;
   dwarf.position_y = nextStep.y;
+  dwarf.position_z = nextStep.z;
   ctx.state.dirtyDwarfIds.add(dwarf.id);
   return true;
 }
