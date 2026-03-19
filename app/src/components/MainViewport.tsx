@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import type { WorldTile, TerrainType, FortressTileType } from "@pwarf/shared";
 import type { FortressViewTile } from "../hooks/useFortressTiles";
 
@@ -21,8 +21,8 @@ interface MainViewportProps {
   designatedTiles?: Set<string>;
   /** Current designation mode */
   designationMode?: string;
-  /** Click handler for tile designation */
-  onTileClick?: (x: number, y: number) => void;
+  /** Area designation handler — called with rectangle bounds */
+  onDesignateArea?: (x1: number, y1: number, x2: number, y2: number) => void;
 }
 
 // Character cell dimensions (monospace)
@@ -94,12 +94,17 @@ export default function MainViewport({
   dwarfPositions,
   designatedTiles,
   designationMode,
-  onTileClick,
+  onDesignateArea,
 }: MainViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
   const dragMoved = useRef(false);
+
+  // Designation drag-select state
+  const [selStart, setSelStart] = useState<{ x: number; y: number } | null>(null);
+  const [selEnd, setSelEnd] = useState<{ x: number; y: number } | null>(null);
+  const isDesignating = designationMode && designationMode !== 'none';
 
   const getWorldTile = useCallback(
     (wx: number, wy: number): { ch: string; fg: string; bg?: string } => {
@@ -203,15 +208,43 @@ export default function MainViewport({
       }
     }
 
+    // Draw selection rectangle overlay
+    if (selStart && selEnd) {
+      const sx1 = Math.min(selStart.x, selEnd.x);
+      const sy1 = Math.min(selStart.y, selEnd.y);
+      const sx2 = Math.max(selStart.x, selEnd.x);
+      const sy2 = Math.max(selStart.y, selEnd.y);
+
+      ctx.fillStyle = "rgba(255, 102, 0, 0.25)";
+      for (let sy = sy1; sy <= sy2; sy++) {
+        for (let sx = sx1; sx <= sx2; sx++) {
+          const px = (sx - offsetX) * CHAR_W;
+          const py = (sy - offsetY) * CHAR_H;
+          if (px >= 0 && px < w && py >= 0 && py < h) {
+            ctx.fillRect(px, py, CHAR_W, CHAR_H);
+          }
+        }
+      }
+
+      // Draw rectangle border
+      const rx = (sx1 - offsetX) * CHAR_W;
+      const ry = (sy1 - offsetY) * CHAR_H;
+      const rw = (sx2 - sx1 + 1) * CHAR_W;
+      const rh = (sy2 - sy1 + 1) * CHAR_H;
+      ctx.strokeStyle = "#ff6600";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(rx + 0.5, ry + 0.5, rw - 1, rh - 1);
+    }
+
     // Draw cursor outline
     const cx = (cursorX - offsetX) * CHAR_W;
     const cy = (cursorY - offsetY) * CHAR_H;
     if (cx >= 0 && cx < w && cy >= 0 && cy < h) {
-      ctx.strokeStyle = designationMode && designationMode !== 'none' ? "#ff6600" : "#4af626";
+      ctx.strokeStyle = isDesignating ? "#ff6600" : "#4af626";
       ctx.lineWidth = 1;
       ctx.strokeRect(cx + 0.5, cy + 0.5, CHAR_W - 1, CHAR_H - 1);
     }
-  }, [offsetX, offsetY, cursorX, cursorY, getTile, onViewportSize, designationMode]);
+  }, [offsetX, offsetY, cursorX, cursorY, getTile, onViewportSize, isDesignating, selStart, selEnd]);
 
   // Re-render on state change
   useEffect(() => {
@@ -231,14 +264,21 @@ export default function MainViewport({
       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
       const col = Math.floor((e.clientX - rect.left) / CHAR_W);
       const row = Math.floor((e.clientY - rect.top) / CHAR_H);
-      onCursorMove(offsetX + col, offsetY + row);
+      const wx = offsetX + col;
+      const wy = offsetY + row;
+      onCursorMove(wx, wy);
 
       if (dragging.current) {
         dragMoved.current = true;
-        onDragMove(e.clientX, e.clientY, CHAR_W, CHAR_H);
+        if (isDesignating) {
+          // Update selection end point
+          setSelEnd({ x: wx, y: wy });
+        } else {
+          onDragMove(e.clientX, e.clientY, CHAR_W, CHAR_H);
+        }
       }
     },
-    [offsetX, offsetY, onCursorMove, onDragMove],
+    [offsetX, offsetY, onCursorMove, onDragMove, isDesignating],
   );
 
   const handleMouseDown = useCallback(
@@ -246,26 +286,42 @@ export default function MainViewport({
       if (e.button === 0) {
         dragging.current = true;
         dragMoved.current = false;
-        onDragStart(e.clientX, e.clientY, CHAR_W, CHAR_H);
+
+        if (isDesignating) {
+          // Start designation selection
+          const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+          const col = Math.floor((e.clientX - rect.left) / CHAR_W);
+          const row = Math.floor((e.clientY - rect.top) / CHAR_H);
+          const wx = offsetX + col;
+          const wy = offsetY + row;
+          setSelStart({ x: wx, y: wy });
+          setSelEnd({ x: wx, y: wy });
+        } else {
+          onDragStart(e.clientX, e.clientY, CHAR_W, CHAR_H);
+        }
       }
     },
-    [onDragStart],
+    [onDragStart, isDesignating, offsetX, offsetY],
   );
 
   const handleMouseUp = useCallback(
-    (e: React.MouseEvent) => {
-      if (dragging.current && !dragMoved.current && onTileClick && designationMode && designationMode !== 'none') {
-        // Click without drag in designation mode → designate tile
-        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-        const col = Math.floor((e.clientX - rect.left) / CHAR_W);
-        const row = Math.floor((e.clientY - rect.top) / CHAR_H);
-        onTileClick(offsetX + col, offsetY + row);
+    (_e: React.MouseEvent) => {
+      if (dragging.current && isDesignating && selStart && selEnd && onDesignateArea) {
+        const x1 = Math.min(selStart.x, selEnd.x);
+        const y1 = Math.min(selStart.y, selEnd.y);
+        const x2 = Math.max(selStart.x, selEnd.x);
+        const y2 = Math.max(selStart.y, selEnd.y);
+        onDesignateArea(x1, y1, x2, y2);
       }
       dragging.current = false;
       dragMoved.current = false;
-      onDragEnd();
+      setSelStart(null);
+      setSelEnd(null);
+      if (!isDesignating) {
+        onDragEnd();
+      }
     },
-    [onDragEnd, onTileClick, designationMode, offsetX, offsetY],
+    [onDragEnd, onDesignateArea, isDesignating, selStart, selEnd],
   );
 
   return (
