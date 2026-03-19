@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { POLL_DWARVES_MS } from '@pwarf/shared';
 
 export interface LiveDwarf {
   id: string;
@@ -58,7 +59,7 @@ export function useDwarves(civId: string | null) {
 
     pollRef.current = setInterval(() => {
       void fetchDwarves();
-    }, 2000);
+    }, POLL_DWARVES_MS);
 
     return () => {
       if (pollRef.current) {

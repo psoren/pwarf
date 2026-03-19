@@ -8,7 +8,7 @@ import {
 } from "@pwarf/shared";
 import type { Dwarf, TaskType } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
-import { createTask, findNearestItem } from "../task-helpers.js";
+import { createTask, findNearestItem, findNearestTileOfType } from "../task-helpers.js";
 
 /**
  * Need Satisfaction Phase
@@ -83,28 +83,53 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
     : dwarf.need_sleep;
   const priority = Math.min(10, Math.floor(10 * (1 - needValue / 100)));
 
-  // Find target item for eat/drink
-  let targetItemId: string | null = null;
-  if (taskType === 'eat') {
-    const food = findNearestItem(state.items, 'food', dwarf.position_x, dwarf.position_y, dwarf.position_z);
-    if (!food) return; // No food available — dwarf stays idle and desperate
-    targetItemId = food.id;
-  } else if (taskType === 'drink') {
-    const drink = findNearestItem(state.items, 'drink', dwarf.position_x, dwarf.position_y, dwarf.position_z);
-    if (!drink) return; // No drink available
-    targetItemId = drink.id;
-  }
-
   const workRequired = taskType === 'eat' ? WORK_EAT
     : taskType === 'drink' ? WORK_DRINK
     : WORK_SLEEP;
 
+  // For eat/drink: try to find a tile source (mushroom garden / well) first,
+  // then fall back to consumable items.
+  let targetX = dwarf.position_x;
+  let targetY = dwarf.position_y;
+  let targetZ = dwarf.position_z;
+  let targetItemId: string | null = null;
+
+  if (taskType === 'eat') {
+    const garden = findNearestTileOfType(
+      'mushroom_garden', dwarf.position_x, dwarf.position_y, dwarf.position_z,
+      state.fortressTileOverrides, ctx.fortressDeriver,
+    );
+    if (garden) {
+      targetX = garden.x;
+      targetY = garden.y;
+      targetZ = garden.z;
+    } else {
+      const food = findNearestItem(state.items, 'food', dwarf.position_x, dwarf.position_y, dwarf.position_z);
+      if (!food) return; // No food source available
+      targetItemId = food.id;
+    }
+  } else if (taskType === 'drink') {
+    const well = findNearestTileOfType(
+      'well', dwarf.position_x, dwarf.position_y, dwarf.position_z,
+      state.fortressTileOverrides, ctx.fortressDeriver,
+    );
+    if (well) {
+      targetX = well.x;
+      targetY = well.y;
+      targetZ = well.z;
+    } else {
+      const drink = findNearestItem(state.items, 'drink', dwarf.position_x, dwarf.position_y, dwarf.position_z);
+      if (!drink) return; // No drink source available
+      targetItemId = drink.id;
+    }
+  }
+
   createTask(state, ctx.civilizationId, {
     task_type: taskType,
     priority,
-    target_x: dwarf.position_x,  // Eat/drink/sleep at current position for Phase 0
-    target_y: dwarf.position_y,
-    target_z: dwarf.position_z,
+    target_x: targetX,
+    target_y: targetY,
+    target_z: targetZ,
     target_item_id: targetItemId,
     work_required: workRequired,
     assigned_dwarf_id: dwarf.id,
