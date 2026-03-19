@@ -12,13 +12,24 @@ export interface ActiveTask {
   work_required: number;
 }
 
+/** Build a compact fingerprint for diffing. */
+function fingerprint(tasks: ActiveTask[]): string {
+  let s = '';
+  for (const t of tasks) {
+    s += `${t.id}:${t.status}:${t.work_progress};`;
+  }
+  return s;
+}
+
 export function useTasks(civId: string | null) {
   const [tasks, setTasks] = useState<ActiveTask[]>([]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastFingerprint = useRef<string>('');
 
   useEffect(() => {
     if (!civId) {
       setTasks([]);
+      lastFingerprint.current = '';
       return;
     }
 
@@ -30,12 +41,16 @@ export function useTasks(civId: string | null) {
         .in('status', ['pending', 'claimed', 'in_progress']);
 
       if (!error && data) {
-        setTasks(data);
+        const fp = fingerprint(data);
+        if (fp !== lastFingerprint.current) {
+          lastFingerprint.current = fp;
+          setTasks(data);
+        }
       }
     }
 
     void fetchTasks();
-    pollRef.current = setInterval(() => void fetchTasks(), 1000);
+    pollRef.current = setInterval(() => void fetchTasks(), 2000);
 
     return () => {
       if (pollRef.current) {
