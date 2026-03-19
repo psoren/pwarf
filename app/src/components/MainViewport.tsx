@@ -30,6 +30,8 @@ interface MainViewportProps {
   onTileClick?: (x: number, y: number) => void;
   /** Selected world tile position */
   selectedTile?: { x: number; y: number } | null;
+  /** Click handler for clicking a dwarf on the map */
+  onDwarfClick?: (x: number, y: number) => void;
 }
 
 // Character cell dimensions (monospace)
@@ -69,6 +71,7 @@ export default function MainViewport({
   onCancelArea,
   onTileClick,
   selectedTile,
+  onDwarfClick,
 }: MainViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -241,20 +244,29 @@ export default function MainViewport({
       }
     }
 
-    // Draw selection rectangle overlay
+    // Draw selection rectangle overlay with blueprint preview
     if (selStart && selEnd) {
       const sx1 = Math.min(selStart.x, selEnd.x);
       const sy1 = Math.min(selStart.y, selEnd.y);
       const sx2 = Math.max(selStart.x, selEnd.x);
       const sy2 = Math.max(selStart.y, selEnd.y);
 
-      ctx.fillStyle = isCancelling ? "rgba(255, 0, 0, 0.25)" : "rgba(255, 102, 0, 0.25)";
+      const preview = designationMode && !isCancelling ? DESIGNATION_PREVIEW[designationMode] : null;
+
       for (let sy = sy1; sy <= sy2; sy++) {
         for (let sx = sx1; sx <= sx2; sx++) {
           const px = (sx - offsetX) * CHAR_W;
           const py = (sy - offsetY) * CHAR_H;
           if (px >= 0 && px < w && py >= 0 && py < h) {
+            // Background tint
+            ctx.fillStyle = isCancelling ? "rgba(255, 0, 0, 0.25)" : "rgba(68, 34, 0, 0.6)";
             ctx.fillRect(px, py, CHAR_W, CHAR_H);
+
+            // Blueprint glyph preview
+            if (preview) {
+              ctx.fillStyle = preview.fg;
+              ctx.fillText(preview.ch, px + 1, py + 2);
+            }
           }
         }
       }
@@ -358,9 +370,15 @@ export default function MainViewport({
           onDesignateArea(x1, y1, x2, y2);
         }
       }
-      // Fire tile click if user clicked without dragging (world map selection)
-      if (dragging.current && !dragMoved.current && !isDesignating && onTileClick) {
-        onTileClick(cursorX, cursorY);
+      // Fire tile click if user clicked without dragging
+      if (dragging.current && !dragMoved.current && !isDesignating) {
+        // Check for dwarf click in fortress mode
+        const cursorKey = `${cursorX},${cursorY}`;
+        if (onDwarfClick && dwarfPositions?.has(cursorKey)) {
+          onDwarfClick(cursorX, cursorY);
+        } else if (onTileClick) {
+          onTileClick(cursorX, cursorY);
+        }
       }
       dragging.current = false;
       dragMoved.current = false;
@@ -372,7 +390,7 @@ export default function MainViewport({
         onDragEnd();
       }
     },
-    [onDragEnd, onDesignateArea, onCancelArea, onTileClick, isDesignating, selStart, selEnd, cursorX, cursorY],
+    [onDragEnd, onDesignateArea, onCancelArea, onTileClick, onDwarfClick, dwarfPositions, isDesignating, selStart, selEnd, cursorX, cursorY],
   );
 
   return (

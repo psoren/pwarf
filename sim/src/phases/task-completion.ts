@@ -257,7 +257,8 @@ function completeDrink(dwarf: Dwarf, task: Task, ctx: SimContext): void {
 }
 
 function completeSleep(dwarf: Dwarf, ctx: SimContext): void {
-  dwarf.need_sleep = MAX_NEED;
+  // Sleep restoration happens gradually each tick in task-execution.
+  // Nothing extra to do on completion.
   ctx.state.dirtyDwarfIds.add(dwarf.id);
 }
 

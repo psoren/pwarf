@@ -106,7 +106,7 @@ describe("completeTask", () => {
     expect(dwarf.need_drink).toBe(Math.min(MAX_NEED, 15 + DRINK_RESTORE_AMOUNT));
   });
 
-  it("sleeping restores sleep to MAX_NEED", () => {
+  it("sleeping completion does not add extra sleep (gradual restore happens in task-execution)", () => {
     const dwarf = makeDwarf({ need_sleep: 10 });
     const ctx = makeContext({ dwarves: [dwarf] });
     const task = createTask(ctx.state, "civ-1", {
@@ -118,7 +118,8 @@ describe("completeTask", () => {
 
     completeTask(dwarf, task, ctx);
 
-    expect(dwarf.need_sleep).toBe(MAX_NEED);
+    // Sleep restoration is gradual — completeSleep no longer adds anything
+    expect(dwarf.need_sleep).toBe(10);
   });
 
   it("mining at z=0 creates stone item and grass tile", () => {

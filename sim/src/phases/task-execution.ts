@@ -1,4 +1,4 @@
-import { BASE_WORK_RATE } from "@pwarf/shared";
+import { BASE_WORK_RATE, SLEEP_RESTORE_PER_TICK, MAX_NEED } from "@pwarf/shared";
 import type { Dwarf, Task } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { getDwarfSkillLevel, getRequiredSkill } from "../task-helpers.js";
@@ -67,6 +67,12 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
 
     task.work_progress += workRate;
     state.dirtyTaskIds.add(task.id);
+
+    // Restore sleep gradually each tick while sleeping
+    if (task.task_type === 'sleep') {
+      dwarf.need_sleep = Math.min(MAX_NEED, dwarf.need_sleep + SLEEP_RESTORE_PER_TICK);
+      state.dirtyDwarfIds.add(dwarf.id);
+    }
 
     if (task.work_progress >= task.work_required) {
       completeTask(dwarf, task, ctx);
