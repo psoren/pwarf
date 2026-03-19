@@ -28,10 +28,10 @@ interface MainViewportProps {
   onCancelArea?: (x1: number, y1: number, x2: number, y2: number) => void;
   /** Click handler for world map tile selection */
   onTileClick?: (x: number, y: number) => void;
-  /** Selected world tile position */
-  selectedTile?: { x: number; y: number } | null;
   /** Click handler for clicking a dwarf on the map */
   onDwarfClick?: (x: number, y: number) => void;
+  /** Selected world tile position */
+  selectedTile?: { x: number; y: number } | null;
 }
 
 // Character cell dimensions (monospace)
@@ -70,8 +70,8 @@ export default function MainViewport({
   onDesignateArea,
   onCancelArea,
   onTileClick,
-  selectedTile,
   onDwarfClick,
+  selectedTile,
 }: MainViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

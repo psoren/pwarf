@@ -344,7 +344,7 @@ export default function App() {
           cursorTile={world.mode === "world" ? (selectedTileData ?? cursorTile) : cursorTile}
           onEmbark={world.mode === "world" && selectedWorldTile ? handleEmbark : undefined}
           dwarves={liveDwarves}
-          onGoToDwarf={world.mode === "fortress" ? handleGoToDwarf : undefined}
+          onDwarfClick={world.mode === "fortress" ? (id: string) => setModalDwarfId(id) : undefined}
         />
 
         <MainViewport
@@ -366,8 +366,8 @@ export default function App() {
           onDesignateArea={world.mode === "fortress" ? designation.handleDesignateArea : undefined}
           onCancelArea={world.mode === "fortress" ? designation.handleCancelArea : undefined}
           onTileClick={world.mode === "world" ? (x: number, y: number) => setSelectedWorldTile({ x, y }) : undefined}
-          selectedTile={world.mode === "world" ? selectedWorldTile : undefined}
           onDwarfClick={world.mode === "fortress" ? handleDwarfClick : undefined}
+          selectedTile={world.mode === "world" ? selectedWorldTile : undefined}
         />
 
         {modalDwarf && (
