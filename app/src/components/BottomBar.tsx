@@ -47,6 +47,9 @@ export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, for
             <span>
               <kbd className="text-[var(--amber)]">b</kbd> build
             </span>
+            <span>
+              <kbd className="text-[var(--amber)]">p</kbd> priorities
+            </span>
           </>
         )}
         <span>

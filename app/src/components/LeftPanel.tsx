@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { WorldTile } from "@pwarf/shared";
 import type { LiveDwarf } from "../hooks/useDwarves";
 
@@ -15,8 +16,28 @@ function dwarfJobLabel(d: LiveDwarf): string {
   return "Idle";
 }
 
+function needBar(label: string, value: number, color: string) {
+  const pct = Math.round(value);
+  const barColor = value < 25 ? "var(--red, #f87171)" : color;
+  return (
+    <div className="flex items-center gap-1">
+      <span className="w-12 text-[var(--text)]">{label}</span>
+      <div className="flex-1 h-1.5 bg-[#333] rounded overflow-hidden">
+        <div
+          className="h-full rounded"
+          style={{ width: `${pct}%`, backgroundColor: barColor }}
+        />
+      </div>
+      <span className="w-6 text-right" style={{ color: barColor }}>{pct}</span>
+    </div>
+  );
+}
+
 export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmbark, dwarves = [] }: LeftPanelProps) {
   const isOcean = cursorTile?.terrain === "ocean";
+  const [selectedDwarfId, setSelectedDwarfId] = useState<string | null>(null);
+
+  const selectedDwarf = selectedDwarfId ? dwarves.find(d => d.id === selectedDwarfId) : null;
 
   return (
     <aside
@@ -33,27 +54,71 @@ export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmb
 
       {!collapsed && (
         <div className="px-2 pb-2 overflow-y-auto text-xs">
-          <h2 className="text-[var(--amber)] mb-1 font-bold">
-            {mode === "fortress" ? "Dwarves" : "Tile Info"}
-          </h2>
-
           {mode === "fortress" ? (
-            <ul className="space-y-0.5">
-              {dwarves.map((d) => (
-                <li
-                  key={d.id}
-                  className="flex justify-between hover:bg-[var(--bg-hover)] px-1"
-                >
-                  <span className="text-[var(--green)]">{d.name}</span>
-                  <span className="text-[var(--text)]">{dwarfJobLabel(d)}</span>
-                </li>
-              ))}
-              {dwarves.length === 0 && (
-                <li className="text-[var(--text)]">No dwarves</li>
-              )}
-            </ul>
+            selectedDwarf ? (
+              // Dwarf detail view
+              <div className="space-y-2">
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setSelectedDwarfId(null)}
+                    className="text-[var(--amber)] hover:text-[var(--green)] cursor-pointer"
+                  >
+                    &larr;
+                  </button>
+                  <h2 className="text-[var(--green)] font-bold">
+                    {selectedDwarf.name}{selectedDwarf.surname ? ` ${selectedDwarf.surname}` : ""}
+                  </h2>
+                </div>
+
+                <div className="text-[var(--text)]">
+                  Status: <span className="text-[var(--green)]">{dwarfJobLabel(selectedDwarf)}</span>
+                </div>
+
+                <div className="text-[var(--text)]">
+                  Position: <span className="text-[var(--green)]">({selectedDwarf.position_x}, {selectedDwarf.position_y})</span>
+                </div>
+
+                <div className="border-t border-[var(--border)] pt-1 mt-1 space-y-1">
+                  <div className="text-[var(--amber)] font-bold mb-0.5">Needs</div>
+                  {needBar("Food", selectedDwarf.need_food, "var(--green)")}
+                  {needBar("Drink", selectedDwarf.need_drink, "#4488ff")}
+                  {needBar("Sleep", selectedDwarf.need_sleep, "#aa88ff")}
+                </div>
+
+                <div className="border-t border-[var(--border)] pt-1 mt-1">
+                  <div className="text-[var(--amber)] font-bold mb-0.5">Stress</div>
+                  {needBar("Stress", selectedDwarf.stress_level, "#ff6600")}
+                </div>
+
+                <div className="border-t border-[var(--border)] pt-1 mt-1">
+                  <div className="text-[var(--amber)] font-bold mb-0.5">Health</div>
+                  {needBar("HP", selectedDwarf.health, "var(--green)")}
+                </div>
+              </div>
+            ) : (
+              // Dwarf roster
+              <>
+                <h2 className="text-[var(--amber)] mb-1 font-bold">Dwarves</h2>
+                <ul className="space-y-0.5">
+                  {dwarves.map((d) => (
+                    <li
+                      key={d.id}
+                      className="flex justify-between hover:bg-[var(--bg-hover)] px-1 cursor-pointer"
+                      onClick={() => setSelectedDwarfId(d.id)}
+                    >
+                      <span className="text-[var(--green)]">{d.name}</span>
+                      <span className="text-[var(--text)]">{dwarfJobLabel(d)}</span>
+                    </li>
+                  ))}
+                  {dwarves.length === 0 && (
+                    <li className="text-[var(--text)]">No dwarves</li>
+                  )}
+                </ul>
+              </>
+            )
           ) : cursorTile ? (
             <div className="space-y-1">
+              <h2 className="text-[var(--amber)] mb-1 font-bold">Tile Info</h2>
               <p>
                 Terrain:{" "}
                 <span className="text-[var(--green)]">{cursorTile.terrain}</span>
@@ -91,6 +156,7 @@ export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmb
             </div>
           ) : (
             <div className="space-y-1 text-[var(--text)]">
+              <h2 className="text-[var(--amber)] mb-1 font-bold">Tile Info</h2>
               <p>Hover over a tile to see info</p>
             </div>
           )}

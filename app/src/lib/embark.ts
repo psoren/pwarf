@@ -6,13 +6,13 @@ const FORTRESS_CENTER = Math.floor(FORTRESS_SIZE / 2);
 
 /** Starting dwarf roles with their skills */
 const STARTING_ROLES: { job: string; skills: string[] }[] = [
-  { job: 'Miner',      skills: ['mining'] },
-  { job: 'Miner',      skills: ['mining'] },
+  { job: 'Miner',      skills: ['mining', 'building'] },
+  { job: 'Miner',      skills: ['mining', 'building'] },
   { job: 'Farmer',     skills: ['farming'] },
   { job: 'Farmer',     skills: ['farming'] },
-  { job: 'Woodcutter', skills: [] },
-  { job: 'Mason',      skills: [] },
-  { job: 'Brewer',     skills: [] },
+  { job: 'Woodcutter', skills: ['building'] },
+  { job: 'Mason',      skills: ['building'] },
+  { job: 'Brewer',     skills: ['building'] },
 ];
 
 /** Offsets from fortress center for starting dwarf positions */

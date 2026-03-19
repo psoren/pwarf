@@ -22,7 +22,7 @@ import { jobClaiming } from "../phases/job-claiming.js";
 import { taskExecution } from "../phases/task-execution.js";
 import { needSatisfaction } from "../phases/need-satisfaction.js";
 import { stressUpdate } from "../phases/stress-update.js";
-import { createTask, isDwarfIdle } from "../task-helpers.js";
+import { createTask, isDwarfIdle, getBestSkill } from "../task-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -848,5 +848,131 @@ describe("build tasks", () => {
     await taskExecution(ctx);
 
     expect(skill.xp).toBe(12); // XP_BUILD = 12
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getBestSkill tests
+// ---------------------------------------------------------------------------
+
+describe("getBestSkill", () => {
+  it("returns null for dwarf with no skills", () => {
+    expect(getBestSkill("dwarf-1", [])).toBeNull();
+  });
+
+  it("returns the highest-level skill", () => {
+    const skills = [
+      makeSkill("dwarf-1", "mining", 3),
+      makeSkill("dwarf-1", "farming", 7),
+      makeSkill("dwarf-1", "building", 1),
+    ];
+    expect(getBestSkill("dwarf-1", skills)).toBe("farming");
+  });
+
+  it("only considers skills belonging to the given dwarf", () => {
+    const skills = [
+      makeSkill("dwarf-1", "mining", 3),
+      makeSkill("dwarf-2", "mining", 10),
+    ];
+    expect(getBestSkill("dwarf-1", skills)).toBe("mining");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Skill preference tests
+// ---------------------------------------------------------------------------
+
+describe("skill-based task preferences", () => {
+  it("dwarf prefers task matching best skill over equidistant alternative", async () => {
+    const miner = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
+    const skills = [
+      makeSkill(miner.id, "mining", 8),
+      makeSkill(miner.id, "building", 2),
+    ];
+    const ctx = makeContext({ dwarves: [miner], skills });
+
+    const buildTask = createTask(ctx.state, "civ-1", {
+      task_type: "build_wall",
+      priority: 5,
+      target_x: 5,
+      target_y: 0,
+      target_z: 0,
+    });
+    const mineTask = createTask(ctx.state, "civ-1", {
+      task_type: "mine",
+      priority: 5,
+      target_x: 5,
+      target_y: 0,
+      target_z: 0,
+    });
+
+    await jobClaiming(ctx);
+
+    // Miner's best skill is mining, so mine task should be preferred
+    expect(miner.current_task_id).toBe(mineTask.id);
+    expect(mineTask.status).toBe("claimed");
+    expect(buildTask.status).toBe("pending");
+  });
+
+  it("best skill bonus does not override large priority difference", async () => {
+    const dwarf = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
+    const skills = [
+      makeSkill(dwarf.id, "mining", 5),
+      makeSkill(dwarf.id, "building", 0),
+    ];
+    const ctx = makeContext({ dwarves: [dwarf], skills });
+
+    // Build task with much higher priority
+    const buildTask = createTask(ctx.state, "civ-1", {
+      task_type: "build_wall",
+      priority: 10,
+      target_x: 5,
+      target_y: 0,
+      target_z: 0,
+    });
+    const mineTask = createTask(ctx.state, "civ-1", {
+      task_type: "mine",
+      priority: 1,
+      target_x: 5,
+      target_y: 0,
+      target_z: 0,
+    });
+
+    await jobClaiming(ctx);
+
+    // Priority difference of 9 (= 27 score points) overwhelms the best skill bonus (5)
+    expect(dwarf.current_task_id).toBe(buildTask.id);
+  });
+
+  it("two dwarves with different specializations pick matching tasks", async () => {
+    const miner = makeDwarf({ name: "Miner", position_x: 0, position_y: 0, position_z: 0 });
+    const builder = makeDwarf({ name: "Builder", position_x: 0, position_y: 0, position_z: 0 });
+    const skills = [
+      makeSkill(miner.id, "mining", 8),
+      makeSkill(miner.id, "building", 1),
+      makeSkill(builder.id, "mining", 1),
+      makeSkill(builder.id, "building", 8),
+    ];
+    const ctx = makeContext({ dwarves: [miner, builder], skills });
+
+    const mineTask = createTask(ctx.state, "civ-1", {
+      task_type: "mine",
+      priority: 5,
+      target_x: 5,
+      target_y: 0,
+      target_z: 0,
+    });
+    const buildTask = createTask(ctx.state, "civ-1", {
+      task_type: "build_wall",
+      priority: 5,
+      target_x: 5,
+      target_y: 0,
+      target_z: 0,
+    });
+
+    await jobClaiming(ctx);
+
+    expect(miner.current_task_id).toBe(mineTask.id);
+    expect(builder.current_task_id).toBe(buildTask.id);
   });
 });
