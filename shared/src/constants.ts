@@ -600,3 +600,20 @@ export const MEMORY_SPOUSE_GRIEF_INTENSITY = 40;
 
 /** How many in-game years grief from losing a spouse lingers */
 export const MEMORY_SPOUSE_GRIEF_DURATION_YEARS = 10;
+
+
+// ============================================================
+// Fortress name generation
+// ============================================================
+
+export const FORTRESS_NAME_MATERIALS = [
+  'Iron', 'Steel', 'Copper', 'Gold', 'Silver', 'Stone', 'Granite',
+  'Obsidian', 'Marble', 'Bronze', 'Cobalt', 'Adamantine', 'Ash',
+  'Bone', 'Crystal', 'Diamond', 'Emerald', 'Flint', 'Onyx',
+];
+
+export const FORTRESS_NAME_NOUNS = [
+  'hold', 'forge', 'gate', 'vault', 'hall', 'peak', 'keep',
+  'ridge', 'crag', 'spire', 'bridge', 'mine', 'deep', 'bastion',
+  'anvil', 'crown', 'tower', 'wall', 'barrow', 'haven',
+];

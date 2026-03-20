@@ -60,6 +60,9 @@ export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, for
               <kbd className="text-[var(--amber)]">E</kbd> engrave
             </span>
             <span>
+              <kbd className="text-[var(--amber)]">f</kbd> farm
+            </span>
+            <span>
               <kbd className="text-[var(--amber)]">p</kbd> priorities
             </span>
           </>

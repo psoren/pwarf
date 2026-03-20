@@ -14,7 +14,8 @@ export type KeyAction =
   | { type: "designate_stockpile" }
   | { type: "designate_deconstruct" }
   | { type: "designate_smooth" }
-  | { type: "designate_engrave" };
+  | { type: "designate_engrave" }
+  | { type: "designate_farm" };
 
 export function useKeyboard(onAction: (action: KeyAction) => void) {
   useEffect(() => {
@@ -84,6 +85,9 @@ export function useKeyboard(onAction: (action: KeyAction) => void) {
           break;
         case "E":
           onAction({ type: "designate_engrave" });
+          break;
+        case "f":
+          onAction({ type: "designate_farm" });
           break;
         case "Escape":
           onAction({ type: "cancel_designation" });
