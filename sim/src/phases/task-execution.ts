@@ -1,4 +1,13 @@
-import { BASE_WORK_RATE, SLEEP_RESTORE_PER_TICK, MAX_NEED } from "@pwarf/shared";
+import {
+  BASE_WORK_RATE,
+  SLEEP_RESTORE_PER_TICK,
+  MAX_NEED,
+  HARDNESS_SOIL,
+  HARDNESS_STONE,
+  HARDNESS_IGNITE,
+  HARDNESS_ORE,
+  HARDNESS_GEM,
+} from "@pwarf/shared";
 import type { Dwarf, Task } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { getDwarfSkillLevel, getRequiredSkill } from "../task-helpers.js";
@@ -63,7 +72,15 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
     const skillLevel = requiredSkill
       ? getDwarfSkillLevel(dwarf.id, requiredSkill, state.dwarfSkills)
       : 0;
-    const workRate = BASE_WORK_RATE * (1 + skillLevel * 0.1);
+
+    let hardness = 1;
+    if (task.task_type === 'mine' && task.target_x !== null && task.target_y !== null && task.target_z !== null) {
+      const getTile = buildTileLookup(ctx);
+      const tileType = getTile(task.target_x, task.target_y, task.target_z);
+      hardness = getTileHardness(tileType);
+    }
+
+    const workRate = (BASE_WORK_RATE * (1 + skillLevel * 0.1)) / hardness;
 
     task.work_progress += workRate;
     state.dirtyTaskIds.add(task.id);
@@ -116,6 +133,22 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext): boolean {
   dwarf.position_z = nextStep.z;
   ctx.state.dirtyDwarfIds.add(dwarf.id);
   return true;
+}
+
+/**
+ * Returns the hardness multiplier for a given tile type.
+ * Higher hardness = more work required to mine.
+ * Exported for unit testing.
+ */
+export function getTileHardness(tileType: string | null): number {
+  switch (tileType) {
+    case 'soil':       return HARDNESS_SOIL;    // 0.3 — fast
+    case 'ore':        return HARDNESS_ORE;     // 1.2
+    case 'gem':        return HARDNESS_GEM;     // 1.4
+    case 'lava_stone':
+    case 'cavern_wall': return HARDNESS_IGNITE; // 1.5 — slow
+    default:           return HARDNESS_STONE;   // 1.0 — rock, open_air, etc.
+  }
 }
 
 function failTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {
