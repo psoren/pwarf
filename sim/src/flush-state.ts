@@ -153,7 +153,22 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
     );
   }
 
-  if (state.civDirty) {
+  if (state.civFallen) {
+    promises.push(
+      supabase
+        .from("civilizations")
+        .update({
+          status: 'fallen',
+          fallen_year: ctx.year,
+          cause_of_death: state.civFallenCause,
+          population: 0,
+        })
+        .eq("id", ctx.civilizationId)
+        .then(({ error }) => {
+          if (error) console.warn(`[flush] civilizations fallen update failed: ${error.message}`);
+        }),
+    );
+  } else if (state.civDirty) {
     promises.push(
       supabase
         .from("civilizations")
