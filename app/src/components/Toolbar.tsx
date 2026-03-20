@@ -5,13 +5,15 @@ interface ToolbarProps {
   mode: "fortress" | "world";
   onSignOut?: () => void;
   onRestart?: () => void;
+  onTogglePause?: () => void;
+  isPaused?: boolean;
   population?: number;
   year?: number;
   civName?: string;
   items?: Item[];
 }
 
-export default function Toolbar({ mode, onSignOut, onRestart, population = 0, year = 1, civName, items = [] }: ToolbarProps) {
+export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, population = 0, year = 1, civName, items = [] }: ToolbarProps) {
   return (
     <header className="flex items-center justify-between px-3 py-1 border-b border-[var(--border)] bg-[var(--bg-panel)] text-xs select-none shrink-0">
       <div className="flex gap-4 items-center">
@@ -28,6 +30,18 @@ export default function Toolbar({ mode, onSignOut, onRestart, population = 0, ye
         <span>Pop: {population}</span>
         {mode === "fortress" && items.length > 0 && <ResourceCounter items={items} />}
         <span className="text-[var(--amber)]">No alerts</span>
+        {mode === "fortress" && onTogglePause && (
+          <button
+            onClick={onTogglePause}
+            className={`px-2 py-0.5 border cursor-pointer ${
+              isPaused
+                ? "border-[var(--amber)] text-[var(--amber)] hover:text-[var(--green)] hover:border-[var(--green)]"
+                : "border-[var(--border)] text-[var(--text)] hover:text-[var(--amber)] hover:border-[var(--amber)]"
+            }`}
+          >
+            {isPaused ? "Resume" : "Pause"}
+          </button>
+        )}
         {onRestart && (
           <button
             onClick={onRestart}
