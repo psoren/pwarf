@@ -4,10 +4,14 @@ Hey Ralph. Parker is asleep. You're in charge. Here's everything you need to kno
 
 ## Environment
 
-- Local Supabase is running (Parker set it up before going to sleep). Use it for any DB-dependent work.
-- The Supabase CLI should be available: `supabase start` to confirm it's up.
-- Migrations live in `supabase/migrations/` — apply them with `supabase db reset` or `supabase migration up`.
-- Local DB connection is the default when `supabase start` is running.
+- Local Supabase should be running (Parker set it up before going to sleep).
+- Check with `supabase status`. If it's stopped, run `supabase start`.
+- Local Supabase URL: `http://127.0.0.1:54321`
+- Credentials files (gitignored, on disk):
+  - App: `.env.local.supabase-local` → copy to `app/.env.local` to point the frontend at local DB
+  - Sim: `.env.sim.local` → `source .env.sim.local` before running the sim CLI
+- Apply new migrations: `supabase migration up` (or `supabase db reset` to start fresh)
+- Studio UI: http://127.0.0.1:54323
 
 ## What you are
 
