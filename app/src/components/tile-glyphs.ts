@@ -42,6 +42,9 @@ export const FORTRESS_GLYPHS: Record<FortressTileType, { ch: string; fg: string 
   ice:                { ch: "≈",  fg: "#aaddff" },
   mud:                { ch: "≈",  fg: "#665533" },
   cave_entrance:      { ch: "\u25BC", fg: "#886644" },
+  smooth_stone:       { ch: "\u2591", fg: "#aaa" },
+  engraved_stone:     { ch: "\u2593", fg: "#ddbbaa" },
+  engraved_floor:     { ch: "+",  fg: "#ddbbaa" },
   empty:              { ch: " ",  fg: "#000" },
 };
 

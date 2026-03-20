@@ -162,7 +162,12 @@ export type TaskType =
   | 'build_well'
   | 'build_mushroom_garden'
   | 'deconstruct'
-  | 'wander';
+  | 'wander'
+  | 'smooth'
+  | 'engrave'
+  | 'brew'
+  | 'cook'
+  | 'smith';
 
 export type TaskStatus =
   | 'pending'
@@ -197,6 +202,9 @@ export type FortressTileType =
   | 'ice'
   | 'mud'
   | 'cave_entrance'
+  | 'smooth_stone'
+  | 'engraved_stone'
+  | 'engraved_floor'
   | 'empty';
 
 // ============================================================
