@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { yearlyRollup } from "./yearly-rollup.js";
 import { makeDwarf, makeTask, makeItem, makeContext } from "../__tests__/test-helpers.js";
-import { ELDER_DEATH_AGE } from "@pwarf/shared";
+import { ELDER_DEATH_AGE, CARAVAN_INTERVAL_YEARS, CARAVAN_DRINK_COUNT, CARAVAN_FOOD_COUNT } from "@pwarf/shared";
 
 describe("yearlyRollup", () => {
   describe("aging", () => {
@@ -207,6 +207,86 @@ describe("yearlyRollup", () => {
       expect(data.population).toBeTypeOf("number");
       expect(data.deaths).toBeTypeOf("number");
       expect(data.migrants).toBeTypeOf("number");
+    });
+  });
+
+  describe("trade caravan arrivals", () => {
+    it("fires a caravan event on caravan years (year divisible by CARAVAN_INTERVAL_YEARS)", async () => {
+      const dwarf = makeDwarf({ age: 30 });
+      for (const year of [CARAVAN_INTERVAL_YEARS, CARAVAN_INTERVAL_YEARS * 2, CARAVAN_INTERVAL_YEARS * 3]) {
+        const ctx = makeContext({ dwarves: [dwarf] });
+        ctx.year = year;
+
+        await yearlyRollup(ctx);
+
+        const caravanEvent = ctx.state.pendingEvents.find(e => e.category === "trade_caravan_arrival");
+        expect(caravanEvent, `expected caravan event on year ${year}`).toBeDefined();
+        expect(caravanEvent?.description).toContain("Mountainhome");
+      }
+    });
+
+    it("does not fire on non-caravan years (1, 2, 3, 4)", async () => {
+      const dwarf = makeDwarf({ age: 30 });
+      for (const year of [1, 2, 3, 4]) {
+        const ctx = makeContext({ dwarves: [dwarf] });
+        ctx.year = year;
+
+        await yearlyRollup(ctx);
+
+        const caravanEvent = ctx.state.pendingEvents.find(e => e.category === "trade_caravan_arrival");
+        expect(caravanEvent, `did not expect caravan event on year ${year}`).toBeUndefined();
+      }
+    });
+
+    it("adds correct drink and food item counts on caravan year", async () => {
+      const dwarf = makeDwarf({ age: 30 });
+      const ctx = makeContext({ dwarves: [dwarf] });
+      ctx.year = CARAVAN_INTERVAL_YEARS;
+
+      await yearlyRollup(ctx);
+
+      const drinkItems = ctx.state.items.filter(i => i.category === "drink");
+      const foodItems = ctx.state.items.filter(i => i.category === "food");
+      expect(drinkItems).toHaveLength(CARAVAN_DRINK_COUNT);
+      expect(foodItems.length).toBeGreaterThanOrEqual(CARAVAN_FOOD_COUNT);
+    });
+
+    it("adds raw material items (1–3) on caravan year", async () => {
+      const dwarf = makeDwarf({ age: 30 });
+      const ctx = makeContext({ dwarves: [dwarf] });
+      ctx.year = CARAVAN_INTERVAL_YEARS;
+
+      await yearlyRollup(ctx);
+
+      const rawItems = ctx.state.items.filter(i => i.category === "raw_material");
+      expect(rawItems.length).toBeGreaterThanOrEqual(1);
+      expect(rawItems.length).toBeLessThanOrEqual(3);
+    });
+
+    it("adds a positive memory to all living dwarves on caravan year", async () => {
+      const d1 = makeDwarf({ age: 30 });
+      const d2 = makeDwarf({ age: 25 });
+      const ctx = makeContext({ dwarves: [d1, d2] });
+      ctx.year = CARAVAN_INTERVAL_YEARS;
+
+      await yearlyRollup(ctx);
+
+      for (const dwarf of [d1, d2]) {
+        const caravanMemory = dwarf.memories.find(m => m.text.includes("caravan"));
+        expect(caravanMemory).toBeDefined();
+        expect(caravanMemory?.sentiment).toBe("positive");
+      }
+    });
+
+    it("does not add caravan memory to dead dwarves", async () => {
+      const alive = makeDwarf({ age: 30 });
+      const dead = makeDwarf({ status: "dead", age: 40 });
+      const ctx = makeContext({ dwarves: [alive, dead] });
+      ctx.year = CARAVAN_INTERVAL_YEARS;
+
+      await yearlyRollup(ctx);
+
+      expect(dead.memories.find(m => m.text.includes("caravan"))).toBeUndefined();
     });
   });
 });
