@@ -52,6 +52,7 @@ When changing a public API that both `sim/` and `app/` use (e.g. `SimRunner` con
 - Reference the issue number in commits and PRs (e.g., `closes #123`).
 - Close the issue when the PR is merged.
 - **One conversation per ticket.** Start a new Claude Code conversation for each ticket/PR. This keeps cost tracking accurate — the session cost reported in the PR description reflects exactly that ticket's work.
+- **Use the `in-progress` label to signal active work.** When starting a ticket, add the `in-progress` label (`gh issue edit <N> --add-label "in-progress"`). Before picking up any ticket, check whether it already has this label — if it does, someone else is working on it; skip it and pick the next one.
 
 ## Cost Tracking
 

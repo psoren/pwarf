@@ -8,18 +8,24 @@ import {
   WORK_BUILD_WALL,
   WORK_BUILD_FLOOR,
   WORK_BUILD_BED,
+  WORK_DECONSTRUCT,
 } from "@pwarf/shared";
 import { supabase } from "../lib/supabase";
 import type { FortressViewTile } from "./useFortressTiles";
 import type { OptimisticDesignation } from "./useTasks";
 
-export type DesignationMode = "none" | "mine" | "build_wall" | "build_floor" | "build_bed" | "stockpile";
+export type DesignationMode = "none" | "mine" | "build_wall" | "build_floor" | "build_bed" | "stockpile" | "deconstruct";
 
 const BUILD_WORK: Record<string, number> = {
   build_wall: WORK_BUILD_WALL,
   build_floor: WORK_BUILD_FLOOR,
   build_bed: WORK_BUILD_BED,
 };
+
+/** Tile types that can be deconstructed. */
+const DECONSTRUCTIBLE: ReadonlySet<string> = new Set([
+  'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden',
+]);
 
 export function useDesignation(opts: {
   civId: string | null;
@@ -79,6 +85,7 @@ export function useDesignation(opts: {
     const mineable: string[] = ['stone', 'ore', 'gem', 'soil', 'cavern_wall', 'tree', 'rock', 'bush'];
     const buildable: string[] = ['open_air', 'grass', 'constructed_floor', 'cavern_floor'];
     const isMine = designationMode === 'mine';
+    const isDeconstruct = designationMode === 'deconstruct';
     const taskType = designationMode as TaskType;
     const baseBuildWork = BUILD_WORK[designationMode] ?? WORK_BUILD_WALL;
     const priority = taskPriorities[taskType] ?? 5;
@@ -103,6 +110,8 @@ export function useDesignation(opts: {
 
         if (isMine) {
           if (!mineable.includes(tile.tileType)) continue;
+        } else if (isDeconstruct) {
+          if (!DECONSTRUCTIBLE.has(tile.tileType)) continue;
         } else {
           if (!buildable.includes(tile.tileType)) continue;
         }
@@ -115,6 +124,8 @@ export function useDesignation(opts: {
             case 'bush': workRequired = WORK_CLEAR_BUSH; break;
             default: workRequired = WORK_MINE_BASE; break;
           }
+        } else if (isDeconstruct) {
+          workRequired = WORK_DECONSTRUCT;
         }
 
         tasks.push({
@@ -189,6 +200,12 @@ export function useDesignation(opts: {
     setDesignationMode((m) => (m === "stockpile" ? "none" : "stockpile"));
   }, []);
 
+  const toggleDeconstruct = useCallback(() => {
+    setBuildMenuOpen(false);
+    setPrioritiesOpen(false);
+    setDesignationMode((m) => (m === "deconstruct" ? "none" : "deconstruct"));
+  }, []);
+
   const toggleBuildMenu = useCallback(() => {
     setDesignationMode("none");
     setPrioritiesOpen(false);
@@ -221,6 +238,7 @@ export function useDesignation(opts: {
     handlePriorityChange,
     toggleMine,
     toggleStockpile,
+    toggleDeconstruct,
     toggleBuildMenu,
     togglePriorities,
     cancelDesignation,

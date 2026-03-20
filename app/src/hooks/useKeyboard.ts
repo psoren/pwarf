@@ -11,7 +11,8 @@ export type KeyAction =
   | { type: "open_build_menu" }
   | { type: "open_priorities" }
   | { type: "cancel_designation" }
-  | { type: "designate_stockpile" };
+  | { type: "designate_stockpile" }
+  | { type: "designate_deconstruct" };
 
 export function useKeyboard(onAction: (action: KeyAction) => void) {
   useEffect(() => {
@@ -72,6 +73,9 @@ export function useKeyboard(onAction: (action: KeyAction) => void) {
           break;
         case "S":
           onAction({ type: "designate_stockpile" });
+          break;
+        case "D":
+          onAction({ type: "designate_deconstruct" });
           break;
         case "Escape":
           onAction({ type: "cancel_designation" });

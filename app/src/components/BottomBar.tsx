@@ -51,6 +51,9 @@ export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, for
               <kbd className="text-[var(--amber)]">S</kbd> stockpile
             </span>
             <span>
+              <kbd className="text-[var(--amber)]">D</kbd> deconstruct
+            </span>
+            <span>
               <kbd className="text-[var(--amber)]">p</kbd> priorities
             </span>
           </>
