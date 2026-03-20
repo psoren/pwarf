@@ -1,17 +1,10 @@
-export const DWARF_NAMES = [
-  'Urist', 'Doren', 'Kadol', 'Aban', 'Likot', 'Morul', 'Fikod',
-  'Bomrek', 'Ducim', 'Erith', 'Goden', 'Ingiz', 'Kumil', 'Litast',
-  'Mosus', 'Nish', 'Olon', 'Rigoth', 'Sodel', 'Tekkud',
-];
+import { DWARF_FIRST_NAMES, DWARF_SURNAMES } from '@pwarf/shared';
 
-export const SURNAMES = [
-  'Hammerstone', 'Ironpick', 'Deepdelve', 'Coppervein', 'Granitearm',
-  'Boulderfist', 'Axebeard', 'Goldseam', 'Rockjaw', 'Tunnelborn',
-];
+export { DWARF_FIRST_NAMES as DWARF_NAMES, DWARF_SURNAMES as SURNAMES };
 
 /** Pick `count` unique names from the name list */
 export function pickUniqueNames(count: number): string[] {
-  const pool = [...DWARF_NAMES];
+  const pool = [...DWARF_FIRST_NAMES];
   const picked: string[] = [];
   for (let i = 0; i < count && pool.length > 0; i++) {
     const idx = Math.floor(Math.random() * pool.length);
