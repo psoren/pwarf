@@ -41,5 +41,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          LOOKBACK_MINUTES: ${{ github.event.inputs.lookback_minutes || '65' }}
+          LOOKBACK_MINUTES: ${{ github.event.inputs.lookback_minutes }}
         run: node .github/scripts/hourly-digest.mjs

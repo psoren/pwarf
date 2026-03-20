@@ -253,9 +253,9 @@ async function main() {
   // Use time-since-last-post as the lookback window so we never double-count PRs.
   // Fall back to LOOKBACK_MINUTES (or 10 min) on the very first run.
   const sinceLastPost = minutesSinceLastPost();
-  const lookback = sinceLastPost != null
-    ? sinceLastPost + 2          // +2 min buffer for clock skew
-    : Number(process.env.LOOKBACK_MINUTES ?? 10);
+  // Explicit LOOKBACK_MINUTES (from workflow_dispatch) overrides dynamic lookback.
+  const explicitLookback = process.env.LOOKBACK_MINUTES ? Number(process.env.LOOKBACK_MINUTES) : null;
+  const lookback = explicitLookback ?? (sinceLastPost != null ? sinceLastPost + 2 : 10);
 
   console.log(`Fetching PRs merged in the last ${lookback} min…`);
   const prs = await getMergedPRs(lookback);
