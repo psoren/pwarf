@@ -239,6 +239,9 @@ export default function App() {
         case "designate_stockpile":
           if (world.mode === "fortress") designation.toggleStockpile();
           break;
+        case "designate_deconstruct":
+          if (world.mode === "fortress") designation.toggleDeconstruct();
+          break;
         case "cancel_designation":
           designation.cancelDesignation();
           break;

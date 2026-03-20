@@ -51,6 +51,7 @@ export const DESIGNATION_PREVIEW: Record<string, { ch: string; fg: string }> = {
   build_wall:        { ch: "#", fg: "#cc8844" },
   build_floor:       { ch: "+", fg: "#cc8844" },
   build_bed:         { ch: "\u2261", fg: "#cc8844" },
+  deconstruct:       { ch: "X", fg: "#cc4444" },
   stockpile:         { ch: "\u25A1", fg: "#8B6914" },
 };
 
