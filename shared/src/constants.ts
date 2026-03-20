@@ -146,6 +146,29 @@ export const ELDER_DEATH_AGE = 80;
 export const ELDER_DEATH_CHANCE_PER_YEAR = 0.1;
 
 // ============================================================
+// Immigration
+// ============================================================
+
+/** Probability of an immigration wave arriving each year (starting year 2). */
+export const IMMIGRATION_CHANCE_PER_YEAR = 0.6;
+
+/** Maximum number of immigrants that can arrive in a single wave. */
+export const IMMIGRATION_MAX_ARRIVALS = 3;
+
+/** Dwarf first names — shared between sim (immigration) and app (embark). */
+export const DWARF_FIRST_NAMES = [
+  'Urist', 'Doren', 'Kadol', 'Aban', 'Likot', 'Morul', 'Fikod',
+  'Bomrek', 'Ducim', 'Erith', 'Goden', 'Ingiz', 'Kumil', 'Litast',
+  'Mosus', 'Nish', 'Olon', 'Rigoth', 'Sodel', 'Tekkud',
+];
+
+/** Dwarf clan surnames — shared between sim (immigration) and app (embark). */
+export const DWARF_SURNAMES = [
+  'Hammerstone', 'Ironpick', 'Deepdelve', 'Coppervein', 'Granitearm',
+  'Boulderfist', 'Axebeard', 'Goldseam', 'Rockjaw', 'Tunnelborn',
+];
+
+// ============================================================
 // Stress severity tiers
 // ============================================================
 
