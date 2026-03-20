@@ -1,5 +1,4 @@
 import type { Item } from "@pwarf/shared";
-import ResourceCounter from "./ResourceCounter";
 import { deriveAlert } from "../utils/alerts";
 import type { LiveDwarf } from "../hooks/useDwarves";
 
@@ -20,9 +19,10 @@ interface ToolbarProps {
   wealth?: number;
   dwarves?: LiveDwarf[];
   onTutorial?: () => void;
+  onInventory?: () => void;
 }
 
-export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0, dwarves = [], onTutorial }: ToolbarProps) {
+export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0, dwarves = [], onTutorial, onInventory }: ToolbarProps) {
   const alert = mode === "fortress" ? deriveAlert(dwarves) : null;
 
   return (
@@ -40,7 +40,14 @@ export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isP
       <div className="flex gap-4 items-center">
         <span>Pop: {population}</span>
         {mode === "fortress" && <span className="text-[var(--amber)]">§ {wealth.toLocaleString()}</span>}
-        {mode === "fortress" && items.length > 0 && <ResourceCounter items={items} />}
+        {mode === "fortress" && onInventory && (
+          <button
+            onClick={onInventory}
+            className="px-2 py-0.5 border border-[var(--border)] text-[var(--text)] hover:text-[var(--amber)] hover:border-[var(--amber)] cursor-pointer"
+          >
+            Inventory ({items.length})
+          </button>
+        )}
         {mode === "fortress" && (
           alert ? (
             <span
