@@ -76,6 +76,7 @@ This is done as part of the `/review-pr` skill — no need to run it manually fo
 - Typecheck all: `npm run build` (runs tsc in each workspace)
 - Dev app: `npm run dev:app`
 - Dev sim: `npm run dev:sim`
+- **Always run `npm run build` before committing.** TypeScript composite builds cache `.d.ts` files locally; a previously-passing cache can hide errors at cross-package boundaries. If a build passes locally but fails in CI, run `tsc -b --force` in the affected workspace to bust the cache.
 
 ## Code Style
 
