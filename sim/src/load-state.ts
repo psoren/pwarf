@@ -104,5 +104,7 @@ export async function loadStateFromSupabase(
     tantrumTicks: new Map(),
     infectedDwarfIds: new Set(),
     warnedNeedIds: new Map(),
+    ghostDwarfIds: new Set(),
+    ghostPositions: new Map(),
   };
 }

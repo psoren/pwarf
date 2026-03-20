@@ -137,6 +137,10 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       completeSmith(dwarf, task, ctx);
       awardXp(dwarf.id, 'smithing', XP_SMITH, ctx, dwarf);
       break;
+    case 'engrave_memorial':
+      completeMemorial(task, ctx, dwarf);
+      awardXp(dwarf.id, 'engraving', XP_ENGRAVE, ctx, dwarf);
+      break;
   }
 
   // Purpose restoration: work gives dwarves a sense of meaning
@@ -495,6 +499,49 @@ function completeSmooth(task: Task, ctx: SimContext): void {
     currentType === 'cavern_floor' || currentType === 'constructed_floor' ? 'smooth_stone' : 'smooth_stone';
 
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, resultType, existing?.material ?? null, existing?.is_mined ?? false);
+}
+
+function completeMemorial(task: Task, ctx: SimContext, dwarf: Dwarf): void {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+  if (ctx.state.ghostDwarfIds.size === 0) return;
+
+  // Find the nearest ghost to the memorial location (on the same z-level)
+  let nearestGhostId: string | null = null;
+  let nearestDist = Infinity;
+  for (const [ghostId, pos] of ctx.state.ghostPositions) {
+    if (pos.z !== task.target_z) continue;
+    const dist =
+      Math.abs(pos.x - task.target_x) +
+      Math.abs(pos.y - task.target_y);
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearestGhostId = ghostId;
+    }
+  }
+
+  if (!nearestGhostId) return;
+
+  ctx.state.ghostDwarfIds.delete(nearestGhostId);
+  ctx.state.ghostPositions.delete(nearestGhostId);
+
+  const ghostDwarf = ctx.state.dwarves.find(d => d.id === nearestGhostId);
+  const ghostName = ghostDwarf ? dwarfName(ghostDwarf) : 'the departed';
+
+  ctx.state.pendingEvents.push({
+    id: ctx.rng.uuid(),
+    world_id: '',
+    year: ctx.year,
+    category: 'discovery',
+    civilization_id: ctx.civilizationId,
+    ruin_id: null,
+    dwarf_id: dwarf.id,
+    item_id: null,
+    faction_id: null,
+    monster_id: null,
+    description: `${dwarfName(dwarf)} has engraved a memorial for ${ghostName}. The spirit is at rest.`,
+    event_data: { action: 'memorial', ghost_dwarf_id: nearestGhostId },
+    created_at: new Date().toISOString(),
+  });
 }
 
 function completeEngrave(task: Task, ctx: SimContext, dwarf: Dwarf): void {

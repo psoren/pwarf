@@ -23,6 +23,7 @@ const TASK_SKILL_MAP: Record<TaskType, string | null> = {
   brew: 'brewing',
   cook: 'cooking',
   smith: 'smithing',
+  engrave_memorial: 'engraving',
 };
 
 /** Get the skill name required for a task type, or null if no skill needed. */

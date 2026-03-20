@@ -40,6 +40,8 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
         dwarf.died_year = year;
         dwarf.cause_of_death = 'unknown';
         deathsThisYear += 1;
+        state.ghostDwarfIds.add(dwarf.id);
+        state.ghostPositions.set(dwarf.id, { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z });
 
         if (dwarf.current_task_id) {
           const task = state.tasks.find(t => t.id === dwarf.current_task_id);
