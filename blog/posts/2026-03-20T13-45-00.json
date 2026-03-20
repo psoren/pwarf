@@ -1,0 +1,96 @@
+{
+  "id": "2026-03-20T13-45-00",
+  "timestamp": "2026-03-20T13:45:00.000Z",
+  "title": "Digest — Mar 20, 2026, 01:45 PM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nHello, pwarf community! We’ve been busy improving your experience in our dwarf-fortress-style colony sim. Here's what’s been merged recently:\n\n## UI Improvements\n- **Task Label Updates**: The sidebar will now show task labels along with their progress (e.g., `mine (73%)`), providing better context on dwarf activities. (PR #352)\n- **Dwarf Modal Enhancements**: We’ve added the display of gender and tantrum state in the dwarf modal, making it easier to manage your dwarves. (PR #364)\n\n## Game Mechanics\n- **Deconstruction Feature**: Players can now easily deconstruct built structures using the new `deconstruct` designation mode (press **D**). (PR #356)\n- **Food and Water Requirements**: Dwarves now require actual food or water sources to satisfy their needs, encouraging better resource management. (PR #362)\n- **Monster System**: We introduced a basic monster system, where creatures spawn and pursue dwarves, adding a new layer of challenge to your colony. (PR #368)\n\n## Bug Fixes\n- **Sidebar Fixes**: The sidebar now displays task statuses correctly, resolving issues from previous PRs. (PR #352)\n- **Blueprint Flicker**: Addressed a flickering issue with blueprint tiles, ensuring smoother gameplay during simulations. (PR #353)\n- **Tick Count Accuracy**: Fixed the tick count in personality-traits tests to reflect accurate values, improving test reliability. (PR #354)\n- **Immediate Visibility of Built/Mined Tiles**: Built and mined structures now appear immediately without waiting for database updates. (PR #367)\n- **Terrain Type Handling**: Fixed issues with resource extraction by ensuring the correct terrain type is used for interactions. (PR #366)\n\n## Development Workflow\n- **New In-Progress Label**: We've added documentation for using an `in-progress` label on GitHub issues to streamline our development process. (PR #355)\n\n## Command Line Improvements\n- **Step Mode**: Added a `--step-mode` flag to the CLI for enhanced simulation control, making it easier to test and iterate on gameplay. (PR #361)\n\nThank you for your ongoing support and feedback! Keep on building your dwarven paradise!\n\n## Merged PRs\n- PR #352\n- PR #353\n- PR #354\n- PR #355\n- PR #356\n- PR #361\n- PR #362\n- PR #364\n- PR #366\n- PR #367\n- PR #368",
+  "prs": [
+    {
+      "number": 352,
+      "title": "fix: sidebar shows task label+% matching modal; halve build work constants (closes #349, closes #351)",
+      "url": "https://github.com/psoren/pwarf/pull/352",
+      "cost": {
+        "amount": "$1.27",
+        "tokens": "3.4M tokens"
+      }
+    },
+    {
+      "number": 353,
+      "title": "fix: stop blueprint flicker on sim tick (closes #348)",
+      "url": "https://github.com/psoren/pwarf/pull/353",
+      "cost": {
+        "amount": "$0.15",
+        "tokens": "329k tokens"
+      }
+    },
+    {
+      "number": 354,
+      "title": "fix: correct tick count in personality-traits test",
+      "url": "https://github.com/psoren/pwarf/pull/354",
+      "cost": {
+        "amount": "$3.03",
+        "tokens": "6.5M tokens"
+      }
+    },
+    {
+      "number": 355,
+      "title": "docs: add in-progress label workflow to CLAUDE.md",
+      "url": "https://github.com/psoren/pwarf/pull/355"
+    },
+    {
+      "number": 356,
+      "title": "feat: deconstruct/remove built structures (closes #350)",
+      "url": "https://github.com/psoren/pwarf/pull/356",
+      "cost": {
+        "amount": "$0.10",
+        "tokens": "42k tokens"
+      }
+    },
+    {
+      "number": 361,
+      "title": "feat: step mode interactive sim driver (closes #299)",
+      "url": "https://github.com/psoren/pwarf/pull/361",
+      "cost": {
+        "amount": "$4.38",
+        "tokens": "10.7M tokens"
+      }
+    },
+    {
+      "number": 362,
+      "title": "fix: require actual food/water source to eat or drink (closes #357)",
+      "url": "https://github.com/psoren/pwarf/pull/362"
+    },
+    {
+      "number": 366,
+      "title": "fix: pass terrain type to FortressDeriver so trees drop wood not stone (closes #365)",
+      "url": "https://github.com/psoren/pwarf/pull/366"
+    },
+    {
+      "number": 364,
+      "title": "feat: show gender and tantrum state in dwarf modal",
+      "url": "https://github.com/psoren/pwarf/pull/364",
+      "cost": {
+        "amount": "$7.06",
+        "tokens": "18.3M tokens"
+      }
+    },
+    {
+      "number": 367,
+      "title": "fix: show built/mined tiles immediately without waiting for DB flush",
+      "url": "https://github.com/psoren/pwarf/pull/367",
+      "cost": {
+        "amount": "$0.18",
+        "tokens": "493k tokens"
+      }
+    },
+    {
+      "number": 368,
+      "title": "feat: MVP monster system — spawning, pathfinding, and combat",
+      "url": "https://github.com/psoren/pwarf/pull/368",
+      "cost": {
+        "amount": "$23.66",
+        "tokens": "60.7M tokens"
+      }
+    }
+  ],
+  "images": []
+}
