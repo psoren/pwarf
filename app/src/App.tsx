@@ -20,6 +20,7 @@ import { useStockpileTiles } from "./hooks/useStockpileTiles";
 import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
 import TaskPriorities from "./components/TaskPriorities";
 import { DwarfModal } from "./components/DwarfModal";
+import { EpitaphScreen } from "./components/EpitaphScreen";
 import { SURFACE_Z, CAVE_Z } from "@pwarf/shared";
 import type { Item } from "@pwarf/shared";
 import type { LiveDwarf } from "./hooks/useDwarves";
@@ -409,6 +410,13 @@ export default function App() {
       />
 
       <div className="flex flex-1 min-h-0 relative">
+        {snapshot?.civFallen && world.mode === "fortress" && (
+          <EpitaphScreen
+            year={snapshot.year}
+            events={events.map(e => ({ text: e.description, category: e.category }))}
+            onRestart={world.handleRestart}
+          />
+        )}
         {designation.buildMenuOpen && (
           <BuildMenu
             onSelect={designation.handleBuildSelect}

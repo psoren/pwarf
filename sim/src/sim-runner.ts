@@ -36,6 +36,7 @@ export interface SimSnapshot {
   fortressTileOverrides: FortressTile[];
   monsters: Monster[];
   year: number;
+  civFallen: boolean;
 }
 
 /**
@@ -197,6 +198,7 @@ export class SimRunner {
         fortressTileOverrides: [...this.ctx.state.fortressTileOverrides.values()],
         monsters: this.ctx.state.monsters,
         year: this.currentYear,
+        civFallen: this.ctx.state.civFallen,
       });
     }
   }
