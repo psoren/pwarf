@@ -266,6 +266,9 @@ export default function App() {
         case "designate_engrave":
           if (world.mode === "fortress") designation.toggleEngrave();
           break;
+        case "designate_farm":
+          if (world.mode === "fortress") designation.toggleFarm();
+          break;
         case "cancel_designation":
           designation.cancelDesignation();
           setFollowedDwarfId(null);
