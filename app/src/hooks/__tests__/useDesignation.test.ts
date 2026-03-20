@@ -191,4 +191,64 @@ describe("useDesignation", () => {
       expect(mockInsert).not.toHaveBeenCalled();
     });
   });
+
+  describe("optimistic tile clearing (fix #348)", () => {
+    it("shows optimistic tile immediately after designation", async () => {
+      setupInsertChain();
+      const { result } = makeHook();
+
+      act(() => { result.current.toggleMine(); });
+      await act(async () => {
+        await result.current.handleDesignateArea(2, 3, 2, 3);
+      });
+
+      expect(result.current.optimisticTiles.has("2,3")).toBe(true);
+    });
+
+    it("keeps optimistic tile when designatedTiles ref changes but key is absent", async () => {
+      setupInsertChain();
+      const empty1 = new Map<string, string>();
+      const { result, rerender } = renderHook(
+        (props: Parameters<typeof useDesignation>[0]) => useDesignation(props),
+        { initialProps: { civId: "civ-1", zLevel: 0, getFortressTile: () => ({ tileType: "stone", material: null, x: 2, y: 3, z: 0, isRevealed: false, isMined: false }), designatedTiles: empty1, addOptimistic: () => {} } },
+      );
+
+      act(() => { result.current.toggleMine(); });
+      await act(async () => {
+        await result.current.handleDesignateArea(2, 3, 2, 3);
+      });
+
+      expect(result.current.optimisticTiles.has("2,3")).toBe(true);
+
+      // Sim tick: new reference, key still absent — optimistic tile must survive
+      const empty2 = new Map<string, string>();
+      rerender({ civId: "civ-1", zLevel: 0, getFortressTile: () => ({ tileType: "stone", material: null, x: 2, y: 3, z: 0, isRevealed: false, isMined: false }), designatedTiles: empty2, addOptimistic: () => {} });
+
+      expect(result.current.optimisticTiles.has("2,3")).toBe(true);
+    });
+
+    it("removes optimistic tile once its key appears in designatedTiles", async () => {
+      setupInsertChain();
+      const getFortressTile = () => ({ tileType: "stone" as const, material: null, x: 2, y: 3, z: 0, isRevealed: false, isMined: false });
+      const { result, rerender } = renderHook(
+        (props: Parameters<typeof useDesignation>[0]) => useDesignation(props),
+        { initialProps: { civId: "civ-1", zLevel: 0, getFortressTile, designatedTiles: new Map<string, string>(), addOptimistic: () => {} } },
+      );
+
+      act(() => { result.current.toggleMine(); });
+      await act(async () => {
+        await result.current.handleDesignateArea(2, 3, 2, 3);
+      });
+
+      expect(result.current.optimisticTiles.has("2,3")).toBe(true);
+
+      // Real data arrives with the key
+      const realData = new Map([["2,3", "mine"]]);
+      await act(async () => {
+        rerender({ civId: "civ-1", zLevel: 0, getFortressTile, designatedTiles: realData, addOptimistic: () => {} });
+      });
+
+      expect(result.current.optimisticTiles.has("2,3")).toBe(false);
+    });
+  });
 });
