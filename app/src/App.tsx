@@ -78,6 +78,7 @@ export default function App() {
   // Active tasks — prefer live snapshot, fall back to DB polling
   const polledTasks = useTasks(world.civId);
   const { addOptimistic } = polledTasks;
+  const liveTasks = snapshot?.tasks ?? polledTasks.tasks;
   const designatedTiles = useMemo(() => {
     const AUTONOMOUS: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
     const tasks = snapshot?.tasks ?? polledTasks.tasks;
@@ -88,6 +89,23 @@ export default function App() {
       const tz = 'target_z' in t ? t.target_z : null;
       if (tx !== null && ty !== null && tz === zLevel && !AUTONOMOUS.has(t.task_type) && ['pending', 'claimed', 'in_progress'].includes(t.status)) {
         map.set(`${tx},${ty}`, t.task_type);
+      }
+    }
+    return map;
+  }, [snapshot?.tasks, polledTasks.tasks, zLevel]);
+
+  // Build progress for in_progress tasks keyed by "x,y"
+  const buildProgressTiles = useMemo(() => {
+    const AUTONOMOUS: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
+    const tasks = snapshot?.tasks ?? polledTasks.tasks;
+    const map = new Map<string, number>();
+    for (const t of tasks) {
+      if (t.status !== 'in_progress' || AUTONOMOUS.has(t.task_type)) continue;
+      const tx = 'target_x' in t ? t.target_x : null;
+      const ty = 'target_y' in t ? t.target_y : null;
+      const tz = 'target_z' in t ? t.target_z : null;
+      if (tx !== null && ty !== null && tz === zLevel && t.work_required > 0) {
+        map.set(`${tx},${ty}`, Math.round((t.work_progress / t.work_required) * 100));
       }
     }
     return map;
@@ -340,8 +358,9 @@ export default function App() {
   const terrainForBar = world.mode === "world" ? (cursorTile?.terrain ?? null) : null;
   const cursorKey = `${viewport.cursorX},${viewport.cursorY}`;
   const cursorDesignation = world.mode === "fortress" ? mergedDesignatedTiles.get(cursorKey) : undefined;
+  const cursorBuildProgress = world.mode === "fortress" ? buildProgressTiles.get(cursorKey) : undefined;
   const fortressTileLabel = world.mode === "fortress" && cursorFortressTile
-    ? formatFortressTileLabel(cursorFortressTile.tileType, cursorFortressTile.material, cursorDesignation)
+    ? formatFortressTileLabel(cursorFortressTile.tileType, cursorFortressTile.material, cursorDesignation, cursorBuildProgress)
     : null;
 
   return (
@@ -412,6 +431,7 @@ export default function App() {
           stockpileTiles={world.mode === "fortress" ? stockpileTiles : undefined}
           groundItems={world.mode === "fortress" ? groundItems : undefined}
           zLevel={zLevel}
+          buildProgressTiles={world.mode === "fortress" ? buildProgressTiles : undefined}
         />
 
         {modalDwarf && (
@@ -420,6 +440,7 @@ export default function App() {
             onClose={() => setModalDwarfId(null)}
             onGoTo={handleGoToDwarf}
             items={liveItems}
+            tasks={liveTasks}
           />
         )}
 
@@ -460,11 +481,14 @@ export default function App() {
   );
 }
 
-function formatFortressTileLabel(tileType: string, material: string | null, designation?: string): string {
+function formatFortressTileLabel(tileType: string, material: string | null, designation?: string, buildProgress?: number): string {
   const label = tileType.replace(/_/g, " ");
   const base = material ? `${label} (${material})` : label;
   if (designation) {
     const desLabel = designation.replace(/_/g, " ");
+    if (buildProgress !== undefined) {
+      return `${base} [building: ${desLabel} ${buildProgress}%]`;
+    }
     return `${base} [designated: ${desLabel}]`;
   }
   return base;
