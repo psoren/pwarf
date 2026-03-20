@@ -206,6 +206,19 @@ export const DISEASE_RECOVERY_CHANCE = 0.5;
 export const DISEASE_SPREAD_RADIUS = 4;
 
 // ============================================================
+// Ghosts
+// ============================================================
+
+/** Stress applied per tick to alive dwarves within haunting radius of a ghost */
+export const GHOST_STRESS_PER_TICK = 0.3;
+
+/** Manhattan-distance radius within which a ghost haunts nearby dwarves */
+export const GHOST_HAUNTING_RADIUS = 5;
+
+/** Work required to engrave a memorial slab */
+export const MEMORIAL_WORK_REQUIRED = 200;
+
+// ============================================================
 // Stress severity tiers
 // ============================================================
 

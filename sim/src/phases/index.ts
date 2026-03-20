@@ -21,3 +21,4 @@ export { thoughtGeneration } from "./thought-generation.js";
 export { haulAssignment } from "./haul-assignment.js";
 export { beautyRestoration } from "./beauty-restoration.js";
 export { diseasePhase, hasWell } from "./disease.js";
+export { haunting } from "./haunting.js";

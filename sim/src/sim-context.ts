@@ -60,6 +60,19 @@ export interface CachedState {
    * Cleared when the need recovers above the warning threshold.
    */
   warnedNeedIds: Map<string, Set<string>>;
+
+  /**
+   * IDs of dwarves who have died without a memorial and now haunt the fortress.
+   * Populated when a dwarf dies; cleared when a memorial is engraved nearby.
+   * Not persisted across sim restarts (in-memory only).
+   */
+  ghostDwarfIds: Set<string>;
+
+  /**
+   * Position of each ghost at the time of death. Keyed by dwarf ID.
+   * Used to determine haunting radius and memorial targeting.
+   */
+  ghostPositions: Map<string, { x: number; y: number; z: number }>;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */
@@ -88,6 +101,8 @@ export function createEmptyCachedState(): CachedState {
     tantrumTicks: new Map(),
     infectedDwarfIds: new Set(),
     warnedNeedIds: new Map(),
+    ghostDwarfIds: new Set(),
+    ghostPositions: new Map(),
   };
 }
 
