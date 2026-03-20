@@ -55,6 +55,9 @@ export default function App() {
     viewportRows: vpRows,
   });
 
+  // Sim runner — provides live in-memory state
+  const { snapshot } = useSimRunner(world.civId, world.worldId);
+
   const { getTile: getFortressTile } = useFortressTiles({
     civId: world.civId,
     worldSeed: world.worldSeed,
@@ -64,6 +67,7 @@ export default function App() {
     zLevel,
     viewportCols: vpCols,
     viewportRows: vpRows,
+    snapshotTileOverrides: snapshot?.fortressTileOverrides,
   });
 
   const cursorTile = world.worldId ? getTile(viewport.cursorX, viewport.cursorY) : null;
@@ -71,9 +75,6 @@ export default function App() {
     ? getTile(selectedWorldTile.x, selectedWorldTile.y)
     : null;
   const cursorFortressTile = world.civId ? getFortressTile(viewport.cursorX, viewport.cursorY) : null;
-
-  // Sim runner — provides live in-memory state
-  const { snapshot } = useSimRunner(world.civId, world.worldId);
 
   // Active tasks — prefer live snapshot, fall back to DB polling
   const polledTasks = useTasks(world.civId);

@@ -28,6 +28,9 @@ interface UseFortressTilesOptions {
   zLevel: number;
   viewportCols: number;
   viewportRows: number;
+  /** Tile overrides from the live sim snapshot — applied on top of DB overrides
+   * so builds/mines appear immediately without waiting for the DB flush. */
+  snapshotTileOverrides?: FortressTile[];
 }
 
 const CACHE_MAX = 20_000;
@@ -41,6 +44,7 @@ export function useFortressTiles({
   zLevel,
   viewportCols,
   viewportRows,
+  snapshotTileOverrides,
 }: UseFortressTilesOptions) {
   const [dbOverrides, setDbOverrides] = useState<Map<string, Partial<FortressTile>>>(new Map());
   const lastFetchKey = useRef<string>('');
@@ -51,10 +55,40 @@ export function useFortressTiles({
     return createFortressDeriver(worldSeed, civId, terrain ?? "plains");
   }, [worldSeed, civId, terrain]);
 
-  // Tile cache
+  // Tile cache — keyed "x,y"
   const cacheRef = useRef(new Map<string, FortressViewTile>());
 
-  // Clear cache when underlying data changes
+  // Map of snapshot overrides at the current z-level for O(1) lookup.
+  // Rebuild only when the snapshot changes. Use a ref so getTile can read it
+  // without re-creating the callback.
+  const snapshotMapRef = useRef<Map<string, FortressTile>>(new Map());
+  const prevSnapshotRef = useRef<FortressTile[] | undefined>(undefined);
+
+  if (snapshotTileOverrides !== prevSnapshotRef.current) {
+    prevSnapshotRef.current = snapshotTileOverrides;
+    const next = new Map<string, FortressTile>();
+    for (const tile of snapshotTileOverrides ?? []) {
+      if (tile.z === zLevel) {
+        next.set(`${tile.x},${tile.y}`, tile);
+      }
+    }
+    // Selectively evict cache entries whose snapshot tile changed
+    for (const [key, tile] of next) {
+      const prev = snapshotMapRef.current.get(key);
+      if (!prev || prev.tile_type !== tile.tile_type || prev.is_mined !== tile.is_mined) {
+        cacheRef.current.delete(key);
+      }
+    }
+    // Also evict keys that were in snapshot but are now gone (tile removed)
+    for (const key of snapshotMapRef.current.keys()) {
+      if (!next.has(key)) {
+        cacheRef.current.delete(key);
+      }
+    }
+    snapshotMapRef.current = next;
+  }
+
+  // Clear entire cache when underlying data sources change (deriver, DB, z-level)
   useEffect(() => {
     cacheRef.current.clear();
   }, [deriver, dbOverrides, zLevel]);
@@ -134,7 +168,12 @@ export function useFortressTiles({
       }
 
       const derived = deriver.deriveTile(x, y, zLevel);
-      const override = dbOverrides.get(key);
+
+      // Snapshot overrides (sim in-memory state) take priority over DB overrides
+      // so built/mined tiles appear immediately before the next DB flush.
+      const snapshotOverride = snapshotMapRef.current.get(key);
+      const dbOverride = dbOverrides.get(key);
+      const override = snapshotOverride ?? dbOverride;
 
       const tile: FortressViewTile = {
         x,
