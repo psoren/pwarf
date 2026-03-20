@@ -402,6 +402,11 @@ export interface StockpileTile {
   x: number;
   y: number;
   z: number;
+  /** Item categories this stockpile accepts. NULL = accepts all categories. */
+  accepts_categories: ItemCategory[] | null;
+  /** Higher priority stockpiles are preferred over lower-priority ones when
+   *  multiple tiles have available capacity. */
+  priority: number;
   created_at: string;
 }
 

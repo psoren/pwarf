@@ -1,15 +1,22 @@
 import { describe, it, expect } from "vitest";
-import { haulAssignment } from "./haul-assignment.js";
+import { haulAssignment, findBestStockpile } from "./haul-assignment.js";
 import { makeDwarf, makeItem, makeContext } from "../__tests__/test-helpers.js";
-import type { StockpileTile } from "@pwarf/shared";
+import type { StockpileTile, ItemCategory } from "@pwarf/shared";
 
-function makeStockpileTile(x: number, y: number, z: number): StockpileTile {
+function makeStockpileTile(
+  x: number,
+  y: number,
+  z: number,
+  opts: { accepts_categories?: ItemCategory[] | null; priority?: number } = {},
+): StockpileTile {
   return {
     id: crypto.randomUUID(),
     civilization_id: "civ-1",
     x,
     y,
     z,
+    accepts_categories: opts.accepts_categories ?? null,
+    priority: opts.priority ?? 0,
     created_at: new Date().toISOString(),
   };
 }
@@ -103,5 +110,67 @@ describe("haulAssignment", () => {
     expect(haulTasks).toHaveLength(1);
     expect(haulTasks[0].target_x).toBe(7);
     expect(haulTasks[0].target_y).toBe(7);
+  });
+});
+
+describe("findBestStockpile", () => {
+  it("returns null when no tiles accept the item category", () => {
+    const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    // Food-only stockpile, but item is raw_material
+    const foodOnly = makeStockpileTile(10, 10, 0, { accepts_categories: ['food'] });
+    ctx.state.stockpileTiles.set("10,10,0", foodOnly);
+
+    const result = findBestStockpile(ctx, 5, 5, 0, 'raw_material');
+    expect(result).toBeNull();
+  });
+
+  it("accepts items when accepts_categories is null (all-category stockpile)", () => {
+    const ctx = makeContext({});
+
+    const allCategories = makeStockpileTile(10, 10, 0, { accepts_categories: null });
+    ctx.state.stockpileTiles.set("10,10,0", allCategories);
+
+    const result = findBestStockpile(ctx, 5, 5, 0, 'raw_material');
+    expect(result).not.toBeNull();
+    expect(result?.x).toBe(10);
+  });
+
+  it("prefers higher-priority stockpile over nearer lower-priority one", () => {
+    const ctx = makeContext({});
+
+    const nearLow = makeStockpileTile(6, 6, 0, { priority: 0 });
+    const farHigh = makeStockpileTile(20, 20, 0, { priority: 5 });
+    ctx.state.stockpileTiles.set("6,6,0", nearLow);
+    ctx.state.stockpileTiles.set("20,20,0", farHigh);
+
+    const result = findBestStockpile(ctx, 5, 5, 0, 'raw_material');
+    expect(result?.x).toBe(20);
+    expect(result?.y).toBe(20);
+  });
+
+  it("breaks priority ties by distance", () => {
+    const ctx = makeContext({});
+
+    const nearSamePriority = makeStockpileTile(7, 7, 0, { priority: 2 });
+    const farSamePriority = makeStockpileTile(50, 50, 0, { priority: 2 });
+    ctx.state.stockpileTiles.set("7,7,0", nearSamePriority);
+    ctx.state.stockpileTiles.set("50,50,0", farSamePriority);
+
+    const result = findBestStockpile(ctx, 5, 5, 0, 'food');
+    expect(result?.x).toBe(7);
+  });
+
+  it("filters by category when accepts_categories is set", () => {
+    const ctx = makeContext({});
+
+    const foodOnly = makeStockpileTile(10, 10, 0, { accepts_categories: ['food'] });
+    const rawOnly = makeStockpileTile(20, 20, 0, { accepts_categories: ['raw_material'] });
+    ctx.state.stockpileTiles.set("10,10,0", foodOnly);
+    ctx.state.stockpileTiles.set("20,20,0", rawOnly);
+
+    const result = findBestStockpile(ctx, 5, 5, 0, 'food');
+    expect(result?.x).toBe(10);
   });
 });

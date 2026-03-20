@@ -1,4 +1,5 @@
 import { WORK_HAUL, STOCKPILE_TILE_CAPACITY } from "@pwarf/shared";
+import type { ItemCategory } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { getCarriedItems } from "../inventory.js";
 import { isDwarfIdle } from "../task-helpers.js";
@@ -8,8 +9,9 @@ import { manhattanDistance } from "../pathfinding.js";
 /**
  * Haul Assignment Phase
  *
- * For each idle dwarf carrying items, find the nearest stockpile tile
- * with available capacity and create a haul task.
+ * For each idle dwarf carrying items, find the best stockpile tile (nearest
+ * among highest-priority tiles that accept the item's category) and create
+ * a haul task.
  */
 export async function haulAssignment(ctx: SimContext): Promise<void> {
   const { state } = ctx;
@@ -22,12 +24,11 @@ export async function haulAssignment(ctx: SimContext): Promise<void> {
     const carried = getCarriedItems(dwarf.id, state.items);
     if (carried.length === 0) continue;
 
-    // Find the nearest stockpile tile with capacity
-    const target = findNearestOpenStockpile(ctx, dwarf.position_x, dwarf.position_y, dwarf.position_z);
-    if (!target) continue;
-
     // Create a haul task for the first carried item
     const item = carried[0];
+    const target = findBestStockpile(ctx, dwarf.position_x, dwarf.position_y, dwarf.position_z, item.category);
+    if (!target) continue;
+
     createTask(ctx, {
       task_type: 'haul',
       priority: 4,
@@ -40,16 +41,24 @@ export async function haulAssignment(ctx: SimContext): Promise<void> {
   }
 }
 
-/** Find the nearest stockpile tile that has room for more items. */
-function findNearestOpenStockpile(
+/**
+ * Find the best stockpile tile for an item.
+ *
+ * Selection order:
+ * 1. Tiles that accept the item's category (or accept all categories)
+ * 2. Among accepted tiles, prefer highest `priority`
+ * 3. Among equal-priority tiles, prefer nearest (Manhattan distance)
+ */
+export function findBestStockpile(
   ctx: SimContext,
   fromX: number,
   fromY: number,
   fromZ: number,
+  itemCategory: ItemCategory,
 ): { x: number; y: number; z: number } | null {
   const { state } = ctx;
 
-  // Count items at each stockpile tile (items on the ground + pending haul tasks targeting it)
+  // Count items at each stockpile tile (on-ground + pending haul tasks)
   const tileItemCounts = new Map<string, number>();
 
   for (const item of state.items) {
@@ -61,7 +70,6 @@ function findNearestOpenStockpile(
     }
   }
 
-  // Also count pending haul tasks targeting each tile
   for (const task of state.tasks) {
     if (task.task_type !== 'haul') continue;
     if (task.status === 'completed' || task.status === 'cancelled' || task.status === 'failed') continue;
@@ -73,17 +81,26 @@ function findNearestOpenStockpile(
   }
 
   let best: { x: number; y: number; z: number } | null = null;
+  let bestPriority = -Infinity;
   let bestDist = Infinity;
 
   for (const [key, tile] of state.stockpileTiles) {
+    // Skip if at capacity
     const count = tileItemCounts.get(key) ?? 0;
     if (count >= STOCKPILE_TILE_CAPACITY) continue;
+
+    // Skip if this stockpile doesn't accept the item's category
+    if (tile.accepts_categories !== null && !tile.accepts_categories.includes(itemCategory)) continue;
 
     const dist = manhattanDistance(
       { x: fromX, y: fromY, z: fromZ },
       { x: tile.x, y: tile.y, z: tile.z },
     );
-    if (dist < bestDist) {
+    const tilePriority = tile.priority ?? 0;
+
+    // Prefer higher priority; break ties by distance
+    if (tilePriority > bestPriority || (tilePriority === bestPriority && dist < bestDist)) {
+      bestPriority = tilePriority;
       bestDist = dist;
       best = { x: tile.x, y: tile.y, z: tile.z };
     }
