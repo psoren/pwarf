@@ -48,6 +48,7 @@ When changing a public API that both `sim/` and `app/` use (e.g. `SimRunner` con
 ## Workflow
 
 - **`main` has force-push protection enabled.** Never `git push --force` to main. Force-pushing feature branches after a rebase is fine.
+- **Always `git pull` on main before starting new work.** Create worktrees off the latest main to avoid missing recently merged changes.
 - **Every change must have a GitHub issue filed first.** Include a description and apply appropriate labels (`bug`, `documentation`, `enhancement`, `phase-0` through `phase-5`, etc.).
 - Reference the issue number in commits and PRs (e.g., `closes #123`).
 - Close the issue when the PR is merged.
