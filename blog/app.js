@@ -63,7 +63,8 @@ function escapeHtml(str) {
 // ── Data fetching ──────────────────────────────────────────────────────────
 
 async function fetchIndex() {
-  const res = await fetch(`${BASE}index.json`);
+  // no-store so the browser always gets the latest list of posts
+  const res = await fetch(`${BASE}index.json`, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Failed to fetch index: ${res.status}`);
   return res.json();
 }
