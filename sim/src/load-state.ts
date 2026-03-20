@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { StockpileTile, WorldEvent } from "@pwarf/shared";
+import type { DwarfRelationship, StockpileTile, WorldEvent } from "@pwarf/shared";
 import { WORLD_EVENTS_RECENT_LIMIT } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 
@@ -54,6 +54,9 @@ export async function loadStateFromSupabase(
         .limit(WORLD_EVENTS_RECENT_LIMIT),
     ]);
 
+  // Load relationships after dwarves — need alive dwarf IDs
+  const aliveDwarfIds = (dwarvesResult.data ?? []).map((d: { id: string }) => d.id);
+
   if (dwarvesResult.error) throw new Error(`Failed to load dwarves: ${dwarvesResult.error.message}`);
   if (itemsResult.error) throw new Error(`Failed to load items: ${itemsResult.error.message}`);
   if (structuresResult.error) throw new Error(`Failed to load structures: ${structuresResult.error.message}`);
@@ -61,6 +64,17 @@ export async function loadStateFromSupabase(
   if (tasksResult.error) throw new Error(`Failed to load tasks: ${tasksResult.error.message}`);
   if (stockpileResult.error) throw new Error(`Failed to load stockpile_tiles: ${stockpileResult.error.message}`);
   if (eventsResult.error) console.warn(`[load-state] Failed to load world_events: ${eventsResult.error.message}`);
+
+  // Load relationships for alive dwarves
+  let dwarfRelationships: DwarfRelationship[] = [];
+  if (aliveDwarfIds.length > 0) {
+    const { data, error } = await supabase
+      .from("dwarf_relationships")
+      .select("*")
+      .in("dwarf_a_id", aliveDwarfIds);
+    if (error) console.warn(`[load-state] Failed to load dwarf_relationships: ${error.message}`);
+    else dwarfRelationships = (data ?? []) as DwarfRelationship[];
+  }
 
   // Load skills for the alive dwarves
   const dwarfIds = (dwarvesResult.data ?? []).map(d => d.id);
@@ -87,6 +101,7 @@ export async function loadStateFromSupabase(
     monsters: monstersResult.data ?? [],
     tasks: tasksResult.data ?? [],
     dwarfSkills: dwarfSkills as never[],
+    dwarfRelationships,
     worldEvents: (eventsResult.data ?? []) as WorldEvent[],
     dirtyDwarfIds: new Set(),
     dirtyItemIds: new Set(),
@@ -94,7 +109,9 @@ export async function loadStateFromSupabase(
     dirtyMonsterIds: new Set(),
     dirtyTaskIds: new Set(),
     dirtyDwarfSkillIds: new Set(),
+    dirtyDwarfRelationshipIds: new Set(),
     newTasks: [],
+    newDwarfRelationships: [],
     pendingEvents: [],
     stockpileTiles,
     fortressTileOverrides: new Map(),

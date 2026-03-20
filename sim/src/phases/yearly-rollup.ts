@@ -10,7 +10,8 @@ import { dwarfName } from "../dwarf-utils.js";
 import { createImmigrantDwarf } from "../dwarf-factory.js";
 import { diseasePhase } from "./disease.js";
 import { applyWitnessStress } from "./deprivation.js";
-import { createWitnessDeathMemories, decayMemories } from "../dwarf-memory.js";
+import { createGriefFriendMemories, createWitnessDeathMemories, decayMemories } from "../dwarf-memory.js";
+import { relationshipFormationPhase } from "./relationship-formation.js";
 
 /**
  * Yearly Rollup Phase
@@ -46,6 +47,7 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
         state.ghostPositions.set(dwarf.id, { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z });
         applyWitnessStress(dwarf, state);
         createWitnessDeathMemories(dwarf, state, year);
+        createGriefFriendMemories(dwarf, state, year);
 
         if (dwarf.current_task_id) {
           const task = state.tasks.find(t => t.id === dwarf.current_task_id);
@@ -111,6 +113,9 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
 
   // Disease: outbreak, spread, damage, and recovery
   diseasePhase(ctx);
+
+  // Relationship formation: dwarves form acquaintances and friendships
+  relationshipFormationPhase(ctx);
 
   // Memory decay: strip expired memories from all alive dwarves
   for (const dwarf of state.dwarves) {

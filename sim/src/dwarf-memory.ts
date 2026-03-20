@@ -5,6 +5,8 @@ import {
   MEMORY_ARTIFACT_DURATION_YEARS,
   MEMORY_MASTERWORK_INTENSITY,
   MEMORY_MASTERWORK_DURATION_YEARS,
+  MEMORY_GRIEF_FRIEND_INTENSITY,
+  MEMORY_GRIEF_FRIEND_DURATION_YEARS,
   WITNESS_DEATH_RADIUS,
 } from "@pwarf/shared";
 import type { Dwarf, DwarfMemory } from "@pwarf/shared";
@@ -105,4 +107,34 @@ export function createMasterworkMemory(dwarf: Dwarf, state: CachedState, current
     year: currentYear,
     expires_year: currentYear + MEMORY_MASTERWORK_DURATION_YEARS,
   }, state);
+}
+
+/**
+ * Applies a grief_friend memory to all alive dwarves who were 'friend' with the deceased.
+ * Called from all death paths after createWitnessDeathMemories.
+ */
+export function createGriefFriendMemories(
+  deceased: Dwarf,
+  state: CachedState,
+  currentYear: number,
+): void {
+  for (const rel of state.dwarfRelationships) {
+    if (rel.type !== 'friend') continue;
+    const friendId = rel.dwarf_a_id === deceased.id
+      ? rel.dwarf_b_id
+      : rel.dwarf_b_id === deceased.id
+        ? rel.dwarf_a_id
+        : null;
+    if (!friendId) continue;
+
+    const friend = state.dwarves.find(d => d.id === friendId);
+    if (!friend || friend.status !== 'alive') continue;
+
+    addMemory(friend, {
+      type: 'grief_friend',
+      intensity: MEMORY_GRIEF_FRIEND_INTENSITY,
+      year: currentYear,
+      expires_year: currentYear + MEMORY_GRIEF_FRIEND_DURATION_YEARS,
+    }, state);
+  }
 }

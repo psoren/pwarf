@@ -560,3 +560,22 @@ export const POLL_EVENTS_MS = 3_000;
 /** How often the frontend polls for fortress tile overrides */
 export const POLL_FORTRESS_TILES_MS = 3_000;
 
+
+// ============================================================
+// Dwarf relationships
+// ============================================================
+
+/** Probability that two nearby dwarves form an acquaintance relationship each year */
+export const FRIENDSHIP_FORMATION_CHANCE = 0.3;
+
+/** Years as acquaintance before upgrading to friend */
+export const FRIEND_UPGRADE_YEARS = 2;
+
+/** Extra stress spike when a close friend dies (immediate, on top of witness stress) */
+export const GRIEF_FRIEND_STRESS = 20;
+
+/** Intensity of a "grief_friend" memory (positive = stress) */
+export const MEMORY_GRIEF_FRIEND_INTENSITY = 25;
+
+/** How many in-game years grief from losing a friend lingers */
+export const MEMORY_GRIEF_FRIEND_DURATION_YEARS = 5;
