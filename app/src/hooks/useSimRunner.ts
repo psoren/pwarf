@@ -9,6 +9,7 @@ export function useSimRunner(civId: string | null, worldId: string | null) {
   const runnerRef = useRef<SimRunner | null>(null);
   const [snapshot, setSnapshot] = useState<SimSnapshot | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [speed, setSpeedState] = useState(1);
 
   // Throttle UI updates — emit at most every 100ms (10 fps) to avoid
   // re-rendering on every single sim tick (which runs at 10/s anyway).
@@ -41,10 +42,18 @@ export function useSimRunner(civId: string | null, worldId: string | null) {
     }
   }, []);
 
+  const setSpeed = useCallback((multiplier: number) => {
+    const runner = runnerRef.current;
+    if (!runner) return;
+    runner.setSpeed(multiplier);
+    setSpeedState(multiplier);
+  }, []);
+
   useEffect(() => {
     if (!civId || !worldId) {
       setSnapshot(null);
       setIsPaused(false);
+      setSpeedState(1);
       return;
     }
 
@@ -67,8 +76,9 @@ export function useSimRunner(civId: string | null, worldId: string | null) {
       });
       runnerRef.current = null;
       setIsPaused(false);
+      setSpeedState(1);
     };
   }, [civId, worldId, handleTick]);
 
-  return { runnerRef, snapshot, isPaused, togglePause };
+  return { runnerRef, snapshot, isPaused, togglePause, speed, setSpeed };
 }

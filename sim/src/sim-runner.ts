@@ -58,6 +58,7 @@ export class SimRunner {
   currentYear = 1;
   currentDay = 1;
   isPaused = false;
+  speedMultiplier = 1;
 
   constructor(adapter: StateAdapter) {
     this.adapter = adapter;
@@ -94,7 +95,7 @@ export class SimRunner {
 
     console.log(`[sim] starting simulation for civilization ${civilizationId}`);
 
-    const intervalMs = 1000 / STEPS_PER_SECOND;
+    const intervalMs = 1000 / (STEPS_PER_SECOND * this.speedMultiplier);
     this.timer = setInterval(() => {
       void this.tick();
     }, intervalMs);
@@ -127,7 +128,21 @@ export class SimRunner {
   resume(): void {
     if (!this.isPaused || !this.ctx) return;
     this.isPaused = false;
-    const intervalMs = 1000 / STEPS_PER_SECOND;
+    const intervalMs = 1000 / (STEPS_PER_SECOND * this.speedMultiplier);
+    this.timer = setInterval(() => {
+      void this.tick();
+    }, intervalMs);
+  }
+
+  /** Change tick speed without stopping. 1 = normal, 2 = double, 5 = fast. */
+  setSpeed(multiplier: number): void {
+    this.speedMultiplier = multiplier;
+    if (this.isPaused || !this.ctx) return;
+    // Restart tick interval at new rate
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
+    const intervalMs = 1000 / (STEPS_PER_SECOND * multiplier);
     this.timer = setInterval(() => {
       void this.tick();
     }, intervalMs);
