@@ -57,6 +57,11 @@ Follow these when writing or modifying code to keep the codebase clean:
 - **Shared test helpers.** Test factory functions (`makeDwarf`, `makeContext`, etc.) live in `sim/src/__tests__/test-helpers.ts`. Don't duplicate them across test files.
 - **Name test files after what they test.** `dwarf-names.test.ts` tests `dwarf-names.ts`, not `embark.test.ts`.
 
+## PR Self-Review
+
+- **Every PR must be self-reviewed before it is created.** Run `/review-pr` to check the diff, tests, types, and code quality before pushing.
+- Fix any blocking issues found before opening the PR.
+
 ## Playtesting
 
 - **Every PR must include a playtest.** After implementing a feature or fix, run the game in Chrome and verify it works end-to-end.
