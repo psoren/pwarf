@@ -104,6 +104,7 @@ Follow these when writing or modifying code to keep the codebase clean:
 - **Every PR must be self-reviewed after creation, before merging.** The workflow is: push branch → create PR → run `/review-pr` → fix blocking issues → merge.
 - `/review-pr` checks diff, tests, types, code quality, and embeds the Claude cost in the PR description.
 - **After review passes, merge the PR immediately.** Don't leave open PRs sitting around. Once `/review-pr` finds no blocking issues, merge with `gh pr merge <N> --squash`.
+- **After merging, remove the worktree.** Run `git worktree remove .claude/worktrees/<name>` from the repo root, then `git branch -d <branch>` to delete the local branch.
 
 ## Database migrations
 
