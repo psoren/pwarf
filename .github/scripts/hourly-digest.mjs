@@ -48,6 +48,20 @@ async function ghFetch(path, options = {}) {
   return res.json();
 }
 
+/** Return how many minutes have elapsed since the last digest post was written. */
+function minutesSinceLastPost() {
+  const indexPath = join(BLOG_DIR, 'index.json');
+  try {
+    const index = JSON.parse(readFileSync(indexPath, 'utf8'));
+    const posts = index.posts ?? [];
+    if (posts.length === 0) return null;
+    const lastTime = new Date(posts[posts.length - 1].timestamp).getTime();
+    return Math.floor((Date.now() - lastTime) / 60_000);
+  } catch {
+    return null;
+  }
+}
+
 /** Return PRs merged in the last `windowMinutes` minutes. */
 async function getMergedPRs(windowMinutes = Number(process.env.LOOKBACK_MINUTES ?? 65)) {
   const since = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
@@ -113,7 +127,7 @@ async function summarize(prData) {
     'Do NOT inline PR numbers in the prose — list them at the very end under "## Merged PRs".';
 
   const userPrompt =
-    'The following pull requests were merged into main in the last hour. Write a digest.\n\n' +
+    'The following pull requests were merged into main since the last digest. Write a digest.\n\n' +
     prBlocks;
 
   const res = await fetch(
@@ -233,12 +247,30 @@ function formatSimStats(stats) {
 
 // ── Main ───────────────────────────────────────────────────────────────────
 
+const PR_THRESHOLD = Number(process.env.PR_THRESHOLD ?? 5);
+
 async function main() {
-  console.log('Fetching PRs merged in the last hour…');
-  const prs = await getMergedPRs();
+  // Use time-since-last-post as the lookback window so we never double-count PRs.
+  // Fall back to LOOKBACK_MINUTES (or 10 min) on the very first run.
+  const sinceLastPost = minutesSinceLastPost();
+  const lookback = sinceLastPost != null
+    ? sinceLastPost + 2          // +2 min buffer for clock skew
+    : Number(process.env.LOOKBACK_MINUTES ?? 10);
+
+  console.log(`Fetching PRs merged in the last ${lookback} min…`);
+  const prs = await getMergedPRs(lookback);
 
   if (prs.length === 0) {
-    console.log('No PRs merged in the last hour — skipping digest.');
+    console.log('No PRs merged since last digest — skipping.');
+    return;
+  }
+
+  // Skip if below threshold and it hasn't been 60+ min since the last post.
+  if (prs.length < PR_THRESHOLD && (sinceLastPost == null || sinceLastPost < 60)) {
+    console.log(
+      `Only ${prs.length} PR(s) since last digest (threshold: ${PR_THRESHOLD}, ` +
+      `last post: ${sinceLastPost ?? 'never'} min ago) — skipping.`,
+    );
     return;
   }
 

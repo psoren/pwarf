@@ -2,8 +2,8 @@ name: Hourly Digest
 
 on:
   schedule:
-    # Runs at the top of every hour
-    - cron: '0 * * * *'
+    # Runs every 5 minutes; script skips if fewer than 5 PRs have accumulated
+    - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       lookback_minutes:
