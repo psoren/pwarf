@@ -521,7 +521,10 @@ const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sle
 function formatFortressTileLabel(tileType: string, material: string | null, designation?: string, buildProgress?: number): string {
   const label = tileType.replace(/_/g, " ");
   const base = material ? `${label} (${material})` : label;
-  if (designation) {
+  // Don't show designation suffix if tile is already in a built state —
+  // task list may lag behind tile update (race condition between polls).
+  const tileIsBuilt = tileType === 'constructed_wall' || tileType === 'constructed_floor';
+  if (designation && !tileIsBuilt) {
     const desLabel = designation.replace(/_/g, " ");
     if (buildProgress !== undefined) {
       return `${base} [building: ${desLabel} ${buildProgress}%]`;
