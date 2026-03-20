@@ -4,6 +4,13 @@ import type { ActiveTask } from "../hooks/useTasks";
 
 const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
 
+/** Returns a CSS color for a dwarf's name based on their stress level (0–100). */
+export function stressColor(stressLevel: number): string {
+  if (stressLevel >= 67) return "var(--red)";
+  if (stressLevel >= 34) return "var(--amber)";
+  return "var(--green)";
+}
+
 interface LeftPanelProps {
   mode: "fortress" | "world";
   collapsed: boolean;
@@ -92,7 +99,7 @@ export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmb
                       className="flex justify-between hover:bg-[var(--bg-hover)] px-1 cursor-pointer"
                       onClick={() => onDwarfClick?.(d.id)}
                     >
-                      <span className="text-[var(--green)]">{d.name}</span>
+                      <span style={{ color: stressColor(d.stress_level) }}>{d.name}</span>
                       <span className="text-[var(--text)]">
                         <span className="text-[var(--border)] mr-1">z{d.position_z}</span>
                         {dwarfJobLabel(d, tasks)}
