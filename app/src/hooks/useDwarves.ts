@@ -29,6 +29,11 @@ export interface LiveDwarf {
   stress_level: number;
   health: number;
   memories: DwarfThought[];
+  trait_openness: number | null;
+  trait_conscientiousness: number | null;
+  trait_extraversion: number | null;
+  trait_agreeableness: number | null;
+  trait_neuroticism: number | null;
 }
 
 /** Build a compact fingerprint string for diffing without deep comparison. */
@@ -55,7 +60,7 @@ export function useDwarves(civId: string | null) {
     async function fetchDwarves() {
       const { data, error } = await supabase
         .from('dwarves')
-        .select('id, name, surname, status, age, gender, is_in_tantrum, position_x, position_y, position_z, current_task_id, need_food, need_drink, need_sleep, need_social, need_purpose, need_beauty, stress_level, health, memories')
+        .select('id, name, surname, status, age, gender, is_in_tantrum, position_x, position_y, position_z, current_task_id, need_food, need_drink, need_sleep, need_social, need_purpose, need_beauty, stress_level, health, memories, trait_openness, trait_conscientiousness, trait_extraversion, trait_agreeableness, trait_neuroticism')
         .eq('civilization_id', civId!)
         .eq('status', 'alive');
 
