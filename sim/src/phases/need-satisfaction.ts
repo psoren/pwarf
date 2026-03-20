@@ -5,6 +5,10 @@ import {
   WORK_EAT,
   WORK_DRINK,
   WORK_SLEEP,
+  MAX_NEED,
+  SOCIAL_RESTORE_PER_NEARBY_DWARF,
+  SOCIAL_PROXIMITY_RADIUS,
+  SOCIAL_PROXIMITY_MAX_DWARVES,
 } from "@pwarf/shared";
 import type { Dwarf, TaskType, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -40,6 +44,9 @@ export async function needSatisfaction(ctx: SimContext): Promise<void> {
     if (dwarf.need_sleep < NEED_INTERRUPT_SLEEP) {
       maybeInterruptForNeed(dwarf, 'sleep', ctx);
     }
+
+    // Social: restore need based on proximity to other alive dwarves
+    restoreSocialNeed(dwarf, state.dwarves);
   }
 }
 
@@ -150,4 +157,28 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
     work_required: workRequired,
     assigned_dwarf_id: dwarf.id,
   });
+}
+
+/**
+ * Restores social need based on how many other alive dwarves are nearby.
+ * Counts up to SOCIAL_PROXIMITY_MAX_DWARVES for diminishing returns.
+ * Exported for unit testing.
+ */
+export function restoreSocialNeed(dwarf: Dwarf, allDwarves: Dwarf[]): void {
+  let nearbyCount = 0;
+  for (const other of allDwarves) {
+    if (other.id === dwarf.id) continue;
+    if (other.status !== 'alive') continue;
+    if (other.position_z !== dwarf.position_z) continue;
+    const dist = Math.abs(other.position_x - dwarf.position_x) + Math.abs(other.position_y - dwarf.position_y);
+    if (dist <= SOCIAL_PROXIMITY_RADIUS) {
+      nearbyCount++;
+    }
+  }
+
+  if (nearbyCount === 0) return;
+
+  const effectiveCount = Math.min(nearbyCount, SOCIAL_PROXIMITY_MAX_DWARVES);
+  const restore = effectiveCount * SOCIAL_RESTORE_PER_NEARBY_DWARF;
+  dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + restore);
 }

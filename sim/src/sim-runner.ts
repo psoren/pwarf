@@ -19,6 +19,7 @@ import {
   idleWandering,
   thoughtGeneration,
   haulAssignment,
+  beautyRestoration,
 } from "./phases/index.js";
 
 /** Snapshot of sim state emitted after every tick for live UI rendering. */
@@ -156,6 +157,7 @@ export class SimRunner {
     await jobClaiming(this.ctx);
     await eventFiring(this.ctx);
     await thoughtGeneration(this.ctx);
+    await beautyRestoration(this.ctx);
 
     if (this.stepCount % STEPS_PER_YEAR === 0) {
       this.currentYear++;
