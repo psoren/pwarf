@@ -49,4 +49,11 @@ export const DESIGNATION_PREVIEW: Record<string, { ch: string; fg: string }> = {
   mine:              { ch: "X", fg: "#cc6600" },
   build_wall:        { ch: "#", fg: "#cc8844" },
   build_floor:       { ch: "+", fg: "#cc8844" },
+  stockpile:         { ch: "\u25A1", fg: "#8B6914" },
 };
+
+/** Glyph for stockpile tiles. */
+export const STOCKPILE_GLYPH = { bg: "#1a2a1a" };
+
+/** Glyph for items on the ground. */
+export const GROUND_ITEM_GLYPH = { ch: "*", fg: "#cc9933" };

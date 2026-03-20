@@ -1,3 +1,6 @@
+import type { Item } from "@pwarf/shared";
+import ResourceCounter from "./ResourceCounter";
+
 interface ToolbarProps {
   mode: "fortress" | "world";
   onSignOut?: () => void;
@@ -5,9 +8,10 @@ interface ToolbarProps {
   population?: number;
   year?: number;
   civName?: string;
+  items?: Item[];
 }
 
-export default function Toolbar({ mode, onSignOut, onRestart, population = 0, year = 1, civName }: ToolbarProps) {
+export default function Toolbar({ mode, onSignOut, onRestart, population = 0, year = 1, civName, items = [] }: ToolbarProps) {
   return (
     <header className="flex items-center justify-between px-3 py-1 border-b border-[var(--border)] bg-[var(--bg-panel)] text-xs select-none shrink-0">
       <div className="flex gap-4 items-center">
@@ -22,6 +26,7 @@ export default function Toolbar({ mode, onSignOut, onRestart, population = 0, ye
 
       <div className="flex gap-4 items-center">
         <span>Pop: {population}</span>
+        {mode === "fortress" && items.length > 0 && <ResourceCounter items={items} />}
         <span className="text-[var(--amber)]">No alerts</span>
         {onRestart && (
           <button

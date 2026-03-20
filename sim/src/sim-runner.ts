@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { STEPS_PER_SECOND, STEPS_PER_YEAR, SIM_FLUSH_INTERVAL_MS, createFortressDeriver } from "@pwarf/shared";
-import type { Dwarf, Task, WorldEvent } from "@pwarf/shared";
+import type { Dwarf, Item, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { loadStateFromSupabase } from "./load-state.js";
@@ -19,11 +19,13 @@ import {
   yearlyRollup,
   idleWandering,
   thoughtGeneration,
+  haulAssignment,
 } from "./phases/index.js";
 
 /** Snapshot of sim state emitted after every tick for live UI rendering. */
 export interface SimSnapshot {
   dwarves: Dwarf[];
+  items: Item[];
   tasks: Task[];
   events: WorldEvent[];
 }
@@ -98,6 +100,7 @@ export class SimRunner {
       if (this.ctx) {
         void flushToSupabase(this.ctx);
         void this.pollNewTasks();
+        void this.pollStockpileTiles();
       }
     }, SIM_FLUSH_INTERVAL_MS);
   }
@@ -143,6 +146,24 @@ export class SimRunner {
     }
   }
 
+  /** Poll Supabase for stockpile tiles created by the player. */
+  private async pollStockpileTiles(): Promise<void> {
+    if (!this.ctx) return;
+    const { state, supabase, civilizationId } = this.ctx;
+
+    const { data, error } = await supabase
+      .from('stockpile_tiles')
+      .select('*')
+      .eq('civilization_id', civilizationId);
+
+    if (error || !data) return;
+
+    state.stockpileTiles.clear();
+    for (const tile of data) {
+      state.stockpileTiles.set(`${tile.x},${tile.y},${tile.z}`, tile);
+    }
+  }
+
   /** Execute one simulation step — all phases run in order. */
   async tick(): Promise<void> {
     if (!this.ctx) return;
@@ -163,6 +184,7 @@ export class SimRunner {
     await combatResolution(this.ctx);
     await constructionProgress(this.ctx);
     await idleWandering(this.ctx);
+    await haulAssignment(this.ctx);
     await jobClaiming(this.ctx);
     await eventFiring(this.ctx);
     await thoughtGeneration(this.ctx);
@@ -180,6 +202,7 @@ export class SimRunner {
     if (this.onTick) {
       this.onTick({
         dwarves: this.ctx.state.dwarves,
+        items: this.ctx.state.items,
         tasks: this.ctx.state.tasks,
         events: this.ctx.state.worldEvents,
       });

@@ -12,7 +12,7 @@ import { supabase } from "../lib/supabase";
 import type { FortressViewTile } from "./useFortressTiles";
 import type { OptimisticDesignation } from "./useTasks";
 
-export type DesignationMode = "none" | "mine" | "build_wall" | "build_floor";
+export type DesignationMode = "none" | "mine" | "build_wall" | "build_floor" | "stockpile";
 
 const BUILD_WORK: Record<string, number> = {
   build_wall: WORK_BUILD_WALL,
@@ -49,6 +49,25 @@ export function useDesignation(opts: {
 
   const handleDesignateArea = useCallback(async (x1: number, y1: number, x2: number, y2: number) => {
     if (designationMode === 'none' || !civId) return;
+
+    // Stockpile designation — insert directly into stockpile_tiles
+    if (designationMode === 'stockpile') {
+      const walkable: string[] = ['open_air', 'grass', 'constructed_floor', 'cavern_floor', 'sand', 'mud', 'ice', 'cave_entrance', 'soil'];
+      const rows: Array<{ civilization_id: string; x: number; y: number; z: number }> = [];
+      for (let y = y1; y <= y2; y++) {
+        for (let x = x1; x <= x2; x++) {
+          const tile = getFortressTile(x, y);
+          if (!tile || !walkable.includes(tile.tileType)) continue;
+          rows.push({ civilization_id: civId, x, y, z: zLevel });
+        }
+      }
+      if (rows.length === 0) return;
+      const { error } = await supabase.from('stockpile_tiles').upsert(rows, { onConflict: 'civilization_id,x,y,z' });
+      if (error) {
+        console.error('[designate] Failed to create stockpile tiles:', error.message);
+      }
+      return;
+    }
 
     const mineable: string[] = ['stone', 'ore', 'gem', 'soil', 'cavern_wall', 'tree', 'rock', 'bush'];
     const buildable: string[] = ['open_air', 'grass', 'constructed_floor', 'cavern_floor'];
@@ -157,6 +176,12 @@ export function useDesignation(opts: {
     setDesignationMode((m) => (m === "mine" ? "none" : "mine"));
   }, []);
 
+  const toggleStockpile = useCallback(() => {
+    setBuildMenuOpen(false);
+    setPrioritiesOpen(false);
+    setDesignationMode((m) => (m === "stockpile" ? "none" : "stockpile"));
+  }, []);
+
   const toggleBuildMenu = useCallback(() => {
     setDesignationMode("none");
     setPrioritiesOpen(false);
@@ -188,6 +213,7 @@ export function useDesignation(opts: {
     handleBuildSelect,
     handlePriorityChange,
     toggleMine,
+    toggleStockpile,
     toggleBuildMenu,
     togglePriorities,
     cancelDesignation,

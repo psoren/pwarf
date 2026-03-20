@@ -5,6 +5,7 @@ import type {
   FortressDeriver,
   FortressTile,
   Item,
+  StockpileTile,
   Structure,
   Monster,
   WorldEvent,
@@ -34,6 +35,9 @@ export interface CachedState {
   /** Events queued during a tick, flushed by the event-firing phase. */
   pendingEvents: WorldEvent[];
 
+  /** Stockpile tiles keyed by "x,y,z". */
+  stockpileTiles: Map<string, StockpileTile>;
+
   /** Fortress tile overrides created by mining/building. Keyed by "x,y,z". */
   fortressTileOverrides: Map<string, FortressTile>;
   dirtyFortressTileKeys: Set<string>;
@@ -60,6 +64,7 @@ export function createEmptyCachedState(): CachedState {
     dirtyTaskIds: new Set(),
     newTasks: [],
     pendingEvents: [],
+    stockpileTiles: new Map(),
     fortressTileOverrides: new Map(),
     dirtyFortressTileKeys: new Set(),
     zeroFoodTicks: new Map(),

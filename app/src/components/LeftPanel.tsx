@@ -1,4 +1,4 @@
-import type { WorldTile } from "@pwarf/shared";
+import type { WorldTile, Item } from "@pwarf/shared";
 import type { LiveDwarf } from "../hooks/useDwarves";
 
 interface LeftPanelProps {
@@ -9,6 +9,10 @@ interface LeftPanelProps {
   onEmbark?: () => void;
   dwarves?: LiveDwarf[];
   onDwarfClick?: (dwarfId: string) => void;
+  items?: Item[];
+  selectedFortressTile?: { x: number; y: number } | null;
+  stockpileTiles?: Set<string>;
+  zLevel?: number;
 }
 
 function dwarfJobLabel(d: LiveDwarf): string {
@@ -16,7 +20,7 @@ function dwarfJobLabel(d: LiveDwarf): string {
   return "Idle";
 }
 
-export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmbark, dwarves = [], onDwarfClick }: LeftPanelProps) {
+export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmbark, dwarves = [], onDwarfClick, items = [], selectedFortressTile, stockpileTiles, zLevel = 0 }: LeftPanelProps) {
   const isOcean = cursorTile?.terrain === "ocean";
 
   return (
@@ -35,27 +39,63 @@ export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmb
       {!collapsed && (
         <div className="px-2 pb-2 overflow-y-auto text-xs">
           {mode === "fortress" ? (
-            <>
-              <h2 className="text-[var(--amber)] mb-1 font-bold">Dwarves</h2>
-              <ul className="space-y-0.5">
-                {dwarves.map((d) => (
-                  <li
-                    key={d.id}
-                    className="flex justify-between hover:bg-[var(--bg-hover)] px-1 cursor-pointer"
-                    onClick={() => onDwarfClick?.(d.id)}
-                  >
-                    <span className="text-[var(--green)]">{d.name}</span>
-                    <span className="text-[var(--text)]">
-                      <span className="text-[var(--border)] mr-1">z{d.position_z}</span>
-                      {dwarfJobLabel(d)}
-                    </span>
-                  </li>
-                ))}
-                {dwarves.length === 0 && (
-                  <li className="text-[var(--text)]">No dwarves</li>
-                )}
-              </ul>
-            </>
+            selectedFortressTile && stockpileTiles?.has(`${selectedFortressTile.x},${selectedFortressTile.y},${zLevel}`) ? (
+              // Stockpile detail view
+              <div className="space-y-2">
+                <h2 className="text-[var(--amber)] font-bold">Stockpile</h2>
+                <div className="text-[var(--text)]">
+                  Pos: <span className="text-[var(--green)]">({selectedFortressTile.x}, {selectedFortressTile.y}, z{zLevel})</span>
+                </div>
+                {(() => {
+                  const tileItems = items.filter(i =>
+                    i.held_by_dwarf_id === null &&
+                    i.position_x === selectedFortressTile.x &&
+                    i.position_y === selectedFortressTile.y &&
+                    i.position_z === zLevel
+                  );
+                  return tileItems.length > 0 ? (
+                    <div className="border-t border-[var(--border)] pt-1 mt-1">
+                      <div className="text-[var(--text)] mb-1">{tileItems.length} item{tileItems.length !== 1 ? 's' : ''}</div>
+                      <ul className="space-y-0.5">
+                        {tileItems.map((item) => (
+                          <li key={item.id} className="flex justify-between">
+                            <span className="text-[var(--green)]">{item.name}</span>
+                            <span className="text-[var(--text)]">
+                              {item.material && <span className="text-[var(--border)] mr-1">{item.material}</span>}
+                              {item.weight ?? 0}w
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div className="text-[var(--text)] border-t border-[var(--border)] pt-1 mt-1">Empty</div>
+                  );
+                })()}
+              </div>
+            ) : (
+              <>
+                <h2 className="text-[var(--amber)] mb-1 font-bold">Dwarves</h2>
+                <ul className="space-y-0.5">
+                  {dwarves.map((d) => (
+                    <li
+                      key={d.id}
+                      className="flex justify-between hover:bg-[var(--bg-hover)] px-1 cursor-pointer"
+                      onClick={() => onDwarfClick?.(d.id)}
+                    >
+                      <span className="text-[var(--green)]">{d.name}</span>
+                      <span className="text-[var(--text)]">
+                        <span className="text-[var(--border)] mr-1">z{d.position_z}</span>
+                        {dwarfJobLabel(d)}
+                      </span>
+                    </li>
+                  ))}
+                  {dwarves.length === 0 && (
+                    <li className="text-[var(--text)]">No dwarves</li>
+                  )}
+                </ul>
+              </>
+            )
           ) : cursorTile ? (
             <div className="space-y-1">
               <h2 className="text-[var(--amber)] mb-1 font-bold">Tile Info</h2>
