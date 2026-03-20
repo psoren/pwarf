@@ -73,6 +73,16 @@ export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, for
         <span>
           <kbd className="text-[var(--amber)]">[ ]</kbd> panels
         </span>
+        {mode === "fortress" && (
+          <>
+            <span>
+              <kbd className="text-[var(--amber)]">Space</kbd> pause
+            </span>
+            <span>
+              <kbd className="text-[var(--amber)]">1/2/5</kbd> speed
+            </span>
+          </>
+        )}
       </div>
     </footer>
   );
