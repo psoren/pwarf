@@ -27,6 +27,20 @@ Before merging any new sim system:
 - Unit tests for all pure functions
 - Headless mode still works (no new browser dependencies)
 
+## Secrets & credentials
+
+**Never hardcode secrets in source files.** All credentials must come from environment variables.
+
+| Secret | Where it lives | How code accesses it |
+|---|---|---|
+| Supabase URL | `app/.env.local` (local), GitHub Actions secret | `import.meta.env.VITE_SUPABASE_URL` |
+| Supabase anon key | `app/.env.local` (local), GitHub Actions secret | `import.meta.env.VITE_SUPABASE_ANON_KEY` |
+
+- `.env` and `.env.local` files are gitignored — never commit them.
+- `.claude/worktrees/` and `.claude/projects/` are also gitignored — they contain copies of local env files.
+- GitHub Actions uses repository secrets (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`) injected at build time. The hourly digest workflow uses only the built-in `GITHUB_TOKEN` — no extra secrets needed.
+- Before opening a PR, confirm no secrets appear in the diff. If a secret is ever accidentally committed, rotate it immediately.
+
 ## Workflow
 
 - **Every change must have a GitHub issue filed first.** Include a description and apply appropriate labels (`bug`, `documentation`, `enhancement`, `phase-0` through `phase-5`, etc.).
