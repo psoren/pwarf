@@ -82,8 +82,28 @@ Follow these when writing or modifying code to keep the codebase clean:
 
 Use the `github-upload-image-to-pr` skill (installed in `.claude/skills/`) to upload images to PRs. It uses `agent-browser` to upload files through GitHub's comment textarea, then embeds the resulting URLs in the PR description via `gh pr edit`.
 
+**Taking a full-page screenshot (including the log panel and all UI):**
+
+Do NOT use `mainCanvas.toDataURL()` — that only captures the game canvas, not the surrounding HTML panels. Instead, use `html2canvas` to capture the entire page:
+
+```javascript
+// Run in mcp__claude-in-chrome__javascript_tool on the game tab
+const script = document.createElement('script');
+script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+document.body.appendChild(script);
+new Promise(resolve => script.onload = resolve).then(async () => {
+  const canvas = await html2canvas(document.body, {useCORS: true, logging: false});
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = 'pwarf-screenshot.png';
+  a.click();
+});
+```
+
+The file downloads to `~/Downloads/`. Check with `ls -lh ~/Downloads/pwarf-screenshot.png`.
+
 **Workflow:**
-1. Take screenshots during playtesting (save to `/tmp/` or `~/Downloads/`)
+1. Capture a full-page screenshot using html2canvas (above) — saves to `~/Downloads/`
 2. Use `agent-browser upload "#fc-new_comment_field" /path/to/image.png` to upload via GitHub's file input — note the **double quotes** around the selector; single quotes fail
 3. Wait 3–5 seconds, then read the textarea: `agent-browser eval "document.getElementById('new_comment_field')?.value"`
 4. Extract the `user-attachments/assets/` URL from the result
