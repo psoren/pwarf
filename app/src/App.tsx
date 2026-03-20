@@ -21,6 +21,7 @@ import { usePublishedRuins } from "./hooks/usePublishedRuins";
 import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
 import TaskPriorities from "./components/TaskPriorities";
 import { DwarfModal } from "./components/DwarfModal";
+import { InventoryModal } from "./components/InventoryModal";
 import { EpitaphScreen } from "./components/EpitaphScreen";
 import { TutorialOverlay } from "./components/TutorialOverlay";
 import { useTutorial } from "./hooks/useTutorial";
@@ -345,6 +346,9 @@ export default function App() {
   const [modalDwarfId, setModalDwarfId] = useState<string | null>(null);
   const modalDwarf = modalDwarfId ? liveDwarves.find(d => d.id === modalDwarfId) ?? null : null;
 
+  // Inventory modal
+  const [inventoryOpen, setInventoryOpen] = useState(false);
+
   const handleDwarfClick = useCallback((x: number, y: number) => {
     const dwarf = liveDwarves.find(d => d.position_x === x && d.position_y === y && d.position_z === zLevel);
     if (dwarf) {
@@ -448,6 +452,7 @@ export default function App() {
         wealth={civWealth}
         dwarves={liveDwarves}
         onTutorial={tutorial.start}
+        onInventory={world.civId ? () => setInventoryOpen(true) : undefined}
       />
 
       {tutorial.active && (
@@ -537,6 +542,14 @@ export default function App() {
             onGoTo={handleGoToDwarf}
             items={liveItems}
             tasks={liveTasks}
+          />
+        )}
+
+        {inventoryOpen && (
+          <InventoryModal
+            items={liveItems}
+            dwarves={liveDwarves}
+            onClose={() => setInventoryOpen(false)}
           />
         )}
 
