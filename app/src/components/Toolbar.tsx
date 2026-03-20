@@ -1,5 +1,7 @@
 import type { Item } from "@pwarf/shared";
 import ResourceCounter from "./ResourceCounter";
+import { deriveAlert } from "../utils/alerts";
+import type { LiveDwarf } from "../hooks/useDwarves";
 
 const SPEEDS = [1, 2, 5] as const;
 
@@ -16,9 +18,12 @@ interface ToolbarProps {
   civName?: string;
   items?: Item[];
   wealth?: number;
+  dwarves?: LiveDwarf[];
 }
 
-export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0 }: ToolbarProps) {
+export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0, dwarves = [] }: ToolbarProps) {
+  const alert = mode === "fortress" ? deriveAlert(dwarves) : null;
+
   return (
     <header className="flex items-center justify-between px-3 py-1 border-b border-[var(--border)] bg-[var(--bg-panel)] text-xs select-none shrink-0">
       <div className="flex gap-4 items-center">
@@ -35,7 +40,17 @@ export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isP
         <span>Pop: {population}</span>
         {mode === "fortress" && <span className="text-[var(--amber)]">§ {wealth.toLocaleString()}</span>}
         {mode === "fortress" && items.length > 0 && <ResourceCounter items={items} />}
-        <span className="text-[var(--amber)]">No alerts</span>
+        {mode === "fortress" && (
+          alert ? (
+            <span
+              className={alert.severity === "critical" ? "text-[var(--red,#f87171)] font-bold" : "text-[var(--amber)]"}
+            >
+              ⚠ {alert.message}
+            </span>
+          ) : (
+            <span className="text-[var(--border)]">No alerts</span>
+          )
+        )}
         {mode === "fortress" && onTogglePause && (
           <div className="flex items-center gap-1">
             <button
