@@ -18,7 +18,7 @@ import { handleDeprivationDeaths } from "./deprivation.js";
 import { completeTask } from "./task-completion.js";
 
 /** Task types where the dwarf stands adjacent to (not on) the target tile. */
-const ADJACENT_TASK_TYPES: ReadonlySet<string> = new Set(['mine', 'build_wall']);
+const ADJACENT_TASK_TYPES: ReadonlySet<string> = new Set(['mine', 'build_wall', 'deconstruct']);
 
 /**
  * Task Execution Phase

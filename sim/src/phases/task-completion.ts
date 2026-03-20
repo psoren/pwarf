@@ -106,6 +106,10 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       completeBuildStructure(task, ctx, 'mushroom_garden', 'mushroom_garden');
       awardXp(dwarf.id, 'building', XP_BUILD, state);
       break;
+    case 'deconstruct':
+      completeDeconstruct(task, ctx);
+      awardXp(dwarf.id, 'building', XP_BUILD, state);
+      break;
   }
 
   // Purpose restoration: work gives dwarves a sense of meaning
@@ -118,7 +122,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
  * Exported for unit testing.
  */
 export function restorePurposeNeed(dwarf: Dwarf, taskType: string): void {
-  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'farm_till', 'farm_plant', 'farm_harvest']);
+  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest']);
   const restore = SKILLED_TASKS.has(taskType)
     ? PURPOSE_RESTORE_SKILLED
     : taskType === 'haul'
@@ -390,6 +394,61 @@ function completeBuildStructure(
   ctx.state.dirtyStructureIds.add(structure.id);
 
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, tileType, 'stone', false);
+}
+
+/** Deconstructible tile types — only these can be targeted for removal. */
+const DECONSTRUCTIBLE_TILES = new Set([
+  'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden',
+]);
+
+function completeDeconstruct(task: Task, ctx: SimContext): void {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+
+  const key = `${task.target_x},${task.target_y},${task.target_z}`;
+  const tileOverride = ctx.state.fortressTileOverrides.get(key);
+  const tileType = tileOverride?.tile_type ?? null;
+
+  // Only remove deconstructible tiles
+  if (tileType && !DECONSTRUCTIBLE_TILES.has(tileType)) return;
+
+  // Release bed occupancy if someone is sleeping in it
+  if (tileType === 'bed') {
+    const bed = ctx.state.structures.find(
+      s => s.type === 'bed'
+        && s.position_x === task.target_x
+        && s.position_y === task.target_y
+        && s.position_z === task.target_z,
+    );
+    if (bed) {
+      // Evict sleeping dwarf
+      if (bed.occupied_by_dwarf_id) {
+        const occupant = ctx.state.dwarves.find(d => d.id === bed.occupied_by_dwarf_id);
+        if (occupant) {
+          occupant.current_task_id = null;
+          ctx.state.dirtyDwarfIds.add(occupant.id);
+        }
+      }
+      const idx = ctx.state.structures.indexOf(bed);
+      if (idx !== -1) ctx.state.structures.splice(idx, 1);
+      ctx.state.dirtyStructureIds.add(bed.id);
+    }
+  }
+
+  // Remove other structures (well, mushroom_garden) at this tile
+  if (tileType === 'well' || tileType === 'mushroom_garden') {
+    const structIdx = ctx.state.structures.findIndex(
+      s => s.position_x === task.target_x
+        && s.position_y === task.target_y
+        && s.position_z === task.target_z,
+    );
+    if (structIdx !== -1) {
+      const [removed] = ctx.state.structures.splice(structIdx, 1);
+      ctx.state.dirtyStructureIds.add(removed.id);
+    }
+  }
+
+  // Restore tile to open_air
+  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'open_air', null, false);
 }
 
 function awardXp(dwarfId: string, skillName: string, xpAmount: number, state: SimContext['state']): void {

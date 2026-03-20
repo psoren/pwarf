@@ -266,6 +266,9 @@ export const WORK_BUILD_WELL = 60;
 /** Work required to build a mushroom garden */
 export const WORK_BUILD_MUSHROOM_GARDEN = 50;
 
+/** Work required to deconstruct a built structure or tile */
+export const WORK_DECONSTRUCT = 30;
+
 /** Work required to wander (just walking, instant once arrived) */
 export const WORK_WANDER = 1;
 

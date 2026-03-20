@@ -16,6 +16,7 @@ const TASK_SKILL_MAP: Record<TaskType, string | null> = {
   build_bed: 'building',
   build_well: 'building',
   build_mushroom_garden: 'building',
+  deconstruct: 'building',
   wander: null,
 };
 
