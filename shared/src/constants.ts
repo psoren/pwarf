@@ -451,6 +451,9 @@ export const WORK_BREW = 50;
 /** Work required to cook a meal */
 export const WORK_COOK = 40;
 
+/** Minimum cooked food stock before auto-cook triggers */
+export const MIN_COOK_STOCK = 15;
+
 /** Work required to smith an item */
 export const WORK_SMITH = 70;
 
