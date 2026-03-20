@@ -413,7 +413,7 @@ export default function App() {
         isPaused={isPaused}
         population={liveDwarves.length}
         year={snapshot?.year ?? 1}
-        civName={world.mode === "fortress" ? "Stonegear" : undefined}
+        civName={world.mode === "fortress" ? (world.civName ?? undefined) : undefined}
         items={liveItems}
       />
 
