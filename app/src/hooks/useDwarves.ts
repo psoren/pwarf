@@ -13,6 +13,7 @@ export interface LiveDwarf {
   name: string;
   surname: string | null;
   status: string;
+  age: number | null;
   position_x: number;
   position_y: number;
   position_z: number;
@@ -20,6 +21,9 @@ export interface LiveDwarf {
   need_food: number;
   need_drink: number;
   need_sleep: number;
+  need_social: number;
+  need_purpose: number;
+  need_beauty: number;
   stress_level: number;
   health: number;
   memories: DwarfThought[];
@@ -29,7 +33,7 @@ export interface LiveDwarf {
 function fingerprint(dwarves: LiveDwarf[]): string {
   let s = '';
   for (const d of dwarves) {
-    s += `${d.id}:${d.position_x},${d.position_y},${d.position_z}:${d.current_task_id}:${d.need_food}:${d.need_drink}:${d.need_sleep}:${d.stress_level}:${d.health};`;
+    s += `${d.id}:${d.position_x},${d.position_y},${d.position_z}:${d.current_task_id}:${d.need_food}:${d.need_drink}:${d.need_sleep}:${d.need_social}:${d.need_purpose}:${d.need_beauty}:${d.stress_level}:${d.health};`;
   }
   return s;
 }
@@ -49,7 +53,7 @@ export function useDwarves(civId: string | null) {
     async function fetchDwarves() {
       const { data, error } = await supabase
         .from('dwarves')
-        .select('id, name, surname, status, position_x, position_y, position_z, current_task_id, need_food, need_drink, need_sleep, stress_level, health, memories')
+        .select('id, name, surname, status, age, position_x, position_y, position_z, current_task_id, need_food, need_drink, need_sleep, need_social, need_purpose, need_beauty, stress_level, health, memories')
         .eq('civilization_id', civId!)
         .eq('status', 'alive');
 
