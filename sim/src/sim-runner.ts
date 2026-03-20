@@ -35,6 +35,7 @@ export interface SimSnapshot {
    * can show tile changes immediately without waiting for the DB flush. */
   fortressTileOverrides: FortressTile[];
   monsters: Monster[];
+  year: number;
 }
 
 /**
@@ -195,6 +196,7 @@ export class SimRunner {
         events: this.ctx.state.worldEvents,
         fortressTileOverrides: [...this.ctx.state.fortressTileOverrides.values()],
         monsters: this.ctx.state.monsters,
+        year: this.currentYear,
       });
     }
   }
