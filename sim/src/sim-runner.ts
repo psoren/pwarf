@@ -57,6 +57,7 @@ export class SimRunner {
   stepCount = 0;
   currentYear = 1;
   currentDay = 1;
+  isPaused = false;
 
   constructor(adapter: StateAdapter) {
     this.adapter = adapter;
@@ -114,7 +115,25 @@ export class SimRunner {
     }, SIM_FLUSH_INTERVAL_MS);
   }
 
-  /** Pause the loop and persist state. */
+  /** Freeze the tick loop without flushing or unloading state. */
+  pause(): void {
+    if (this.isPaused || !this.timer) return;
+    clearInterval(this.timer);
+    this.timer = null;
+    this.isPaused = true;
+  }
+
+  /** Resume a paused tick loop. */
+  resume(): void {
+    if (!this.isPaused || !this.ctx) return;
+    this.isPaused = false;
+    const intervalMs = 1000 / STEPS_PER_SECOND;
+    this.timer = setInterval(() => {
+      void this.tick();
+    }, intervalMs);
+  }
+
+  /** Fully stop the sim, flush state, and unload. */
   async stop(): Promise<void> {
     if (this.timer) {
       clearInterval(this.timer);
