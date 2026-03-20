@@ -91,9 +91,10 @@ export const BEAUTY_STRUCTURE_RADIUS = 6;
 
 /**
  * How much neuroticism scales stress gains.
- * At trait=1.0: gains × (1 + 0.5×1.0) = 1.5×
- * At trait=0.5: gains × (1 + 0.5×0.0) = 1.0× (no effect)
- * At trait=0.0: gains × (1 + 0.5×-0.5) = 0.75×
+ * Formula: gain × (1 + (trait - 0.5) × NEUROTICISM_STRESS_MULTIPLIER)
+ * At trait=1.0: gains × 1.5 (neurotic — more stress)
+ * At trait=0.5: gains × 1.0 (average — no effect)
+ * At trait=0.0: gains × 0.5 (stable — less stress)
  */
 export const NEUROTICISM_STRESS_MULTIPLIER = 1.0;
 
