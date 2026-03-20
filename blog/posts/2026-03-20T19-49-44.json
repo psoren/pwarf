@@ -1,0 +1,56 @@
+{
+  "id": "2026-03-20T19-49-44",
+  "timestamp": "2026-03-20T19:49:44.910Z",
+  "title": "Digest — Mar 20, 2026, 07:49 PM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nHello Dwarf Enthusiasts! We've made some exciting updates since our last digest. Here’s a summary of the changes:\n\n## New Features\n- **Inventory Modal**: \n  - We've replaced the outdated ResourceCounter in the toolbar with a new **Inventory** button. \n  - Now, you can easily view your **Stockpile** items (uncarried and organized by category) and see what’s being carried by each dwarf in a simple modal.\n\n## Fixes & Improvements\n- **Gender Assignment for Starting Dwarves**: \n  - Fixed a bug that caused all starting dwarves to have a null gender. They will now be assigned a gender randomly during embarkation.\n  \n- **Deduplication of Blog Posts**: \n  - Resolved an issue with our hourly digest that caused duplicate PR entries. Uncovered posts have been cleaned up for a clearer overview.\n  \n- **Missing Digest Posts Backfilled**: \n  - We've also added back a missing digest post covering PRs #352 to #368 from a previous period. This ensures no important updates have been overlooked.\n  \n- **Digest Push and Polling Enhancements**: \n  - Improved the digest workflow so it respects explicit lookback_minutes when triggered. Now, it will push updates more frequently (every 5 minutes) and will ignore paths to the blog during CI checks.\n\nWith these updates, we're paving the way for a smoother and more enjoyable experience in managing your dwarf colony. Thanks for your continued support and happy digging!\n\n## Merged PRs\n- #465\n- #463\n- #469\n- #468\n- #461\n- #467\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 176\n- **Avg stress:** 67.4\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 67.4,
+    "tasks_completed": 176
+  },
+  "prs": [
+    {
+      "number": 467,
+      "title": "feat: inventory modal with stockpile and carried items",
+      "url": "https://github.com/psoren/pwarf/pull/467",
+      "cost": {
+        "amount": "$1.47",
+        "tokens": "2.6M tokens"
+      }
+    },
+    {
+      "number": 469,
+      "title": "fix: deduplicate blog posts",
+      "url": "https://github.com/psoren/pwarf/pull/469"
+    },
+    {
+      "number": 468,
+      "title": "digest: backfill missing posts for PRs #352–#368",
+      "url": "https://github.com/psoren/pwarf/pull/468"
+    },
+    {
+      "number": 465,
+      "title": "fix: set gender on starting dwarves at embark",
+      "url": "https://github.com/psoren/pwarf/pull/465",
+      "cost": {
+        "amount": "$2.69",
+        "tokens": "5.7M tokens"
+      }
+    },
+    {
+      "number": 463,
+      "title": "fix: respect explicit lookback_minutes in workflow_dispatch",
+      "url": "https://github.com/psoren/pwarf/pull/463"
+    },
+    {
+      "number": 461,
+      "title": "fix: digest push to main + 5-min polling with 5-PR threshold",
+      "url": "https://github.com/psoren/pwarf/pull/461"
+    }
+  ],
+  "images": []
+}
