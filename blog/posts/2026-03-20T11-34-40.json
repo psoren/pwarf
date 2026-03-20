@@ -1,0 +1,99 @@
+{
+  "id": "2026-03-20T11-34-40",
+  "timestamp": "2026-03-20T11:34:40.459Z",
+  "title": "Digest — Mar 20, 2026, 11:34 AM UTC",
+  "summary": "# pwarf Devlog\n\n## Dwarf Details and Needs\n- The dwarf detail modal now includes all six needs: food, drink, sleep, social, purpose, and beauty.\n- Dwarf age is displayed prominently in the header, along with the top five skills fetched on modal opening.\n\n## Bug Fixes and Enhancements\n- Corrected the event-firing category for starvation/dehydration warnings, now properly categorized under 'discovery'.\n- Enhanced edge-trigger logic for need warnings, ensuring they fire only when a need crosses below its threshold.\n- Fixed material hardness application for mining tasks, allowing for variable mining speeds based on tile material.\n\n## New Features\n- Introduced yearly aging for dwarves, impacting their survival past a certain age. Dwarves above 80 have a chance to die naturally each year.\n- Implemented the tantrum phase: dwarves experiencing high stress may enter a tantrum, which cancels their current tasks and tracks their recovery duration.\n- Added new personality traits: conscientiousness and extraversion, affecting work speed and social need decay respectively.\n- Two new buildable structures were introduced: wells and mushroom gardens, enhancing the beauty restoration system.\n\n## Sim Health\n- A new health check feature is now included in the hourly digest, providing a snapshot of dwarf survival, task completion, and average stress levels.\n\nStay tuned for more updates as we continue to enhance the pwarf experience!\n\n## Merged PRs\n- #336\n- #332\n- #330\n- #327\n- #325\n- #322\n- #320\n- #317\n- #315\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 174\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 174
+  },
+  "prs": [
+    {
+      "number": 336,
+      "title": "feat: dwarf modal shows all 6 needs, age, and skills",
+      "url": "https://github.com/psoren/pwarf/pull/336",
+      "cost": {
+        "amount": "$2.05",
+        "tokens": "5.6M tokens"
+      }
+    },
+    {
+      "number": 332,
+      "title": "fix: correct event-firing category and edge-trigger logic",
+      "url": "https://github.com/psoren/pwarf/pull/332",
+      "cost": {
+        "amount": "$3.53",
+        "tokens": "9.6M tokens"
+      }
+    },
+    {
+      "number": 330,
+      "title": "feat: yearly aging and openness beauty trait",
+      "url": "https://github.com/psoren/pwarf/pull/330",
+      "cost": {
+        "amount": "$1.75",
+        "tokens": "4.8M tokens"
+      }
+    },
+    {
+      "number": 327,
+      "title": "feat: implement tantrum trigger and recovery",
+      "url": "https://github.com/psoren/pwarf/pull/327",
+      "cost": {
+        "amount": "$1.54",
+        "tokens": "4.2M tokens"
+      }
+    },
+    {
+      "number": 325,
+      "title": "feat: conscientiousness/extraversion personality traits",
+      "url": "https://github.com/psoren/pwarf/pull/325",
+      "cost": {
+        "amount": "$1.62",
+        "tokens": "4.4M tokens"
+      }
+    },
+    {
+      "number": 322,
+      "title": "feat: personality traits affect stress gain/recovery rate",
+      "url": "https://github.com/psoren/pwarf/pull/322",
+      "cost": {
+        "amount": "$1.66",
+        "tokens": "4.5M tokens"
+      }
+    },
+    {
+      "number": 320,
+      "title": "feat: build_well and build_mushroom_garden task types",
+      "url": "https://github.com/psoren/pwarf/pull/320",
+      "cost": {
+        "amount": "$0.15",
+        "tokens": "419k tokens"
+      }
+    },
+    {
+      "number": 317,
+      "title": "fix: apply material hardness to mine task work rate",
+      "url": "https://github.com/psoren/pwarf/pull/317",
+      "cost": {
+        "amount": "$0.13",
+        "tokens": "355k tokens"
+      }
+    },
+    {
+      "number": 315,
+      "title": "feat: embed live sim stats in hourly digest",
+      "url": "https://github.com/psoren/pwarf/pull/315",
+      "cost": {
+        "amount": "$1.22",
+        "tokens": "3.3M tokens, multi-ticket session"
+      }
+    }
+  ],
+  "images": []
+}
