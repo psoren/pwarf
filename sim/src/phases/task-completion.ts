@@ -9,6 +9,11 @@ import {
   XP_FARM_HARVEST,
   XP_BUILD,
   XP_HAUL,
+  XP_SMOOTH,
+  XP_ENGRAVE,
+  XP_BREW,
+  XP_COOK,
+  XP_SMITH,
   PURPOSE_RESTORE_SKILLED,
   PURPOSE_RESTORE_HAUL,
   PURPOSE_RESTORE_DEFAULT,
@@ -110,6 +115,26 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       completeDeconstruct(task, ctx);
       awardXp(dwarf.id, 'building', XP_BUILD, state);
       break;
+    case 'smooth':
+      completeSmooth(task, ctx);
+      awardXp(dwarf.id, 'building', XP_SMOOTH, state);
+      break;
+    case 'engrave':
+      completeEngrave(task, ctx);
+      awardXp(dwarf.id, 'engraving', XP_ENGRAVE, state);
+      break;
+    case 'brew':
+      completeBrew(dwarf, task, ctx);
+      awardXp(dwarf.id, 'brewing', XP_BREW, state);
+      break;
+    case 'cook':
+      completeCook(dwarf, task, ctx);
+      awardXp(dwarf.id, 'cooking', XP_COOK, state);
+      break;
+    case 'smith':
+      completeSmith(dwarf, task, ctx);
+      awardXp(dwarf.id, 'smithing', XP_SMITH, state);
+      break;
   }
 
   // Purpose restoration: work gives dwarves a sense of meaning
@@ -122,7 +147,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
  * Exported for unit testing.
  */
 export function restorePurposeNeed(dwarf: Dwarf, taskType: string): void {
-  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest']);
+  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'smooth', 'engrave', 'brew', 'cook', 'smith']);
   const restore = SKILLED_TASKS.has(taskType)
     ? PURPOSE_RESTORE_SKILLED
     : taskType === 'haul'
@@ -449,6 +474,179 @@ function completeDeconstruct(task: Task, ctx: SimContext): void {
 
   // Restore tile to open_air
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'open_air', null, false);
+}
+
+/** Smoothable source tile types (can be designated for smoothing). */
+export const SMOOTHABLE_TILES = new Set<string>([
+  'rock', 'stone', 'cavern_wall', 'cavern_floor', 'constructed_wall', 'constructed_floor',
+]);
+
+function completeSmooth(task: Task, ctx: SimContext): void {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+
+  const key = `${task.target_x},${task.target_y},${task.target_z}`;
+  const existing = ctx.state.fortressTileOverrides.get(key);
+  const currentType = existing?.tile_type ?? null;
+
+  // Floors become engraved_floor candidate; walls become smooth_stone
+  const resultType: FortressTileType =
+    currentType === 'cavern_floor' || currentType === 'constructed_floor' ? 'smooth_stone' : 'smooth_stone';
+
+  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, resultType, existing?.material ?? null, existing?.is_mined ?? false);
+}
+
+function completeEngrave(task: Task, ctx: SimContext): void {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+
+  const key = `${task.target_x},${task.target_y},${task.target_z}`;
+  const existing = ctx.state.fortressTileOverrides.get(key);
+  const currentType = existing?.tile_type;
+
+  // Only engrave smooth stone or constructed floors
+  if (currentType !== 'smooth_stone') return;
+
+  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'engraved_stone', existing?.material ?? null, existing?.is_mined ?? false);
+}
+
+/**
+ * Brew: consumes a plant item at the target tile, creates an ale (drink item).
+ * Exported for unit testing.
+ */
+export function completeBrew(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+
+  // Consume a plant (raw_material) item at the target tile (or anywhere in inventory)
+  const plant = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'raw_material') ??
+    findItemHeldBy(ctx, dwarf.id, 'raw_material');
+  if (plant) {
+    const idx = ctx.state.items.findIndex(i => i.id === plant.id);
+    if (idx !== -1) ctx.state.items.splice(idx, 1);
+    ctx.state.dirtyItemIds.add(plant.id);
+  }
+
+  // Produce ale drink item
+  const ale: Item = {
+    id: ctx.rng.uuid(),
+    name: 'Plump helmet brew',
+    category: 'drink',
+    quality: 'standard',
+    material: 'plant',
+    weight: 1,
+    value: 3,
+    is_artifact: false,
+    created_by_dwarf_id: dwarf.id,
+    created_in_civ_id: ctx.civilizationId,
+    created_year: ctx.year,
+    held_by_dwarf_id: null,
+    located_in_civ_id: ctx.civilizationId,
+    located_in_ruin_id: null,
+    position_x: task.target_x,
+    position_y: task.target_y,
+    position_z: task.target_z,
+    lore: null,
+    properties: {},
+    created_at: new Date().toISOString(),
+  };
+  ctx.state.items.push(ale);
+  ctx.state.dirtyItemIds.add(ale.id);
+}
+
+/**
+ * Cook: consumes a food item at the target tile, creates a prepared meal (higher value).
+ * Exported for unit testing.
+ */
+export function completeCook(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+
+  const ingredient = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'food') ??
+    findItemHeldBy(ctx, dwarf.id, 'food');
+  if (ingredient) {
+    const idx = ctx.state.items.findIndex(i => i.id === ingredient.id);
+    if (idx !== -1) ctx.state.items.splice(idx, 1);
+    ctx.state.dirtyItemIds.add(ingredient.id);
+  }
+
+  const meal: Item = {
+    id: ctx.rng.uuid(),
+    name: 'Prepared meal',
+    category: 'food',
+    quality: 'fine',
+    material: 'cooked',
+    weight: 1,
+    value: 5,
+    is_artifact: false,
+    created_by_dwarf_id: dwarf.id,
+    created_in_civ_id: ctx.civilizationId,
+    created_year: ctx.year,
+    held_by_dwarf_id: null,
+    located_in_civ_id: ctx.civilizationId,
+    located_in_ruin_id: null,
+    position_x: task.target_x,
+    position_y: task.target_y,
+    position_z: task.target_z,
+    lore: null,
+    properties: {},
+    created_at: new Date().toISOString(),
+  };
+  ctx.state.items.push(meal);
+  ctx.state.dirtyItemIds.add(meal.id);
+}
+
+/**
+ * Smith: consumes an ore/metal raw_material item, creates a tool.
+ * Exported for unit testing.
+ */
+export function completeSmith(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+
+  const ore = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'raw_material') ??
+    findItemHeldBy(ctx, dwarf.id, 'raw_material');
+  if (ore) {
+    const idx = ctx.state.items.findIndex(i => i.id === ore.id);
+    if (idx !== -1) ctx.state.items.splice(idx, 1);
+    ctx.state.dirtyItemIds.add(ore.id);
+  }
+
+  const tool: Item = {
+    id: ctx.rng.uuid(),
+    name: 'Stone pick',
+    category: 'tool',
+    quality: 'standard',
+    material: ore?.material ?? 'stone',
+    weight: 3,
+    value: 8,
+    is_artifact: false,
+    created_by_dwarf_id: dwarf.id,
+    created_in_civ_id: ctx.civilizationId,
+    created_year: ctx.year,
+    held_by_dwarf_id: null,
+    located_in_civ_id: ctx.civilizationId,
+    located_in_ruin_id: null,
+    position_x: task.target_x,
+    position_y: task.target_y,
+    position_z: task.target_z,
+    lore: null,
+    properties: {},
+    created_at: new Date().toISOString(),
+  };
+  ctx.state.items.push(tool);
+  ctx.state.dirtyItemIds.add(tool.id);
+}
+
+/** Find the first item at a given tile position with the given category. */
+function findItemAt(ctx: SimContext, x: number, y: number, z: number, category: string): Item | undefined {
+  return ctx.state.items.find(
+    i => i.category === category
+      && i.position_x === x
+      && i.position_y === y
+      && i.position_z === z
+      && i.held_by_dwarf_id === null,
+  );
+}
+
+/** Find the first item held by a dwarf with the given category. */
+function findItemHeldBy(ctx: SimContext, dwarfId: string, category: string): Item | undefined {
+  return ctx.state.items.find(i => i.category === category && i.held_by_dwarf_id === dwarfId);
 }
 
 function awardXp(dwarfId: string, skillName: string, xpAmount: number, state: SimContext['state']): void {
