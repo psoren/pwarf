@@ -8,6 +8,7 @@ import {
 import type { SimContext } from "../sim-context.js";
 import { dwarfName } from "../dwarf-utils.js";
 import { createImmigrantDwarf } from "../dwarf-factory.js";
+import { diseasePhase } from "./disease.js";
 
 /**
  * Yearly Rollup Phase
@@ -101,6 +102,9 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
       created_at: new Date().toISOString(),
     });
   }
+
+  // Disease: outbreak, spread, damage, and recovery
+  diseasePhase(ctx);
 
   // Year-end summary event
   const population = state.dwarves.filter(d => d.status === 'alive').length;
