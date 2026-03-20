@@ -80,27 +80,23 @@ export default function App() {
   const { addOptimistic } = polledTasks;
   const liveTasks = snapshot?.tasks ?? polledTasks.tasks;
   const designatedTiles = useMemo(() => {
-    const AUTONOMOUS: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
-    const tasks = snapshot?.tasks ?? polledTasks.tasks;
     const map = new Map<string, string>();
-    for (const t of tasks) {
+    for (const t of liveTasks) {
       const tx = 'target_x' in t ? t.target_x : null;
       const ty = 'target_y' in t ? t.target_y : null;
       const tz = 'target_z' in t ? t.target_z : null;
-      if (tx !== null && ty !== null && tz === zLevel && !AUTONOMOUS.has(t.task_type) && ['pending', 'claimed', 'in_progress'].includes(t.status)) {
+      if (tx !== null && ty !== null && tz === zLevel && !AUTONOMOUS_TASK_TYPES.has(t.task_type) && ['pending', 'claimed', 'in_progress'].includes(t.status)) {
         map.set(`${tx},${ty}`, t.task_type);
       }
     }
     return map;
-  }, [snapshot?.tasks, polledTasks.tasks, zLevel]);
+  }, [liveTasks, zLevel]);
 
   // Build progress for in_progress tasks keyed by "x,y"
   const buildProgressTiles = useMemo(() => {
-    const AUTONOMOUS: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
-    const tasks = snapshot?.tasks ?? polledTasks.tasks;
     const map = new Map<string, number>();
-    for (const t of tasks) {
-      if (t.status !== 'in_progress' || AUTONOMOUS.has(t.task_type)) continue;
+    for (const t of liveTasks) {
+      if (t.status !== 'in_progress' || AUTONOMOUS_TASK_TYPES.has(t.task_type)) continue;
       const tx = 'target_x' in t ? t.target_x : null;
       const ty = 'target_y' in t ? t.target_y : null;
       const tz = 'target_z' in t ? t.target_z : null;
@@ -109,7 +105,7 @@ export default function App() {
       }
     }
     return map;
-  }, [snapshot?.tasks, polledTasks.tasks, zLevel]);
+  }, [liveTasks, zLevel]);
 
   const designation = useDesignation({
     civId: world.civId,
@@ -481,6 +477,8 @@ export default function App() {
     </div>
   );
 }
+
+const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
 
 function formatFortressTileLabel(tileType: string, material: string | null, designation?: string, buildProgress?: number): string {
   const label = tileType.replace(/_/g, " ");
