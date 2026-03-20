@@ -153,6 +153,18 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
     );
   }
 
+  if (state.civDirty) {
+    promises.push(
+      supabase
+        .from("civilizations")
+        .update({ population: state.civPopulation, wealth: state.civWealth })
+        .eq("id", ctx.civilizationId)
+        .then(({ error }) => {
+          if (error) console.warn(`[flush] civilizations update failed: ${error.message}`);
+        }),
+    );
+  }
+
   if (events.length > 0) {
     // Stamp world_id on events (phases leave it empty)
     const worldId = ctx.worldId;
@@ -181,4 +193,5 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   state.newTasks = [];
   state.newDwarfRelationships = [];
   state.pendingEvents = [];
+  state.civDirty = false;
 }
