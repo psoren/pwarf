@@ -10,6 +10,7 @@ import {
   needSatisfaction,
   stressUpdate,
   tantrumCheck,
+  monsterSpawning,
   monsterPathfinding,
   combatResolution,
   constructionProgress,
@@ -19,6 +20,7 @@ import {
   idleWandering,
   thoughtGeneration,
   haulAssignment,
+  beautyRestoration,
 } from "./phases/index.js";
 import { SCENARIOS, buildScenarioState, buildEatDrinkTasks } from "./scenarios.js";
 import { serializeState } from "./state-serializer.js";
@@ -112,6 +114,7 @@ async function runOneTick(session: StepSession): Promise<void> {
   await needSatisfaction(ctx);
   await stressUpdate(ctx);
   await tantrumCheck(ctx);
+  await monsterSpawning(ctx);
   await monsterPathfinding(ctx);
   await combatResolution(ctx);
   await constructionProgress(ctx);
@@ -120,6 +123,7 @@ async function runOneTick(session: StepSession): Promise<void> {
   await jobClaiming(ctx);
   await eventFiring(ctx);
   await thoughtGeneration(ctx);
+  await beautyRestoration(ctx);
 
   if (session.step % STEPS_PER_YEAR === 0) {
     session.year++;

@@ -14,6 +14,8 @@ export interface LiveDwarf {
   surname: string | null;
   status: string;
   age: number | null;
+  gender: string | null;
+  is_in_tantrum: boolean;
   position_x: number;
   position_y: number;
   position_z: number;
@@ -53,7 +55,7 @@ export function useDwarves(civId: string | null) {
     async function fetchDwarves() {
       const { data, error } = await supabase
         .from('dwarves')
-        .select('id, name, surname, status, age, position_x, position_y, position_z, current_task_id, need_food, need_drink, need_sleep, need_social, need_purpose, need_beauty, stress_level, health, memories')
+        .select('id, name, surname, status, age, gender, is_in_tantrum, position_x, position_y, position_z, current_task_id, need_food, need_drink, need_sleep, need_social, need_purpose, need_beauty, stress_level, health, memories')
         .eq('civilization_id', civId!)
         .eq('status', 'alive');
 
