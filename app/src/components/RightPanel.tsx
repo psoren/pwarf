@@ -17,6 +17,20 @@ const PLACEHOLDER_LEGENDS = [
   "Year 204 — Great flood",
 ];
 
+/** Group consecutive events with the same description into (event, count) pairs. */
+export function groupConsecutiveEvents(events: LiveEvent[]): Array<{ event: LiveEvent; count: number }> {
+  const groups: Array<{ event: LiveEvent; count: number }> = [];
+  for (const event of events) {
+    const last = groups[groups.length - 1];
+    if (last && last.event.description === event.description) {
+      last.count++;
+    } else {
+      groups.push({ event, count: 1 });
+    }
+  }
+  return groups;
+}
+
 /** Map event category to a CSS color variable. */
 function categoryColor(category: string): string {
   switch (category) {
@@ -83,10 +97,13 @@ export default function RightPanel({ collapsed, onToggle, events }: RightPanelPr
                 <p className="text-[var(--text)] opacity-50 italic">No events yet.</p>
               ) : (
                 <ul className="space-y-0.5">
-                  {events.map((event) => (
+                  {groupConsecutiveEvents(events).map(({ event, count }) => (
                     <li key={event.id} className="text-[var(--text)]">
                       <span style={{ color: categoryColor(event.category) }} className="mr-1">*</span>
                       {event.description}
+                      {count > 1 && (
+                        <span className="ml-1 opacity-50 text-[0.65rem]">×{count}</span>
+                      )}
                     </li>
                   ))}
                 </ul>
