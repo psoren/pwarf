@@ -104,10 +104,19 @@ Follow these when writing or modifying code to keep the codebase clean:
 
 ## Playtesting
 
-- **Every PR must include a playtest.** After implementing a feature or fix, run the game in Chrome and verify it works end-to-end.
-- Include a text report in the PR description summarizing what was tested and the results.
-- Include **before and after screenshots** — one showing the state before your change (bug or missing feature), one after (fix working). To get the "before" shot, stash your changes or check out main, run the game, capture, then restore your branch.
-- Use the `/playtest` skill to run the game locally in Chrome with browser automation.
+**Prefer headless tests over UI playtests.** UI playtests in Chrome are slow and fragile. Use them only when a PR changes visible UI behavior. For sim logic changes, use `runScenario()` instead.
+
+| PR type | Verification |
+|---|---|
+| Sim logic only (new phase, need tuning, bug fix) | `runScenario()` scenario test + `npm test` |
+| New DB table / schema change | `npm test` + quick headless embark to confirm migration works |
+| UI change (new component, layout, rendering) | `/playtest` in Chrome with before/after screenshots |
+| Full feature (sim + UI together) | Both scenario tests and `/playtest` |
+
+- For UI playtests, run the game against **local Supabase** (not production) so schema issues surface immediately.
+- Include a text report in the PR description summarizing what was tested.
+- Include **before and after screenshots** for UI changes. Use the `/playtest` skill.
+- Use the `github-upload-image-to-pr` skill to attach screenshots to PRs.
 
 ### Uploading screenshots to PRs
 
