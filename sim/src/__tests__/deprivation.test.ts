@@ -227,6 +227,33 @@ describe("fortress collapse (civFallen)", () => {
     expect(ctx.state.civFallenCause).toBe('siege');
   });
 
+  it("maps tantrum_spiral cause correctly", () => {
+    const dwarf = makeDwarf();
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    killDwarf(dwarf, 'tantrum_spiral', ctx);
+
+    expect(ctx.state.civFallenCause).toBe('tantrum_spiral');
+  });
+
+  it("maps plague cause correctly", () => {
+    const dwarf = makeDwarf();
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    killDwarf(dwarf, 'plague', ctx);
+
+    expect(ctx.state.civFallenCause).toBe('plague');
+  });
+
+  it("maps unknown causes to unknown", () => {
+    const dwarf = makeDwarf();
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    killDwarf(dwarf, 'old age', ctx);
+
+    expect(ctx.state.civFallenCause).toBe('unknown');
+  });
+
   it("does not set civFallen when there are still alive dwarves", () => {
     const victim = makeDwarf();
     const survivor = makeDwarf();
