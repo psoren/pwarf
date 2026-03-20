@@ -100,6 +100,12 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [], tasks }: DwarfM
           {dwarf.age != null && (
             <span>Age: <span className="text-[var(--green)]">{dwarf.age}</span></span>
           )}
+          {dwarf.gender && (
+            <span className="capitalize text-[var(--text)]">{dwarf.gender}</span>
+          )}
+          {dwarf.is_in_tantrum && (
+            <span className="text-[#f87171] font-bold">TANTRUM</span>
+          )}
         </div>
 
         <div className="text-[var(--text)] flex items-center justify-between mb-2">
