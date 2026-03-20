@@ -14,7 +14,9 @@ export type KeyAction =
   | { type: "designate_stockpile" }
   | { type: "designate_deconstruct" }
   | { type: "designate_smooth" }
-  | { type: "designate_engrave" };
+  | { type: "designate_engrave" }
+  | { type: "toggle_pause" }
+  | { type: "set_speed"; multiplier: 1 | 2 | 5 };
 
 export function useKeyboard(onAction: (action: KeyAction) => void) {
   useEffect(() => {
@@ -87,6 +89,19 @@ export function useKeyboard(onAction: (action: KeyAction) => void) {
           break;
         case "Escape":
           onAction({ type: "cancel_designation" });
+          break;
+        case " ":
+          e.preventDefault();
+          onAction({ type: "toggle_pause" });
+          break;
+        case "1":
+          onAction({ type: "set_speed", multiplier: 1 });
+          break;
+        case "2":
+          onAction({ type: "set_speed", multiplier: 2 });
+          break;
+        case "5":
+          onAction({ type: "set_speed", multiplier: 5 });
           break;
       }
     }
