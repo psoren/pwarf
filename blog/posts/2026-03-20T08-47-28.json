@@ -1,0 +1,40 @@
+{
+  "id": "2026-03-20T08-47-28",
+  "timestamp": "2026-03-20T08:47:28.263Z",
+  "title": "Digest — Mar 20, 2026, 08:47 AM UTC",
+  "summary": "# Pwarf Devlog Digest\n\n## New Features and Improvements\n\n- **Batch Mode Automated Playtesting**: We've introduced a headless runner that enables in-memory simulation without using Supabase or timers. This feature includes:\n  - Four starter scenarios: starvation, idle-fortress, long-run-stability, and overcrowding.\n  - A state serializer that creates LLM-friendly JSON snapshots incorporating alerts and death records.\n  - A prompt template for analyzing batch outputs in poetic form.\n\n- **Log Panel Enhancements**: Duplicate log entries now collapse into a single entry with a `×N` count, significantly improving log usability. This was particularly crucial during active mining sessions where identical messages flooded the log.\n\n## Quality of Life Updates\n\n- **Self-Review Requirement**: We've added a new `/review-pr` skill that requires developers to self-review code before submitting pull requests. This update aims to enhance code quality through better testing and review processes.\n\nThese improvements contribute to a smoother and more enjoyable experience in managing and developing your dwarf colony.\n\n## Merged PRs\n- feat: batch mode automated playtesting (closes #298)\n- fix: collapse duplicate log entries with ×N count (closes #294)\n- docs: add /review-pr skill and require self-review before PRs (closes #300)",
+  "prs": [
+    {
+      "number": 303,
+      "title": "feat: batch mode automated playtesting (closes #298)",
+      "url": "https://github.com/psoren/pwarf/pull/303"
+    },
+    {
+      "number": 295,
+      "title": "fix: collapse duplicate log entries with ×N count",
+      "url": "https://github.com/psoren/pwarf/pull/295"
+    },
+    {
+      "number": 301,
+      "title": "docs: add /review-pr skill and require self-review before PRs",
+      "url": "https://github.com/psoren/pwarf/pull/301"
+    }
+  ],
+  "images": [
+    {
+      "prNumber": 303,
+      "prTitle": "feat: batch mode automated playtesting (closes #298)",
+      "url": "https://github.com/user-attachments/assets/948f4561-e79e-4204-9c86-09083ac1517b"
+    },
+    {
+      "prNumber": 295,
+      "prTitle": "fix: collapse duplicate log entries with ×N count",
+      "url": "https://github.com/user-attachments/assets/b900dc60-81dc-4063-88dd-ecbe36899ebc"
+    },
+    {
+      "prNumber": 295,
+      "prTitle": "fix: collapse duplicate log entries with ×N count",
+      "url": "https://github.com/user-attachments/assets/6500c7fc-7905-4b38-88a5-336c3ab8f06f"
+    }
+  ]
+}
