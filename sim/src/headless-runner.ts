@@ -9,6 +9,7 @@ import {
   needSatisfaction,
   stressUpdate,
   tantrumCheck,
+  tantrumActions,
   monsterSpawning,
   monsterPathfinding,
   combatResolution,
@@ -109,6 +110,7 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
     await needSatisfaction(ctx);
     await stressUpdate(ctx);
     await tantrumCheck(ctx);
+    await tantrumActions(ctx);
     await monsterSpawning(ctx);
     await monsterPathfinding(ctx);
     await combatResolution(ctx);

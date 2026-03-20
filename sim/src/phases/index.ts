@@ -5,6 +5,7 @@ export { handleDeprivationDeaths, killDwarf } from "./deprivation.js";
 export { needSatisfaction } from "./need-satisfaction.js";
 export { stressUpdate } from "./stress-update.js";
 export { tantrumCheck } from "./tantrum-check.js";
+export { tantrumActions } from "./tantrum-actions.js";
 export { monsterSpawning } from "./monster-spawning.js";
 export { monsterPathfinding } from "./monster-pathfinding.js";
 export { combatResolution } from "./combat-resolution.js";

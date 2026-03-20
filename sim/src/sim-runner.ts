@@ -10,6 +10,7 @@ import {
   needSatisfaction,
   stressUpdate,
   tantrumCheck,
+  tantrumActions,
   monsterSpawning,
   monsterPathfinding,
   combatResolution,
@@ -157,6 +158,7 @@ export class SimRunner {
     await needSatisfaction(this.ctx);
     await stressUpdate(this.ctx);
     await tantrumCheck(this.ctx);
+    await tantrumActions(this.ctx);
     await monsterSpawning(this.ctx);
     await monsterPathfinding(this.ctx);
     await combatResolution(this.ctx);
