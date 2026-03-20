@@ -60,8 +60,10 @@ export function relationshipFormationPhase(ctx: SimContext): void {
         existing.formed_year !== null &&
         year - existing.formed_year >= FRIEND_UPGRADE_YEARS
       ) {
-        // Upgrade acquaintance to friend
+        // Upgrade acquaintance to friend; reset formed_year so marriage timer
+        // counts from when they became friends, not when they met.
         existing.type = "friend";
+        existing.formed_year = year;
         existing.strength = Math.min(existing.strength + 1, 10);
         state.dirtyDwarfRelationshipIds.add(existing.id);
       } else if (
