@@ -212,6 +212,12 @@ export const SCORE_BEST_SKILL_BONUS = 5;
 // Polling / flush intervals (milliseconds)
 // ============================================================
 
+/** Milliseconds between sim write cycles */
+export const WRITE_INTERVAL = 1_000;
+
+/** Number of sim ticks per write cycle (WRITE_INTERVAL / tick duration) */
+export const WRITE_TICKS = 10;
+
 /** How often the sim engine flushes dirty state to Supabase and polls for new tasks */
 export const SIM_FLUSH_INTERVAL_MS = 15_000;
 
