@@ -17,7 +17,7 @@ import { diseasePhase } from "./disease.js";
  * - Aging: increments dwarf ages, triggers old-age death checks
  * - Immigration: new dwarves may arrive each year (starting year 2)
  *
- * Not yet implemented: skill ups, faction drift, disease, ruin decay.
+ * Not yet implemented: skill ups, faction drift, ruin decay.
  */
 export async function yearlyRollup(ctx: SimContext): Promise<void> {
   const { state, rng, year, civilizationId } = ctx;
