@@ -37,14 +37,40 @@ interface LeftPanelProps {
   zLevel?: number;
 }
 
+const TASK_ICONS: Record<string, string> = {
+  sleep: "💤",
+  eat: "🍖",
+  drink: "🍖",
+  mine: "⛏",
+  haul: "📦",
+  farm_till: "🌱",
+  farm_plant: "🌱",
+  farm_harvest: "🌾",
+  build_wall: "🔨",
+  build_floor: "🔨",
+  build_bed: "🔨",
+  build_well: "🔨",
+  build_mushroom_garden: "🔨",
+  smooth: "🪨",
+  engrave: "🪨",
+  deconstruct: "💥",
+};
+
+export function taskIcon(taskType: string, isTantrum: boolean): string {
+  if (isTantrum) return "😤";
+  return TASK_ICONS[taskType] ?? "⚒";
+}
+
 function dwarfJobLabel(d: LiveDwarf, tasks?: ActiveTask[]): string {
-  if (!d.current_task_id) return "Idle";
+  if (d.is_in_tantrum && !d.current_task_id) return "😤 Tantrum";
+  if (!d.current_task_id) return "· Idle";
   const task = tasks?.find(t => t.id === d.current_task_id);
-  if (!task) return "Working";
+  if (!task) return "⚒ Working";
+  const icon = taskIcon(task.task_type, d.is_in_tantrum);
   const label = task.task_type.replace(/_/g, " ");
-  if (AUTONOMOUS_TASK_TYPES.has(task.task_type) || task.work_required === 0) return label;
+  if (AUTONOMOUS_TASK_TYPES.has(task.task_type) || task.work_required === 0) return `${icon} ${label}`;
   const pct = Math.round((task.work_progress / task.work_required) * 100);
-  return `${label} (${pct}%)`;
+  return `${icon} ${label} (${pct}%)`;
 }
 
 const SORT_CYCLE: Record<SortMode, SortMode> = {
