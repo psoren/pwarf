@@ -29,9 +29,10 @@ describe("conscientiousness affects work speed", () => {
     });
     lazyDwarf.current_task_id = lazyTask.id;
 
-    // Use enough ticks for the lazy dwarf to almost but not quite finish
-    // WORK_BUILD_FLOOR=50, lazy modifier=0.75, so lazy needs ~67 ticks
-    const TICKS = 60;
+    // Use enough ticks for the lazy dwarf to almost but not quite finish.
+    // WORK_BUILD_FLOOR=25, diligent modifier=1.25 → done in 20 ticks,
+    // lazy modifier=0.75 → needs 34 ticks.
+    const TICKS = 25;
 
     const [diligentResult, lazyResult] = await Promise.all([
       runScenario({ dwarves: [diligentDwarf], tasks: [diligentTask], ticks: TICKS }),
