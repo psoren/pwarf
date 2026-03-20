@@ -5,6 +5,11 @@
  * Finds the current Claude Code conversation's token usage and cost via ccusage.
  * Run at PR creation time to embed cost data in the PR description.
  *
+ * Usage:
+ *   node scripts/session-cost.mjs            # total session cost
+ *   node scripts/session-cost.mjs --snapshot # print raw cost number (for delta baseline)
+ *   node scripts/session-cost.mjs --delta <baseline>  # cost since baseline
+ *
  * Output (stdout): a single markdown line, e.g.:
  *   **Claude cost:** $1.23 (456k tokens)
  */
@@ -59,7 +64,6 @@ if (!jsonlPath) {
   process.exit(1);
 }
 
-// The session ID is the filename without the .jsonl extension
 const sessionId = jsonlPath.split('/').pop().replace('.jsonl', '');
 
 let sessionData;
@@ -76,10 +80,30 @@ try {
 const cost = sessionData.totalCost ?? 0;
 const tokens = sessionData.totalTokens ?? 0;
 
-const formattedCost = `$${cost.toFixed(2)}`;
+const args = process.argv.slice(2);
+
+// --snapshot: just print the raw cost number for use as a delta baseline
+if (args[0] === '--snapshot') {
+  console.log(cost.toFixed(6));
+  process.exit(0);
+}
+
+// --delta <baseline>: subtract a baseline cost captured at ticket start
+let deltaCost = cost;
+let deltaTokens = tokens;
+if (args[0] === '--delta' && args[1]) {
+  const baseline = parseFloat(args[1]);
+  if (!isNaN(baseline)) {
+    deltaCost = Math.max(0, cost - baseline);
+    // Approximate token delta proportionally
+    deltaTokens = cost > 0 ? Math.round(tokens * (deltaCost / cost)) : 0;
+  }
+}
+
+const formattedCost = `$${deltaCost.toFixed(2)}`;
 const formattedTokens =
-  tokens >= 1_000_000
-    ? `${(tokens / 1_000_000).toFixed(1)}M tokens`
-    : `${Math.round(tokens / 1000)}k tokens`;
+  deltaTokens >= 1_000_000
+    ? `${(deltaTokens / 1_000_000).toFixed(1)}M tokens`
+    : `${Math.round(deltaTokens / 1000)}k tokens`;
 
 console.log(`**Claude cost:** ${formattedCost} (${formattedTokens})`);

@@ -116,6 +116,22 @@ Key files:
 - Each sim phase gets its own file under `sim/src/phases/`
 - Test helpers live in `sim/src/__tests__/test-helpers.ts`
 
+## Cost tracking per ticket
+
+You're running as one long session, so `session-cost.mjs` will report cumulative cost. To get a per-ticket cost, snapshot before you start and diff after:
+
+```sh
+# Before starting a ticket — save the baseline
+COST_BEFORE=$(node scripts/session-cost.mjs --snapshot)
+
+# ... do the work ...
+
+# When creating the PR — get the delta
+node scripts/session-cost.mjs --delta $COST_BEFORE
+```
+
+Embed the output in the `## Claude Cost` section of the PR description as usual.
+
 ## Commits
 
 Format: `type: description (closes #N)`
