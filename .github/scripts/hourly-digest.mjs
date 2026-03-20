@@ -96,14 +96,15 @@ async function summarize(prData) {
         images.length > 0 ? `\nScreenshots in this PR: ${images.length}` : '';
       return [
         `### PR #${pr.number}: ${pr.title}`,
-        pr.body ? `Description:\n${pr.body.slice(0, 600)}` : '(no description)',
-        `Commits:\n${commits.map((c) => `- ${c}`).join('\n')}`,
+        pr.body ? `Description:\n${pr.body.slice(0, 300)}` : '(no description)',
+        `Commits:\n${commits.slice(0, 5).map((c) => `- ${c}`).join('\n')}`,
         imageNote,
       ]
         .filter(Boolean)
         .join('\n');
     })
-    .join('\n\n---\n\n');
+    .join('\n\n---\n\n')
+    .slice(0, 20000); // hard cap to stay within ~8k token limit
 
   const systemPrompt =
     'You are writing a devlog for pwarf, a dwarf-fortress-style colony sim game. ' +
