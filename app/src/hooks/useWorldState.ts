@@ -28,7 +28,7 @@ export function useWorldState(opts: {
   // Ensure player profile exists after auth, then restore any existing session
   useEffect(() => {
     if (user && !playerEnsured) {
-      ensurePlayer(supabase, user.id, user.email ?? "unknown")
+      ensurePlayer(supabase, user.id, user.email ?? undefined)
         .then(() => loadSession(user.id))
         .then(async (session) => {
           if (session.worldId) {

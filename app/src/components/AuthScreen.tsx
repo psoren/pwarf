@@ -133,6 +133,7 @@ export default function AuthScreen({ onSignIn, onSignUp, onPlayAsGuest }: AuthSc
           Play as Guest
         </button>
         <p className="text-[var(--text)] opacity-30 text-xs">Progress won't be saved.</p>
+        <p className="text-[var(--text)] opacity-20 text-xs italic">← Regan &amp; Nathaly use this</p>
       </div>
     </div>
   );
