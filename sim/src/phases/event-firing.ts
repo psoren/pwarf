@@ -1,4 +1,6 @@
+import type { Dwarf } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
+import { dwarfName } from "../dwarf-utils.js";
 
 /** Need threshold below which a critical warning fires */
 const CRITICAL_NEED_THRESHOLD = 10;
@@ -24,60 +26,53 @@ export async function eventFiring(ctx: SimContext): Promise<void> {
   for (const dwarf of state.dwarves) {
     if (dwarf.status !== 'alive') continue;
 
-    const warned = state.warnedNeedIds.get(dwarf.id) ?? new Set<string>();
-
-    // Critical food warning — fires once when crossing below threshold
-    if (dwarf.need_food < CRITICAL_NEED_THRESHOLD) {
-      if (!warned.has('food')) {
-        warned.add('food');
-        state.warnedNeedIds.set(dwarf.id, warned);
-        state.pendingEvents.push({
-          id: ctx.rng.uuid(),
-          world_id: '',
-          year: ctx.year,
-          category: 'discovery',
-          civilization_id: ctx.civilizationId,
-          ruin_id: null,
-          dwarf_id: dwarf.id,
-          item_id: null,
-          faction_id: null,
-          monster_id: null,
-          description: `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''} is starving.`,
-          event_data: { need: 'food', value: dwarf.need_food },
-          created_at: new Date().toISOString(),
-        });
-      }
-    } else if (dwarf.need_food >= CRITICAL_NEED_RESET) {
-      warned.delete('food');
-    }
-
-    // Critical drink warning — fires once when crossing below threshold
-    if (dwarf.need_drink < CRITICAL_NEED_THRESHOLD) {
-      if (!warned.has('drink')) {
-        warned.add('drink');
-        state.warnedNeedIds.set(dwarf.id, warned);
-        state.pendingEvents.push({
-          id: ctx.rng.uuid(),
-          world_id: '',
-          year: ctx.year,
-          category: 'discovery',
-          civilization_id: ctx.civilizationId,
-          ruin_id: null,
-          dwarf_id: dwarf.id,
-          item_id: null,
-          faction_id: null,
-          monster_id: null,
-          description: `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''} is dehydrated.`,
-          event_data: { need: 'drink', value: dwarf.need_drink },
-          created_at: new Date().toISOString(),
-        });
-      }
-    } else if (dwarf.need_drink >= CRITICAL_NEED_RESET) {
-      warned.delete('drink');
-    }
+    checkCriticalNeed(dwarf, 'food', dwarf.need_food, ctx);
+    checkCriticalNeed(dwarf, 'drink', dwarf.need_drink, ctx);
   }
 
   // Task completion events are queued directly by the task-execution phase.
   // Death events and fortress-fallen events are also queued there.
   // This phase is a catch-all for events that don't fit neatly into other phases.
+}
+
+const NEED_MESSAGE: Record<string, string> = {
+  food: 'is starving',
+  drink: 'is dehydrated',
+};
+
+function checkCriticalNeed(
+  dwarf: Dwarf,
+  needType: 'food' | 'drink',
+  currentValue: number,
+  ctx: SimContext,
+): void {
+  const { state } = ctx;
+
+  if (currentValue < CRITICAL_NEED_THRESHOLD) {
+    const warned = state.warnedNeedIds.get(dwarf.id);
+    if (warned?.has(needType)) return; // already warned this crossing
+
+    // Lazy-init the Set only when we actually need to record a warning
+    const warningSet = warned ?? new Set<string>();
+    warningSet.add(needType);
+    if (!warned) state.warnedNeedIds.set(dwarf.id, warningSet);
+
+    state.pendingEvents.push({
+      id: ctx.rng.uuid(),
+      world_id: '',
+      year: ctx.year,
+      category: 'discovery',
+      civilization_id: ctx.civilizationId,
+      ruin_id: null,
+      dwarf_id: dwarf.id,
+      item_id: null,
+      faction_id: null,
+      monster_id: null,
+      description: `${dwarfName(dwarf)} ${NEED_MESSAGE[needType]}.`,
+      event_data: { need: needType, value: currentValue },
+      created_at: new Date().toISOString(),
+    });
+  } else if (currentValue >= CRITICAL_NEED_RESET) {
+    state.warnedNeedIds.get(dwarf.id)?.delete(needType);
+  }
 }

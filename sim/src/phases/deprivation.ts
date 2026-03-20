@@ -45,6 +45,7 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
   dwarf.died_year = ctx.year;
   dwarf.cause_of_death = cause;
   state.dirtyDwarfIds.add(dwarf.id);
+  state.warnedNeedIds.delete(dwarf.id);
 
   // Fail any task assigned to this dwarf
   if (dwarf.current_task_id) {
