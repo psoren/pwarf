@@ -133,6 +133,9 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
     state.civWealth = wealth;
     state.civDirty = true;
   }
+  if (population > state.civPeakPopulation) {
+    state.civPeakPopulation = population;
+  }
 
   // Year-end summary event
   const deathClause = deathsThisYear === 0
