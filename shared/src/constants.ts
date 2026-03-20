@@ -318,6 +318,34 @@ export const SCORE_DISTANCE_WEIGHT = 0.5;
 export const SCORE_BEST_SKILL_BONUS = 5;
 
 // ============================================================
+// Monsters & Combat
+// ============================================================
+
+/** Ticks between monster spawn checks. */
+export const MONSTER_SPAWN_INTERVAL = 200;
+
+/** Maximum number of active monsters at a time (MVP cap). */
+export const MONSTER_MAX_ACTIVE = 1;
+
+/** Base health for a spawned night_creature. */
+export const MONSTER_NIGHT_CREATURE_HEALTH = 50;
+
+/** Base threat level for a spawned night_creature. */
+export const MONSTER_NIGHT_CREATURE_THREAT = 30;
+
+/** Base damage a monster deals per combat tick (before threat scaling). */
+export const MONSTER_ATTACK_BASE = 8;
+
+/** Base damage a dwarf deals per combat tick. */
+export const DWARF_ATTACK_BASE = 6;
+
+/** Damage range spread (±) around the base value. */
+export const COMBAT_DAMAGE_SPREAD = 5;
+
+/** XP awarded to the dwarf who kills a monster. */
+export const XP_MONSTER_KILL = 20;
+
+// ============================================================
 // Polling / flush intervals (milliseconds)
 // ============================================================
 
