@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { calcStressDelta } from "./stress-update.js";
+import { MEMORY_STRESS_PER_TICK } from "@pwarf/shared";
+import type { DwarfMemory } from "@pwarf/shared";
 
 // All needs comfortable — no stress gains, just recovery
 const COMFORTABLE_NEEDS = [80, 80, 80, 80, 80, 80];
@@ -136,6 +138,40 @@ describe("calcStressDelta", () => {
       const deltaNoTrait = calcStressDelta(noTrait, mixedNeeds);
 
       expect(deltaAgreeable).toBeCloseTo(deltaNoTrait);
+    });
+  });
+
+  describe("memories", () => {
+    const noTraits = { trait_neuroticism: null, trait_agreeableness: null };
+
+    it("positive-intensity memory increases stress delta", () => {
+      const deathMemory: DwarfMemory = { type: 'witnessed_death', intensity: 15, year: 1, expires_year: 4 };
+      const deltaWithMemory = calcStressDelta(noTraits, COMFORTABLE_NEEDS, [deathMemory]);
+      const deltaWithout = calcStressDelta(noTraits, COMFORTABLE_NEEDS);
+      expect(deltaWithMemory).toBeCloseTo(deltaWithout + 15 * MEMORY_STRESS_PER_TICK);
+    });
+
+    it("negative-intensity memory decreases stress delta", () => {
+      const artifactMemory: DwarfMemory = { type: 'created_artifact', intensity: -20, year: 1, expires_year: 6 };
+      const deltaWithMemory = calcStressDelta(noTraits, COMFORTABLE_NEEDS, [artifactMemory]);
+      const deltaWithout = calcStressDelta(noTraits, COMFORTABLE_NEEDS);
+      expect(deltaWithMemory).toBeCloseTo(deltaWithout + (-20) * MEMORY_STRESS_PER_TICK);
+    });
+
+    it("multiple memories stack", () => {
+      const mems: DwarfMemory[] = [
+        { type: 'witnessed_death', intensity: 15, year: 1, expires_year: 4 },
+        { type: 'witnessed_death', intensity: 15, year: 1, expires_year: 4 },
+      ];
+      const deltaWithMemory = calcStressDelta(noTraits, COMFORTABLE_NEEDS, mems);
+      const deltaWithout = calcStressDelta(noTraits, COMFORTABLE_NEEDS);
+      expect(deltaWithMemory).toBeCloseTo(deltaWithout + 2 * 15 * MEMORY_STRESS_PER_TICK);
+    });
+
+    it("empty memories array behaves same as no memories", () => {
+      const withEmpty = calcStressDelta(noTraits, COMFORTABLE_NEEDS, []);
+      const withUndefined = calcStressDelta(noTraits, COMFORTABLE_NEEDS);
+      expect(withEmpty).toBeCloseTo(withUndefined);
     });
   });
 

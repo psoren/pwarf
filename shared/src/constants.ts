@@ -206,6 +206,19 @@ export const DISEASE_RECOVERY_CHANCE = 0.5;
 export const DISEASE_SPREAD_RADIUS = 4;
 
 // ============================================================
+// Strange moods (artifact creation)
+// ============================================================
+
+/**
+ * Probability that a dwarf at severe stress enters a strange mood
+ * (producing an artifact) instead of a tantrum.
+ */
+export const STRANGE_MOOD_CHANCE = 0.05;
+
+/** Work ticks required to complete an artifact during a strange mood */
+export const STRANGE_MOOD_WORK = 500;
+
+// ============================================================
 // Witness stress (death trauma)
 // ============================================================
 
@@ -214,6 +227,31 @@ export const WITNESS_DEATH_STRESS = 8;
 
 /** Manhattan-distance radius within which a death is "witnessed" */
 export const WITNESS_DEATH_RADIUS = 5;
+
+// ============================================================
+// Dwarf memory system
+// ============================================================
+
+/** Stress delta per tick for each active memory (scaled by intensity). */
+export const MEMORY_STRESS_PER_TICK = 0.01;
+
+/** Intensity of a "witnessed_death" memory (positive = stress). */
+export const MEMORY_WITNESSED_DEATH_INTENSITY = 15;
+
+/** How many in-game years a death memory lingers. */
+export const MEMORY_WITNESSED_DEATH_DURATION_YEARS = 3;
+
+/** Intensity of a "created_artifact" memory (negative = stress relief). */
+export const MEMORY_ARTIFACT_INTENSITY = -20;
+
+/** How many in-game years an artifact creation memory lingers. */
+export const MEMORY_ARTIFACT_DURATION_YEARS = 5;
+
+/** Intensity of a "created_masterwork" memory (negative = stress relief). */
+export const MEMORY_MASTERWORK_INTENSITY = -10;
+
+/** How many in-game years a masterwork memory lingers. */
+export const MEMORY_MASTERWORK_DURATION_YEARS = 2;
 
 // ============================================================
 // Ghosts

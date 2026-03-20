@@ -6,8 +6,11 @@ import {
   TANTRUM_DURATION_MILD,
   TANTRUM_DURATION_MODERATE,
   TANTRUM_DURATION_SEVERE,
+  STRANGE_MOOD_CHANCE,
+  STRANGE_MOOD_WORK,
 } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
+import { createTask } from "../task-helpers.js";
 
 /**
  * Tantrum Check Phase
@@ -29,27 +32,52 @@ export async function tantrumCheck(ctx: SimContext): Promise<void> {
   for (const dwarf of state.dwarves) {
     if (dwarf.status !== 'alive') continue;
 
-    if (!dwarf.is_in_tantrum) {
-      // Check if stress crossed the threshold → trigger tantrum
+    if (!dwarf.is_in_tantrum && !state.strangeMoodDwarfIds.has(dwarf.id)) {
+      // Check if stress crossed the threshold → trigger strange mood or tantrum
       if (dwarf.stress_level >= STRESS_TANTRUM_THRESHOLD) {
-        dwarf.is_in_tantrum = true;
-        state.dirtyDwarfIds.add(dwarf.id);
+        // At severe stress, chance of strange mood (dwarf creates an artifact instead)
+        if (dwarf.stress_level >= STRESS_TANTRUM_SEVERE && ctx.rng.random() < STRANGE_MOOD_CHANCE) {
+          state.strangeMoodDwarfIds.add(dwarf.id);
+          state.dirtyDwarfIds.add(dwarf.id);
 
-        // Assign tantrum duration based on severity
-        const duration = getTantrumDuration(dwarf.stress_level);
-        state.tantrumTicks.set(dwarf.id, duration);
-
-        // Cancel current task so they can't work while tantrumming
-        if (dwarf.current_task_id !== null) {
-          const task = state.tasks.find(t => t.id === dwarf.current_task_id);
-          if (task && task.status !== 'completed' && task.status !== 'cancelled') {
-            task.status = 'cancelled';
-            state.dirtyTaskIds.add(task.id);
+          // Cancel current task
+          if (dwarf.current_task_id !== null) {
+            const currentTask = state.tasks.find(t => t.id === dwarf.current_task_id);
+            if (currentTask && currentTask.status !== 'completed' && currentTask.status !== 'cancelled') {
+              currentTask.status = 'cancelled';
+              state.dirtyTaskIds.add(currentTask.id);
+            }
+            dwarf.current_task_id = null;
           }
-          dwarf.current_task_id = null;
+
+          // Create create_artifact task assigned to this dwarf
+          const artifactTask = createTask(ctx, {
+            task_type: 'create_artifact',
+            priority: 10,
+            work_required: STRANGE_MOOD_WORK,
+            assigned_dwarf_id: dwarf.id,
+          });
+          dwarf.current_task_id = artifactTask.id;
+        } else {
+          dwarf.is_in_tantrum = true;
+          state.dirtyDwarfIds.add(dwarf.id);
+
+          // Assign tantrum duration based on severity
+          const duration = getTantrumDuration(dwarf.stress_level);
+          state.tantrumTicks.set(dwarf.id, duration);
+
+          // Cancel current task so they can't work while tantrumming
+          if (dwarf.current_task_id !== null) {
+            const task = state.tasks.find(t => t.id === dwarf.current_task_id);
+            if (task && task.status !== 'completed' && task.status !== 'cancelled') {
+              task.status = 'cancelled';
+              state.dirtyTaskIds.add(task.id);
+            }
+            dwarf.current_task_id = null;
+          }
         }
       }
-    } else {
+    } else if (dwarf.is_in_tantrum) {
       // Dwarf is already in tantrum — count down and possibly recover
       const remaining = (state.tantrumTicks.get(dwarf.id) ?? 1) - 1;
 

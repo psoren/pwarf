@@ -143,4 +143,65 @@ describe("tantrumCheck", () => {
       expect(ctx.state.tantrumTicks.get(dwarf.id)).toBe(49);
     });
   });
+
+  describe("strange moods", () => {
+    it("triggers strange mood instead of tantrum at severe stress (seed 7)", async () => {
+      // Seed 7 produces rng.random() ≈ 0.012 which is < STRANGE_MOOD_CHANCE (0.05)
+      const dwarf = makeDwarf({ stress_level: STRESS_TANTRUM_SEVERE, is_in_tantrum: false });
+      const ctx = makeContext({ dwarves: [dwarf] }, 7);
+
+      await tantrumCheck(ctx);
+
+      expect(ctx.state.strangeMoodDwarfIds.has(dwarf.id)).toBe(true);
+      expect(dwarf.is_in_tantrum).toBe(false);
+    });
+
+    it("strange mood dwarf gets a create_artifact task", async () => {
+      const dwarf = makeDwarf({ stress_level: STRESS_TANTRUM_SEVERE, is_in_tantrum: false });
+      const ctx = makeContext({ dwarves: [dwarf] }, 7);
+
+      await tantrumCheck(ctx);
+
+      expect(ctx.state.strangeMoodDwarfIds.has(dwarf.id)).toBe(true);
+      const artifactTask = ctx.state.tasks.find(t => t.task_type === 'create_artifact');
+      expect(artifactTask).toBeDefined();
+      expect(artifactTask?.assigned_dwarf_id).toBe(dwarf.id);
+      expect(dwarf.current_task_id).toBe(artifactTask?.id);
+    });
+
+    it("strange mood cancels the dwarf's current task", async () => {
+      const dwarf = makeDwarf({ stress_level: STRESS_TANTRUM_SEVERE, is_in_tantrum: false });
+      const existingTask = makeTask("mine", { assigned_dwarf_id: dwarf.id, status: "in_progress" });
+      dwarf.current_task_id = existingTask.id;
+      const ctx = makeContext({ dwarves: [dwarf], tasks: [existingTask] }, 7);
+
+      await tantrumCheck(ctx);
+
+      expect(existingTask.status).toBe("cancelled");
+    });
+
+    it("dwarf below severe threshold always gets tantrum not strange mood", async () => {
+      // At moderate stress (< 96) no strange mood possible
+      const dwarf = makeDwarf({ stress_level: STRESS_TANTRUM_MODERATE, is_in_tantrum: false });
+      const ctx = makeContext({ dwarves: [dwarf] }, 7);
+
+      await tantrumCheck(ctx);
+
+      expect(dwarf.is_in_tantrum).toBe(true);
+      expect(ctx.state.strangeMoodDwarfIds.has(dwarf.id)).toBe(false);
+    });
+
+    it("does not affect dwarves already in strange mood", async () => {
+      const dwarf = makeDwarf({ stress_level: STRESS_TANTRUM_SEVERE, is_in_tantrum: false });
+      const ctx = makeContext({ dwarves: [dwarf] }, 7);
+      ctx.state.strangeMoodDwarfIds.add(dwarf.id);
+
+      const tasksBefore = ctx.state.tasks.length;
+      await tantrumCheck(ctx);
+
+      // No new tasks created — dwarf is already in strange mood
+      expect(ctx.state.tasks.length).toBe(tasksBefore);
+      expect(dwarf.is_in_tantrum).toBe(false);
+    });
+  });
 });

@@ -24,6 +24,8 @@ import type { SimContext } from "../sim-context.js";
 import { canPickUp } from "../inventory.js";
 import { dwarfName } from "../dwarf-utils.js";
 import { generateEngravingScene } from "../engrave-scene.js";
+import { generateArtifactName, randomArtifactCategory, randomArtifactMaterial, randomArtifactQuality } from "../artifact-names.js";
+import { createArtifactMemory, createMasterworkMemory } from "../dwarf-memory.js";
 
 /** Build task type → resulting fortress tile type. */
 const BUILD_TILE_MAP: Record<string, FortressTileType> = {
@@ -141,6 +143,9 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       completeMemorial(task, ctx, dwarf);
       awardXp(dwarf.id, 'engraving', XP_ENGRAVE, ctx, dwarf);
       break;
+    case 'create_artifact':
+      completeArtifact(dwarf, ctx);
+      break;
   }
 
   // Purpose restoration: work gives dwarves a sense of meaning
@@ -153,7 +158,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
  * Exported for unit testing.
  */
 export function restorePurposeNeed(dwarf: Dwarf, taskType: string): void {
-  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'smooth', 'engrave', 'brew', 'cook', 'smith']);
+  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'smooth', 'engrave', 'brew', 'cook', 'smith', 'create_artifact']);
   const restore = SKILLED_TASKS.has(taskType)
     ? PURPOSE_RESTORE_SKILLED
     : taskType === 'haul'
@@ -540,6 +545,73 @@ function completeMemorial(task: Task, ctx: SimContext, dwarf: Dwarf): void {
     monster_id: null,
     description: `${dwarfName(dwarf)} has engraved a memorial for ${ghostName}. The spirit is at rest.`,
     event_data: { action: 'memorial', ghost_dwarf_id: nearestGhostId },
+    created_at: new Date().toISOString(),
+  });
+}
+
+function completeArtifact(dwarf: Dwarf, ctx: SimContext): void {
+  const { state } = ctx;
+
+  // Remove from strange mood tracking
+  state.strangeMoodDwarfIds.delete(dwarf.id);
+
+  // Generate artifact
+  const artifactName = generateArtifactName(dwarf, ctx.rng);
+  const category = randomArtifactCategory(ctx.rng);
+  const material = randomArtifactMaterial(ctx.rng);
+  const quality = randomArtifactQuality(ctx.rng);
+
+  const artifact: Item = {
+    id: ctx.rng.uuid(),
+    name: artifactName,
+    category,
+    quality,
+    material,
+    weight: ctx.rng.int(1, 10),
+    value: ctx.rng.int(200, 2000),
+    is_artifact: true,
+    created_by_dwarf_id: dwarf.id,
+    created_in_civ_id: ctx.civilizationId,
+    created_year: ctx.year,
+    held_by_dwarf_id: dwarf.id,
+    located_in_civ_id: ctx.civilizationId,
+    located_in_ruin_id: null,
+    position_x: null,
+    position_y: null,
+    position_z: null,
+    lore: `Created during a strange mood by ${dwarfName(dwarf)}.`,
+    properties: {},
+    created_at: new Date().toISOString(),
+  };
+
+  state.items.push(artifact);
+  state.dirtyItemIds.add(artifact.id);
+
+  // Reduce stress after completing the artifact
+  dwarf.stress_level = Math.max(0, dwarf.stress_level - 30);
+  state.dirtyDwarfIds.add(dwarf.id);
+
+  // Create lasting positive memories for the creator
+  createArtifactMemory(dwarf, state, ctx.year);
+  // Masterwork-tier items also add a separate, shorter-lived memory of craft pride
+  if (quality === 'masterwork' || quality === 'artifact') {
+    createMasterworkMemory(dwarf, state, ctx.year);
+  }
+
+  // Fire artifact_created event
+  state.pendingEvents.push({
+    id: ctx.rng.uuid(),
+    world_id: '',
+    year: ctx.year,
+    category: 'artifact_created',
+    civilization_id: ctx.civilizationId,
+    ruin_id: null,
+    dwarf_id: dwarf.id,
+    item_id: artifact.id,
+    faction_id: null,
+    monster_id: null,
+    description: `${dwarfName(dwarf)} has created "${artifactName}" in the grip of a strange mood!`,
+    event_data: { artifact_id: artifact.id, quality, material, category },
     created_at: new Date().toISOString(),
   });
 }

@@ -106,5 +106,6 @@ export async function loadStateFromSupabase(
     warnedNeedIds: new Map(),
     ghostDwarfIds: new Set(),
     ghostPositions: new Map(),
+    strangeMoodDwarfIds: new Set(),
   };
 }

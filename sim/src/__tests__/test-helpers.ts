@@ -154,6 +154,6 @@ export function makeContext(opts?: {
   tasks?: Task[];
   items?: Item[];
   structures?: Structure[];
-}): SimContext {
-  return createTestContext(opts);
+}, seed?: number): SimContext {
+  return createTestContext(opts, seed);
 }
