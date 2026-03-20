@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { SimRunner } from "./sim-runner.js";
 import { SupabaseStateAdapter } from "./state-adapter.js";
 import { runHeadless } from "./headless-runner.js";
+import { runStepMode } from "./step-mode.js";
 import { SCENARIOS } from "./scenarios.js";
 
 // Parse CLI args
@@ -22,8 +23,18 @@ const outputArg = getArg("--output");
 const snapshotEveryArg = getArg("--snapshot-every");
 const seedArg = getArg("--seed");
 
+// --- Step mode (interactive JSON protocol on stdin/stdout) ---
+if (hasFlag("--step-mode")) {
+  const seed = seedArg ? parseInt(seedArg, 10) : 0;
+  runStepMode({ seed, scenario: scenarioArg })
+    .then(() => process.exit(0))
+    .catch(err => {
+      console.error("[sim] step mode failed:", err);
+      process.exit(1);
+    });
+
 // --- Headless / batch mode ---
-if (scenarioArg || hasFlag("--headless")) {
+} else if (scenarioArg || hasFlag("--headless")) {
   const ticks = ticksArg ? parseInt(ticksArg, 10) : undefined;
   const snapshotEvery = snapshotEveryArg ? parseInt(snapshotEveryArg, 10) : 0;
 
@@ -60,6 +71,7 @@ if (scenarioArg || hasFlag("--headless")) {
       console.error("[sim] headless run failed:", err);
       process.exit(1);
     });
+
 } else {
   // --- Live mode (requires Supabase) ---
   const SUPABASE_URL = process.env.SUPABASE_URL;
@@ -70,6 +82,7 @@ if (scenarioArg || hasFlag("--headless")) {
       "[sim] SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in environment"
     );
     console.error("[sim] For headless/batch mode, use --scenario <name> or --headless");
+    console.error("[sim] For interactive step mode, use --step-mode [--seed N] [--scenario name]");
     process.exit(1);
   }
 
