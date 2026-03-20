@@ -23,6 +23,7 @@ import type { Dwarf, FortressTile, FortressTileType, Task, Item, Structure } fro
 import type { SimContext } from "../sim-context.js";
 import { canPickUp } from "../inventory.js";
 import { dwarfName } from "../dwarf-utils.js";
+import { generateEngravingScene } from "../engrave-scene.js";
 
 /** Build task type → resulting fortress tile type. */
 const BUILD_TILE_MAP: Record<string, FortressTileType> = {
@@ -121,7 +122,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       awardXp(dwarf.id, 'building', XP_SMOOTH, ctx, dwarf);
       break;
     case 'engrave':
-      completeEngrave(task, ctx);
+      completeEngrave(task, ctx, dwarf);
       awardXp(dwarf.id, 'engraving', XP_ENGRAVE, ctx, dwarf);
       break;
     case 'brew':
@@ -496,17 +497,38 @@ function completeSmooth(task: Task, ctx: SimContext): void {
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, resultType, existing?.material ?? null, existing?.is_mined ?? false);
 }
 
-function completeEngrave(task: Task, ctx: SimContext): void {
+function completeEngrave(task: Task, ctx: SimContext, dwarf: Dwarf): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
   const key = `${task.target_x},${task.target_y},${task.target_z}`;
   const existing = ctx.state.fortressTileOverrides.get(key);
   const currentType = existing?.tile_type;
 
-  // Only engrave smooth stone or constructed floors
+  // Only engrave smooth stone
   if (currentType !== 'smooth_stone') return;
 
-  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'engraved_stone', existing?.material ?? null, existing?.is_mined ?? false);
+  // Generate a scene from recent fortress history and store in material field
+  const allEvents = [...ctx.state.worldEvents, ...ctx.state.pendingEvents];
+  const scene = generateEngravingScene(allEvents, ctx.rng);
+
+  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'engraved_stone', scene, existing?.is_mined ?? false);
+
+  // Fire discovery event about the engraving
+  ctx.state.pendingEvents.push({
+    id: ctx.rng.uuid(),
+    world_id: '',
+    year: ctx.year,
+    category: 'discovery',
+    civilization_id: ctx.civilizationId,
+    ruin_id: null,
+    dwarf_id: dwarf.id,
+    item_id: null,
+    faction_id: null,
+    monster_id: null,
+    description: `${dwarfName(dwarf)} has engraved a scene. ${scene}`,
+    event_data: { action: 'engrave', scene },
+    created_at: new Date().toISOString(),
+  });
 }
 
 /**
