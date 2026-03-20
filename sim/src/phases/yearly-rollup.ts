@@ -21,6 +21,8 @@ import { createImmigrantDwarf } from "../dwarf-factory.js";
 export async function yearlyRollup(ctx: SimContext): Promise<void> {
   const { state, rng, year, civilizationId } = ctx;
 
+  let deathsThisYear = 0;
+
   for (const dwarf of state.dwarves) {
     if (dwarf.status !== 'alive') continue;
 
@@ -36,6 +38,7 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
         dwarf.status = 'dead';
         dwarf.died_year = year;
         dwarf.cause_of_death = 'unknown';
+        deathsThisYear += 1;
 
         if (dwarf.current_task_id) {
           const task = state.tasks.find(t => t.id === dwarf.current_task_id);
@@ -66,8 +69,10 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
   }
 
   // Immigration — new dwarves arrive starting from year 2
+  let migrantsThisYear = 0;
   if (year >= 2 && rng.random() < IMMIGRATION_CHANCE_PER_YEAR) {
     const count = rng.int(1, IMMIGRATION_MAX_ARRIVALS);
+    migrantsThisYear = count;
     const center = Math.floor(FORTRESS_SIZE / 2);
     const immigrants = Array.from({ length: count }, (_, i) =>
       createImmigrantDwarf(rng, civilizationId, year, center + i, center)
@@ -96,4 +101,28 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
       created_at: new Date().toISOString(),
     });
   }
+
+  // Year-end summary event
+  const population = state.dwarves.filter(d => d.status === 'alive').length;
+  const deathClause = deathsThisYear === 0
+    ? 'No dwarves died.'
+    : deathsThisYear === 1 ? '1 dwarf died this year.' : `${deathsThisYear} dwarves died this year.`;
+  const migrantClause = migrantsThisYear === 0
+    ? ''
+    : migrantsThisYear === 1 ? ' 1 migrant arrived.' : ` ${migrantsThisYear} migrants arrived.`;
+  state.pendingEvents.push({
+    id: rng.uuid(),
+    world_id: '',
+    year,
+    category: 'discovery',
+    civilization_id: civilizationId,
+    ruin_id: null,
+    dwarf_id: null,
+    item_id: null,
+    faction_id: null,
+    monster_id: null,
+    description: `Year ${year} ends. Population: ${population} dwarves. ${deathClause}${migrantClause}`,
+    event_data: { type: 'year_rollup', population, deaths: deathsThisYear, migrants: migrantsThisYear },
+    created_at: new Date().toISOString(),
+  });
 }

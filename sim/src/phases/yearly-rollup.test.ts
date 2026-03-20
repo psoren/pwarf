@@ -90,9 +90,81 @@ describe("yearlyRollup", () => {
 
       await yearlyRollup(ctx);
 
-      expect(ctx.state.pendingEvents.length).toBe(1);
-      expect(ctx.state.pendingEvents[0].category).toBe("death");
-      expect(ctx.state.pendingEvents[0].description).toContain("old age");
+      const deathEvent = ctx.state.pendingEvents.find(e => e.category === "death");
+      expect(deathEvent).toBeDefined();
+      expect(deathEvent?.description).toContain("old age");
+    });
+  });
+
+  describe("year-end summary event", () => {
+    it("fires a discovery event at the end of every year", async () => {
+      const dwarf = makeDwarf({ age: 30 });
+      const ctx = makeContext({ dwarves: [dwarf] });
+      ctx.year = 3;
+
+      await yearlyRollup(ctx);
+
+      const summaryEvent = ctx.state.pendingEvents.find(
+        e => e.category === "discovery" && typeof e.event_data === "object" &&
+          (e.event_data as Record<string, unknown>).type === "year_rollup",
+      );
+      expect(summaryEvent).toBeDefined();
+      expect(summaryEvent?.description).toContain("Year 3 ends");
+    });
+
+    it("includes population count in the summary", async () => {
+      const d1 = makeDwarf({ age: 30 });
+      const d2 = makeDwarf({ age: 25 });
+      const ctx = makeContext({ dwarves: [d1, d2] });
+      ctx.year = 5;
+
+      await yearlyRollup(ctx);
+
+      const summaryEvent = ctx.state.pendingEvents.find(
+        e => (e.event_data as Record<string, unknown>)?.type === "year_rollup",
+      );
+      expect(summaryEvent?.description).toContain("Population: 2 dwarves");
+    });
+
+    it("reports deaths in the summary when a dwarf dies", async () => {
+      const dwarf = makeDwarf({ age: 99 });
+      const ctx = makeContext({ dwarves: [dwarf] });
+      ctx.year = 10;
+
+      await yearlyRollup(ctx);
+
+      const summaryEvent = ctx.state.pendingEvents.find(
+        e => (e.event_data as Record<string, unknown>)?.type === "year_rollup",
+      );
+      expect(summaryEvent?.description).toContain("1 dwarf died this year");
+    });
+
+    it("reports no deaths when no dwarf dies", async () => {
+      const dwarf = makeDwarf({ age: 30 });
+      // year 1 skips immigration so only the year-end summary fires
+      const ctx1 = makeContext({ dwarves: [dwarf] });
+      ctx1.year = 1;
+      await yearlyRollup(ctx1);
+
+      const summaryEvent = ctx1.state.pendingEvents.find(
+        e => (e.event_data as Record<string, unknown>)?.type === "year_rollup",
+      );
+      expect(summaryEvent?.description).toContain("No dwarves died");
+    });
+
+    it("event_data includes population, deaths, migrants fields", async () => {
+      const dwarf = makeDwarf({ age: 30 });
+      const ctx = makeContext({ dwarves: [dwarf] });
+
+      await yearlyRollup(ctx);
+
+      const summaryEvent = ctx.state.pendingEvents.find(
+        e => (e.event_data as Record<string, unknown>)?.type === "year_rollup",
+      );
+      const data = summaryEvent?.event_data as Record<string, unknown>;
+      expect(data.population).toBeTypeOf("number");
+      expect(data.deaths).toBeTypeOf("number");
+      expect(data.migrants).toBeTypeOf("number");
     });
   });
 });
