@@ -1,0 +1,255 @@
+{
+  "id": "2026-03-20T07-58-28",
+  "timestamp": "2026-03-20T07:58:28.882Z",
+  "title": "Digest — Mar 20, 2026, 07:58 AM UTC",
+  "summary": "# Pwarf Devlog - Recent Merges\n\nWe've had a bustling hour with numerous enhancements and fixes in Pwarf! Here’s a roundup of the latest changes:\n\n## Development Enhancements\n- **Self-Review Process**: We've implemented a new `/review-pr` skill that checks for code quality and requires self-review before submitting PRs to ensure high standards. \n- **Live Sim Snapshots**: The simulation now emits real-time snapshots, allowing UI updates at around 10 frames per second, making the game feel more dynamic and responsive.\n\n## Gameplay Features\n- **Dwarven Comfort**: Beds can now be built and used by dwarves who will seek them out when tired, with penalties for sleeping on the floor.\n- **Inventory and Stockpile System**: Dwarves now carry items with weight limits, and stockpile zones will automatically receive items, making resources management far easier.\n- **Thought System**: Dwarves will now generate thoughts based on their needs, stress, and personality traits, adding depth to their interactions and behaviors.\n- **Pathfinding Improvements**: Surfaces now allow traversal by dwarves, enhancing navigation and exploration in the game environment.\n\n## User Experience Improvements\n- **Dwarf Interaction**: Clicking a dwarf now brings up a dedicated info modal that is easier to read and interact with.\n- **Canceling Designations**: We've added a shift-drag feature that allows players to cancel mining tasks intuitively.\n- **Reduced Polling Frequency**: Optimizations have been made to reduce database calls significantly, improving overall performance.\n\n## Fixes and Usability\n- We've addressed several bug fixes related to pathfinding, UI displays, and designation handling to ensure smoother gameplay experience.\n\nThese changes are aimed at making gameplay more engaging, intuitive, and efficient. We can’t wait for you to try out these features!\n\n## Merged PRs\n- PR #301, PR #297, PR #287, PR #292, PR #279, PR #286, PR #274, PR #277, PR #271, PR #270, PR #266, PR #267, PR #263, PR #261, PR #259, PR #257, PR #256, PR #254, PR #252, PR #250, PR #249, PR #247, PR #246, PR #245, PR #243, PR #241, PR #233, PR #234, PR #238.",
+  "prs": [
+    {
+      "number": 301,
+      "title": "docs: add /review-pr skill and require self-review before PRs",
+      "url": "https://github.com/psoren/pwarf/pull/301"
+    },
+    {
+      "number": 297,
+      "title": "feat: hourly digest blog on GitHub Pages",
+      "url": "https://github.com/psoren/pwarf/pull/297"
+    },
+    {
+      "number": 287,
+      "title": "docs: design doc for automated playtesting API (closes #284)",
+      "url": "https://github.com/psoren/pwarf/pull/287"
+    },
+    {
+      "number": 292,
+      "title": "feat: beds — buildable structure with sleep-seeking AI (closes #288)",
+      "url": "https://github.com/psoren/pwarf/pull/292"
+    },
+    {
+      "number": 279,
+      "title": "feat: dwarf inventory, stockpile zones, and resource counter",
+      "url": "https://github.com/psoren/pwarf/pull/279"
+    },
+    {
+      "number": 286,
+      "title": "docs: add screenshot upload instructions and commit skill",
+      "url": "https://github.com/psoren/pwarf/pull/286"
+    },
+    {
+      "number": 274,
+      "title": "feat: unify dwarf click to always show popup (closes #272)",
+      "url": "https://github.com/psoren/pwarf/pull/274"
+    },
+    {
+      "number": 276,
+      "title": "docs: update page title (closes #275)",
+      "url": "https://github.com/psoren/pwarf/pull/276"
+    },
+    {
+      "number": 277,
+      "title": "fix: show designation blueprints instantly with optimistic updates (closes #273)",
+      "url": "https://github.com/psoren/pwarf/pull/277"
+    },
+    {
+      "number": 271,
+      "title": "fix: filter designations by z-level, show blueprints instantly (closes #268)",
+      "url": "https://github.com/psoren/pwarf/pull/271"
+    },
+    {
+      "number": 270,
+      "title": "fix: walkable surface tiles + remove stair references",
+      "url": "https://github.com/psoren/pwarf/pull/270"
+    },
+    {
+      "number": 266,
+      "title": "feat: blueprint preview, dwarf modal, gradual sleep, remove stairs",
+      "url": "https://github.com/psoren/pwarf/pull/266"
+    },
+    {
+      "number": 267,
+      "title": "perf: eliminate tile map rebuilds on pan (closes #265)",
+      "url": "https://github.com/psoren/pwarf/pull/267"
+    },
+    {
+      "number": 263,
+      "title": "feat: live sim snapshots for instant UI updates",
+      "url": "https://github.com/psoren/pwarf/pull/263"
+    },
+    {
+      "number": 261,
+      "title": "fix: add 5s timeout to getSession to prevent infinite hang",
+      "url": "https://github.com/psoren/pwarf/pull/261"
+    },
+    {
+      "number": 259,
+      "title": "fix: handle getSession failure so app doesn't hang on Loading",
+      "url": "https://github.com/psoren/pwarf/pull/259"
+    },
+    {
+      "number": 257,
+      "title": "fix: CI workflow + useDesignation test type error",
+      "url": "https://github.com/psoren/pwarf/pull/257"
+    },
+    {
+      "number": 256,
+      "title": "feat: replace z-level stairs with discoverable cave entrances",
+      "url": "https://github.com/psoren/pwarf/pull/256"
+    },
+    {
+      "number": 254,
+      "title": "fix: wander system — validate walkability, clear spawn area, fix orphaned tasks",
+      "url": "https://github.com/psoren/pwarf/pull/254"
+    },
+    {
+      "number": 252,
+      "title": "feat: infinite food/drink sources (closes #251)",
+      "url": "https://github.com/psoren/pwarf/pull/252"
+    },
+    {
+      "number": 250,
+      "title": "feat: shift+drag to cancel pending mining designations (closes #244)",
+      "url": "https://github.com/psoren/pwarf/pull/250"
+    },
+    {
+      "number": 249,
+      "title": "fix: surface tiles not walkable — dwarves stuck when wandering",
+      "url": "https://github.com/psoren/pwarf/pull/249"
+    },
+    {
+      "number": 247,
+      "title": "feat: shift+drag to cancel pending designations",
+      "url": "https://github.com/psoren/pwarf/pull/247"
+    },
+    {
+      "number": 246,
+      "title": "feat: dwarf thought system with personality-driven inner lives (closes #242)",
+      "url": "https://github.com/psoren/pwarf/pull/246"
+    },
+    {
+      "number": 245,
+      "title": "perf: reduce DB polling frequency ~8x (closes #240)",
+      "url": "https://github.com/psoren/pwarf/pull/245"
+    },
+    {
+      "number": 243,
+      "title": "feat: survival basics — well, mushroom garden, and idle wandering",
+      "url": "https://github.com/psoren/pwarf/pull/243"
+    },
+    {
+      "number": 241,
+      "title": "fix: vary fortress surface terrain by overworld biome (closes #239)",
+      "url": "https://github.com/psoren/pwarf/pull/241"
+    },
+    {
+      "number": 233,
+      "title": "feat: dwarf tracking UI and real 3D pathfinding (closes #228, #229, #230)",
+      "url": "https://github.com/psoren/pwarf/pull/233"
+    },
+    {
+      "number": 234,
+      "title": "feat: allow building on grass and mining surface features (closes #232)",
+      "url": "https://github.com/psoren/pwarf/pull/234"
+    },
+    {
+      "number": 238,
+      "title": "perf: reduce polling overhead and unnecessary re-renders",
+      "url": "https://github.com/psoren/pwarf/pull/238"
+    }
+  ],
+  "images": [
+    {
+      "prNumber": 292,
+      "prTitle": "feat: beds — buildable structure with sleep-seeking AI (closes #288)",
+      "url": "https://github.com/user-attachments/assets/placeholder-build-menu"
+    },
+    {
+      "prNumber": 292,
+      "prTitle": "feat: beds — buildable structure with sleep-seeking AI (closes #288)",
+      "url": "https://github.com/user-attachments/assets/placeholder-designation"
+    },
+    {
+      "prNumber": 279,
+      "prTitle": "feat: dwarf inventory, stockpile zones, and resource counter",
+      "url": "https://github.com/user-attachments/assets/882599c4-e813-40f8-b0d3-16e6d2aabc79"
+    },
+    {
+      "prNumber": 274,
+      "prTitle": "feat: unify dwarf click to always show popup (closes #272)",
+      "url": "https://github.com/user-attachments/assets/ss_53365ev64"
+    },
+    {
+      "prNumber": 274,
+      "prTitle": "feat: unify dwarf click to always show popup (closes #272)",
+      "url": "https://github.com/user-attachments/assets/ss_89137knyp"
+    },
+    {
+      "prNumber": 276,
+      "prTitle": "docs: update page title (closes #275)",
+      "url": "https://github.com/user-attachments/assets/d6281005-ce7f-4fe2-8e6b-514ac3f645a9"
+    },
+    {
+      "prNumber": 266,
+      "prTitle": "feat: blueprint preview, dwarf modal, gradual sleep, remove stairs",
+      "url": "https://github.com/user-attachments/assets/placeholder-modal"
+    },
+    {
+      "prNumber": 266,
+      "prTitle": "feat: blueprint preview, dwarf modal, gradual sleep, remove stairs",
+      "url": "https://github.com/user-attachments/assets/placeholder-build"
+    },
+    {
+      "prNumber": 266,
+      "prTitle": "feat: blueprint preview, dwarf modal, gradual sleep, remove stairs",
+      "url": "https://github.com/user-attachments/assets/placeholder-mine"
+    },
+    {
+      "prNumber": 267,
+      "prTitle": "perf: eliminate tile map rebuilds on pan (closes #265)",
+      "url": "https://github.com/user-attachments/assets/panning-playtest.gif"
+    },
+    {
+      "prNumber": 247,
+      "prTitle": "feat: shift+drag to cancel pending designations",
+      "url": "https://github.com/user-attachments/assets/placeholder-before"
+    },
+    {
+      "prNumber": 247,
+      "prTitle": "feat: shift+drag to cancel pending designations",
+      "url": "https://github.com/user-attachments/assets/placeholder-after"
+    },
+    {
+      "prNumber": 246,
+      "prTitle": "feat: dwarf thought system with personality-driven inner lives (closes #242)",
+      "url": "https://github.com/user-attachments/assets/placeholder-rigoth"
+    },
+    {
+      "prNumber": 246,
+      "prTitle": "feat: dwarf thought system with personality-driven inner lives (closes #242)",
+      "url": "https://github.com/user-attachments/assets/placeholder-goden"
+    },
+    {
+      "prNumber": 245,
+      "prTitle": "perf: reduce DB polling frequency ~8x (closes #240)",
+      "url": "https://github.com/user-attachments/assets/placeholder"
+    },
+    {
+      "prNumber": 243,
+      "prTitle": "feat: survival basics — well, mushroom garden, and idle wandering",
+      "url": "https://github.com/user-attachments/assets/placeholder-well"
+    },
+    {
+      "prNumber": 243,
+      "prTitle": "feat: survival basics — well, mushroom garden, and idle wandering",
+      "url": "https://github.com/user-attachments/assets/placeholder-garden"
+    },
+    {
+      "prNumber": 233,
+      "prTitle": "feat: dwarf tracking UI and real 3D pathfinding (closes #228, #229, #230)",
+      "url": "https://github.com/user-attachments/assets/placeholder-roster"
+    },
+    {
+      "prNumber": 233,
+      "prTitle": "feat: dwarf tracking UI and real 3D pathfinding (closes #228, #229, #230)",
+      "url": "https://github.com/user-attachments/assets/placeholder-detail"
+    }
+  ]
+}
