@@ -1,11 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
-import { makeDwarf, makeTask } from "./test-helpers.js";
+import { makeDwarf, makeTask, makeItem, makeStructure } from "./test-helpers.js";
 import {
   WORK_MINE_BASE,
   WORK_BUILD_WALL,
   WORK_BUILD_FLOOR,
   WORK_BUILD_BED,
+  WORK_EAT,
+  WORK_DRINK,
+  FOOD_RESTORE_AMOUNT,
+  DRINK_RESTORE_AMOUNT,
+  NEED_INTERRUPT_FOOD,
+  NEED_INTERRUPT_DRINK,
+  STARVATION_TICKS,
 } from "@pwarf/shared";
 
 // ============================================================
@@ -205,5 +212,107 @@ describe("build_bed task scenario", () => {
       t => t.x === 5 && t.y === 5 && t.z === 0,
     );
     expect(bedTile?.tile_type).toBe("bed");
+  });
+});
+
+// ============================================================
+// Eat/drink require food/water source scenarios
+// ============================================================
+
+describe("eat scenario", () => {
+  it("dwarf eats food item on ground and food is removed", async () => {
+    const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 5, position_x: 0, position_y: 0, position_z: 0 });
+    const food = makeItem({ category: "food", position_x: 0, position_y: 0, position_z: 0 });
+    const task = makeTask("eat", {
+      assigned_dwarf_id: dwarf.id,
+      target_x: 0,
+      target_y: 0,
+      target_z: 0,
+      target_item_id: food.id,
+      work_required: WORK_EAT,
+    });
+    task.status = "in_progress";
+    dwarf.current_task_id = task.id;
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      tasks: [task],
+      items: [food],
+      ticks: WORK_EAT + 2,
+    });
+
+    expect(result.tasks[0]!.status).toBe("completed");
+    expect(result.dwarves[0]!.need_food).toBeGreaterThan(NEED_INTERRUPT_FOOD);
+    // Food item should be consumed
+    expect(result.items.find(i => i.id === food.id)).toBeUndefined();
+  });
+
+  it("dwarf does NOT create eat task when no food is available", async () => {
+    const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 5 });
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      items: [],
+      ticks: 5,
+    });
+
+    const eatTasks = result.tasks.filter(t => t.task_type === "eat");
+    expect(eatTasks).toHaveLength(0);
+    // Dwarf is still alive (just hungry, no starvation in 5 ticks)
+    expect(result.dwarves[0]!.status).toBe("alive");
+  });
+});
+
+describe("drink scenario", () => {
+  it("dwarf drinks from well and drink need is restored", async () => {
+    const dwarf = makeDwarf({ need_drink: NEED_INTERRUPT_DRINK - 5, position_x: 0, position_y: 0, position_z: 0 });
+    const well = makeStructure({ type: "well", position_x: 0, position_y: 0, position_z: 0 });
+    const task = makeTask("drink", {
+      assigned_dwarf_id: dwarf.id,
+      target_x: 0,
+      target_y: 0,
+      target_z: 0,
+      target_item_id: null, // wells have no item id
+      work_required: WORK_DRINK,
+    });
+    task.status = "in_progress";
+    dwarf.current_task_id = task.id;
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      tasks: [task],
+      structures: [well],
+      ticks: WORK_DRINK + 2,
+    });
+
+    expect(result.tasks[0]!.status).toBe("completed");
+    expect(result.dwarves[0]!.need_drink).toBeGreaterThan(NEED_INTERRUPT_DRINK);
+  });
+
+  it("dwarf does NOT create drink task when no water source is available", async () => {
+    const dwarf = makeDwarf({ need_drink: NEED_INTERRUPT_DRINK - 5 });
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      items: [],
+      structures: [],
+      ticks: 5,
+    });
+
+    const drinkTasks = result.tasks.filter(t => t.task_type === "drink");
+    expect(drinkTasks).toHaveLength(0);
+  });
+
+  it("dwarf starves when food is not available", async () => {
+    const dwarf = makeDwarf({ need_food: 0, need_drink: 80 });
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      items: [],
+      ticks: STARVATION_TICKS + 5,
+    });
+
+    expect(result.dwarves[0]!.status).toBe("dead");
+    expect(result.dwarves[0]!.cause_of_death).toBe("starvation");
   });
 });

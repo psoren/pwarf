@@ -20,7 +20,7 @@ import { taskExecution } from "../phases/task-execution.js";
 import { needSatisfaction } from "../phases/need-satisfaction.js";
 import { stressUpdate } from "../phases/stress-update.js";
 import { createTask, isDwarfIdle, getBestSkill } from "../task-helpers.js";
-import { makeDwarf, makeSkill, makeContext } from "./test-helpers.js";
+import { makeDwarf, makeSkill, makeContext, makeItem, makeStructure } from "./test-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Task helper tests
@@ -377,32 +377,36 @@ describe("task execution", () => {
 // ---------------------------------------------------------------------------
 
 describe("need satisfaction", () => {
-  it("creates eat task when food need is low (infinite source)", async () => {
-    const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1 });
-    const ctx = makeContext({ dwarves: [dwarf] });
+  it("creates eat task targeting nearest food item when food need is low", async () => {
+    const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1, position_x: 0, position_y: 0, position_z: 0 });
+    const food = makeItem({ category: "food", position_x: 3, position_y: 0, position_z: 0 });
+    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
 
     await needSatisfaction(ctx);
 
     const eatTasks = ctx.state.tasks.filter(t => t.task_type === "eat");
     expect(eatTasks).toHaveLength(1);
     expect(eatTasks[0]!.assigned_dwarf_id).toBe(dwarf.id);
-    expect(eatTasks[0]!.target_item_id).toBeNull();
+    expect(eatTasks[0]!.target_item_id).toBe(food.id);
   });
 
-  it("creates drink task when drink need is low (infinite source)", async () => {
-    const dwarf = makeDwarf({ need_drink: NEED_INTERRUPT_DRINK - 1 });
-    const ctx = makeContext({ dwarves: [dwarf] });
+  it("creates drink task targeting nearest water source when drink need is low", async () => {
+    const dwarf = makeDwarf({ need_drink: NEED_INTERRUPT_DRINK - 1, position_x: 0, position_y: 0, position_z: 0 });
+    const well = makeStructure({ type: "well", position_x: 4, position_y: 0, position_z: 0 });
+    const ctx = makeContext({ dwarves: [dwarf], structures: [well] });
 
     await needSatisfaction(ctx);
 
     const drinkTasks = ctx.state.tasks.filter(t => t.task_type === "drink");
     expect(drinkTasks).toHaveLength(1);
-    expect(drinkTasks[0]!.target_item_id).toBeNull();
+    expect(drinkTasks[0]!.target_x).toBe(4);
+    expect(drinkTasks[0]!.target_item_id).toBeNull(); // well has no item id
   });
 
-  it("drops current task when need is critical", async () => {
-    const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1 });
-    const ctx = makeContext({ dwarves: [dwarf] });
+  it("drops current task when need is critical and food is available", async () => {
+    const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1, position_x: 0, position_y: 0, position_z: 0 });
+    const food = makeItem({ category: "food", position_x: 2, position_y: 0, position_z: 0 });
+    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
 
     // Give dwarf a haul task
     const haulTask = createTask(ctx, {
@@ -551,8 +555,12 @@ describe("starvation scenario", () => {
       need_food: NEED_INTERRUPT_FOOD + 5, // Just above threshold
       need_drink: 80,
       need_sleep: 80,
+      position_x: 0,
+      position_y: 0,
+      position_z: 0,
     });
-    const ctx = makeContext({ dwarves: [dwarf] });
+    const food = makeItem({ category: "food", position_x: 0, position_y: 0, position_z: 0 });
+    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
 
     // Run needs decay until food drops below interrupt threshold
     let ticks = 0;

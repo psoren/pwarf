@@ -10,7 +10,7 @@ import {
   SOCIAL_PROXIMITY_RADIUS,
   SOCIAL_PROXIMITY_MAX_DWARVES,
 } from "@pwarf/shared";
-import type { Dwarf, TaskType, Structure } from "@pwarf/shared";
+import type { Dwarf, Item, TaskType, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createTask } from "../task-helpers.js";
 
@@ -51,6 +51,102 @@ export async function needSatisfaction(ctx: SimContext): Promise<void> {
 }
 
 const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep']);
+
+/**
+ * Finds the nearest accessible food item for a dwarf.
+ * Accessible means: on the ground (position set, not held) or already held by this dwarf.
+ * Exported for unit testing.
+ */
+export function findNearestFood(
+  items: Item[],
+  dwarfId: string,
+  fromX: number,
+  fromY: number,
+  fromZ: number,
+): Item | null {
+  let nearest: Item | null = null;
+  let nearestDist = Infinity;
+
+  for (const item of items) {
+    if (item.category !== 'food') continue;
+
+    const heldByDwarf = item.held_by_dwarf_id === dwarfId;
+    const onGround = item.held_by_dwarf_id === null
+      && item.position_x !== null
+      && item.position_y !== null
+      && item.position_z !== null;
+
+    if (!heldByDwarf && !onGround) continue;
+
+    const itemX = heldByDwarf ? fromX : item.position_x!;
+    const itemY = heldByDwarf ? fromY : item.position_y!;
+    const itemZ = heldByDwarf ? fromZ : item.position_z!;
+
+    const dist = Math.abs(itemX - fromX) + Math.abs(itemY - fromY) + Math.abs(itemZ - fromZ) * 10;
+    if (dist < nearestDist) {
+      nearest = item;
+      nearestDist = dist;
+    }
+  }
+
+  return nearest;
+}
+
+/**
+ * Finds the nearest water source for a dwarf.
+ * Checks for a well structure first (infinite supply), then a drink item on the ground.
+ * Returns { type, x, y, z, itemId } — itemId is null for wells.
+ * Exported for unit testing.
+ */
+export function findNearestWaterSource(
+  structures: Structure[],
+  items: Item[],
+  dwarfId: string,
+  fromX: number,
+  fromY: number,
+  fromZ: number,
+): { x: number; y: number; z: number; itemId: string | null } | null {
+  // Prefer well structures (infinite supply)
+  let nearest: { x: number; y: number; z: number; itemId: string | null } | null = null;
+  let nearestDist = Infinity;
+
+  for (const s of structures) {
+    if (s.type !== 'well') continue;
+    if (s.completion_pct < 100) continue;
+    if (s.position_x === null || s.position_y === null || s.position_z === null) continue;
+
+    const dist = Math.abs(s.position_x - fromX) + Math.abs(s.position_y - fromY) + Math.abs(s.position_z - fromZ) * 10;
+    if (dist < nearestDist) {
+      nearest = { x: s.position_x, y: s.position_y, z: s.position_z, itemId: null };
+      nearestDist = dist;
+    }
+  }
+
+  // Also check drink items (held by dwarf or on ground)
+  for (const item of items) {
+    if (item.category !== 'drink') continue;
+
+    const heldByDwarf = item.held_by_dwarf_id === dwarfId;
+    const onGround = item.held_by_dwarf_id === null
+      && item.position_x !== null
+      && item.position_y !== null
+      && item.position_z !== null;
+
+    if (!heldByDwarf && !onGround) continue;
+
+    const itemX = heldByDwarf ? fromX : item.position_x!;
+    const itemY = heldByDwarf ? fromY : item.position_y!;
+    const itemZ = heldByDwarf ? fromZ : item.position_z!;
+
+    const dist = Math.abs(itemX - fromX) + Math.abs(itemY - fromY) + Math.abs(itemZ - fromZ) * 10;
+    if (dist < nearestDist) {
+      nearest = { x: itemX, y: itemY, z: itemZ, itemId: item.id };
+      nearestDist = dist;
+    }
+  }
+
+  return nearest;
+}
 
 function findNearestBed(
   structures: Structure[],
@@ -96,7 +192,40 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
   );
   if (existingTask) return;
 
-  // Drop current task
+  // Resolve target before dropping current task — if no source is available, abort early
+  // so we don't interrupt productive work for a need that can't be satisfied yet.
+  let targetX = dwarf.position_x;
+  let targetY = dwarf.position_y;
+  let targetZ = dwarf.position_z;
+  let targetItemId: string | null = null;
+
+  if (taskType === 'eat') {
+    const food = findNearestFood(state.items, dwarf.id, dwarf.position_x, dwarf.position_y, dwarf.position_z);
+    if (!food) return; // No food available — dwarf goes hungry
+    targetItemId = food.id;
+    targetX = food.held_by_dwarf_id === dwarf.id ? dwarf.position_x : (food.position_x ?? dwarf.position_x);
+    targetY = food.held_by_dwarf_id === dwarf.id ? dwarf.position_y : (food.position_y ?? dwarf.position_y);
+    targetZ = food.held_by_dwarf_id === dwarf.id ? dwarf.position_z : (food.position_z ?? dwarf.position_z);
+  } else if (taskType === 'drink') {
+    const water = findNearestWaterSource(state.structures, state.items, dwarf.id, dwarf.position_x, dwarf.position_y, dwarf.position_z);
+    if (!water) return; // No water available — dwarf goes thirsty
+    targetX = water.x;
+    targetY = water.y;
+    targetZ = water.z;
+    targetItemId = water.itemId;
+  } else if (taskType === 'sleep') {
+    const bed = findNearestBed(state.structures, dwarf.position_x, dwarf.position_y, dwarf.position_z);
+    if (bed && bed.position_x !== null && bed.position_y !== null && bed.position_z !== null) {
+      targetX = bed.position_x;
+      targetY = bed.position_y;
+      targetZ = bed.position_z;
+      targetItemId = bed.id;
+      bed.occupied_by_dwarf_id = dwarf.id;
+      state.dirtyStructureIds.add(bed.id);
+    }
+  }
+
+  // Drop current task now that we know we can satisfy the need
   if (dwarf.current_task_id) {
     const currentTask = state.tasks.find(t => t.id === dwarf.current_task_id);
     if (currentTask && currentTask.status !== 'completed' && currentTask.status !== 'failed' && currentTask.status !== 'cancelled') {
@@ -131,28 +260,9 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
     : dwarf.need_sleep;
   const priority = Math.min(10, Math.floor(10 * (1 - needValue / 100)));
 
-  // Eat/drink use infinite sources (beer fountain / meat roast) — no item lookup needed
   const workRequired = taskType === 'eat' ? WORK_EAT
     : taskType === 'drink' ? WORK_DRINK
     : WORK_SLEEP;
-
-  // For sleep: try to find an available bed
-  let targetX = dwarf.position_x;
-  let targetY = dwarf.position_y;
-  let targetZ = dwarf.position_z;
-  let targetItemId: string | null = null;
-
-  if (taskType === 'sleep') {
-    const bed = findNearestBed(state.structures, dwarf.position_x, dwarf.position_y, dwarf.position_z);
-    if (bed && bed.position_x !== null && bed.position_y !== null && bed.position_z !== null) {
-      targetX = bed.position_x;
-      targetY = bed.position_y;
-      targetZ = bed.position_z;
-      targetItemId = bed.id;
-      bed.occupied_by_dwarf_id = dwarf.id;
-      state.dirtyStructureIds.add(bed.id);
-    }
-  }
 
   createTask(ctx, {
     task_type: taskType,
