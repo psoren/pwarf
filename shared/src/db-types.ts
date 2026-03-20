@@ -108,7 +108,8 @@ export type EventCategory =
   | 'myth'
   | 'monster_sighting'
   | 'monster_slain'
-  | 'monster_siege';
+  | 'monster_siege'
+  | 'trade_caravan_arrival';
 
 export type TerrainType =
   | 'mountain'

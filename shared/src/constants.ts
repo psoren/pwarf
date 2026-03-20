@@ -448,6 +448,9 @@ export const WORK_ENGRAVE = 60;
 /** Work required to brew a batch of ale */
 export const WORK_BREW = 50;
 
+/** Minimum drink item count before auto-brew creates a new brew task */
+export const MIN_DRINK_STOCK = 10;
+
 /** Work required to cook a meal */
 export const WORK_COOK = 40;
 
@@ -620,3 +623,12 @@ export const FORTRESS_NAME_NOUNS = [
   'ridge', 'crag', 'spire', 'bridge', 'mine', 'deep', 'bastion',
   'anvil', 'crown', 'tower', 'wall', 'barrow', 'haven',
 ];
+
+/** How many years between trade caravan arrivals */
+export const CARAVAN_INTERVAL_YEARS = 5;
+
+/** Number of drink items a caravan brings */
+export const CARAVAN_DRINK_COUNT = 15;
+
+/** Number of food items a caravan brings */
+export const CARAVAN_FOOD_COUNT = 10;
