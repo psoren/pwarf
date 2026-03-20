@@ -7,9 +7,11 @@ import {
   XP_FARM_PLANT,
   XP_FARM_HARVEST,
   XP_BUILD,
+  XP_HAUL,
 } from "@pwarf/shared";
 import type { Dwarf, FortressTile, FortressTileType, Task, Item } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
+import { canPickUp } from "../inventory.js";
 
 /** Build task type → resulting fortress tile type. */
 const BUILD_TILE_MAP: Record<string, FortressTileType> = {
@@ -56,11 +58,12 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   // Apply completion effects based on task type
   switch (task.task_type) {
     case 'mine':
-      completeMine(task, ctx);
+      completeMine(dwarf, task, ctx);
       awardXp(dwarf.id, 'mining', XP_MINE, state);
       break;
     case 'haul':
-      completeHaul(task);
+      completeHaul(dwarf, task, ctx);
+      awardXp(dwarf.id, 'hauling', XP_HAUL, state);
       break;
     case 'farm_till':
       awardXp(dwarf.id, 'farming', XP_FARM_TILL, state);
@@ -89,7 +92,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   }
 }
 
-function completeMine(task: Task, ctx: SimContext): void {
+function completeMine(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
   // Look up the tile type being mined (check overrides first, then deriver)
@@ -112,16 +115,28 @@ function completeMine(task: Task, ctx: SimContext): void {
       weight: itemWeight,
       value: itemValue,
       is_artifact: false,
-      created_by_dwarf_id: null,
+      created_by_dwarf_id: dwarf.id,
       created_in_civ_id: ctx.civilizationId,
       created_year: ctx.year,
       held_by_dwarf_id: null,
       located_in_civ_id: ctx.civilizationId,
       located_in_ruin_id: null,
+      position_x: null,
+      position_y: null,
+      position_z: null,
       lore: null,
       properties: {},
       created_at: new Date().toISOString(),
     };
+
+    // Dwarf picks up the item if they can carry it, otherwise drop at mine tile
+    if (canPickUp(dwarf.id, minedItem, ctx.state.items)) {
+      minedItem.held_by_dwarf_id = dwarf.id;
+    } else {
+      minedItem.position_x = task.target_x;
+      minedItem.position_y = task.target_y;
+      minedItem.position_z = task.target_z;
+    }
 
     ctx.state.items.push(minedItem);
     ctx.state.dirtyItemIds.add(minedItem.id);
@@ -191,10 +206,19 @@ function upsertFortressTile(
   ctx.state.dirtyFortressTileKeys.add(key);
 }
 
-function completeHaul(task: Task): void {
-  if (task.target_item_id) {
-    // Item stays in civ — position update will be handled when items get positions
-  }
+function completeHaul(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  if (!task.target_item_id) return;
+
+  const item = ctx.state.items.find(i => i.id === task.target_item_id);
+  if (!item) return;
+
+  // Drop item at haul target position (stockpile tile)
+  item.held_by_dwarf_id = null;
+  item.position_x = task.target_x;
+  item.position_y = task.target_y;
+  item.position_z = task.target_z;
+  item.located_in_civ_id = ctx.civilizationId;
+  ctx.state.dirtyItemIds.add(item.id);
 }
 
 function completeFarmHarvest(task: Task, ctx: SimContext): void {
@@ -213,6 +237,9 @@ function completeFarmHarvest(task: Task, ctx: SimContext): void {
     held_by_dwarf_id: null,
     located_in_civ_id: ctx.civilizationId,
     located_in_ruin_id: null,
+    position_x: task.target_x,
+    position_y: task.target_y,
+    position_z: task.target_z,
     lore: null,
     properties: {},
     created_at: new Date().toISOString(),
@@ -250,10 +277,9 @@ function completeDrink(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   ctx.state.zeroDrinkTicks.delete(dwarf.id);
 }
 
-function completeSleep(dwarf: Dwarf, ctx: SimContext): void {
+function completeSleep(_dwarf: Dwarf, _ctx: SimContext): void {
   // Sleep restoration happens gradually each tick in task-execution.
   // Nothing extra to do on completion.
-  ctx.state.dirtyDwarfIds.add(dwarf.id);
 }
 
 function awardXp(dwarfId: string, skillName: string, xpAmount: number, state: SimContext['state']): void {

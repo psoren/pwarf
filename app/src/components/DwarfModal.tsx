@@ -1,10 +1,13 @@
 import { useEffect } from "react";
+import type { Item } from "@pwarf/shared";
+import { DWARF_CARRY_CAPACITY } from "@pwarf/shared";
 import type { LiveDwarf, DwarfThought } from "../hooks/useDwarves";
 
 interface DwarfModalProps {
   dwarf: LiveDwarf;
   onClose: () => void;
   onGoTo: (dwarf: LiveDwarf) => void;
+  items?: Item[];
 }
 
 function dwarfJobLabel(d: LiveDwarf): string {
@@ -29,7 +32,7 @@ function needBar(label: string, value: number, color: string) {
   );
 }
 
-export function DwarfModal({ dwarf, onClose, onGoTo }: DwarfModalProps) {
+export function DwarfModal({ dwarf, onClose, onGoTo, items = [] }: DwarfModalProps) {
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -95,6 +98,26 @@ export function DwarfModal({ dwarf, onClose, onGoTo }: DwarfModalProps) {
           <div className="text-[var(--amber)] font-bold mb-0.5">Health</div>
           {needBar("HP", dwarf.health, "var(--green)")}
         </div>
+
+        {(() => {
+          const carried = items.filter(i => i.held_by_dwarf_id === dwarf.id);
+          const totalWeight = carried.reduce((sum, i) => sum + (i.weight ?? 0), 0);
+          return carried.length > 0 ? (
+            <div className="border-t border-[var(--border)] pt-2 mt-2">
+              <div className="text-[var(--amber)] font-bold mb-0.5">Inventory</div>
+              {needBar("Carry", (totalWeight / DWARF_CARRY_CAPACITY) * 100, "#cc9933")}
+              <div className="text-[var(--text)] text-[10px] mb-1">{totalWeight} / {DWARF_CARRY_CAPACITY} weight</div>
+              <ul className="space-y-0.5">
+                {carried.map((item) => (
+                  <li key={item.id} className="flex justify-between">
+                    <span className="text-[var(--green)]">{item.name}</span>
+                    <span className="text-[var(--text)]">{item.weight ?? 0}w</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null;
+        })()}
 
         {dwarf.memories && dwarf.memories.length > 0 && (
           <div className="border-t border-[var(--border)] pt-2 mt-2">

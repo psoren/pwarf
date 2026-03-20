@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback, useState } from "react";
 import type { WorldTile } from "@pwarf/shared";
 import type { FortressViewTile } from "../hooks/useFortressTiles";
-import { TERRAIN_GLYPHS, FORTRESS_GLYPHS, DESIGNATION_PREVIEW } from "./tile-glyphs";
+import { TERRAIN_GLYPHS, FORTRESS_GLYPHS, DESIGNATION_PREVIEW, STOCKPILE_GLYPH, GROUND_ITEM_GLYPH } from "./tile-glyphs";
 
 interface MainViewportProps {
   mode: "fortress" | "world";
@@ -32,6 +32,12 @@ interface MainViewportProps {
   onDwarfClick?: (x: number, y: number) => void;
   /** Selected world tile position */
   selectedTile?: { x: number; y: number } | null;
+  /** Stockpile tile positions keyed by "x,y,z" */
+  stockpileTiles?: Set<string>;
+  /** Ground item positions keyed by "x,y" → count */
+  groundItems?: Map<string, number>;
+  /** Current z-level for stockpile rendering */
+  zLevel?: number;
 }
 
 // Character cell dimensions (monospace)
@@ -72,6 +78,9 @@ export default function MainViewport({
   onTileClick,
   onDwarfClick,
   selectedTile,
+  stockpileTiles,
+  groundItems,
+  zLevel = 0,
 }: MainViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,6 +110,12 @@ export default function MainViewport({
   dwarfPositionsRef.current = dwarfPositions;
   const designatedTilesRef = useRef(designatedTiles);
   designatedTilesRef.current = designatedTiles;
+  const stockpileTilesRef = useRef(stockpileTiles);
+  stockpileTilesRef.current = stockpileTiles;
+  const groundItemsRef = useRef(groundItems);
+  groundItemsRef.current = groundItems;
+  const zLevelRef = useRef(zLevel);
+  zLevelRef.current = zLevel;
 
   // Increment to force re-render when data (not offset) changes
   const [dataVersion, setDataVersion] = useState(0);
@@ -108,17 +123,23 @@ export default function MainViewport({
   const prevGetFortressTileData = useRef(getFortressTileData);
   const prevDwarfPositions = useRef(dwarfPositions);
   const prevDesignatedTiles = useRef(designatedTiles);
+  const prevStockpileTiles = useRef(stockpileTiles);
+  const prevGroundItems = useRef(groundItems);
 
   if (
     getWorldTileData !== prevGetWorldTileData.current ||
     getFortressTileData !== prevGetFortressTileData.current ||
     dwarfPositions !== prevDwarfPositions.current ||
-    designatedTiles !== prevDesignatedTiles.current
+    designatedTiles !== prevDesignatedTiles.current ||
+    stockpileTiles !== prevStockpileTiles.current ||
+    groundItems !== prevGroundItems.current
   ) {
     prevGetWorldTileData.current = getWorldTileData;
     prevGetFortressTileData.current = getFortressTileData;
     prevDwarfPositions.current = dwarfPositions;
     prevDesignatedTiles.current = designatedTiles;
+    prevStockpileTiles.current = stockpileTiles;
+    prevGroundItems.current = groundItems;
     setDataVersion((v) => v + 1);
   }
 
@@ -145,6 +166,11 @@ export default function MainViewport({
         return { ch: "\u263A", fg: "#00cccc" };
       }
 
+      // Check for ground items at this position
+      if (groundItemsRef.current?.has(key) && (groundItemsRef.current.get(key) ?? 0) > 0) {
+        return { ch: GROUND_ITEM_GLYPH.ch, fg: GROUND_ITEM_GLYPH.fg };
+      }
+
       // Check for designation overlay
       const taskType = designatedTilesRef.current?.get(key);
 
@@ -153,12 +179,16 @@ export default function MainViewport({
         const tile = fn(wx, wy);
         if (tile) {
           const glyph = FORTRESS_GLYPHS[tile.tileType] ?? { ch: "?", fg: "#f00" };
+          const isStockpile = stockpileTilesRef.current?.has(`${wx},${wy},${zLevelRef.current}`);
           if (taskType) {
             const preview = DESIGNATION_PREVIEW[taskType];
             if (preview) {
               return { ch: preview.ch, fg: preview.fg, bg: "#442200" };
             }
             return { ...glyph, bg: "#442200" };
+          }
+          if (isStockpile) {
+            return { ...glyph, bg: STOCKPILE_GLYPH.bg };
           }
           return glyph;
         }

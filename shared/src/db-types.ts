@@ -383,8 +383,20 @@ export interface Item {
   held_by_dwarf_id: string | null;
   located_in_civ_id: string | null;
   located_in_ruin_id: string | null;
+  position_x: number | null;
+  position_y: number | null;
+  position_z: number | null;
   lore: string | null;
   properties: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface StockpileTile {
+  id: string;
+  civilization_id: string;
+  x: number;
+  y: number;
+  z: number;
   created_at: string;
 }
 

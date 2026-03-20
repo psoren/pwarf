@@ -16,10 +16,12 @@ import { useTasks } from "./hooks/useTasks";
 import { useEvents } from "./hooks/useEvents";
 import { useWorldState } from "./hooks/useWorldState";
 import { useDesignation, type DesignationMode } from "./hooks/useDesignation";
+import { useStockpileTiles } from "./hooks/useStockpileTiles";
 import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
 import TaskPriorities from "./components/TaskPriorities";
 import { DwarfModal } from "./components/DwarfModal";
 import { SURFACE_Z, CAVE_Z } from "@pwarf/shared";
+import type { Item } from "@pwarf/shared";
 import type { LiveDwarf } from "./hooks/useDwarves";
 
 export default function App() {
@@ -146,6 +148,27 @@ export default function App() {
     return map;
   }, [liveDwarves, zLevel]);
 
+  // Stockpile tiles
+  const stockpileTiles = useStockpileTiles(world.civId);
+
+  // Live items from snapshot
+  const liveItems: Item[] = useMemo(() => snapshot?.items ?? [], [snapshot]);
+
+  // Ground items map for rendering (items not held by a dwarf at current z-level)
+  const groundItems = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of liveItems) {
+      if (item.held_by_dwarf_id === null && item.position_x !== null && item.position_y !== null && item.position_z === zLevel) {
+        const key = `${item.position_x},${item.position_y}`;
+        map.set(key, (map.get(key) ?? 0) + 1);
+      }
+    }
+    return map;
+  }, [liveItems, zLevel]);
+
+  // Selected fortress tile (for stockpile inspection)
+  const [selectedFortressTile, setSelectedFortressTile] = useState<{ x: number; y: number } | null>(null);
+
   // Live activity log — prefer snapshot, fall back to DB polling
   const polledEvents = useEvents(world.civId);
   const events = useMemo(() => {
@@ -194,6 +217,9 @@ export default function App() {
           break;
         case "open_priorities":
           if (world.mode === "fortress") designation.togglePriorities();
+          break;
+        case "designate_stockpile":
+          if (world.mode === "fortress") designation.toggleStockpile();
           break;
         case "cancel_designation":
           designation.cancelDesignation();
@@ -323,6 +349,7 @@ export default function App() {
         population={liveDwarves.length}
         year={1}
         civName={world.mode === "fortress" ? "Stonegear" : undefined}
+        items={liveItems}
       />
 
       <div className="flex flex-1 min-h-0 relative">
@@ -347,6 +374,10 @@ export default function App() {
           onEmbark={world.mode === "world" && selectedWorldTile ? handleEmbark : undefined}
           dwarves={liveDwarves}
           onDwarfClick={world.mode === "fortress" ? (id: string) => setModalDwarfId(id) : undefined}
+          items={liveItems}
+          selectedFortressTile={world.mode === "fortress" ? selectedFortressTile : undefined}
+          stockpileTiles={world.mode === "fortress" ? stockpileTiles : undefined}
+          zLevel={zLevel}
         />
 
         <MainViewport
@@ -367,9 +398,16 @@ export default function App() {
           designationMode={world.mode === "fortress" ? designation.designationMode : undefined}
           onDesignateArea={world.mode === "fortress" ? designation.handleDesignateArea : undefined}
           onCancelArea={world.mode === "fortress" ? designation.handleCancelArea : undefined}
-          onTileClick={world.mode === "world" ? (x: number, y: number) => setSelectedWorldTile({ x, y }) : undefined}
+          onTileClick={world.mode === "world"
+            ? (x: number, y: number) => setSelectedWorldTile({ x, y })
+            : world.mode === "fortress"
+              ? (x: number, y: number) => setSelectedFortressTile({ x, y })
+              : undefined}
           onDwarfClick={world.mode === "fortress" ? handleDwarfClick : undefined}
           selectedTile={world.mode === "world" ? selectedWorldTile : undefined}
+          stockpileTiles={world.mode === "fortress" ? stockpileTiles : undefined}
+          groundItems={world.mode === "fortress" ? groundItems : undefined}
+          zLevel={zLevel}
         />
 
         {modalDwarf && (
@@ -377,6 +415,7 @@ export default function App() {
             dwarf={modalDwarf}
             onClose={() => setModalDwarfId(null)}
             onGoTo={handleGoToDwarf}
+            items={liveItems}
           />
         )}
 

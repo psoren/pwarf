@@ -127,6 +127,9 @@ export const WORK_CLEAR_BUSH = 20;
 /** Base work required to haul an item */
 export const WORK_HAUL_BASE = 20;
 
+/** Work required for a haul task (quick — mostly walking) */
+export const WORK_HAUL = 10;
+
 /** Base work required to till a farm plot */
 export const WORK_FARM_TILL_BASE = 60;
 
@@ -179,6 +182,17 @@ export const XP_FARM_TILL = 10;
 export const XP_FARM_PLANT = 10;
 export const XP_FARM_HARVEST = 10;
 export const XP_BUILD = 12;
+export const XP_HAUL = 5;
+
+// ============================================================
+// Inventory & stockpile
+// ============================================================
+
+/** Maximum weight a dwarf can carry */
+export const DWARF_CARRY_CAPACITY = 50;
+
+/** Maximum items per stockpile tile */
+export const STOCKPILE_TILE_CAPACITY = 3;
 
 // ============================================================
 // Scoring weights (job claiming)

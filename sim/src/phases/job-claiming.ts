@@ -3,6 +3,7 @@ import {
   SCORE_SKILL_WEIGHT,
   SCORE_DISTANCE_WEIGHT,
   SCORE_BEST_SKILL_BONUS,
+  DWARF_CARRY_CAPACITY,
 } from "@pwarf/shared";
 import type { Dwarf, Task } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -15,6 +16,7 @@ import {
   getBestSkill,
 } from "../task-helpers.js";
 import { manhattanDistance } from "../pathfinding.js";
+import { getCarriedWeight } from "../inventory.js";
 
 /**
  * Job Claiming Phase
@@ -37,12 +39,18 @@ export async function jobClaiming(ctx: SimContext): Promise<void> {
   for (const dwarf of idleDwarves) {
     let bestTask: Task | null = null;
     let bestScore = -Infinity;
+    const inventoryFull = getCarriedWeight(dwarf.id, state.items) >= DWARF_CARRY_CAPACITY;
 
     for (const task of pendingTasks) {
       if (claimedTaskIds.has(task.id)) continue;
 
       // Autonomous tasks are self-only
       if (isAutonomousTask(task.task_type) && task.assigned_dwarf_id !== dwarf.id) {
+        continue;
+      }
+
+      // Dwarves with full inventory skip mine tasks — haul first
+      if (inventoryFull && task.task_type === 'mine') {
         continue;
       }
 

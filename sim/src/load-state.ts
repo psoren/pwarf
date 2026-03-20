@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { StockpileTile } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 
 /**
@@ -11,7 +12,7 @@ export async function loadStateFromSupabase(
   civilizationId: string,
   worldId: string,
 ): Promise<CachedState> {
-  const [dwarvesResult, itemsResult, structuresResult, monstersResult, tasksResult, skillsResult] =
+  const [dwarvesResult, itemsResult, structuresResult, monstersResult, tasksResult, skillsResult, stockpileResult] =
     await Promise.all([
       supabase
         .from("dwarves")
@@ -21,7 +22,7 @@ export async function loadStateFromSupabase(
       supabase
         .from("items")
         .select("*")
-        .eq("located_in_civ_id", civilizationId),
+        .or(`located_in_civ_id.eq.${civilizationId},created_in_civ_id.eq.${civilizationId}`),
       supabase
         .from("structures")
         .select("*")
@@ -40,6 +41,10 @@ export async function loadStateFromSupabase(
         .from("dwarf_skills")
         .select("*")
         .in("dwarf_id", []),  // Will be populated after dwarves load
+      supabase
+        .from("stockpile_tiles")
+        .select("*")
+        .eq("civilization_id", civilizationId),
     ]);
 
   if (dwarvesResult.error) throw new Error(`Failed to load dwarves: ${dwarvesResult.error.message}`);
@@ -47,6 +52,7 @@ export async function loadStateFromSupabase(
   if (structuresResult.error) throw new Error(`Failed to load structures: ${structuresResult.error.message}`);
   if (monstersResult.error) throw new Error(`Failed to load monsters: ${monstersResult.error.message}`);
   if (tasksResult.error) throw new Error(`Failed to load tasks: ${tasksResult.error.message}`);
+  if (stockpileResult.error) throw new Error(`Failed to load stockpile_tiles: ${stockpileResult.error.message}`);
 
   // Load skills for the alive dwarves
   const dwarfIds = (dwarvesResult.data ?? []).map(d => d.id);
@@ -58,6 +64,12 @@ export async function loadStateFromSupabase(
       .in("dwarf_id", dwarfIds);
     if (error) throw new Error(`Failed to load dwarf_skills: ${error.message}`);
     dwarfSkills = data ?? [];
+  }
+
+  // Build stockpile tile map
+  const stockpileTiles = new Map<string, StockpileTile>();
+  for (const st of (stockpileResult.data ?? []) as StockpileTile[]) {
+    stockpileTiles.set(`${st.x},${st.y},${st.z}`, st);
   }
 
   return {
@@ -75,6 +87,7 @@ export async function loadStateFromSupabase(
     dirtyTaskIds: new Set(),
     newTasks: [],
     pendingEvents: [],
+    stockpileTiles,
     fortressTileOverrides: new Map(),
     dirtyFortressTileKeys: new Set(),
     zeroFoodTicks: new Map(),
