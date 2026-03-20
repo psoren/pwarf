@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { STEPS_PER_YEAR } from "@pwarf/shared";
-import type { Dwarf, FortressTile, Item, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
+import type { Dwarf, DwarfSkill, FortressTile, Item, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext, CachedState } from "./sim-context.js";
 import { createEmptyCachedState, createRng } from "./sim-context.js";
 import { DEFAULT_TEST_SEED } from "./rng.js";
@@ -25,6 +25,8 @@ import {
 /** Input configuration for a scenario run. */
 export interface ScenarioConfig {
   dwarves?: Dwarf[];
+  /** Dwarf skill records — required for any scenario that tests skilled tasks (build, mine, farm). */
+  dwarfSkills?: DwarfSkill[];
   items?: Item[];
   structures?: Structure[];
   monsters?: Monster[];
@@ -66,6 +68,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
   const state: CachedState = createEmptyCachedState();
   // Deep-copy all input entities so mutations during the run don't affect the caller's objects
   state.dwarves = config.dwarves ? config.dwarves.map(d => ({ ...d })) : [];
+  state.dwarfSkills = config.dwarfSkills ? config.dwarfSkills.map(s => ({ ...s })) : [];
   state.items = config.items ? config.items.map(i => ({ ...i })) : [];
   state.structures = config.structures ? config.structures.map(s => ({ ...s })) : [];
   state.monsters = config.monsters ? config.monsters.map(m => ({ ...m })) : [];
