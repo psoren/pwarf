@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { SimRunner } from "./sim-runner.js";
+import { SupabaseStateAdapter } from "./state-adapter.js";
 import { runHeadless } from "./headless-runner.js";
 import { SCENARIOS } from "./scenarios.js";
 
@@ -73,7 +74,7 @@ if (scenarioArg || hasFlag("--headless")) {
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-  const runner = new SimRunner(supabase);
+  const runner = new SimRunner(new SupabaseStateAdapter(supabase));
 
   const civId = process.env.CIVILIZATION_ID ?? "default";
   const worldId = process.env.WORLD_ID;
