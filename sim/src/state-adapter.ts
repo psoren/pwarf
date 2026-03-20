@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Task, StockpileTile } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
@@ -32,10 +31,13 @@ export interface StateAdapter {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class SupabaseStateAdapter implements StateAdapter {
-  // Accepts SupabaseClient<any> so app/ and sim/ can use different
-  // moduleResolution settings without triggering structural incompatibility.
+  // Constructor accepts `any` because app/ uses moduleResolution:"bundler" and
+  // sim/ uses NodeNext — TypeScript treats the same SupabaseClient type as
+  // structurally incompatible across those two resolution modes, even when it
+  // resolves to the exact same .d.ts file.  Using `any` here avoids that
+  // false-positive type error at the package boundary.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(private readonly supabase: SupabaseClient<any>) {}
+  constructor(private readonly supabase: any) {}
 
   async loadState(civilizationId: string, worldId: string): Promise<CachedState> {
     return loadStateFromSupabase(this.supabase, civilizationId, worldId);
