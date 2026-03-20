@@ -25,6 +25,7 @@ import {
   haunting,
   autoCookPhase,
   autoBrew,
+  taskRecovery,
 } from "./phases/index.js";
 
 /** Snapshot of sim state emitted after every tick for live UI rendering. */
@@ -223,6 +224,7 @@ export class SimRunner {
     await constructionProgress(this.ctx);
     await idleWandering(this.ctx);
     await haulAssignment(this.ctx);
+    taskRecovery(this.ctx);
     await autoCookPhase(this.ctx);
     await autoBrew(this.ctx);
     await jobClaiming(this.ctx);
