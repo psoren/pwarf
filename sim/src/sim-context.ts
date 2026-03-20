@@ -103,6 +103,14 @@ export interface CachedState {
 
   /** High-water mark of live population — recorded on the ruin row when the fortress falls. */
   civPeakPopulation: number;
+
+  /**
+   * Tracks active combat engagements as "${monsterId}:${dwarfId}" pairs.
+   * A battle world event is fired once per pair on first contact.
+   * Cleared when the monster is slain or the dwarf dies.
+   * In-memory only; not persisted across sim restarts.
+   */
+  activeCombatPairs: Set<string>;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */
@@ -142,6 +150,7 @@ export function createEmptyCachedState(): CachedState {
     civFallen: false,
     civFallenCause: 'unknown',
     civPeakPopulation: 0,
+    activeCombatPairs: new Set(),
   };
 }
 

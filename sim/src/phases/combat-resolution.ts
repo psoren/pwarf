@@ -41,6 +41,32 @@ export async function combatResolution(ctx: SimContext): Promise<void> {
     // Pick one dwarf at random to be the primary target this tick
     const target = combatants[rng.int(0, combatants.length - 1)]!;
 
+    // Fire a battle event the first time this monster/dwarf pair engage
+    const combatPairKey = `${monster.id}:${target.id}`;
+    if (!state.activeCombatPairs.has(combatPairKey)) {
+      state.activeCombatPairs.add(combatPairKey);
+      state.pendingEvents.push({
+        id: rng.uuid(),
+        world_id: ctx.worldId,
+        year: ctx.year,
+        category: 'battle',
+        civilization_id: ctx.civilizationId,
+        ruin_id: null,
+        dwarf_id: target.id,
+        item_id: null,
+        faction_id: null,
+        monster_id: monster.id,
+        description: `${target.name} fought the ${monster.name}!`,
+        event_data: {
+          monster_type: monster.type,
+          dwarf_id: target.id,
+          tile_x: monster.current_tile_x,
+          tile_y: monster.current_tile_y,
+        },
+        created_at: new Date().toISOString(),
+      });
+    }
+
     // Monster attacks dwarf
     const monsterDmg = rollDamage(
       rng,
@@ -80,6 +106,13 @@ export function rollDamage(rng: Rng, base: number, spread: number): number {
 
 function slayMonster(monster: Monster, killer: Dwarf, ctx: SimContext): void {
   const { state, rng } = ctx;
+
+  // Clear all combat pairs for this monster
+  for (const key of state.activeCombatPairs) {
+    if (key.startsWith(`${monster.id}:`)) {
+      state.activeCombatPairs.delete(key);
+    }
+  }
 
   monster.status = 'slain';
   monster.slain_year = ctx.year;
