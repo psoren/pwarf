@@ -435,6 +435,7 @@ export default function App() {
         civName={world.mode === "fortress" ? (world.civName ?? undefined) : undefined}
         items={liveItems}
         wealth={civWealth}
+        dwarves={liveDwarves}
       />
 
       <div className="flex flex-1 min-h-0 relative">
