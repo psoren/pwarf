@@ -448,6 +448,9 @@ export const WORK_ENGRAVE = 60;
 /** Work required to brew a batch of ale */
 export const WORK_BREW = 50;
 
+/** Minimum drink item count before auto-brew creates a new brew task */
+export const MIN_DRINK_STOCK = 10;
+
 /** Work required to cook a meal */
 export const WORK_COOK = 40;
 
