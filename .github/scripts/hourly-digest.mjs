@@ -66,6 +66,13 @@ async function getPRCommits(prNumber) {
   return commits.map((c) => c.commit.message.split('\n')[0]);
 }
 
+/** Extract Claude cost from a PR body. Returns null if not found. */
+function extractCost(body = '') {
+  const m = body.match(/\*\*Claude cost:\*\*\s+(\$[\d.]+)\s+\(([^)]+)\)/i);
+  if (!m) return null;
+  return { amount: m[1], tokens: m[2] };
+}
+
 /** Extract image URLs from markdown/HTML in a PR body. */
 function extractImages(body = '') {
   const images = [];
@@ -239,7 +246,8 @@ async function main() {
     prs.map(async (pr) => {
       const commits = await getPRCommits(pr.number);
       const images = extractImages(pr.body ?? '');
-      return { pr, commits, images };
+      const cost = extractCost(pr.body ?? '');
+      return { pr, commits, images, cost };
     }),
   );
 
@@ -259,10 +267,11 @@ async function main() {
     title: `Digest — ${now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC', timeZoneName: 'short' })}`,
     summary: simStatsMarkdown ? `${summary}\n\n${simStatsMarkdown}` : summary,
     simStats: simStats ?? undefined,
-    prs: prData.map(({ pr }) => ({
+    prs: prData.map(({ pr, cost }) => ({
       number: pr.number,
       title: pr.title,
       url: pr.html_url,
+      cost: cost ?? undefined,
     })),
     images: prData.flatMap(({ pr, images }) =>
       images.map((url) => ({

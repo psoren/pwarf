@@ -206,6 +206,12 @@ footer {
   color: var(--accent-dim);
 }
 
+.pr-cost {
+  color: var(--accent-dim);
+  font-size: 0.78rem;
+  margin-left: 0.5rem;
+}
+
 /* ── Screenshots ───────────────────────────────────────────────── */
 
 .screenshots { margin-top: 2rem; }

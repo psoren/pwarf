@@ -27,6 +27,10 @@ Before merging any new sim system:
 - Unit tests for all pure functions
 - Headless mode still works (no new browser dependencies)
 
+### Sim/app integration contract
+
+When changing a public API that both `sim/` and `app/` use (e.g. `SimRunner` constructor signature, exported types), **always update both sides in the same PR**. The TypeScript build covers this if types are correct, but `as any` casts in the app can hide mismatches. Avoid `as any` on sim/app boundaries.
+
 ## Secrets & credentials
 
 **Never hardcode secrets in source files.** All credentials must come from environment variables.
@@ -99,7 +103,9 @@ Follow these when writing or modifying code to keep the codebase clean:
 
 ## Database migrations
 
-- **Every new table needs a migration file.** If code references a new Supabase table (in `load-state.ts`, a hook, the sim, etc.), a corresponding `supabase/migrations/` file must exist. No exceptions. Forgetting this means the table only exists in production and breaks every other environment.
+- **Every new table or schema change needs a migration file.** If code references a new Supabase table or column (in `load-state.ts`, a hook, the sim, etc.), a corresponding `supabase/migrations/` file must exist. No exceptions. Forgetting this means the schema only exists in production and breaks every other environment.
+- **Never apply changes via Supabase MCP without also writing a migration file.** If you use MCP to apply a policy or column, immediately write and commit the corresponding `supabase/migrations/00NNN_name.sql` file in the same PR.
+- **After writing a migration, apply it to production via Supabase MCP** in the same PR. Migration files are not auto-applied — they must be explicitly applied with `mcp__supabase__apply_migration`.
 - **Playtests must be run against local Supabase** for any PR that touches DB schema. A playtest against production will silently pass even if the migration is missing.
 
 ## Playtesting

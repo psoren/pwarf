@@ -105,9 +105,10 @@ function renderList(posts) {
 }
 
 function renderPost(post) {
-  const prItems = post.prs.map(pr =>
-    `<li><a href="${escapeHtml(pr.url)}">#${pr.number}</a> — ${escapeHtml(pr.title)}</li>`
-  ).join('');
+  const prItems = post.prs.map(pr => {
+    const costTag = pr.cost ? ` <span class="pr-cost">${escapeHtml(pr.cost.amount)} (${escapeHtml(pr.cost.tokens)})</span>` : '';
+    return `<li><a href="${escapeHtml(pr.url)}">#${pr.number}</a> — ${escapeHtml(pr.title)}${costTag}</li>`;
+  }).join('');
 
   const screenshotsHtml = post.images && post.images.length > 0 ? `
     <div class="screenshots post-body">
