@@ -1,11 +1,9 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { STEPS_PER_SECOND, STEPS_PER_YEAR, SIM_FLUSH_INTERVAL_MS, createFortressDeriver } from "@pwarf/shared";
 import type { Dwarf, Item, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng } from "./rng.js";
-import { loadStateFromSupabase } from "./load-state.js";
-import { flushToSupabase } from "./flush-state.js";
+import type { StateAdapter } from "./state-adapter.js";
 import {
   needsDecay,
   taskExecution,
@@ -38,7 +36,7 @@ export interface SimSnapshot {
  * function in deterministic order every tick.
  */
 export class SimRunner {
-  private supabase: SupabaseClient;
+  private adapter: StateAdapter;
   private timer: ReturnType<typeof setInterval> | null = null;
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private ctx: SimContext | null = null;
@@ -50,34 +48,26 @@ export class SimRunner {
   currentYear = 1;
   currentDay = 1;
 
-  constructor(supabase: SupabaseClient) {
-    this.supabase = supabase;
+  constructor(adapter: StateAdapter) {
+    this.adapter = adapter;
   }
 
-  /** Load initial state from Supabase and begin the tick loop. */
+  /** Load initial state and begin the tick loop. */
   async start(civilizationId: string, worldId?: string): Promise<void> {
-    let cached;
-    if (worldId) {
-      cached = await loadStateFromSupabase(this.supabase, civilizationId, worldId);
-    } else {
-      cached = createEmptyCachedState();
-    }
+    const cached = worldId
+      ? await this.adapter.loadState(civilizationId, worldId)
+      : createEmptyCachedState();
 
-    // Fetch world seed to create fortress deriver
     let fortressDeriver = null;
     if (worldId) {
-      const { data: worldData } = await this.supabase
-        .from('worlds')
-        .select('seed')
-        .eq('id', worldId)
-        .single();
-      if (worldData?.seed != null) {
-        fortressDeriver = createFortressDeriver(BigInt(worldData.seed), civilizationId);
+      const seed = await this.adapter.getWorldSeed(worldId);
+      if (seed != null) {
+        fortressDeriver = createFortressDeriver(seed, civilizationId);
       }
     }
 
     this.ctx = {
-      supabase: this.supabase,
+      supabase: null as never,
       civilizationId,
       worldId: worldId ?? '',
       fortressDeriver,
@@ -88,19 +78,16 @@ export class SimRunner {
       state: cached,
     };
 
-    console.log(
-      `[sim] starting simulation for civilization ${civilizationId}`
-    );
+    console.log(`[sim] starting simulation for civilization ${civilizationId}`);
 
     const intervalMs = 1000 / STEPS_PER_SECOND;
     this.timer = setInterval(() => {
       void this.tick();
     }, intervalMs);
 
-    // Flush dirty state to Supabase + poll for new tasks
     this.flushTimer = setInterval(() => {
       if (this.ctx) {
-        void flushToSupabase(this.ctx);
+        void this.adapter.flush(this.ctx);
         void this.pollNewTasks();
         void this.pollStockpileTiles();
       }
@@ -118,50 +105,29 @@ export class SimRunner {
       this.flushTimer = null;
     }
 
-    // Final flush before stopping
     if (this.ctx) {
-      await flushToSupabase(this.ctx);
+      await this.adapter.flush(this.ctx);
     }
 
     console.log(`[sim] stopped at step ${this.stepCount}`);
   }
 
-  /** Poll Supabase for new tasks created by the player (designations). */
   private async pollNewTasks(): Promise<void> {
     if (!this.ctx) return;
-    const { state, supabase, civilizationId } = this.ctx;
-
+    const { state, civilizationId } = this.ctx;
     const existingIds = new Set(state.tasks.map(t => t.id));
-
-    const { data, error } = await supabase
-      .from('tasks')
-      .select('*')
-      .eq('civilization_id', civilizationId)
-      .eq('status', 'pending');
-
-    if (error || !data) return;
-
-    for (const task of data) {
-      if (!existingIds.has(task.id)) {
-        state.tasks.push(task);
-      }
+    const newTasks = await this.adapter.pollNewTasks(civilizationId, existingIds);
+    for (const task of newTasks) {
+      state.tasks.push(task);
     }
   }
 
-  /** Poll Supabase for stockpile tiles created by the player. */
   private async pollStockpileTiles(): Promise<void> {
     if (!this.ctx) return;
-    const { state, supabase, civilizationId } = this.ctx;
-
-    const { data, error } = await supabase
-      .from('stockpile_tiles')
-      .select('*')
-      .eq('civilization_id', civilizationId);
-
-    if (error || !data) return;
-
+    const { state, civilizationId } = this.ctx;
+    const tiles = await this.adapter.pollStockpileTiles(civilizationId);
     state.stockpileTiles.clear();
-    for (const tile of data) {
+    for (const tile of tiles) {
       state.stockpileTiles.set(`${tile.x},${tile.y},${tile.z}`, tile);
     }
   }
@@ -191,7 +157,6 @@ export class SimRunner {
     await eventFiring(this.ctx);
     await thoughtGeneration(this.ctx);
 
-    // Yearly rollup only fires once every STEPS_PER_YEAR steps
     if (this.stepCount % STEPS_PER_YEAR === 0) {
       this.currentYear++;
       this.currentDay = 1;
@@ -200,7 +165,6 @@ export class SimRunner {
       await yearlyRollup(this.ctx);
     }
 
-    // Emit snapshot for live UI rendering
     if (this.onTick) {
       this.onTick({
         dwarves: this.ctx.state.dwarves,
