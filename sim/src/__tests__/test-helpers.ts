@@ -1,4 +1,4 @@
-import type { Dwarf, DwarfSkill, Task, Item, Structure } from "@pwarf/shared";
+import type { Dwarf, DwarfSkill, Task, TaskType, Item, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createTestContext } from "../sim-context.js";
 import { createRng, DEFAULT_TEST_SEED } from "../rng.js";
@@ -78,6 +78,26 @@ export function makeItem(overrides?: Partial<Item>): Item {
     lore: null,
     properties: {},
     created_at: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+export function makeTask(task_type: TaskType, overrides?: Partial<Task>): Task {
+  return {
+    id: _factoryRng.uuid(),
+    civilization_id: "civ-1",
+    task_type,
+    status: "claimed",
+    priority: 5,
+    assigned_dwarf_id: null,
+    target_x: null,
+    target_y: null,
+    target_z: null,
+    target_item_id: null,
+    work_progress: 0,
+    work_required: 100,
+    created_at: new Date().toISOString(),
+    completed_at: null,
     ...overrides,
   };
 }
