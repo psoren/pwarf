@@ -1,0 +1,20 @@
+{
+  "id": "2026-03-20T08-57-43",
+  "timestamp": "2026-03-20T08:57:43.762Z",
+  "title": "Digest — Mar 20, 2026, 08:57 AM UTC",
+  "summary": "# pwarf Devlog Update\n\nExciting news, pwarf fans! We've just merged a batch of improvements that enhance our automated playtesting capabilities and streamline your gaming experience.\n\n## New Features for Automated Playtesting\n\n- **Headless Runner Implementation**: A new in-memory sim runner has been introduced, allowing you to playtest scenarios without relying on Supabase or timers.\n- **Starter Scenarios**: Four engaging starter scenarios have been added: \n  - Starvation\n  - Idle Fortress\n  - Long-Run Stability\n  - Overcrowding\n- **State Serialization**: The addition of a JSON snapshot serializer provides LLM-friendly output with alerts, human-readable need labels, and death records.\n- **Playtest Prompt Creation**: A new Haiku prompt template helps analyze the batch output from playtesting runs.\n- **Enhanced CLI Options**: We've updated the CLI to include flags for running scenarios, specifying ticks, outputting JSON, and taking snapshots at regular intervals.\n\nThis set of features aims to make the testing process smoother and more informative for developers and enthusiasts alike!\n\n## Merged PRs\n- PR #303: feat: batch mode automated playtesting (closes #298)",
+  "prs": [
+    {
+      "number": 303,
+      "title": "feat: batch mode automated playtesting (closes #298)",
+      "url": "https://github.com/psoren/pwarf/pull/303"
+    }
+  ],
+  "images": [
+    {
+      "prNumber": 303,
+      "prTitle": "feat: batch mode automated playtesting (closes #298)",
+      "url": "https://github.com/user-attachments/assets/948f4561-e79e-4204-9c86-09083ac1517b"
+    }
+  ]
+}
