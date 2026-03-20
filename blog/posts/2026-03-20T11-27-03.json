@@ -1,0 +1,153 @@
+{
+  "id": "2026-03-20T11-27-03",
+  "timestamp": "2026-03-20T11:27:03.705Z",
+  "title": "Digest — Mar 20, 2026, 11:27 AM UTC",
+  "summary": "# Pwarf Devlog - Recent Merges\n\nWe're excited to share the latest updates to Pwarf! Our team has been busy adding new features, fixing bugs, and improving the overall gameplay experience. Here's a concise summary of the most recent changes.\n\n## Major Features Added\n\n- **Yearly Aging**: Dwarves now age yearly, with chances of natural death for those over 80. This adds a new layer of realism to life in the colony.\n- **Tantrum Recovery System**: Dwarves experiencing high stress will now enter a tantrum state, canceling their current tasks. Recovery times vary based on the severity of the stress.\n- **New Personality Traits**: We've introduced conscientiousness and extraversion traits that affect work speed and social need decay, respectively. This enhances the depth of dwarf personalities.\n- **Restoration of Social, Purpose, and Beauty Needs**: We've implemented new systems for restoring these fundamental needs, directly impacting dwarf happiness and productivity.\n- **New Buildable Structures**: Players can now build wells and mushroom gardens as part of the beauty restoration system.\n\n## Bug Fixes and Improvements\n\n- **Event-Firing Logic**: Fixed issues with the event-firing system, ensuring starvation and dehydration warnings trigger correctly.\n- **Material Hardness**: Dwarves now mine at different speeds based on the hardness of the material, adding strategic elements to mining tasks.\n- **Sim Health Checks**: Each hourly digest now includes a quick health check of the simulation to ensure everything is running smoothly.\n\n## Testing Enhancements\n\n- **End-to-End Scenario Tests**: We’ve introduced various scenario tests to cover essential dwarf activities like mining and building, ensuring consistent gameplay.\n- **Custom Map Fixtures**: New support for custom map fixtures in tests allows for more controlled testing environments.\n\nThese enhancements are paving the way for a more immersive and engaging experience in the world of Pwarf. Stay tuned for more updates!\n\n## Merged PRs\n- #332\n- #330\n- #327\n- #325\n- #322\n- #320\n- #317\n- #315\n- #314\n- #313\n- #311\n- #310\n- #309\n- #307\n- #306\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 174\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 174
+  },
+  "prs": [
+    {
+      "number": 332,
+      "title": "fix: correct event-firing category and edge-trigger logic",
+      "url": "https://github.com/psoren/pwarf/pull/332",
+      "cost": {
+        "amount": "$3.53",
+        "tokens": "9.6M tokens"
+      }
+    },
+    {
+      "number": 330,
+      "title": "feat: yearly aging and openness beauty trait",
+      "url": "https://github.com/psoren/pwarf/pull/330",
+      "cost": {
+        "amount": "$1.75",
+        "tokens": "4.8M tokens"
+      }
+    },
+    {
+      "number": 327,
+      "title": "feat: implement tantrum trigger and recovery",
+      "url": "https://github.com/psoren/pwarf/pull/327",
+      "cost": {
+        "amount": "$1.54",
+        "tokens": "4.2M tokens"
+      }
+    },
+    {
+      "number": 325,
+      "title": "feat: conscientiousness/extraversion personality traits",
+      "url": "https://github.com/psoren/pwarf/pull/325",
+      "cost": {
+        "amount": "$1.62",
+        "tokens": "4.4M tokens"
+      }
+    },
+    {
+      "number": 322,
+      "title": "feat: personality traits affect stress gain/recovery rate",
+      "url": "https://github.com/psoren/pwarf/pull/322",
+      "cost": {
+        "amount": "$1.66",
+        "tokens": "4.5M tokens"
+      }
+    },
+    {
+      "number": 320,
+      "title": "feat: build_well and build_mushroom_garden task types",
+      "url": "https://github.com/psoren/pwarf/pull/320",
+      "cost": {
+        "amount": "$0.15",
+        "tokens": "419k tokens"
+      }
+    },
+    {
+      "number": 317,
+      "title": "fix: apply material hardness to mine task work rate",
+      "url": "https://github.com/psoren/pwarf/pull/317",
+      "cost": {
+        "amount": "$0.13",
+        "tokens": "355k tokens"
+      }
+    },
+    {
+      "number": 315,
+      "title": "feat: embed live sim stats in hourly digest",
+      "url": "https://github.com/psoren/pwarf/pull/315",
+      "cost": {
+        "amount": "$1.22",
+        "tokens": "3.3M tokens, multi-ticket session"
+      }
+    },
+    {
+      "number": 314,
+      "title": "feat: custom map fixtures for test scenarios",
+      "url": "https://github.com/psoren/pwarf/pull/314",
+      "cost": {
+        "amount": "$0.09",
+        "tokens": "251k tokens"
+      }
+    },
+    {
+      "number": 313,
+      "title": "feat: mining and building task scenario tests",
+      "url": "https://github.com/psoren/pwarf/pull/313",
+      "cost": {
+        "amount": "$0.08",
+        "tokens": "227k tokens"
+      }
+    },
+    {
+      "number": 311,
+      "title": "feat: social/purpose/beauty need restoration",
+      "url": "https://github.com/psoren/pwarf/pull/311",
+      "cost": {
+        "amount": "$0.09",
+        "tokens": "253k tokens"
+      }
+    },
+    {
+      "number": 310,
+      "title": "feat: runScenario — headless in-memory tick runner (closes #281)",
+      "url": "https://github.com/psoren/pwarf/pull/310",
+      "cost": {
+        "amount": "$2.98",
+        "tokens": "8.1M tokens"
+      }
+    },
+    {
+      "number": 309,
+      "title": "fix: add missing stockpile_tiles migration (closes #308)",
+      "url": "https://github.com/psoren/pwarf/pull/309",
+      "cost": {
+        "amount": "$0.72",
+        "tokens": "1.9M tokens"
+      }
+    },
+    {
+      "number": 307,
+      "title": "feat: StateAdapter interface — decouple sim from Supabase (closes #280)",
+      "url": "https://github.com/psoren/pwarf/pull/307",
+      "cost": {
+        "amount": "$1.50",
+        "tokens": "4.1M tokens"
+      }
+    },
+    {
+      "number": 306,
+      "title": "feat: seeded RNG for deterministic sim runs (closes #282)",
+      "url": "https://github.com/psoren/pwarf/pull/306",
+      "cost": {
+        "amount": "$3.67",
+        "tokens": "9.9M tokens"
+      }
+    }
+  ],
+  "images": []
+}
