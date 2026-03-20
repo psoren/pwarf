@@ -39,6 +39,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: Copy blog into build output
+        run: cp -r blog app/dist/blog
       - uses: actions/upload-pages-artifact@v3
         with:
           path: app/dist
