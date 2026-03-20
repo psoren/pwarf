@@ -1,11 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "./run-scenario.js";
-import { makeDwarf } from "./__tests__/test-helpers.js";
+import { makeDwarf, makeSkill, makeTask, makeMapTile } from "./__tests__/test-helpers.js";
 import {
   FOOD_DECAY_PER_TICK,
-  DRINK_DECAY_PER_TICK,
   NEED_INTERRUPT_FOOD,
   STEPS_PER_YEAR,
+  WORK_BUILD_WALL,
+  WORK_BUILD_FLOOR,
+  WORK_BUILD_BED,
+  WORK_BUILD_WELL,
+  WORK_BUILD_MUSHROOM_GARDEN,
+  WORK_MINE_BASE,
 } from "@pwarf/shared";
 
 describe("runScenario", () => {
@@ -66,5 +71,219 @@ describe("runScenario", () => {
     const posA = `${a.dwarves[0].position_x},${a.dwarves[0].position_y}`;
     const posB = `${b.dwarves[0].position_x},${b.dwarves[0].position_y}`;
     expect(posA).not.toBe(posB);
+  });
+});
+
+describe("building tasks", () => {
+  // Dwarf starting position — all adjacent/nearby tiles are open_air (no deriver fallback returns open_air)
+  const DX = 10;
+  const DY = 10;
+  const DZ = 0;
+
+  it("build_wall completes and changes tile to constructed_wall", async () => {
+    const dwarf = makeDwarf({ position_x: DX, position_y: DY, position_z: DZ });
+    const skill = makeSkill(dwarf.id, 'building');
+    // Target at (DX, DY+1) — adjacent to dwarf, so no movement needed
+    const task = makeTask('build_wall', {
+      status: 'pending',
+      assigned_dwarf_id: null,
+      target_x: DX,
+      target_y: DY + 1,
+      target_z: DZ,
+      work_required: WORK_BUILD_WALL,
+      work_progress: 0,
+    });
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      dwarfSkills: [skill],
+      tasks: [task],
+      ticks: WORK_BUILD_WALL + 20,
+      seed: 1,
+    });
+
+    const builtTile = result.fortressTileOverrides.find(
+      t => t.x === DX && t.y === DY + 1 && t.z === DZ,
+    );
+    expect(builtTile).toBeDefined();
+    expect(builtTile?.tile_type).toBe('constructed_wall');
+
+    const completedTask = result.tasks.find(t => t.id === task.id);
+    expect(completedTask?.status).toBe('completed');
+  });
+
+  it("build_floor completes and changes tile to constructed_floor", async () => {
+    const dwarf = makeDwarf({ position_x: DX, position_y: DY, position_z: DZ });
+    const skill = makeSkill(dwarf.id, 'building');
+    // Target 3 steps away — dwarf must walk there first (not adjacent task type)
+    const task = makeTask('build_floor', {
+      status: 'pending',
+      assigned_dwarf_id: null,
+      target_x: DX + 3,
+      target_y: DY,
+      target_z: DZ,
+      work_required: WORK_BUILD_FLOOR,
+      work_progress: 0,
+    });
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      dwarfSkills: [skill],
+      tasks: [task],
+      ticks: WORK_BUILD_FLOOR + 20,
+      seed: 1,
+    });
+
+    const builtTile = result.fortressTileOverrides.find(
+      t => t.x === DX + 3 && t.y === DY && t.z === DZ,
+    );
+    expect(builtTile).toBeDefined();
+    expect(builtTile?.tile_type).toBe('constructed_floor');
+  });
+
+  it("build_bed completes and creates a bed structure", async () => {
+    const dwarf = makeDwarf({ position_x: DX, position_y: DY, position_z: DZ });
+    const skill = makeSkill(dwarf.id, 'building');
+    const task = makeTask('build_bed', {
+      status: 'pending',
+      assigned_dwarf_id: null,
+      target_x: DX + 2,
+      target_y: DY,
+      target_z: DZ,
+      work_required: WORK_BUILD_BED,
+      work_progress: 0,
+    });
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      dwarfSkills: [skill],
+      tasks: [task],
+      ticks: WORK_BUILD_BED + 20,
+      seed: 1,
+    });
+
+    const bed = result.structures.find(
+      s => s.type === 'bed' && s.position_x === DX + 2 && s.position_y === DY,
+    );
+    expect(bed).toBeDefined();
+    expect(bed?.completion_pct).toBe(100);
+
+    const builtTile = result.fortressTileOverrides.find(
+      t => t.x === DX + 2 && t.y === DY && t.z === DZ,
+    );
+    expect(builtTile?.tile_type).toBe('bed');
+  });
+
+  it("build_well completes and creates a well structure", async () => {
+    const dwarf = makeDwarf({ position_x: DX, position_y: DY, position_z: DZ });
+    const skill = makeSkill(dwarf.id, 'building');
+    const task = makeTask('build_well', {
+      status: 'pending',
+      assigned_dwarf_id: null,
+      target_x: DX + 2,
+      target_y: DY,
+      target_z: DZ,
+      work_required: WORK_BUILD_WELL,
+      work_progress: 0,
+    });
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      dwarfSkills: [skill],
+      tasks: [task],
+      ticks: WORK_BUILD_WELL + 20,
+      seed: 1,
+    });
+
+    const well = result.structures.find(
+      s => s.type === 'well' && s.position_x === DX + 2 && s.position_y === DY,
+    );
+    expect(well).toBeDefined();
+  });
+
+  it("build_mushroom_garden completes and creates a mushroom_garden structure", async () => {
+    const dwarf = makeDwarf({ position_x: DX, position_y: DY, position_z: DZ });
+    const skill = makeSkill(dwarf.id, 'building');
+    const task = makeTask('build_mushroom_garden', {
+      status: 'pending',
+      assigned_dwarf_id: null,
+      target_x: DX + 2,
+      target_y: DY,
+      target_z: DZ,
+      work_required: WORK_BUILD_MUSHROOM_GARDEN,
+      work_progress: 0,
+    });
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      dwarfSkills: [skill],
+      tasks: [task],
+      ticks: WORK_BUILD_MUSHROOM_GARDEN + 20,
+      seed: 1,
+    });
+
+    const garden = result.structures.find(
+      s => s.type === 'mushroom_garden' && s.position_x === DX + 2 && s.position_y === DY,
+    );
+    expect(garden).toBeDefined();
+  });
+
+  it("mine task completes and changes tile to open_air, creates stone item", async () => {
+    const dwarf = makeDwarf({ position_x: DX, position_y: DY, position_z: DZ });
+    const skill = makeSkill(dwarf.id, 'mining');
+    // Place a stone tile adjacent to the dwarf
+    const stoneTile = makeMapTile(DX, DY + 1, DZ, 'stone');
+    const task = makeTask('mine', {
+      status: 'pending',
+      assigned_dwarf_id: null,
+      target_x: DX,
+      target_y: DY + 1,
+      target_z: DZ,
+      work_required: WORK_MINE_BASE,
+      work_progress: 0,
+    });
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      dwarfSkills: [skill],
+      tasks: [task],
+      fortressTileOverrides: [stoneTile],
+      ticks: WORK_MINE_BASE + 20,
+      seed: 1,
+    });
+
+    const minedTile = result.fortressTileOverrides.find(
+      t => t.x === DX && t.y === DY + 1 && t.z === DZ,
+    );
+    expect(minedTile?.tile_type).toBe('grass'); // z=0 surface mine → grass
+    expect(minedTile?.is_mined).toBe(true);
+
+    const stoneItem = result.items.find(i => i.name === 'Stone block');
+    expect(stoneItem).toBeDefined();
+  });
+
+  it("dwarf without skill cannot claim build task", async () => {
+    // No building skill — task should stay pending
+    const dwarf = makeDwarf({ position_x: DX, position_y: DY, position_z: DZ });
+    const task = makeTask('build_wall', {
+      status: 'pending',
+      assigned_dwarf_id: null,
+      target_x: DX,
+      target_y: DY + 1,
+      target_z: DZ,
+      work_required: WORK_BUILD_WALL,
+      work_progress: 0,
+    });
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      dwarfSkills: [], // no skills
+      tasks: [task],
+      ticks: 50,
+      seed: 1,
+    });
+
+    const pendingTask = result.tasks.find(t => t.id === task.id);
+    expect(pendingTask?.status).toBe('pending');
   });
 });
