@@ -9,7 +9,7 @@ import {
 import type { SimContext } from "../sim-context.js";
 import { dwarfName } from "../dwarf-utils.js";
 import { applyWitnessStress } from "./deprivation.js";
-import { createWitnessDeathMemories } from "../dwarf-memory.js";
+import { createGriefFriendMemories, createWitnessDeathMemories } from "../dwarf-memory.js";
 
 /**
  * Returns true if the fortress has at least one completed well structure.
@@ -111,9 +111,9 @@ export function diseasePhase(ctx: SimContext): void {
       dwarf.cause_of_death = 'disease';
       state.infectedDwarfIds.delete(dwarf.id);
       state.ghostDwarfIds.add(dwarf.id);
-      state.ghostPositions.set(dwarf.id, { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z });
       applyWitnessStress(dwarf, state);
       createWitnessDeathMemories(dwarf, state, year);
+      createGriefFriendMemories(dwarf, state, year);
       state.pendingEvents.push({
         id: rng.uuid(),
         world_id: '',

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createRng, DEFAULT_TEST_SEED, type Rng } from "./rng.js";
 import type {
   Dwarf,
+  DwarfRelationship,
   DwarfSkill,
   FortressDeriver,
   FortressTile,
@@ -21,6 +22,7 @@ export interface CachedState {
   monsters: Monster[];
   tasks: Task[];
   dwarfSkills: DwarfSkill[];
+  dwarfRelationships: DwarfRelationship[];
   worldEvents: WorldEvent[];
 
   /** IDs of entities modified during the current tick, to be flushed to DB. */
@@ -30,9 +32,13 @@ export interface CachedState {
   dirtyMonsterIds: Set<string>;
   dirtyTaskIds: Set<string>;
   dirtyDwarfSkillIds: Set<string>;
+  dirtyDwarfRelationshipIds: Set<string>;
 
   /** New tasks created this tick that need to be inserted (not upserted). */
   newTasks: Task[];
+
+  /** New relationships created that need to be inserted (not upserted). */
+  newDwarfRelationships: DwarfRelationship[];
 
   /** Events queued during a tick, flushed by the event-firing phase. */
   pendingEvents: WorldEvent[];
@@ -55,24 +61,20 @@ export interface CachedState {
   infectedDwarfIds: Set<string>;
 
   /**
+   * IDs of dead dwarves whose spirits have not yet been put to rest.
+   * Ghosts haunt the fortress and stress nearby living dwarves.
+   * Cleared when an engrave_memorial task is completed nearby.
+   * Note: only tracks ghosts from the current session (dead dwarves from prior
+   * sessions are not loaded — this is an acceptable simplification for now).
+   */
+  ghostDwarfIds: Set<string>;
+
+  /**
    * Tracks which (dwarf, need) pairs have already fired a critical-need warning
    * this crossing. Maps dwarfId → Set of need names ('food' | 'drink').
    * Cleared when the need recovers above the warning threshold.
    */
   warnedNeedIds: Map<string, Set<string>>;
-
-  /**
-   * IDs of dwarves who have died without a memorial and now haunt the fortress.
-   * Populated when a dwarf dies; cleared when a memorial is engraved nearby.
-   * Not persisted across sim restarts (in-memory only).
-   */
-  ghostDwarfIds: Set<string>;
-
-  /**
-   * Position of each ghost at the time of death. Keyed by dwarf ID.
-   * Used to determine haunting radius and memorial targeting.
-   */
-  ghostPositions: Map<string, { x: number; y: number; z: number }>;
 
   /**
    * IDs of dwarves currently in a strange mood (creating an artifact).
@@ -91,6 +93,7 @@ export function createEmptyCachedState(): CachedState {
     monsters: [],
     tasks: [],
     dwarfSkills: [],
+    dwarfRelationships: [],
     worldEvents: [],
     dirtyDwarfIds: new Set(),
     dirtyItemIds: new Set(),
@@ -98,7 +101,9 @@ export function createEmptyCachedState(): CachedState {
     dirtyMonsterIds: new Set(),
     dirtyTaskIds: new Set(),
     dirtyDwarfSkillIds: new Set(),
+    dirtyDwarfRelationshipIds: new Set(),
     newTasks: [],
+    newDwarfRelationships: [],
     pendingEvents: [],
     stockpileTiles: new Map(),
     fortressTileOverrides: new Map(),
@@ -107,10 +112,9 @@ export function createEmptyCachedState(): CachedState {
     zeroDrinkTicks: new Map(),
     tantrumTicks: new Map(),
     infectedDwarfIds: new Set(),
-    warnedNeedIds: new Map(),
     ghostDwarfIds: new Set(),
-    ghostPositions: new Map(),
     strangeMoodDwarfIds: new Set(),
+    warnedNeedIds: new Map(),
   };
 }
 

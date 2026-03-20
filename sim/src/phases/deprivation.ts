@@ -1,7 +1,7 @@
 import { STARVATION_TICKS, DEHYDRATION_TICKS, WITNESS_DEATH_STRESS, WITNESS_DEATH_RADIUS } from "@pwarf/shared";
 import type { Dwarf } from "@pwarf/shared";
 import type { CachedState, SimContext } from "../sim-context.js";
-import { createWitnessDeathMemories } from "../dwarf-memory.js";
+import { createGriefFriendMemories, createWitnessDeathMemories } from "../dwarf-memory.js";
 
 /**
  * Handles starvation and dehydration death tracking for all alive dwarves.
@@ -50,11 +50,6 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
 
   // Add to ghost tracking — dwarf haunts until memorialized
   state.ghostDwarfIds.add(dwarf.id);
-  state.ghostPositions.set(dwarf.id, {
-    x: dwarf.position_x,
-    y: dwarf.position_y,
-    z: dwarf.position_z,
-  });
 
   // Fail any task assigned to this dwarf
   if (dwarf.current_task_id) {
@@ -78,8 +73,9 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
   // Apply witness stress to nearby alive dwarves
   applyWitnessStress(dwarf, state);
 
-  // Create lasting memories for witnesses
+  // Create lasting memories for witnesses and friends
   createWitnessDeathMemories(dwarf, state, ctx.year);
+  createGriefFriendMemories(dwarf, state, ctx.year);
 
   // Check if all dwarves are dead — fortress falls
   // Note: dwarf.status is already 'dead' at this point, so filter it out

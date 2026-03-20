@@ -21,6 +21,7 @@ import {
   thoughtGeneration,
   haulAssignment,
   beautyRestoration,
+  haunting,
 } from "./phases/index.js";
 import { SCENARIOS, buildScenarioState, buildEatDrinkTasks } from "./scenarios.js";
 import { serializeState } from "./state-serializer.js";
@@ -121,6 +122,7 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
     await eventFiring(ctx);
     await thoughtGeneration(ctx);
     await beautyRestoration(ctx);
+    await haunting(ctx);
 
     if (stepCount % STEPS_PER_YEAR === 0) {
       currentYear++;

@@ -26,6 +26,7 @@ import { dwarfName } from "../dwarf-utils.js";
 import { generateEngravingScene } from "../engrave-scene.js";
 import { generateArtifactName, randomArtifactCategory, randomArtifactMaterial, randomArtifactQuality } from "../artifact-names.js";
 import { createArtifactMemory, createMasterworkMemory } from "../dwarf-memory.js";
+import { putGhostToRest } from "./haunting.js";
 
 /** Build task type → resulting fortress tile type. */
 const BUILD_TILE_MAP: Record<string, FortressTileType> = {
@@ -127,6 +128,10 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       completeEngrave(task, ctx, dwarf);
       awardXp(dwarf.id, 'engraving', XP_ENGRAVE, ctx, dwarf);
       break;
+    case 'engrave_memorial':
+      completeEngraveMemorial(task, ctx, dwarf);
+      awardXp(dwarf.id, 'engraving', XP_ENGRAVE, ctx, dwarf);
+      break;
     case 'brew':
       completeBrew(dwarf, task, ctx);
       awardXp(dwarf.id, 'brewing', XP_BREW, ctx, dwarf);
@@ -138,10 +143,6 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'smith':
       completeSmith(dwarf, task, ctx);
       awardXp(dwarf.id, 'smithing', XP_SMITH, ctx, dwarf);
-      break;
-    case 'engrave_memorial':
-      completeMemorial(task, ctx, dwarf);
-      awardXp(dwarf.id, 'engraving', XP_ENGRAVE, ctx, dwarf);
       break;
     case 'create_artifact':
       completeArtifact(dwarf, ctx);
@@ -158,7 +159,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
  * Exported for unit testing.
  */
 export function restorePurposeNeed(dwarf: Dwarf, taskType: string): void {
-  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'smooth', 'engrave', 'brew', 'cook', 'smith', 'create_artifact']);
+  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'smooth', 'engrave', 'engrave_memorial', 'brew', 'cook', 'smith', 'create_artifact']);
   const restore = SKILLED_TASKS.has(taskType)
     ? PURPOSE_RESTORE_SKILLED
     : taskType === 'haul'
@@ -506,49 +507,6 @@ function completeSmooth(task: Task, ctx: SimContext): void {
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, resultType, existing?.material ?? null, existing?.is_mined ?? false);
 }
 
-function completeMemorial(task: Task, ctx: SimContext, dwarf: Dwarf): void {
-  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
-  if (ctx.state.ghostDwarfIds.size === 0) return;
-
-  // Find the nearest ghost to the memorial location (on the same z-level)
-  let nearestGhostId: string | null = null;
-  let nearestDist = Infinity;
-  for (const [ghostId, pos] of ctx.state.ghostPositions) {
-    if (pos.z !== task.target_z) continue;
-    const dist =
-      Math.abs(pos.x - task.target_x) +
-      Math.abs(pos.y - task.target_y);
-    if (dist < nearestDist) {
-      nearestDist = dist;
-      nearestGhostId = ghostId;
-    }
-  }
-
-  if (!nearestGhostId) return;
-
-  ctx.state.ghostDwarfIds.delete(nearestGhostId);
-  ctx.state.ghostPositions.delete(nearestGhostId);
-
-  const ghostDwarf = ctx.state.dwarves.find(d => d.id === nearestGhostId);
-  const ghostName = ghostDwarf ? dwarfName(ghostDwarf) : 'the departed';
-
-  ctx.state.pendingEvents.push({
-    id: ctx.rng.uuid(),
-    world_id: '',
-    year: ctx.year,
-    category: 'discovery',
-    civilization_id: ctx.civilizationId,
-    ruin_id: null,
-    dwarf_id: dwarf.id,
-    item_id: null,
-    faction_id: null,
-    monster_id: null,
-    description: `${dwarfName(dwarf)} has engraved a memorial for ${ghostName}. The spirit is at rest.`,
-    event_data: { action: 'memorial', ghost_dwarf_id: nearestGhostId },
-    created_at: new Date().toISOString(),
-  });
-}
-
 function completeArtifact(dwarf: Dwarf, ctx: SimContext): void {
   const { state } = ctx;
 
@@ -648,6 +606,13 @@ function completeEngrave(task: Task, ctx: SimContext, dwarf: Dwarf): void {
     event_data: { action: 'engrave', scene },
     created_at: new Date().toISOString(),
   });
+}
+
+function completeEngraveMemorial(task: Task, ctx: SimContext, dwarf: Dwarf): void {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+
+  // Put a ghost to rest (nearest ghost to this tile)
+  putGhostToRest(task.target_x, task.target_y, dwarfName(dwarf), ctx);
 }
 
 /**

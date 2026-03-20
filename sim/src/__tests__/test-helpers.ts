@@ -1,4 +1,4 @@
-import type { Dwarf, DwarfSkill, FortressTile, FortressTileType, Task, TaskType, Item, Structure } from "@pwarf/shared";
+import type { Dwarf, DwarfRelationship, DwarfSkill, FortressTile, FortressTileType, RelationshipType, Task, TaskType, Item, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createTestContext } from "../sim-context.js";
 import { createRng, DEFAULT_TEST_SEED } from "../rng.js";
@@ -144,6 +144,25 @@ export function makeStructure(overrides?: Partial<Structure>): Structure {
     position_y: 0,
     position_z: 0,
     occupied_by_dwarf_id: null,
+    ...overrides,
+  };
+}
+
+export function makeRelationship(
+  dwarfAId: string,
+  dwarfBId: string,
+  type: RelationshipType = "acquaintance",
+  overrides?: Partial<DwarfRelationship>,
+): DwarfRelationship {
+  const [aId, bId] = dwarfAId < dwarfBId ? [dwarfAId, dwarfBId] : [dwarfBId, dwarfAId];
+  return {
+    id: _factoryRng.uuid(),
+    dwarf_a_id: aId,
+    dwarf_b_id: bId,
+    type,
+    strength: 1,
+    shared_events: [],
+    formed_year: 1,
     ...overrides,
   };
 }

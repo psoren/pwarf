@@ -2,7 +2,7 @@
 // Dwarf memory (stored as JSONB in dwarves.memories)
 // ============================================================
 
-export type DwarfMemoryType = 'witnessed_death' | 'created_masterwork' | 'created_artifact';
+export type DwarfMemoryType = 'witnessed_death' | 'created_masterwork' | 'created_artifact' | 'grief_friend';
 
 /**
  * A single emotional memory stored in a dwarf's memories JSONB array.
@@ -184,10 +184,10 @@ export type TaskType =
   | 'wander'
   | 'smooth'
   | 'engrave'
+  | 'engrave_memorial'
   | 'brew'
   | 'cook'
   | 'smith'
-  | 'engrave_memorial'
   | 'create_artifact';
 
 export type TaskStatus =

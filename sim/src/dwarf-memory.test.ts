@@ -5,10 +5,11 @@ import {
   activeMemories,
   decayMemories,
   createWitnessDeathMemories,
+  createGriefFriendMemories,
   createArtifactMemory,
   createMasterworkMemory,
 } from './dwarf-memory.js';
-import { makeDwarf, makeContext } from './__tests__/test-helpers.js';
+import { makeDwarf, makeRelationship, makeContext } from './__tests__/test-helpers.js';
 import type { DwarfMemory } from '@pwarf/shared';
 
 function makeMemory(overrides: Partial<DwarfMemory> = {}): DwarfMemory {
@@ -224,5 +225,65 @@ describe('createMasterworkMemory', () => {
     expect(mems).toHaveLength(1);
     expect(mems[0].type).toBe('created_masterwork');
     expect(mems[0].intensity).toBeLessThan(0);
+  });
+});
+
+describe('createGriefFriendMemories', () => {
+  it('adds grief_friend memory and immediate stress to alive friends of the deceased', () => {
+    const deceased = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
+    const friend = makeDwarf({ memories: [], stress_level: 0 });
+    const rel = makeRelationship(deceased.id, friend.id, 'friend');
+    const ctx = makeContext({ dwarves: [deceased, friend] });
+    ctx.state.dwarfRelationships.push(rel);
+    deceased.status = 'dead';
+
+    createGriefFriendMemories(deceased, ctx.state, 2);
+
+    const mems = getMemories(friend);
+    expect(mems).toHaveLength(1);
+    expect(mems[0].type).toBe('grief_friend');
+    expect(mems[0].intensity).toBeGreaterThan(0);
+    expect(mems[0].year).toBe(2);
+    expect(friend.stress_level).toBeGreaterThan(0);
+  });
+
+  it('does not add grief to dwarves with only acquaintance relationship', () => {
+    const deceased = makeDwarf();
+    const acquaintance = makeDwarf({ memories: [] });
+    const rel = makeRelationship(deceased.id, acquaintance.id, 'acquaintance');
+    const ctx = makeContext({ dwarves: [deceased, acquaintance] });
+    ctx.state.dwarfRelationships.push(rel);
+    deceased.status = 'dead';
+
+    createGriefFriendMemories(deceased, ctx.state, 2);
+
+    expect(getMemories(acquaintance)).toHaveLength(0);
+  });
+
+  it('does not add grief to already-dead dwarves', () => {
+    const deceased = makeDwarf({ status: 'dead' });
+    const deadFriend = makeDwarf({ status: 'dead', memories: [] });
+    const rel = makeRelationship(deceased.id, deadFriend.id, 'friend');
+    const ctx = makeContext({ dwarves: [deceased, deadFriend] });
+    ctx.state.dwarfRelationships.push(rel);
+
+    createGriefFriendMemories(deceased, ctx.state, 2);
+
+    expect(getMemories(deadFriend)).toHaveLength(0);
+  });
+
+  it('works when deceased is dwarf_b_id in the relationship', () => {
+    const friend = makeDwarf({ memories: [] });
+    const deceased = makeDwarf({ status: 'dead' });
+    // Ensure deceased ends up as b by forcing canonical order
+    const rel = makeRelationship(friend.id, deceased.id, 'friend');
+    const ctx = makeContext({ dwarves: [friend, deceased] });
+    ctx.state.dwarfRelationships.push(rel);
+
+    createGriefFriendMemories(deceased, ctx.state, 3);
+
+    const mems = getMemories(friend);
+    expect(mems).toHaveLength(1);
+    expect(mems[0].type).toBe('grief_friend');
   });
 });

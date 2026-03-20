@@ -254,17 +254,14 @@ export const MEMORY_MASTERWORK_INTENSITY = -10;
 export const MEMORY_MASTERWORK_DURATION_YEARS = 2;
 
 // ============================================================
-// Ghosts
+// Haunting
 // ============================================================
 
-/** Stress applied per tick to alive dwarves within haunting radius of a ghost */
-export const GHOST_STRESS_PER_TICK = 0.3;
+/** Stress applied per tick to a living dwarf near an active ghost */
+export const GHOST_STRESS_PER_TICK = 0.5;
 
 /** Manhattan-distance radius within which a ghost haunts nearby dwarves */
-export const GHOST_HAUNTING_RADIUS = 5;
-
-/** Work required to engrave a memorial slab */
-export const MEMORIAL_WORK_REQUIRED = 200;
+export const GHOST_HAUNTING_RADIUS = 6;
 
 // ============================================================
 // Stress severity tiers
@@ -457,6 +454,9 @@ export const WORK_COOK = 40;
 /** Work required to smith an item */
 export const WORK_SMITH = 70;
 
+/** Work required to engrave a memorial slab for a fallen dwarf */
+export const WORK_ENGRAVE_MEMORIAL = 80;
+
 /** Max distance a dwarf will wander from current position */
 export const WANDER_RADIUS = 8;
 
@@ -560,3 +560,22 @@ export const POLL_EVENTS_MS = 3_000;
 /** How often the frontend polls for fortress tile overrides */
 export const POLL_FORTRESS_TILES_MS = 3_000;
 
+
+// ============================================================
+// Dwarf relationships
+// ============================================================
+
+/** Probability that two nearby dwarves form an acquaintance relationship each year */
+export const FRIENDSHIP_FORMATION_CHANCE = 0.3;
+
+/** Years as acquaintance before upgrading to friend */
+export const FRIEND_UPGRADE_YEARS = 2;
+
+/** Extra stress spike when a close friend dies (immediate, on top of witness stress) */
+export const GRIEF_FRIEND_STRESS = 20;
+
+/** Intensity of a "grief_friend" memory (positive = stress) */
+export const MEMORY_GRIEF_FRIEND_INTENSITY = 25;
+
+/** How many in-game years grief from losing a friend lingers */
+export const MEMORY_GRIEF_FRIEND_DURATION_YEARS = 5;
