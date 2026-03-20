@@ -75,7 +75,7 @@ Follow these when writing or modifying code to keep the codebase clean:
 
 - **Every PR must include a playtest.** After implementing a feature or fix, run the game in Chrome and verify it works end-to-end.
 - Include a text report in the PR description summarizing what was tested and the results.
-- Include screenshots demonstrating the feature working (or bugs found).
+- Include **before and after screenshots** — one showing the state before your change (bug or missing feature), one after (fix working). To get the "before" shot, stash your changes or check out main, run the game, capture, then restore your branch.
 - Use the `/playtest` skill to run the game locally in Chrome with browser automation.
 
 ### Uploading screenshots to PRs
