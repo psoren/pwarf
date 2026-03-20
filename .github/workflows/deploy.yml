@@ -9,6 +9,12 @@ on:
         description: Branch to deploy
         required: false
         default: main
+  # Re-deploy after the digest workflow commits new blog posts.
+  # (Pushes made by GITHUB_TOKEN don't trigger `push` events.)
+  workflow_run:
+    workflows: ["Hourly Digest"]
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
