@@ -19,9 +19,10 @@ interface ToolbarProps {
   items?: Item[];
   wealth?: number;
   dwarves?: LiveDwarf[];
+  onTutorial?: () => void;
 }
 
-export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0, dwarves = [] }: ToolbarProps) {
+export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0, dwarves = [], onTutorial }: ToolbarProps) {
   const alert = mode === "fortress" ? deriveAlert(dwarves) : null;
 
   return (
@@ -85,6 +86,15 @@ export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isP
             className="px-2 py-0.5 border border-[var(--border)] text-[var(--text)] hover:text-[var(--red,#f87171)] hover:border-[var(--red,#f87171)] cursor-pointer"
           >
             New Game
+          </button>
+        )}
+        {onTutorial && (
+          <button
+            onClick={onTutorial}
+            className="px-2 py-0.5 border border-[var(--border)] text-[var(--text)] hover:text-[var(--cyan,#67e8f9)] hover:border-[var(--cyan,#67e8f9)] cursor-pointer"
+            title="Show tutorial"
+          >
+            ?
           </button>
         )}
         {onSignOut && (
