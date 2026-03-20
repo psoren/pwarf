@@ -8,6 +8,7 @@ import {
 } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { dwarfName } from "../dwarf-utils.js";
+import { applyWitnessStress } from "./deprivation.js";
 
 /**
  * Returns true if the fortress has at least one completed well structure.
@@ -110,6 +111,7 @@ export function diseasePhase(ctx: SimContext): void {
       state.infectedDwarfIds.delete(dwarf.id);
       state.ghostDwarfIds.add(dwarf.id);
       state.ghostPositions.set(dwarf.id, { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z });
+      applyWitnessStress(dwarf, state);
       state.pendingEvents.push({
         id: rng.uuid(),
         world_id: '',
