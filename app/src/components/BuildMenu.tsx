@@ -9,6 +9,7 @@ export type BuildOption = {
 const BUILD_OPTIONS: BuildOption[] = [
   { label: "Wall", key: "w", taskType: "build_wall" },
   { label: "Floor", key: "f", taskType: "build_floor" },
+  { label: "Bed", key: "e", taskType: "build_bed" },
 ];
 
 interface BuildMenuProps {

@@ -1,6 +1,7 @@
 import {
   FOOD_RESTORE_AMOUNT,
   DRINK_RESTORE_AMOUNT,
+  FLOOR_SLEEP_STRESS,
   MAX_NEED,
   XP_MINE,
   XP_FARM_TILL,
@@ -9,7 +10,7 @@ import {
   XP_BUILD,
   XP_HAUL,
 } from "@pwarf/shared";
-import type { Dwarf, FortressTile, FortressTileType, Task, Item } from "@pwarf/shared";
+import type { Dwarf, FortressTile, FortressTileType, Task, Item, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { canPickUp } from "../inventory.js";
 
@@ -82,11 +83,15 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       completeDrink(dwarf, task, ctx);
       break;
     case 'sleep':
-      completeSleep(dwarf, ctx);
+      completeSleep(dwarf, task, ctx);
       break;
     case 'build_wall':
     case 'build_floor':
       completeBuild(task, ctx);
+      awardXp(dwarf.id, 'building', XP_BUILD, state);
+      break;
+    case 'build_bed':
+      completeBuildBed(task, ctx);
       awardXp(dwarf.id, 'building', XP_BUILD, state);
       break;
   }
@@ -277,9 +282,45 @@ function completeDrink(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   ctx.state.zeroDrinkTicks.delete(dwarf.id);
 }
 
-function completeSleep(_dwarf: Dwarf, _ctx: SimContext): void {
-  // Sleep restoration happens gradually each tick in task-execution.
-  // Nothing extra to do on completion.
+function completeSleep(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  if (task.target_item_id) {
+    // Was sleeping in a bed — release occupancy
+    const bed = ctx.state.structures.find(s => s.id === task.target_item_id);
+    if (bed) {
+      bed.occupied_by_dwarf_id = null;
+      ctx.state.dirtyStructureIds.add(bed.id);
+    }
+  } else {
+    // Floor sleep — apply stress penalty
+    dwarf.stress_level = Math.min(MAX_NEED, dwarf.stress_level + FLOOR_SLEEP_STRESS);
+  }
+  ctx.state.dirtyDwarfIds.add(dwarf.id);
+}
+
+function completeBuildBed(task: Task, ctx: SimContext): void {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+
+  const bed: Structure = {
+    id: crypto.randomUUID(),
+    civilization_id: ctx.civilizationId,
+    name: null,
+    type: 'bed',
+    completion_pct: 100,
+    built_year: ctx.year,
+    ruin_id: null,
+    quality: 'standard',
+    notes: null,
+    position_x: task.target_x,
+    position_y: task.target_y,
+    position_z: task.target_z,
+    occupied_by_dwarf_id: null,
+  };
+
+  ctx.state.structures.push(bed);
+  ctx.state.dirtyStructureIds.add(bed.id);
+
+  // Place bed tile for rendering
+  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'bed', 'wood', false);
 }
 
 function awardXp(dwarfId: string, skillName: string, xpAmount: number, state: SimContext['state']): void {

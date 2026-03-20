@@ -57,6 +57,14 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
     dwarf.current_task_id = null;
   }
 
+  // Release any bed occupied by this dwarf
+  for (const structure of state.structures) {
+    if (structure.occupied_by_dwarf_id === dwarf.id) {
+      structure.occupied_by_dwarf_id = null;
+      state.dirtyStructureIds.add(structure.id);
+    }
+  }
+
   // Check if all dwarves are dead — fortress falls
   const aliveDwarves = state.dwarves.filter(d => d.status === 'alive');
   if (aliveDwarves.length === 0) {

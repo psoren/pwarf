@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { NEED_INTERRUPT_FOOD, NEED_INTERRUPT_DRINK } from "@pwarf/shared";
-import { makeDwarf, makeContext } from "./test-helpers.js";
+import { NEED_INTERRUPT_FOOD, NEED_INTERRUPT_DRINK, NEED_INTERRUPT_SLEEP } from "@pwarf/shared";
+import { makeDwarf, makeContext, makeStructure } from "./test-helpers.js";
 import { needSatisfaction } from "../phases/need-satisfaction.js";
 
 describe("infinite source need satisfaction", () => {
@@ -46,5 +46,48 @@ describe("infinite source need satisfaction", () => {
 
     const eatTasks = ctx.state.tasks.filter(t => t.task_type === "eat");
     expect(eatTasks).toHaveLength(1);
+  });
+});
+
+describe("bed-seeking sleep", () => {
+  it("creates sleep task targeting bed when one is available", async () => {
+    const dwarf = makeDwarf({ need_sleep: NEED_INTERRUPT_SLEEP - 1, position_x: 5, position_y: 5, position_z: 0 });
+    const bed = makeStructure({ position_x: 8, position_y: 5, position_z: 0 });
+    const ctx = makeContext({ dwarves: [dwarf], structures: [bed] });
+
+    await needSatisfaction(ctx);
+
+    const sleepTasks = ctx.state.tasks.filter(t => t.task_type === "sleep");
+    expect(sleepTasks).toHaveLength(1);
+    expect(sleepTasks[0]!.target_x).toBe(8);
+    expect(sleepTasks[0]!.target_y).toBe(5);
+    expect(sleepTasks[0]!.target_item_id).toBe(bed.id);
+    expect(bed.occupied_by_dwarf_id).toBe(dwarf.id);
+  });
+
+  it("falls back to floor sleep when no beds available", async () => {
+    const dwarf = makeDwarf({ need_sleep: NEED_INTERRUPT_SLEEP - 1, position_x: 5, position_y: 5, position_z: 0 });
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    await needSatisfaction(ctx);
+
+    const sleepTasks = ctx.state.tasks.filter(t => t.task_type === "sleep");
+    expect(sleepTasks).toHaveLength(1);
+    expect(sleepTasks[0]!.target_x).toBe(5);
+    expect(sleepTasks[0]!.target_y).toBe(5);
+    expect(sleepTasks[0]!.target_item_id).toBeNull();
+  });
+
+  it("skips occupied beds and picks next nearest", async () => {
+    const dwarf = makeDwarf({ need_sleep: NEED_INTERRUPT_SLEEP - 1, position_x: 0, position_y: 0, position_z: 0 });
+    const occupiedBed = makeStructure({ position_x: 1, position_y: 0, position_z: 0, occupied_by_dwarf_id: "other-dwarf" });
+    const freeBed = makeStructure({ position_x: 3, position_y: 0, position_z: 0 });
+    const ctx = makeContext({ dwarves: [dwarf], structures: [occupiedBed, freeBed] });
+
+    await needSatisfaction(ctx);
+
+    const sleepTasks = ctx.state.tasks.filter(t => t.task_type === "sleep");
+    expect(sleepTasks).toHaveLength(1);
+    expect(sleepTasks[0]!.target_item_id).toBe(freeBed.id);
   });
 });
