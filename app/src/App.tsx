@@ -442,6 +442,7 @@ export default function App() {
           <EpitaphScreen
             year={snapshot.year}
             events={events.map(e => ({ text: e.description, category: e.category }))}
+            civId={world.civId}
             onRestart={world.handleRestart}
           />
         )}

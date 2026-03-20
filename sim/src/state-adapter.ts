@@ -18,6 +18,9 @@ export interface StateAdapter {
   /** Get the terrain type at the civilization's embark tile. */
   getTerrainForCiv(civilizationId: string): Promise<TerrainType | null>;
 
+  /** Get the civilization's name and embark tile coordinates. */
+  getCivInfo(civilizationId: string): Promise<{ name: string; tileX: number; tileY: number } | null>;
+
   /** Return any new tasks created externally (player designations) since last poll. */
   pollNewTasks(civilizationId: string, existingTaskIds: Set<string>): Promise<Task[]>;
 
@@ -72,6 +75,16 @@ export class SupabaseStateAdapter implements StateAdapter {
     return (tile?.terrain as TerrainType) ?? null;
   }
 
+  async getCivInfo(civilizationId: string): Promise<{ name: string; tileX: number; tileY: number } | null> {
+    const { data } = await this.supabase
+      .from('civilizations')
+      .select('name, tile_x, tile_y')
+      .eq('id', civilizationId)
+      .single();
+    if (!data) return null;
+    return { name: data.name as string, tileX: data.tile_x as number, tileY: data.tile_y as number };
+  }
+
   async pollNewTasks(civilizationId: string, existingTaskIds: Set<string>): Promise<Task[]> {
     const { data, error } = await this.supabase
       .from('tasks')
@@ -121,6 +134,10 @@ export class InMemoryStateAdapter implements StateAdapter {
   }
 
   async getTerrainForCiv(_civilizationId: string): Promise<TerrainType | null> {
+    return null;
+  }
+
+  async getCivInfo(_civilizationId: string): Promise<{ name: string; tileX: number; tileY: number } | null> {
     return null;
   }
 

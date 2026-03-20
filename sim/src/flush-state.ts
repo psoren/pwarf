@@ -168,6 +168,24 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
           if (error) console.warn(`[flush] civilizations fallen update failed: ${error.message}`);
         }),
     );
+    // Fossilize: create a ruin record for this fallen fortress
+    promises.push(
+      supabase
+        .from("ruins")
+        .insert({
+          civilization_id: ctx.civilizationId,
+          world_id: ctx.worldId,
+          name: ctx.civName,
+          tile_x: ctx.civTileX,
+          tile_y: ctx.civTileY,
+          fallen_year: ctx.year,
+          cause_of_death: state.civFallenCause,
+          peak_population: state.civPeakPopulation,
+        })
+        .then(({ error }) => {
+          if (error) console.warn(`[flush] ruins insert failed: ${error.message}`);
+        }),
+    );
   } else if (state.civDirty) {
     promises.push(
       supabase

@@ -71,13 +71,22 @@ export class SimRunner {
       : createEmptyCachedState();
 
     let fortressDeriver = null;
+    let civName = '';
+    let civTileX = 0;
+    let civTileY = 0;
     if (worldId) {
-      const [seed, terrain] = await Promise.all([
+      const [seed, terrain, civInfo] = await Promise.all([
         this.adapter.getWorldSeed(worldId),
         this.adapter.getTerrainForCiv(civilizationId),
+        this.adapter.getCivInfo(civilizationId),
       ]);
       if (seed != null) {
         fortressDeriver = createFortressDeriver(seed, civilizationId, terrain ?? 'plains');
+      }
+      if (civInfo) {
+        civName = civInfo.name;
+        civTileX = civInfo.tileX;
+        civTileY = civInfo.tileY;
       }
     }
 
@@ -85,6 +94,9 @@ export class SimRunner {
       supabase: null as never,
       civilizationId,
       worldId: worldId ?? '',
+      civName,
+      civTileX,
+      civTileY,
       fortressDeriver,
       step: this.stepCount,
       year: this.currentYear,
