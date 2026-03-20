@@ -57,7 +57,7 @@ export default function App() {
   });
 
   // Sim runner — provides live in-memory state
-  const { snapshot } = useSimRunner(world.civId, world.worldId);
+  const { snapshot, isPaused, togglePause } = useSimRunner(world.civId, world.worldId);
 
   const { getTile: getFortressTile } = useFortressTiles({
     civId: world.civId,
@@ -403,6 +403,8 @@ export default function App() {
         mode={world.mode}
         onSignOut={signOut}
         onRestart={world.handleRestart}
+        onTogglePause={world.civId ? togglePause : undefined}
+        isPaused={isPaused}
         population={liveDwarves.length}
         year={snapshot?.year ?? 1}
         civName={world.mode === "fortress" ? "Stonegear" : undefined}
