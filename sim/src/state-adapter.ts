@@ -1,4 +1,4 @@
-import type { Task, StockpileTile } from "@pwarf/shared";
+import type { Task, StockpileTile, TerrainType } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { loadStateFromSupabase } from "./load-state.js";
@@ -14,6 +14,9 @@ export interface StateAdapter {
 
   /** Get the seed for a world (used to create FortressDeriver). */
   getWorldSeed(worldId: string): Promise<bigint | null>;
+
+  /** Get the terrain type at the civilization's embark tile. */
+  getTerrainForCiv(civilizationId: string): Promise<TerrainType | null>;
 
   /** Return any new tasks created externally (player designations) since last poll. */
   pollNewTasks(civilizationId: string, existingTaskIds: Set<string>): Promise<Task[]>;
@@ -50,6 +53,23 @@ export class SupabaseStateAdapter implements StateAdapter {
       .eq('id', worldId)
       .single();
     return data?.seed != null ? BigInt(data.seed) : null;
+  }
+
+  async getTerrainForCiv(civilizationId: string): Promise<TerrainType | null> {
+    const { data } = await this.supabase
+      .from('civilizations')
+      .select('world_id, tile_x, tile_y')
+      .eq('id', civilizationId)
+      .single();
+    if (!data) return null;
+    const { data: tile } = await this.supabase
+      .from('world_tiles')
+      .select('terrain')
+      .eq('world_id', data.world_id)
+      .eq('x', data.tile_x)
+      .eq('y', data.tile_y)
+      .single();
+    return (tile?.terrain as TerrainType) ?? null;
   }
 
   async pollNewTasks(civilizationId: string, existingTaskIds: Set<string>): Promise<Task[]> {
@@ -97,6 +117,10 @@ export class InMemoryStateAdapter implements StateAdapter {
   }
 
   async getWorldSeed(_worldId: string): Promise<bigint | null> {
+    return null;
+  }
+
+  async getTerrainForCiv(_civilizationId: string): Promise<TerrainType | null> {
     return null;
   }
 
