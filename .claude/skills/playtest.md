@@ -57,7 +57,8 @@ Run the pWarf game locally and playtest it in Chrome using browser automation to
    - Note any UI/UX friction
 
 5. **Report findings**
-   - Comment on the playtest GitHub issue with:
+   - Use the `github-upload-image-to-pr` skill to attach screenshots to the PR description
+   - Include a text report in the PR description summarizing:
      - Screenshots of any bugs found
      - List of working features
      - List of bugs/issues with descriptions
