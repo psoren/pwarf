@@ -48,6 +48,13 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
   state.dirtyDwarfIds.add(dwarf.id);
   state.warnedNeedIds.delete(dwarf.id);
 
+  // Clear any active combat pairs involving this dwarf
+  for (const key of state.activeCombatPairs) {
+    if (key.endsWith(`:${dwarf.id}`)) {
+      state.activeCombatPairs.delete(key);
+    }
+  }
+
   // Add to ghost tracking — dwarf haunts until memorialized
   state.ghostDwarfIds.add(dwarf.id);
 
