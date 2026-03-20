@@ -92,5 +92,6 @@ export async function loadStateFromSupabase(
     dirtyFortressTileKeys: new Set(),
     zeroFoodTicks: new Map(),
     zeroDrinkTicks: new Map(),
+    tantrumTicks: new Map(),
   };
 }

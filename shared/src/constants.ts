@@ -135,6 +135,15 @@ export const STRESS_TANTRUM_MODERATE = 90;
 /** Severe tantrum threshold */
 export const STRESS_TANTRUM_SEVERE = 96;
 
+/** Minimum ticks a mild tantrum lasts (stress 80–89) */
+export const TANTRUM_DURATION_MILD = 50;
+
+/** Minimum ticks a moderate tantrum lasts (stress 90–95) */
+export const TANTRUM_DURATION_MODERATE = 100;
+
+/** Minimum ticks a severe tantrum lasts (stress 96–100) */
+export const TANTRUM_DURATION_SEVERE = 200;
+
 // ============================================================
 // Skills
 // ============================================================
