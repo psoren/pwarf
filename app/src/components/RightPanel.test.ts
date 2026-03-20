@@ -96,6 +96,30 @@ describe("groupEventsByYear", () => {
     expect(groups).toHaveLength(1);
     expect(groups[0].year).toBe(7);
   });
+
+  it("includes battle, monster_slain, monster_siege categories", () => {
+    const e1 = makeEvent("1", "Combat erupted", "battle", 3);
+    const e2 = makeEvent("2", "Goblin slain", "monster_slain", 3);
+    const e3 = makeEvent("3", "Siege began", "monster_siege", 3);
+    const groups = groupEventsByYear([e1, e2, e3]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].events).toHaveLength(3);
+  });
+
+  it("includes trade_caravan_arrival and marriage categories", () => {
+    const e1 = makeEvent("1", "Caravan arrived", "trade_caravan_arrival", 5);
+    const e2 = makeEvent("2", "Dwarves married", "marriage", 5);
+    const groups = groupEventsByYear([e1, e2]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].events).toHaveLength(2);
+  });
+
+  it("includes artifact_lost category", () => {
+    const e = makeEvent("1", "Artifact lost", "artifact_lost", 4);
+    const groups = groupEventsByYear([e]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].year).toBe(4);
+  });
 });
 
 describe("causeLabel", () => {

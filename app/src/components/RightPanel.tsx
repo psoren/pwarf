@@ -15,7 +15,12 @@ type WorldTab = "Log" | "Legends" | "Graveyard";
 type Tab = FortressTab | WorldTab;
 
 /** Categories that appear in the Legends tab (significant history). */
-const LEGEND_CATEGORIES = new Set(['death', 'fortress_fallen', 'migration', 'discovery', 'artifact_created']);
+const LEGEND_CATEGORIES = new Set([
+  'death', 'fortress_fallen', 'migration', 'discovery',
+  'artifact_created', 'artifact_lost',
+  'battle', 'monster_slain', 'monster_siege',
+  'trade_caravan_arrival', 'marriage',
+]);
 
 /** Group significant events by year, newest year first. */
 export function groupEventsByYear(events: LiveEvent[]): Array<{ year: number; events: LiveEvent[] }> {
@@ -56,6 +61,15 @@ function categoryColor(category: string): string {
       return 'var(--green)';
     case 'migration':
       return 'var(--cyan)';
+    case 'battle':
+    case 'monster_siege':
+      return '#f97316'; // orange — combat
+    case 'monster_slain':
+      return 'var(--green)';
+    case 'trade_caravan_arrival':
+      return 'var(--cyan)';
+    case 'marriage':
+      return '#cc44aa'; // pink
     default:
       return 'var(--amber)';
   }
