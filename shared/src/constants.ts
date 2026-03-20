@@ -579,3 +579,24 @@ export const MEMORY_GRIEF_FRIEND_INTENSITY = 25;
 
 /** How many in-game years grief from losing a friend lingers */
 export const MEMORY_GRIEF_FRIEND_DURATION_YEARS = 5;
+
+/** Probability that two friends get married each year (requires MARRIAGE_FRIEND_MIN_YEARS as friends) */
+export const MARRIAGE_CHANCE = 0.05;
+
+/** Minimum years as friends before a marriage can occur */
+export const MARRIAGE_FRIEND_MIN_YEARS = 3;
+
+/** Positive stress intensity of the "married" joy memory (negative = stress relief) */
+export const MEMORY_MARRIAGE_JOY_INTENSITY = -20;
+
+/** How many in-game years the marriage joy memory lasts */
+export const MEMORY_MARRIAGE_JOY_DURATION_YEARS = 5;
+
+/** Extra stress spike when a spouse dies (immediate, higher than friend grief) */
+export const GRIEF_SPOUSE_STRESS = 35;
+
+/** Intensity of a "grief_spouse" memory (positive = stress gain) */
+export const MEMORY_SPOUSE_GRIEF_INTENSITY = 40;
+
+/** How many in-game years grief from losing a spouse lingers */
+export const MEMORY_SPOUSE_GRIEF_DURATION_YEARS = 10;
