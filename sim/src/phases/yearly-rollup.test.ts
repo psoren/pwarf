@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { yearlyRollup } from "./yearly-rollup.js";
-import { makeDwarf, makeTask, makeContext } from "../__tests__/test-helpers.js";
+import { makeDwarf, makeTask, makeItem, makeContext } from "../__tests__/test-helpers.js";
 import { ELDER_DEATH_AGE } from "@pwarf/shared";
 
 describe("yearlyRollup", () => {
@@ -150,6 +150,48 @@ describe("yearlyRollup", () => {
         e => (e.event_data as Record<string, unknown>)?.type === "year_rollup",
       );
       expect(summaryEvent?.description).toContain("No dwarves died");
+    });
+
+    it("updates civPopulation and civWealth and sets civDirty when values change", async () => {
+      const dwarf = makeDwarf({ age: 30, civilization_id: "civ-1" });
+      const item = makeItem({ value: 50, located_in_civ_id: "civ-1" });
+      const ctx = makeContext({ dwarves: [dwarf], items: [item] });
+      ctx.state.civPopulation = 0;
+      ctx.state.civWealth = 0;
+      ctx.state.civDirty = false;
+
+      await yearlyRollup(ctx);
+
+      expect(ctx.state.civPopulation).toBe(1);
+      expect(ctx.state.civWealth).toBe(50);
+      expect(ctx.state.civDirty).toBe(true);
+    });
+
+    it("does not set civDirty when population and wealth are unchanged", async () => {
+      const dwarf = makeDwarf({ age: 30, civilization_id: "civ-1" });
+      const item = makeItem({ value: 10, located_in_civ_id: "civ-1" });
+      const ctx = makeContext({ dwarves: [dwarf], items: [item] });
+      ctx.state.civPopulation = 1;
+      ctx.state.civWealth = 10;
+      ctx.state.civDirty = false;
+      ctx.year = 1; // year 1: no immigration
+
+      await yearlyRollup(ctx);
+
+      expect(ctx.state.civDirty).toBe(false);
+    });
+
+    it("excludes items not in this civilization from wealth", async () => {
+      const dwarf = makeDwarf({ age: 30, civilization_id: "civ-1" });
+      const ownItem = makeItem({ value: 100, located_in_civ_id: "civ-1" });
+      const otherItem = makeItem({ value: 999, located_in_civ_id: "civ-other" });
+      const ctx = makeContext({ dwarves: [dwarf], items: [ownItem, otherItem] });
+      ctx.state.civPopulation = 0;
+      ctx.state.civWealth = 0;
+
+      await yearlyRollup(ctx);
+
+      expect(ctx.state.civWealth).toBe(100);
     });
 
     it("event_data includes population, deaths, migrants fields", async () => {
