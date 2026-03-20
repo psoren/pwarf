@@ -67,8 +67,9 @@ export function calcStressDelta(
 
   // Apply neuroticism modifier to stress gains
   // trait_neuroticism: 0.0=very stable, 0.5=average (no effect), 1.0=very neurotic
+  // Clamp modifier to [0.1, ∞) to guard against out-of-range trait values.
   if (gainDelta > 0 && dwarf.trait_neuroticism !== null) {
-    gainDelta *= 1 + (dwarf.trait_neuroticism - 0.5) * NEUROTICISM_STRESS_MULTIPLIER;
+    gainDelta *= Math.max(0.1, 1 + (dwarf.trait_neuroticism - 0.5) * NEUROTICISM_STRESS_MULTIPLIER);
   }
 
   let recoveryDelta = 0;
@@ -77,9 +78,9 @@ export function calcStressDelta(
   if (needValues.every(n => n > 50)) {
     recoveryDelta -= 0.1;
 
-    // Agreeable dwarves recover additional stress per tick
+    // Agreeable dwarves recover additional stress per tick (clamp to 0..1 range)
     if (dwarf.trait_agreeableness !== null) {
-      recoveryDelta -= dwarf.trait_agreeableness * AGREEABLENESS_RECOVERY_BONUS;
+      recoveryDelta -= Math.max(0, dwarf.trait_agreeableness) * AGREEABLENESS_RECOVERY_BONUS;
     }
   }
 

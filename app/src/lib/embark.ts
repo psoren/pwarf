@@ -102,12 +102,12 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
       position_x: FORTRESS_CENTER + offset.dx,
       position_y: FORTRESS_CENTER + offset.dy,
       position_z: 0,
-      // Personality traits: -3 to +3 (Big Five)
-      trait_openness: Math.floor(Math.random() * 7) - 3,
-      trait_conscientiousness: Math.floor(Math.random() * 7) - 3,
-      trait_extraversion: Math.floor(Math.random() * 7) - 3,
-      trait_agreeableness: Math.floor(Math.random() * 7) - 3,
-      trait_neuroticism: Math.floor(Math.random() * 7) - 3,
+      // Personality traits: 0.0–1.0 (Big Five, where 0.5 = average)
+      trait_openness: Math.random(),
+      trait_conscientiousness: Math.random(),
+      trait_extraversion: Math.random(),
+      trait_agreeableness: Math.random(),
+      trait_neuroticism: Math.random(),
     };
   });
 
