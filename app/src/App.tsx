@@ -418,7 +418,7 @@ export default function App() {
         onSetSpeed={world.civId ? setSpeed : undefined}
         population={liveDwarves.length}
         year={snapshot?.year ?? 1}
-        civName={world.mode === "fortress" ? "Stonegear" : undefined}
+        civName={world.mode === "fortress" ? (world.civName ?? undefined) : undefined}
         items={liveItems}
       />
 

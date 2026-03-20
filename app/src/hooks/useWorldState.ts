@@ -21,6 +21,7 @@ export function useWorldState(opts: {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [civId, setCivId] = useState<string | null>(null);
+  const [civName, setCivName] = useState<string | null>(null);
   const [embarkTerrain, setEmbarkTerrain] = useState<TerrainType | null>(null);
   const [mode, setMode] = useState<"fortress" | "world">("world");
 
@@ -29,7 +30,7 @@ export function useWorldState(opts: {
     if (user && !playerEnsured) {
       ensurePlayer(supabase, user.id, user.email ?? "unknown")
         .then(() => loadSession(user.id))
-        .then((session) => {
+        .then(async (session) => {
           if (session.worldId) {
             setWorldId(session.worldId);
             setWorldSeed(session.worldSeed);
@@ -40,6 +41,13 @@ export function useWorldState(opts: {
             setMode("fortress");
             const center = Math.floor(FORTRESS_SIZE / 2);
             setOffset(center - Math.floor(vpCols / 2), center - Math.floor(vpRows / 2));
+            // Fetch civ name from DB on session restore
+            const { data } = await supabase
+              .from('civilizations')
+              .select('name')
+              .eq('id', session.civId)
+              .single();
+            if (data) setCivName(data.name as string);
           }
           setPlayerEnsured(true);
         })
@@ -50,6 +58,7 @@ export function useWorldState(opts: {
       setWorldId(null);
       setWorldSeed(null);
       setCivId(null);
+      setCivName(null);
       setEmbarkTerrain(null);
     }
   }, [user, playerEnsured, setOffset]);
@@ -74,10 +83,11 @@ export function useWorldState(opts: {
   ) => {
     if (!worldId || !worldSeed) return;
     try {
-      const id = await embark(worldId, selectedX, selectedY, worldSeed);
+      const { id, name } = await embark(worldId, selectedX, selectedY, worldSeed);
       const deriver = createWorldDeriver(worldSeed);
       const derived = deriver.deriveTile(selectedX, selectedY);
       setCivId(id);
+      setCivName(name);
       setEmbarkTerrain(derived.terrain);
       setMode("fortress");
       const center = Math.floor(FORTRESS_SIZE / 2);
@@ -95,6 +105,7 @@ export function useWorldState(opts: {
     setWorldId(null);
     setWorldSeed(null);
     setCivId(null);
+    setCivName(null);
     setEmbarkTerrain(null);
     setMode("world");
     setOffset(0, 0);
@@ -107,6 +118,7 @@ export function useWorldState(opts: {
     creating,
     createError,
     civId,
+    civName,
     embarkTerrain,
     mode,
     setMode,

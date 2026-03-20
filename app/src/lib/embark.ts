@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { pickUniqueNames, SURNAMES } from './dwarf-names';
 import { createWorldDeriver, FORTRESS_SIZE } from '@pwarf/shared';
+import { generateFortressName } from './civ-names';
 
 const FORTRESS_CENTER = Math.floor(FORTRESS_SIZE / 2);
 
@@ -66,7 +67,7 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
     .insert({
       world_id: worldId,
       player_id: user.id,
-      name: 'Boatmurdered',
+      name: generateFortressName(),
       tile_x: tileX,
       tile_y: tileY,
       status: 'active',
@@ -74,7 +75,7 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
       population: 7,
       wealth: 0,
     })
-    .select('id')
+    .select('id, name')
     .single();
 
   if (civError || !civ) throw new Error(`Failed to create civilization: ${civError?.message}`);
@@ -226,5 +227,5 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
   const { error: bedTileError } = await supabase.from('fortress_tiles').insert(bedTiles);
   if (bedTileError) throw new Error(`Failed to place bed tiles: ${bedTileError.message}`);
 
-  return civ.id;
+  return { id: civ.id, name: civ.name as string };
 }
