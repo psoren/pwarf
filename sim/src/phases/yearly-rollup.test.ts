@@ -272,7 +272,8 @@ describe("yearlyRollup", () => {
       await yearlyRollup(ctx);
 
       for (const dwarf of [d1, d2]) {
-        const caravanMemory = dwarf.memories.find(m => m.text.includes("caravan"));
+        const memories = dwarf.memories as Array<{ text: string; sentiment: string }>;
+        const caravanMemory = memories.find(m => m.text.includes("caravan"));
         expect(caravanMemory).toBeDefined();
         expect(caravanMemory?.sentiment).toBe("positive");
       }
@@ -286,7 +287,7 @@ describe("yearlyRollup", () => {
 
       await yearlyRollup(ctx);
 
-      expect(dead.memories.find(m => m.text.includes("caravan"))).toBeUndefined();
+      expect((dead.memories as Array<{ text: string }>).find(m => m.text.includes("caravan"))).toBeUndefined();
     });
   });
 });
