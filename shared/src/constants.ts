@@ -254,17 +254,14 @@ export const MEMORY_MASTERWORK_INTENSITY = -10;
 export const MEMORY_MASTERWORK_DURATION_YEARS = 2;
 
 // ============================================================
-// Ghosts
+// Haunting
 // ============================================================
 
-/** Stress applied per tick to alive dwarves within haunting radius of a ghost */
-export const GHOST_STRESS_PER_TICK = 0.3;
+/** Stress applied per tick to a living dwarf near an active ghost */
+export const GHOST_STRESS_PER_TICK = 0.5;
 
 /** Manhattan-distance radius within which a ghost haunts nearby dwarves */
-export const GHOST_HAUNTING_RADIUS = 5;
-
-/** Work required to engrave a memorial slab */
-export const MEMORIAL_WORK_REQUIRED = 200;
+export const GHOST_HAUNTING_RADIUS = 6;
 
 // ============================================================
 // Stress severity tiers
@@ -456,6 +453,9 @@ export const WORK_COOK = 40;
 
 /** Work required to smith an item */
 export const WORK_SMITH = 70;
+
+/** Work required to engrave a memorial slab for a fallen dwarf */
+export const WORK_ENGRAVE_MEMORIAL = 80;
 
 /** Max distance a dwarf will wander from current position */
 export const WANDER_RADIUS = 8;

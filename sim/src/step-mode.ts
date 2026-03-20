@@ -22,6 +22,7 @@ import {
   thoughtGeneration,
   haulAssignment,
   beautyRestoration,
+  haunting,
 } from "./phases/index.js";
 import { SCENARIOS, buildScenarioState, buildEatDrinkTasks } from "./scenarios.js";
 import { serializeState } from "./state-serializer.js";
@@ -126,6 +127,7 @@ async function runOneTick(session: StepSession): Promise<void> {
   await eventFiring(ctx);
   await thoughtGeneration(ctx);
   await beautyRestoration(ctx);
+  await haunting(ctx);
 
   if (session.step % STEPS_PER_YEAR === 0) {
     session.year++;
