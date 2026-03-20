@@ -259,6 +259,12 @@ export default function App() {
         case "designate_deconstruct":
           if (world.mode === "fortress") designation.toggleDeconstruct();
           break;
+        case "designate_smooth":
+          if (world.mode === "fortress") designation.toggleSmooth();
+          break;
+        case "designate_engrave":
+          if (world.mode === "fortress") designation.toggleEngrave();
+          break;
         case "cancel_designation":
           designation.cancelDesignation();
           setFollowedDwarfId(null);

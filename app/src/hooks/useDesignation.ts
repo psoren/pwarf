@@ -11,12 +11,14 @@ import {
   WORK_BUILD_WELL,
   WORK_BUILD_MUSHROOM_GARDEN,
   WORK_DECONSTRUCT,
+  WORK_SMOOTH,
+  WORK_ENGRAVE,
 } from "@pwarf/shared";
 import { supabase } from "../lib/supabase";
 import type { FortressViewTile } from "./useFortressTiles";
 import type { OptimisticDesignation } from "./useTasks";
 
-export type DesignationMode = "none" | "mine" | "build_wall" | "build_floor" | "build_bed" | "build_well" | "build_mushroom_garden" | "stockpile" | "deconstruct";
+export type DesignationMode = "none" | "mine" | "build_wall" | "build_floor" | "build_bed" | "build_well" | "build_mushroom_garden" | "smooth" | "engrave" | "stockpile" | "deconstruct";
 
 const BUILD_WORK: Record<string, number> = {
   build_wall: WORK_BUILD_WALL,
@@ -24,11 +26,23 @@ const BUILD_WORK: Record<string, number> = {
   build_bed: WORK_BUILD_BED,
   build_well: WORK_BUILD_WELL,
   build_mushroom_garden: WORK_BUILD_MUSHROOM_GARDEN,
+  smooth: WORK_SMOOTH,
+  engrave: WORK_ENGRAVE,
 };
 
 /** Tile types that can be deconstructed. */
 const DECONSTRUCTIBLE: ReadonlySet<string> = new Set([
   'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden',
+]);
+
+/** Tile types that can be smoothed. */
+const SMOOTHABLE: ReadonlySet<string> = new Set([
+  'stone', 'cavern_wall', 'rock',
+]);
+
+/** Tile types that can be engraved (only already-smoothed stone). */
+const ENGRAVABLE: ReadonlySet<string> = new Set([
+  'smooth_stone',
 ]);
 
 export function useDesignation(opts: {
@@ -90,6 +104,8 @@ export function useDesignation(opts: {
     const buildable: string[] = ['open_air', 'grass', 'constructed_floor', 'cavern_floor'];
     const isMine = designationMode === 'mine';
     const isDeconstruct = designationMode === 'deconstruct';
+    const isSmooth = designationMode === 'smooth';
+    const isEngrave = designationMode === 'engrave';
     const taskType = designationMode as TaskType;
     const baseBuildWork = BUILD_WORK[designationMode] ?? WORK_BUILD_WALL;
     const priority = taskPriorities[taskType] ?? 5;
@@ -116,6 +132,10 @@ export function useDesignation(opts: {
           if (!mineable.includes(tile.tileType)) continue;
         } else if (isDeconstruct) {
           if (!DECONSTRUCTIBLE.has(tile.tileType)) continue;
+        } else if (isSmooth) {
+          if (!SMOOTHABLE.has(tile.tileType)) continue;
+        } else if (isEngrave) {
+          if (!ENGRAVABLE.has(tile.tileType)) continue;
         } else {
           if (!buildable.includes(tile.tileType)) continue;
         }
@@ -210,6 +230,18 @@ export function useDesignation(opts: {
     setDesignationMode((m) => (m === "deconstruct" ? "none" : "deconstruct"));
   }, []);
 
+  const toggleSmooth = useCallback(() => {
+    setBuildMenuOpen(false);
+    setPrioritiesOpen(false);
+    setDesignationMode((m) => (m === "smooth" ? "none" : "smooth"));
+  }, []);
+
+  const toggleEngrave = useCallback(() => {
+    setBuildMenuOpen(false);
+    setPrioritiesOpen(false);
+    setDesignationMode((m) => (m === "engrave" ? "none" : "engrave"));
+  }, []);
+
   const toggleBuildMenu = useCallback(() => {
     setDesignationMode("none");
     setPrioritiesOpen(false);
@@ -243,6 +275,8 @@ export function useDesignation(opts: {
     toggleMine,
     toggleStockpile,
     toggleDeconstruct,
+    toggleSmooth,
+    toggleEngrave,
     toggleBuildMenu,
     togglePriorities,
     cancelDesignation,
