@@ -73,7 +73,9 @@ export class SupabaseStateAdapter implements StateAdapter {
 
   async flush(ctx: SimContext): Promise<void> {
     const { flushToSupabase } = await import('./flush-state.js');
-    await flushToSupabase(ctx);
+    // ctx.supabase is null in SimRunner (adapter holds the real client),
+    // so inject it before delegating to flushToSupabase.
+    await flushToSupabase({ ...ctx, supabase: this.supabase });
   }
 }
 
