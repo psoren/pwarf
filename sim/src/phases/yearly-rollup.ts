@@ -123,8 +123,18 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
     decayMemories(dwarf, year, state);
   }
 
-  // Year-end summary event
+  // Year-end civilization metadata sync
   const population = state.dwarves.filter(d => d.status === 'alive').length;
+  const wealth = state.items
+    .filter(i => i.located_in_civ_id === civilizationId)
+    .reduce((sum, i) => sum + i.value, 0);
+  if (population !== state.civPopulation || wealth !== state.civWealth) {
+    state.civPopulation = population;
+    state.civWealth = wealth;
+    state.civDirty = true;
+  }
+
+  // Year-end summary event
   const deathClause = deathsThisYear === 0
     ? 'No dwarves died.'
     : deathsThisYear === 1 ? '1 dwarf died this year.' : `${deathsThisYear} dwarves died this year.`;

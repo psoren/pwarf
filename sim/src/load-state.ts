@@ -13,7 +13,7 @@ export async function loadStateFromSupabase(
   civilizationId: string,
   worldId: string,
 ): Promise<CachedState> {
-  const [dwarvesResult, itemsResult, structuresResult, monstersResult, tasksResult, skillsResult, stockpileResult, eventsResult] =
+  const [dwarvesResult, itemsResult, structuresResult, monstersResult, tasksResult, skillsResult, stockpileResult, eventsResult, civResult] =
     await Promise.all([
       supabase
         .from("dwarves")
@@ -52,6 +52,11 @@ export async function loadStateFromSupabase(
         .eq("civilization_id", civilizationId)
         .order("created_at", { ascending: false })
         .limit(WORLD_EVENTS_RECENT_LIMIT),
+      supabase
+        .from("civilizations")
+        .select("population,wealth")
+        .eq("id", civilizationId)
+        .single(),
     ]);
 
   // Load relationships after dwarves — need alive dwarf IDs
@@ -123,5 +128,8 @@ export async function loadStateFromSupabase(
     ghostDwarfIds: new Set(),
     strangeMoodDwarfIds: new Set(),
     warnedNeedIds: new Map(),
+    civPopulation: (civResult.data as { population: number } | null)?.population ?? 0,
+    civWealth: (civResult.data as { wealth: number } | null)?.wealth ?? 0,
+    civDirty: false,
   };
 }

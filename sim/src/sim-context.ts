@@ -82,6 +82,15 @@ export interface CachedState {
    * In-memory only; not persisted across sim restarts.
    */
   strangeMoodDwarfIds: Set<string>;
+
+  /** Cached civilization population, updated each yearly rollup. */
+  civPopulation: number;
+
+  /** Cached civilization wealth (sum of located item values), updated each yearly rollup. */
+  civWealth: number;
+
+  /** Whether civPopulation or civWealth changed this year and need flushing. */
+  civDirty: boolean;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */
@@ -115,6 +124,9 @@ export function createEmptyCachedState(): CachedState {
     ghostDwarfIds: new Set(),
     strangeMoodDwarfIds: new Set(),
     warnedNeedIds: new Map(),
+    civPopulation: 0,
+    civWealth: 0,
+    civDirty: false,
   };
 }
 
