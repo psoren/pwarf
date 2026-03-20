@@ -10,6 +10,7 @@ import {
   needSatisfaction,
   stressUpdate,
   tantrumCheck,
+  tantrumActions,
   monsterSpawning,
   monsterPathfinding,
   combatResolution,
@@ -114,6 +115,7 @@ async function runOneTick(session: StepSession): Promise<void> {
   await needSatisfaction(ctx);
   await stressUpdate(ctx);
   await tantrumCheck(ctx);
+  await tantrumActions(ctx);
   await monsterSpawning(ctx);
   await monsterPathfinding(ctx);
   await combatResolution(ctx);

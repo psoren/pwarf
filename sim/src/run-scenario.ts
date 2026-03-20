@@ -10,6 +10,7 @@ import {
   needSatisfaction,
   stressUpdate,
   tantrumCheck,
+  tantrumActions,
   monsterPathfinding,
   combatResolution,
   constructionProgress,
@@ -109,6 +110,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     await needSatisfaction(ctx);
     await stressUpdate(ctx);
     await tantrumCheck(ctx);
+    await tantrumActions(ctx);
     await monsterPathfinding(ctx);
     await combatResolution(ctx);
     await constructionProgress(ctx);
