@@ -70,9 +70,12 @@ Use the `github-upload-image-to-pr` skill (installed in `.claude/skills/`) to up
 
 **Workflow:**
 1. Take screenshots during playtesting (save to `/tmp/` or `~/Downloads/`)
-2. Use `agent-browser upload '#fc-new_comment_field' /path/to/image.png` to upload via GitHub's file input
-3. Read the textarea value to get the `user-attachments/assets/` URL
-4. Embed in the PR description using `<img>` tags for inline rendering: `<img width="800" alt="description" src="URL" />`
-5. Clear the textarea without submitting the comment
+2. Use `agent-browser upload "#fc-new_comment_field" /path/to/image.png` to upload via GitHub's file input — note the **double quotes** around the selector; single quotes fail
+3. Wait 3–5 seconds, then read the textarea: `agent-browser eval "document.getElementById('new_comment_field')?.value"`
+4. Extract the `user-attachments/assets/` URL from the result
+5. Update the PR description via `gh pr edit {N} --body "..."` with `<img width="800" alt="desc" src="URL" />` tags
+6. Clear the textarea: `agent-browser eval "document.getElementById('new_comment_field').value=''"` — do NOT submit
 
-**Prerequisites:** `agent-browser` must be installed (`npm install -g agent-browser && agent-browser install`) and logged into GitHub (`agent-browser --headed --profile ~/.agent-browser-github open https://github.com/login`).
+**Important:** The `mcp__claude-in-chrome__upload_image` tool only accepts screenshot IDs captured in the current session — it cannot upload files from disk. Always use `agent-browser` for image uploads to GitHub.
+
+**Prerequisites:** `agent-browser` must be installed (`npm install -g agent-browser && agent-browser install`) and the `github-upload-image-to-pr` skill installed (`npx skills add tonkotsuboy/github-upload-image-to-pr`). Log into GitHub once: `agent-browser --headed --profile ~/.agent-browser-github open https://github.com/login`.
