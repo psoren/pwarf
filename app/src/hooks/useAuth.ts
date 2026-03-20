@@ -42,12 +42,18 @@ export function useAuth() {
     if (error) throw error;
   }, []);
 
+  const signInAsGuest = useCallback(async () => {
+    const { error } = await supabase.auth.signInAnonymously();
+    if (error) throw error;
+  }, []);
+
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   }, []);
 
   const user: User | null = session?.user ?? null;
+  const isGuest = user?.is_anonymous ?? false;
 
-  return { session, user, loading, signIn, signUp, signOut };
+  return { session, user, loading, signIn, signUp, signInAsGuest, signOut, isGuest };
 }

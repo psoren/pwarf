@@ -5,9 +5,10 @@ type AuthMode = "login" | "signup";
 interface AuthScreenProps {
   onSignIn: (email: string, password: string) => Promise<void>;
   onSignUp: (email: string, password: string) => Promise<void>;
+  onPlayAsGuest: () => Promise<void>;
 }
 
-export default function AuthScreen({ onSignIn, onSignUp }: AuthScreenProps) {
+export default function AuthScreen({ onSignIn, onSignUp, onPlayAsGuest }: AuthScreenProps) {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -110,6 +111,29 @@ export default function AuthScreen({ onSignIn, onSignUp }: AuthScreenProps) {
               : "Sign Up"}
         </button>
       </form>
+
+      <div className="flex flex-col items-center gap-2 mt-2">
+        <div className="text-[var(--text)] opacity-40 text-xs">or</div>
+        <button
+          type="button"
+          disabled={submitting}
+          onClick={async () => {
+            setError(null);
+            setSubmitting(true);
+            try {
+              await onPlayAsGuest();
+            } catch (err) {
+              setError(err instanceof Error ? err.message : String(err));
+            } finally {
+              setSubmitting(false);
+            }
+          }}
+          className="text-[var(--text)] text-xs hover:text-[var(--amber)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Play as Guest
+        </button>
+        <p className="text-[var(--text)] opacity-30 text-xs">Progress won't be saved.</p>
+      </div>
     </div>
   );
 }

@@ -14,7 +14,7 @@ describe("AuthScreen", () => {
   }
 
   it("renders login form with email and password fields", () => {
-    render(<AuthScreen onSignIn={noop} onSignUp={noop} />);
+    render(<AuthScreen onSignIn={noop} onSignUp={noop} onPlayAsGuest={noop} />);
 
     expect(screen.getByPlaceholderText("Email")).toBeDefined();
     expect(screen.getByPlaceholderText("Password")).toBeDefined();
@@ -22,7 +22,7 @@ describe("AuthScreen", () => {
   });
 
   it("switches to signup mode when Sign Up tab is clicked", () => {
-    render(<AuthScreen onSignIn={noop} onSignUp={noop} />);
+    render(<AuthScreen onSignIn={noop} onSignUp={noop} onPlayAsGuest={noop} />);
 
     // Click the tab (type="button") Sign Up button
     const tabs = screen.getAllByRole("button", { name: "Sign Up" });
@@ -36,7 +36,7 @@ describe("AuthScreen", () => {
   it("displays error messages", async () => {
     const failSignIn = vi.fn().mockRejectedValue(new Error("Invalid credentials"));
 
-    render(<AuthScreen onSignIn={failSignIn} onSignUp={noop} />);
+    render(<AuthScreen onSignIn={failSignIn} onSignUp={noop} onPlayAsGuest={noop} />);
 
     fireEvent.change(screen.getByPlaceholderText("Email"), {
       target: { value: "test@example.com" },

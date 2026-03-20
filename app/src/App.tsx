@@ -30,7 +30,7 @@ import type { Item } from "@pwarf/shared";
 import type { LiveDwarf } from "./hooks/useDwarves";
 
 export default function App() {
-  const { session, user, loading, signIn, signUp, signOut } = useAuth();
+  const { session, user, loading, signIn, signUp, signInAsGuest, signOut } = useAuth();
 
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
@@ -385,7 +385,7 @@ export default function App() {
 
   // Auth screen
   if (!session) {
-    return <AuthScreen onSignIn={signIn} onSignUp={signUp} />;
+    return <AuthScreen onSignIn={signIn} onSignUp={signUp} onPlayAsGuest={signInAsGuest} />;
   }
 
   // Restoring session
