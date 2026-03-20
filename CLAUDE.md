@@ -97,6 +97,11 @@ Follow these when writing or modifying code to keep the codebase clean:
 - `/review-pr` checks diff, tests, types, code quality, and embeds the Claude cost in the PR description.
 - **After review passes, merge the PR immediately.** Don't leave open PRs sitting around. Once `/review-pr` finds no blocking issues, merge with `gh pr merge <N> --squash`.
 
+## Database migrations
+
+- **Every new table needs a migration file.** If code references a new Supabase table (in `load-state.ts`, a hook, the sim, etc.), a corresponding `supabase/migrations/` file must exist. No exceptions. Forgetting this means the table only exists in production and breaks every other environment.
+- **Playtests must be run against local Supabase** for any PR that touches DB schema. A playtest against production will silently pass even if the migration is missing.
+
 ## Playtesting
 
 - **Every PR must include a playtest.** After implementing a feature or fix, run the game in Chrome and verify it works end-to-end.
