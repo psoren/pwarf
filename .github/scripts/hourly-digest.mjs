@@ -9,7 +9,7 @@
  *   GITHUB_REPOSITORY — "owner/repo" (set automatically by Actions)
  */
 
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -178,6 +178,51 @@ function commitAndPush(postId) {
   git('git push');
 }
 
+// ── Sim snapshot ───────────────────────────────────────────────────────────
+
+/**
+ * Run the baseline sim scenario and return a stats object.
+ * Returns null on failure so a broken sim doesn't block the digest.
+ */
+function runSimSnapshot() {
+  try {
+    const snapshotScript = join(REPO_ROOT, 'scripts', 'sim-snapshot.mjs');
+    const result = spawnSync(process.execPath, [snapshotScript], {
+      encoding: 'utf8',
+      timeout: 30_000,
+    });
+    if (result.status !== 0) {
+      console.warn('[sim-snapshot] failed:', result.stderr?.trim());
+      return null;
+    }
+    return JSON.parse(result.stdout.trim());
+  } catch (err) {
+    console.warn('[sim-snapshot] error:', err.message);
+    return null;
+  }
+}
+
+/** Format sim stats as a markdown section for the blog post. */
+function formatSimStats(stats) {
+  if (!stats) return '';
+
+  const deathLines = stats.deaths.length === 0
+    ? '  - No deaths'
+    : stats.deaths.map(d => `  - ${d.name}: ${d.cause}`).join('\n');
+
+  return [
+    '## Sim Health Check',
+    '',
+    `Baseline scenario: 3 dwarves, ${stats.ticks} ticks (${stats.days} days)`,
+    '',
+    `- **Dwarves alive:** ${stats.dwarves_alive} / ${stats.dwarves_total}`,
+    `- **Tasks completed:** ${stats.tasks_completed}`,
+    `- **Avg stress:** ${stats.avg_stress}`,
+    `- **Deaths:**`,
+    deathLines,
+  ].join('\n');
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -198,6 +243,10 @@ async function main() {
     }),
   );
 
+  console.log('Running sim health check…');
+  const simStats = runSimSnapshot();
+  const simStatsMarkdown = formatSimStats(simStats);
+
   console.log('Summarizing with GitHub Models (gpt-4o-mini)…');
   const summary = await summarize(prData);
 
@@ -208,7 +257,8 @@ async function main() {
     id,
     timestamp: now.toISOString(),
     title: `Digest — ${now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'UTC', timeZoneName: 'short' })}`,
-    summary,
+    summary: simStatsMarkdown ? `${summary}\n\n${simStatsMarkdown}` : summary,
+    simStats: simStats ?? undefined,
     prs: prData.map(({ pr }) => ({
       number: pr.number,
       title: pr.title,

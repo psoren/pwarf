@@ -28,6 +28,12 @@ jobs:
         with:
           node-version: 20
 
+      - name: Install dependencies and build sim
+        run: |
+          npm ci
+          npm run build --workspace=shared
+          npm run build --workspace=sim
+
       - name: Generate and commit digest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
