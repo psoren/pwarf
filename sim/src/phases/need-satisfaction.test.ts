@@ -1,13 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { needSatisfaction } from "./need-satisfaction.js";
-import { makeDwarf, makeTask, makeContext } from "../__tests__/test-helpers.js";
+import { makeDwarf, makeTask, makeContext, makeItem, makeStructure } from "../__tests__/test-helpers.js";
 import { NEED_INTERRUPT_DRINK, NEED_INTERRUPT_FOOD, NEED_INTERRUPT_SLEEP } from "@pwarf/shared";
 
 describe("needSatisfaction", () => {
   describe("maybeInterruptForNeed", () => {
-    it("creates a drink task when need_drink is below threshold", async () => {
-      const dwarf = makeDwarf({ need_drink: NEED_INTERRUPT_DRINK - 1 });
-      const ctx = makeContext({ dwarves: [dwarf] });
+    it("creates a drink task when need_drink is below threshold and water is available", async () => {
+      const dwarf = makeDwarf({ need_drink: NEED_INTERRUPT_DRINK - 1, position_x: 0, position_y: 0, position_z: 0 });
+      const well = makeStructure({ type: "well", position_x: 2, position_y: 0, position_z: 0 });
+      const ctx = makeContext({ dwarves: [dwarf], structures: [well] });
 
       await needSatisfaction(ctx);
 
@@ -17,9 +18,10 @@ describe("needSatisfaction", () => {
       expect(drinkTask?.status).toBe('pending');
     });
 
-    it("creates an eat task when need_food is below threshold", async () => {
-      const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1 });
-      const ctx = makeContext({ dwarves: [dwarf] });
+    it("creates an eat task when need_food is below threshold and food is available", async () => {
+      const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1, position_x: 0, position_y: 0, position_z: 0 });
+      const food = makeItem({ category: "food", position_x: 2, position_y: 0, position_z: 0 });
+      const ctx = makeContext({ dwarves: [dwarf], items: [food] });
 
       await needSatisfaction(ctx);
 
@@ -93,8 +95,12 @@ describe("needSatisfaction", () => {
         id: 'dwarf-1',
         need_drink: NEED_INTERRUPT_DRINK - 1,
         current_task_id: wanderTask.id,
+        position_x: 0,
+        position_y: 0,
+        position_z: 0,
       });
-      const ctx = makeContext({ dwarves: [dwarf], tasks: [wanderTask] });
+      const well = makeStructure({ type: "well", position_x: 3, position_y: 0, position_z: 0 });
+      const ctx = makeContext({ dwarves: [dwarf], tasks: [wanderTask], structures: [well] });
 
       await needSatisfaction(ctx);
 
@@ -146,8 +152,12 @@ describe("needSatisfaction", () => {
         id: 'dwarf-1',
         need_drink: NEED_INTERRUPT_DRINK - 1,
         current_task_id: mineTask.id,
+        position_x: 0,
+        position_y: 0,
+        position_z: 0,
       });
-      const ctx = makeContext({ dwarves: [dwarf], tasks: [mineTask] });
+      const well = makeStructure({ type: "well", position_x: 2, position_y: 0, position_z: 0 });
+      const ctx = makeContext({ dwarves: [dwarf], tasks: [mineTask], structures: [well] });
 
       await needSatisfaction(ctx);
 
