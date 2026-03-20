@@ -16,6 +16,7 @@ import {
 import type { Dwarf, FortressTile, FortressTileType, Task, Item, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { canPickUp } from "../inventory.js";
+import { dwarfName } from "../dwarf-utils.js";
 
 /** Build task type → resulting fortress tile type. */
 const BUILD_TILE_MAP: Record<string, FortressTileType> = {
@@ -40,7 +41,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   // Fire completion event for player-created tasks
   const autonomousTypes: string[] = ['eat', 'drink', 'sleep', 'wander'];
   if (!autonomousTypes.includes(task.task_type)) {
-    const dwarfLabel = `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''}`;
+    const dwarfLabel = dwarfName(dwarf);
     const taskLabel = task.task_type.replace(/_/g, ' ');
     state.pendingEvents.push({
       id: ctx.rng.uuid(),

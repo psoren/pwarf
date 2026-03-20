@@ -93,5 +93,6 @@ export async function loadStateFromSupabase(
     zeroFoodTicks: new Map(),
     zeroDrinkTicks: new Map(),
     tantrumTicks: new Map(),
+    warnedNeedIds: new Map(),
   };
 }

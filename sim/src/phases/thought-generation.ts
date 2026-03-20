@@ -1,5 +1,6 @@
 import type { SimContext } from "../sim-context.js";
 import type { Dwarf } from "@pwarf/shared";
+import { dwarfName } from "../dwarf-utils.js";
 
 export interface Thought {
   text: string;
@@ -22,11 +23,6 @@ function adjustedThreshold(base: number, traitValue: number): number {
   // trait ranges from -3 to +3. Each point shifts threshold by ~5.
   // Higher threshold means the condition `need < threshold` triggers sooner (at higher need values).
   return base + traitValue * 5;
-}
-
-/** Full display name for a dwarf. */
-function dwarfName(d: Dwarf): string {
-  return d.surname ? `${d.name} ${d.surname}` : d.name;
 }
 
 /** Add a thought to a dwarf's memories array, capping at MAX_THOUGHTS. */

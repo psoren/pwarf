@@ -1,5 +1,6 @@
 import { ELDER_DEATH_AGE, ELDER_DEATH_CHANCE_PER_YEAR } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
+import { dwarfName } from "../dwarf-utils.js";
 
 /**
  * Yearly Rollup Phase
@@ -48,7 +49,7 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
           item_id: null,
           faction_id: null,
           monster_id: null,
-          description: `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''} has died of old age at ${dwarf.age}.`,
+          description: `${dwarfName(dwarf)} has died of old age at ${dwarf.age}.`,
           event_data: { cause: 'old_age', age: dwarf.age },
           created_at: new Date().toISOString(),
         });
