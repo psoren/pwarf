@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type { TaskType } from "@pwarf/shared";
 import {
   WORK_MINE_BASE,
@@ -37,17 +37,22 @@ export function useDesignation(opts: {
 
   // Optimistic designations — shown immediately before poll picks them up
   const [optimisticTiles, setOptimisticTiles] = useState<Map<string, string>>(new Map());
-  const prevDesignatedTiles = useRef(designatedTiles);
 
-  // Clear optimistic tiles once the real data arrives (designatedTiles changes)
+  // Clear optimistic tiles one-by-one as each key appears in the real designatedTiles.
+  // Content-based so a new array reference on every sim tick doesn't wipe all optimistic
+  // state before the sim has picked up the newly inserted task.
   useEffect(() => {
-    if (designatedTiles !== prevDesignatedTiles.current) {
-      prevDesignatedTiles.current = designatedTiles;
-      if (optimisticTiles.size > 0) {
-        setOptimisticTiles(new Map());
+    if (optimisticTiles.size === 0) return;
+    let changed = false;
+    const next = new Map(optimisticTiles);
+    for (const key of optimisticTiles.keys()) {
+      if (designatedTiles.has(key)) {
+        next.delete(key);
+        changed = true;
       }
     }
-  }, [designatedTiles, optimisticTiles.size]);
+    if (changed) setOptimisticTiles(next);
+  }, [designatedTiles, optimisticTiles]);
 
   const handleDesignateArea = useCallback(async (x1: number, y1: number, x2: number, y2: number) => {
     if (designationMode === 'none' || !civId) return;
