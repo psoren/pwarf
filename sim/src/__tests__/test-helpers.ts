@@ -1,4 +1,4 @@
-import type { Dwarf, DwarfSkill, Task, TaskType, Item, Structure } from "@pwarf/shared";
+import type { Dwarf, DwarfSkill, FortressTile, FortressTileType, Task, TaskType, Item, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createTestContext } from "../sim-context.js";
 import { createRng, DEFAULT_TEST_SEED } from "../rng.js";
@@ -98,6 +98,33 @@ export function makeTask(task_type: TaskType, overrides?: Partial<Task>): Task {
     work_required: 100,
     created_at: new Date().toISOString(),
     completed_at: null,
+    ...overrides,
+  };
+}
+
+/**
+ * Create a fortress tile override for use in ScenarioConfig.fortressTileOverrides.
+ * Useful for controlling tile types in scenario tests — e.g. placing a 'rock' tile
+ * so a mine task produces a stone block, or placing 'tree' to produce wood.
+ */
+export function makeMapTile(
+  x: number,
+  y: number,
+  z: number,
+  tileType: FortressTileType,
+  overrides?: Partial<FortressTile>,
+): FortressTile {
+  return {
+    id: _factoryRng.uuid(),
+    civilization_id: "civ-1",
+    x,
+    y,
+    z,
+    tile_type: tileType,
+    material: null,
+    is_revealed: true,
+    is_mined: false,
+    created_at: new Date().toISOString(),
     ...overrides,
   };
 }

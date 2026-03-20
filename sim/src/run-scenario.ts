@@ -29,6 +29,8 @@ export interface ScenarioConfig {
   structures?: Structure[];
   monsters?: Monster[];
   tasks?: Task[];
+  /** Pre-placed fortress tiles — bypasses the fortress deriver for controlled map fixtures. */
+  fortressTileOverrides?: FortressTile[];
   ticks: number;
   seed?: number;
 }
@@ -68,6 +70,11 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
   state.structures = config.structures ? config.structures.map(s => ({ ...s })) : [];
   state.monsters = config.monsters ? config.monsters.map(m => ({ ...m })) : [];
   state.tasks = config.tasks ? config.tasks.map(t => ({ ...t })) : [];
+  if (config.fortressTileOverrides) {
+    for (const tile of config.fortressTileOverrides) {
+      state.fortressTileOverrides.set(`${tile.x},${tile.y},${tile.z}`, { ...tile });
+    }
+  }
 
   const ctx: SimContext = {
     supabase: null as unknown as SupabaseClient,
