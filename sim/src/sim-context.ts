@@ -55,24 +55,20 @@ export interface CachedState {
   infectedDwarfIds: Set<string>;
 
   /**
+   * IDs of dead dwarves whose spirits have not yet been put to rest.
+   * Ghosts haunt the fortress and stress nearby living dwarves.
+   * Cleared when an engrave_memorial task is completed nearby.
+   * Note: only tracks ghosts from the current session (dead dwarves from prior
+   * sessions are not loaded — this is an acceptable simplification for now).
+   */
+  ghostDwarfIds: Set<string>;
+
+  /**
    * Tracks which (dwarf, need) pairs have already fired a critical-need warning
    * this crossing. Maps dwarfId → Set of need names ('food' | 'drink').
    * Cleared when the need recovers above the warning threshold.
    */
   warnedNeedIds: Map<string, Set<string>>;
-
-  /**
-   * IDs of dwarves who have died without a memorial and now haunt the fortress.
-   * Populated when a dwarf dies; cleared when a memorial is engraved nearby.
-   * Not persisted across sim restarts (in-memory only).
-   */
-  ghostDwarfIds: Set<string>;
-
-  /**
-   * Position of each ghost at the time of death. Keyed by dwarf ID.
-   * Used to determine haunting radius and memorial targeting.
-   */
-  ghostPositions: Map<string, { x: number; y: number; z: number }>;
 
   /**
    * IDs of dwarves currently in a strange mood (creating an artifact).
@@ -107,10 +103,9 @@ export function createEmptyCachedState(): CachedState {
     zeroDrinkTicks: new Map(),
     tantrumTicks: new Map(),
     infectedDwarfIds: new Set(),
-    warnedNeedIds: new Map(),
     ghostDwarfIds: new Set(),
-    ghostPositions: new Map(),
     strangeMoodDwarfIds: new Set(),
+    warnedNeedIds: new Map(),
   };
 }
 

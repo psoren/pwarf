@@ -43,7 +43,6 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
         dwarf.cause_of_death = 'unknown';
         deathsThisYear += 1;
         state.ghostDwarfIds.add(dwarf.id);
-        state.ghostPositions.set(dwarf.id, { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z });
         applyWitnessStress(dwarf, state);
         createWitnessDeathMemories(dwarf, state, year);
 

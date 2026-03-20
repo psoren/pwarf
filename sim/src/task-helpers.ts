@@ -20,10 +20,10 @@ const TASK_SKILL_MAP: Record<TaskType, string | null> = {
   wander: null,
   smooth: 'building',
   engrave: 'engraving',
+  engrave_memorial: 'engraving',
   brew: 'brewing',
   cook: 'cooking',
   smith: 'smithing',
-  engrave_memorial: 'engraving',
   create_artifact: null,
 };
 

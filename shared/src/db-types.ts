@@ -184,10 +184,10 @@ export type TaskType =
   | 'wander'
   | 'smooth'
   | 'engrave'
+  | 'engrave_memorial'
   | 'brew'
   | 'cook'
   | 'smith'
-  | 'engrave_memorial'
   | 'create_artifact';
 
 export type TaskStatus =
