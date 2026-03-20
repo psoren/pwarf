@@ -155,6 +155,11 @@ export default function App() {
           stress_level: d.stress_level,
           health: d.health,
           memories: d.memories as LiveDwarf['memories'],
+          trait_openness: d.trait_openness ?? null,
+          trait_conscientiousness: d.trait_conscientiousness ?? null,
+          trait_extraversion: d.trait_extraversion ?? null,
+          trait_agreeableness: d.trait_agreeableness ?? null,
+          trait_neuroticism: d.trait_neuroticism ?? null,
         }));
     }
     return polledDwarves;
