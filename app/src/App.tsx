@@ -188,6 +188,14 @@ export default function App() {
   // Live items from snapshot
   const liveItems: Item[] = useMemo(() => snapshot?.items ?? [], [snapshot]);
 
+  // Civilization wealth — sum of value for items located in this civ
+  const civWealth = useMemo(() =>
+    liveItems
+      .filter(i => i.located_in_civ_id === world.civId)
+      .reduce((sum, i) => sum + i.value, 0),
+    [liveItems, world.civId],
+  );
+
   // Ground items map for rendering (items not held by a dwarf at current z-level)
   const groundItems = useMemo(() => {
     const map = new Map<string, number>();
@@ -273,9 +281,15 @@ export default function App() {
           designation.cancelDesignation();
           setFollowedDwarfId(null);
           break;
+        case "toggle_pause":
+          if (world.mode === "fortress" && world.civId) togglePause();
+          break;
+        case "set_speed":
+          if (world.mode === "fortress" && world.civId) setSpeed(action.multiplier);
+          break;
       }
     },
-    [viewport.pan, world.civId, world.mode, designation],
+    [viewport.pan, world.civId, world.mode, designation, togglePause, setSpeed],
   );
 
   useKeyboard(handleKeyAction);
@@ -420,6 +434,7 @@ export default function App() {
         year={snapshot?.year ?? 1}
         civName={world.mode === "fortress" ? (world.civName ?? undefined) : undefined}
         items={liveItems}
+        wealth={civWealth}
       />
 
       <div className="flex flex-1 min-h-0 relative">
