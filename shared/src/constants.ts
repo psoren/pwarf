@@ -295,6 +295,21 @@ export const WORK_DECONSTRUCT = 30;
 /** Work required to wander (just walking, instant once arrived) */
 export const WORK_WANDER = 1;
 
+/** Work required to smooth a stone tile */
+export const WORK_SMOOTH = 80;
+
+/** Work required to engrave a smoothed tile */
+export const WORK_ENGRAVE = 60;
+
+/** Work required to brew a batch of ale */
+export const WORK_BREW = 50;
+
+/** Work required to cook a meal */
+export const WORK_COOK = 40;
+
+/** Work required to smith an item */
+export const WORK_SMITH = 70;
+
 /** Max distance a dwarf will wander from current position */
 export const WANDER_RADIUS = 8;
 
@@ -318,6 +333,11 @@ export const XP_FARM_PLANT = 10;
 export const XP_FARM_HARVEST = 10;
 export const XP_BUILD = 12;
 export const XP_HAUL = 5;
+export const XP_SMOOTH = 8;
+export const XP_ENGRAVE = 10;
+export const XP_BREW = 12;
+export const XP_COOK = 12;
+export const XP_SMITH = 15;
 
 // ============================================================
 // Inventory & stockpile

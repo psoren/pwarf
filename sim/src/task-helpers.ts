@@ -18,6 +18,11 @@ const TASK_SKILL_MAP: Record<TaskType, string | null> = {
   build_mushroom_garden: 'building',
   deconstruct: 'building',
   wander: null,
+  smooth: 'building',
+  engrave: 'engraving',
+  brew: 'brewing',
+  cook: 'cooking',
+  smith: 'smithing',
 };
 
 /** Get the skill name required for a task type, or null if no skill needed. */
