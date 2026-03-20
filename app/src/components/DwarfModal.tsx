@@ -1,6 +1,7 @@
-import { useEffect } from "react";
-import type { Item } from "@pwarf/shared";
+import { useEffect, useState } from "react";
+import type { DwarfSkill, Item } from "@pwarf/shared";
 import { DWARF_CARRY_CAPACITY } from "@pwarf/shared";
+import { supabase } from "../lib/supabase";
 import type { LiveDwarf, DwarfThought } from "../hooks/useDwarves";
 
 interface DwarfModalProps {
@@ -33,6 +34,8 @@ function needBar(label: string, value: number, color: string) {
 }
 
 export function DwarfModal({ dwarf, onClose, onGoTo, items = [] }: DwarfModalProps) {
+  const [skills, setSkills] = useState<DwarfSkill[]>([]);
+
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -44,6 +47,21 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [] }: DwarfModalPro
     window.addEventListener("keydown", handleKey, true);
     return () => window.removeEventListener("keydown", handleKey, true);
   }, [onClose]);
+
+  useEffect(() => {
+    supabase
+      .from("dwarf_skills")
+      .select("*")
+      .eq("dwarf_id", dwarf.id)
+      .gt("level", 0)
+      .order("level", { ascending: false })
+      .then(({ data }) => {
+        if (data) setSkills(data as DwarfSkill[]);
+      });
+  }, [dwarf.id]);
+
+  const carried = items.filter(i => i.held_by_dwarf_id === dwarf.id);
+  const totalWeight = carried.reduce((sum, i) => sum + (i.weight ?? 0), 0);
 
   return (
     <div
@@ -66,8 +84,11 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [] }: DwarfModalPro
           </button>
         </div>
 
-        <div className="text-[var(--text)] mb-2">
-          Status: <span className="text-[var(--green)]">{dwarfJobLabel(dwarf)}</span>
+        <div className="text-[var(--text)] mb-1 flex gap-3">
+          <span>Status: <span className="text-[var(--green)]">{dwarfJobLabel(dwarf)}</span></span>
+          {dwarf.age != null && (
+            <span>Age: <span className="text-[var(--green)]">{dwarf.age}</span></span>
+          )}
         </div>
 
         <div className="text-[var(--text)] flex items-center justify-between mb-2">
@@ -87,6 +108,9 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [] }: DwarfModalPro
           {needBar("Food", dwarf.need_food, "var(--green)")}
           {needBar("Drink", dwarf.need_drink, "#4488ff")}
           {needBar("Sleep", dwarf.need_sleep, "#aa88ff")}
+          {needBar("Social", dwarf.need_social, "#44ccaa")}
+          {needBar("Purpose", dwarf.need_purpose, "#ccaa44")}
+          {needBar("Beauty", dwarf.need_beauty, "#cc44aa")}
         </div>
 
         <div className="border-t border-[var(--border)] pt-2 mt-2">
@@ -99,25 +123,35 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [] }: DwarfModalPro
           {needBar("HP", dwarf.health, "var(--green)")}
         </div>
 
-        {(() => {
-          const carried = items.filter(i => i.held_by_dwarf_id === dwarf.id);
-          const totalWeight = carried.reduce((sum, i) => sum + (i.weight ?? 0), 0);
-          return carried.length > 0 ? (
-            <div className="border-t border-[var(--border)] pt-2 mt-2">
-              <div className="text-[var(--amber)] font-bold mb-0.5">Inventory</div>
-              {needBar("Carry", (totalWeight / DWARF_CARRY_CAPACITY) * 100, "#cc9933")}
-              <div className="text-[var(--text)] text-[10px] mb-1">{totalWeight} / {DWARF_CARRY_CAPACITY} weight</div>
-              <ul className="space-y-0.5">
-                {carried.map((item) => (
-                  <li key={item.id} className="flex justify-between">
-                    <span className="text-[var(--green)]">{item.name}</span>
-                    <span className="text-[var(--text)]">{item.weight ?? 0}w</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null;
-        })()}
+        {skills.length > 0 && (
+          <div className="border-t border-[var(--border)] pt-2 mt-2">
+            <div className="text-[var(--amber)] font-bold mb-0.5">Skills</div>
+            <ul className="space-y-0.5">
+              {skills.slice(0, 5).map((s) => (
+                <li key={s.id} className="flex justify-between">
+                  <span className="text-[var(--text)] capitalize">{s.skill_name.replace(/_/g, ' ')}</span>
+                  <span className="text-[var(--green)]">Lv {s.level}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {carried.length > 0 && (
+          <div className="border-t border-[var(--border)] pt-2 mt-2">
+            <div className="text-[var(--amber)] font-bold mb-0.5">Inventory</div>
+            {needBar("Carry", (totalWeight / DWARF_CARRY_CAPACITY) * 100, "#cc9933")}
+            <div className="text-[var(--text)] text-[10px] mb-1">{totalWeight} / {DWARF_CARRY_CAPACITY} weight</div>
+            <ul className="space-y-0.5">
+              {carried.map((item) => (
+                <li key={item.id} className="flex justify-between">
+                  <span className="text-[var(--green)]">{item.name}</span>
+                  <span className="text-[var(--text)]">{item.weight ?? 0}w</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {dwarf.memories && dwarf.memories.length > 0 && (
           <div className="border-t border-[var(--border)] pt-2 mt-2">
