@@ -3,9 +3,11 @@ import {
   MIN_NEED,
   NEUROTICISM_STRESS_MULTIPLIER,
   AGREEABLENESS_RECOVERY_BONUS,
+  MEMORY_STRESS_PER_TICK,
 } from "@pwarf/shared";
-import type { Dwarf } from "@pwarf/shared";
+import type { Dwarf, DwarfMemory } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
+import { activeMemories } from "../dwarf-memory.js";
 
 /**
  * Stress Update Phase
@@ -32,7 +34,8 @@ export async function stressUpdate(ctx: SimContext): Promise<void> {
       dwarf.need_beauty,
     ];
 
-    const delta = calcStressDelta(dwarf, needValues);
+    const memories = activeMemories(dwarf, ctx.year);
+    const delta = calcStressDelta(dwarf, needValues, memories);
 
     if (delta !== 0) {
       dwarf.stress_level = Math.max(MIN_NEED, Math.min(MAX_NEED, dwarf.stress_level + delta));
@@ -52,6 +55,7 @@ export async function stressUpdate(ctx: SimContext): Promise<void> {
 export function calcStressDelta(
   dwarf: Pick<Dwarf, 'trait_neuroticism' | 'trait_agreeableness'>,
   needValues: number[],
+  memories: DwarfMemory[] = [],
 ): number {
   let gainDelta = 0;
 
@@ -84,5 +88,12 @@ export function calcStressDelta(
     }
   }
 
-  return gainDelta + recoveryDelta;
+  // Memory contribution: each active memory applies intensity * MEMORY_STRESS_PER_TICK per tick
+  // Positive intensity → stress, negative → relief
+  let memoryDelta = 0;
+  for (const memory of memories) {
+    memoryDelta += memory.intensity * MEMORY_STRESS_PER_TICK;
+  }
+
+  return gainDelta + recoveryDelta + memoryDelta;
 }
