@@ -197,6 +197,34 @@ export const TANTRUM_DURATION_SEVERE = 200;
 /** Maximum achievable skill level for any dwarf skill */
 export const MAX_SKILL_LEVEL = 20;
 
+/**
+ * Dwarf Fortress-style skill tier names indexed by skill level (0–20).
+ * Level 0 = Dabbling, level 20 = Legendary+4.
+ */
+export const SKILL_TIER_NAMES: readonly string[] = [
+  'Dabbling',     // 0
+  'Novice',       // 1
+  'Apprentice',   // 2
+  'Journeyman',   // 3
+  'Competent',    // 4
+  'Skilled',      // 5
+  'Proficient',   // 6
+  'Talented',     // 7
+  'Adept',        // 8
+  'Expert',       // 9
+  'Professional', // 10
+  'Accomplished', // 11
+  'Great',        // 12
+  'Master',       // 13
+  'High Master',  // 14
+  'Grand Master', // 15
+  'Legendary',    // 16
+  'Legendary+1',  // 17
+  'Legendary+2',  // 18
+  'Legendary+3',  // 19
+  'Legendary+4',  // 20
+];
+
 // ============================================================
 // Task dispatch
 // ============================================================

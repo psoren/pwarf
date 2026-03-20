@@ -29,6 +29,7 @@ export interface CachedState {
   dirtyStructureIds: Set<string>;
   dirtyMonsterIds: Set<string>;
   dirtyTaskIds: Set<string>;
+  dirtyDwarfSkillIds: Set<string>;
 
   /** New tasks created this tick that need to be inserted (not upserted). */
   newTasks: Task[];
@@ -73,6 +74,7 @@ export function createEmptyCachedState(): CachedState {
     dirtyStructureIds: new Set(),
     dirtyMonsterIds: new Set(),
     dirtyTaskIds: new Set(),
+    dirtyDwarfSkillIds: new Set(),
     newTasks: [],
     pendingEvents: [],
     stockpileTiles: new Map(),
