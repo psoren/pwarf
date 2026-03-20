@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { stressColor, stressBarColor, sortDwarves } from "./LeftPanel";
+import { stressColor, stressBarColor, sortDwarves, activityIcon } from "./LeftPanel";
 import type { LiveDwarf } from "../hooks/useDwarves";
+import type { ActiveTask } from "../hooks/useTasks";
 
 describe("stressColor", () => {
   it("returns green for low stress (0)", () => {
@@ -97,5 +98,49 @@ describe("sortDwarves", () => {
     const original = [...dwarves];
     sortDwarves(dwarves, "stress");
     expect(dwarves).toEqual(original);
+  });
+});
+
+describe("activityIcon", () => {
+  function makeD(overrides: Partial<LiveDwarf>): LiveDwarf {
+    return {
+      id: "1", name: "Urist", surname: null, status: "alive", age: null, gender: null,
+      is_in_tantrum: false, position_x: 0, position_y: 0, position_z: 0,
+      current_task_id: null, stress_level: 0,
+      need_food: 100, need_drink: 100, need_sleep: 100, need_social: 100, need_purpose: 100, need_beauty: 100,
+      health: 100, memories: [], ...overrides,
+    };
+  }
+
+  function makeTask(overrides: Partial<ActiveTask>): ActiveTask {
+    return { id: "t1", task_type: "mine", status: "active", target_x: null, target_y: null, target_z: null, work_required: 10, work_progress: 0, ...overrides };
+  }
+
+  it("returns · for idle dwarf", () => {
+    expect(activityIcon(makeD({}))).toBe("·");
+  });
+
+  it("returns 😤 for tantrum", () => {
+    expect(activityIcon(makeD({ is_in_tantrum: true, current_task_id: "t1" }))).toBe("😤");
+  });
+
+  it("returns 💤 for sleeping", () => {
+    const task = makeTask({ id: "t1", task_type: "sleep" });
+    expect(activityIcon(makeD({ current_task_id: "t1" }), [task])).toBe("💤");
+  });
+
+  it("returns 🍖 for eating", () => {
+    const task = makeTask({ id: "t1", task_type: "eat" });
+    expect(activityIcon(makeD({ current_task_id: "t1" }), [task])).toBe("🍖");
+  });
+
+  it("returns 🍖 for drinking", () => {
+    const task = makeTask({ id: "t1", task_type: "drink" });
+    expect(activityIcon(makeD({ current_task_id: "t1" }), [task])).toBe("🍖");
+  });
+
+  it("returns ⛏ for any active work task", () => {
+    const task = makeTask({ id: "t1", task_type: "mine" });
+    expect(activityIcon(makeD({ current_task_id: "t1" }), [task])).toBe("⛏");
   });
 });

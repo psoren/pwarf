@@ -13,6 +13,8 @@ interface DwarfModalProps {
   tasks?: ActiveTask[];
 }
 
+import { skillStars } from "../lib/dwarf-skills";
+
 const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
 
 function dwarfJobLabel(d: LiveDwarf, tasks?: ActiveTask[]): string {
@@ -147,7 +149,7 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [], tasks }: DwarfM
               {skills.slice(0, 5).map((s) => (
                 <li key={s.id} className="flex justify-between">
                   <span className="text-[var(--text)] capitalize">{s.skill_name.replace(/_/g, ' ')}</span>
-                  <span className="text-[var(--green)]">Lv {s.level}</span>
+                  <span className="text-[var(--amber)]" title={`Lv ${s.level}`}>{skillStars(s.level)}</span>
                 </li>
               ))}
             </ul>

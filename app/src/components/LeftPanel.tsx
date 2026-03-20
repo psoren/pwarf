@@ -47,6 +47,18 @@ function dwarfJobLabel(d: LiveDwarf, tasks?: ActiveTask[]): string {
   return `${label} (${pct}%)`;
 }
 
+/** Returns a contextual activity icon for a dwarf. */
+export function activityIcon(d: LiveDwarf, tasks?: ActiveTask[]): string {
+  if (d.is_in_tantrum) return "😤";
+  if (!d.current_task_id) return "·";
+  const task = tasks?.find(t => t.id === d.current_task_id);
+  if (!task) return "⛏";
+  const type = task.task_type;
+  if (type === "sleep") return "💤";
+  if (type === "eat" || type === "drink") return "🍖";
+  return "⛏";
+}
+
 const SORT_CYCLE: Record<SortMode, SortMode> = {
   stress: "name",
   name: "activity",
@@ -144,6 +156,7 @@ export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmb
                       <div className="flex justify-between">
                         <span style={{ color: stressColor(d.stress_level) }}>{d.name}</span>
                         <span className="text-[var(--text)]">
+                          <span className="mr-1">{activityIcon(d, tasks)}</span>
                           <span className="text-[var(--border)] mr-1">z{d.position_z}</span>
                           {dwarfJobLabel(d, tasks)}
                         </span>
