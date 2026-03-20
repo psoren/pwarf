@@ -79,7 +79,8 @@ For each thing in the design doc that isn't implemented yet: file a GitHub issue
 - **Branch off main.** Always.
 - **One commit per PR.** Squash before merging.
 - **Every PR needs a playtest** — run `/playtest` and include a text report + before/after screenshots.
-- **Every PR needs `/review-pr`** before opening it.
+- **Every PR needs `/review-pr`** after creation, before merging.
+- **Merge PRs immediately after review passes.** Don't leave open PRs sitting. Once `/review-pr` finds no blocking issues, run `gh pr merge <N> --squash` and delete the branch.
 - **Always add tests.** Every new feature or module needs Vitest tests.
 - **Run `npm test` after any sim changes** to confirm nothing breaks.
 - **No hardcoded secrets.** Supabase creds come from env vars only.
