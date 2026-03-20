@@ -63,3 +63,16 @@ Follow these when writing or modifying code to keep the codebase clean:
 - Include a text report in the PR description summarizing what was tested and the results.
 - Include screenshots demonstrating the feature working (or bugs found).
 - Use the `/playtest` skill to run the game locally in Chrome with browser automation.
+
+### Uploading screenshots to PRs
+
+Use the `github-upload-image-to-pr` skill (installed in `.claude/skills/`) to upload images to PRs. It uses `agent-browser` to upload files through GitHub's comment textarea, then embeds the resulting URLs in the PR description via `gh pr edit`.
+
+**Workflow:**
+1. Take screenshots during playtesting (save to `/tmp/` or `~/Downloads/`)
+2. Use `agent-browser upload '#fc-new_comment_field' /path/to/image.png` to upload via GitHub's file input
+3. Read the textarea value to get the `user-attachments/assets/` URL
+4. Embed in the PR description using `<img>` tags for inline rendering: `<img width="800" alt="description" src="URL" />`
+5. Clear the textarea without submitting the comment
+
+**Prerequisites:** `agent-browser` must be installed (`npm install -g agent-browser && agent-browser install`) and logged into GitHub (`agent-browser --headed --profile ~/.agent-browser-github open https://github.com/login`).
