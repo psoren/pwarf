@@ -1,14 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import type { LiveEvent } from "../hooks/useEvents";
+import type { Ruin } from "@pwarf/shared";
 
 interface RightPanelProps {
   collapsed: boolean;
   onToggle: () => void;
   events: LiveEvent[];
+  mode: "world" | "fortress";
+  publishedRuins?: Ruin[];
 }
 
-const TABS = ["Log", "Legends"] as const;
-type Tab = (typeof TABS)[number];
+type FortressTab = "Log" | "Legends";
+type WorldTab = "Log" | "Legends" | "Graveyard";
+type Tab = FortressTab | WorldTab;
 
 /** Categories that appear in the Legends tab (significant history). */
 const LEGEND_CATEGORIES = new Set(['death', 'fortress_fallen', 'migration', 'discovery', 'artifact_created']);
@@ -57,10 +61,29 @@ function categoryColor(category: string): string {
   }
 }
 
-export default function RightPanel({ collapsed, onToggle, events }: RightPanelProps) {
+/** Map cause_of_death to a short display string. */
+export function causeLabel(cause: string): string {
+  switch (cause) {
+    case 'starvation': return 'starved';
+    case 'dehydration': return 'thirsted';
+    case 'tantrum_spiral': return 'tantrum';
+    case 'plague': return 'plague';
+    case 'combat': return 'slain';
+    case 'unknown': return 'unknown';
+    default: return cause;
+  }
+}
+
+export default function RightPanel({ collapsed, onToggle, events, mode, publishedRuins = [] }: RightPanelProps) {
+  const tabs: Tab[] = mode === "world" ? ["Log", "Legends", "Graveyard"] : ["Log", "Legends"];
   const [tab, setTab] = useState<Tab>("Log");
   const logRef = useRef<HTMLDivElement>(null);
   const prevCountRef = useRef(0);
+
+  // Reset to Log tab when mode changes
+  useEffect(() => {
+    setTab("Log");
+  }, [mode]);
 
   // Auto-scroll when new events arrive
   useEffect(() => {
@@ -86,7 +109,7 @@ export default function RightPanel({ collapsed, onToggle, events }: RightPanelPr
       {!collapsed && (
         <>
           <div className="flex border-b border-[var(--border)] text-xs">
-            {TABS.map((t) => (
+            {tabs.map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -118,7 +141,7 @@ export default function RightPanel({ collapsed, onToggle, events }: RightPanelPr
                   ))}
                 </ul>
               )
-            ) : (
+            ) : tab === "Legends" ? (
               groupEventsByYear(events).length === 0 ? (
                 <p className="text-[var(--text)] opacity-50 italic">No history yet.</p>
               ) : (
@@ -137,6 +160,27 @@ export default function RightPanel({ collapsed, onToggle, events }: RightPanelPr
                     </div>
                   ))}
                 </div>
+              )
+            ) : (
+              /* Graveyard tab */
+              publishedRuins.length === 0 ? (
+                <p className="text-[var(--text)] opacity-50 italic">No published ruins yet.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {publishedRuins.map((ruin) => (
+                    <li key={ruin.id} className="border-b border-[var(--border)] pb-1">
+                      <div className="text-[var(--amber)] font-bold truncate">{ruin.name}</div>
+                      <div className="text-[var(--text)] opacity-70 flex gap-2 flex-wrap">
+                        <span>Year {ruin.fallen_year}</span>
+                        <span className="text-[var(--red,#f87171)]">{causeLabel(ruin.cause_of_death)}</span>
+                        <span>pop {ruin.peak_population}</span>
+                        {ruin.danger_level > 0 && (
+                          <span className="text-[var(--amber)]">danger {ruin.danger_level}</span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
               )
             )}
           </div>
