@@ -198,3 +198,65 @@ describe("applyWitnessStress", () => {
     expect(bystander.stress_level).toBe(10 + WITNESS_DEATH_STRESS);
   });
 });
+
+describe("fortress collapse (civFallen)", () => {
+  it("sets civFallen when the last dwarf dies", () => {
+    const dwarf = makeDwarf();
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    killDwarf(dwarf, 'starvation', ctx);
+
+    expect(ctx.state.civFallen).toBe(true);
+  });
+
+  it("sets civFallenCause to starvation for starvation/dehydration deaths", () => {
+    const dwarf = makeDwarf();
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    killDwarf(dwarf, 'dehydration', ctx);
+
+    expect(ctx.state.civFallenCause).toBe('starvation');
+  });
+
+  it("sets civFallenCause to siege for monster attack deaths", () => {
+    const dwarf = makeDwarf();
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    killDwarf(dwarf, 'monster attack', ctx);
+
+    expect(ctx.state.civFallenCause).toBe('siege');
+  });
+
+  it("does not set civFallen when there are still alive dwarves", () => {
+    const victim = makeDwarf();
+    const survivor = makeDwarf();
+    const ctx = makeContext({ dwarves: [victim, survivor] });
+
+    killDwarf(victim, 'starvation', ctx);
+
+    expect(ctx.state.civFallen).toBe(false);
+  });
+
+  it("fires a fortress_fallen event when the last dwarf dies", () => {
+    const dwarf = makeDwarf();
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    killDwarf(dwarf, 'starvation', ctx);
+
+    const event = ctx.state.pendingEvents.find(e => e.category === 'fortress_fallen');
+    expect(event).toBeDefined();
+    expect(event?.description).toContain('fallen');
+  });
+
+  it("does not fire a duplicate fortress_fallen event if civFallen is already true", () => {
+    const dwarf1 = makeDwarf();
+    const dwarf2 = makeDwarf();
+    const ctx = makeContext({ dwarves: [dwarf1, dwarf2] });
+
+    killDwarf(dwarf1, 'starvation', ctx);
+    killDwarf(dwarf2, 'starvation', ctx);
+
+    const events = ctx.state.pendingEvents.filter(e => e.category === 'fortress_fallen');
+    expect(events.length).toBe(1);
+  });
+});
