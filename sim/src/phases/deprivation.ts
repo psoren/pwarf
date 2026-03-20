@@ -1,6 +1,7 @@
 import { STARVATION_TICKS, DEHYDRATION_TICKS, WITNESS_DEATH_STRESS, WITNESS_DEATH_RADIUS } from "@pwarf/shared";
 import type { Dwarf } from "@pwarf/shared";
 import type { CachedState, SimContext } from "../sim-context.js";
+import { createWitnessDeathMemories } from "../dwarf-memory.js";
 
 /**
  * Handles starvation and dehydration death tracking for all alive dwarves.
@@ -76,6 +77,9 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
 
   // Apply witness stress to nearby alive dwarves
   applyWitnessStress(dwarf, state);
+
+  // Create lasting memories for witnesses
+  createWitnessDeathMemories(dwarf, state, ctx.year);
 
   // Check if all dwarves are dead — fortress falls
   // Note: dwarf.status is already 'dead' at this point, so filter it out

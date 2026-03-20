@@ -25,6 +25,7 @@ import { canPickUp } from "../inventory.js";
 import { dwarfName } from "../dwarf-utils.js";
 import { generateEngravingScene } from "../engrave-scene.js";
 import { generateArtifactName, randomArtifactCategory, randomArtifactMaterial, randomArtifactQuality } from "../artifact-names.js";
+import { createArtifactMemory, createMasterworkMemory } from "../dwarf-memory.js";
 
 /** Build task type → resulting fortress tile type. */
 const BUILD_TILE_MAP: Record<string, FortressTileType> = {
@@ -589,6 +590,13 @@ function completeArtifact(dwarf: Dwarf, ctx: SimContext): void {
   // Reduce stress after completing the artifact
   dwarf.stress_level = Math.max(0, dwarf.stress_level - 30);
   state.dirtyDwarfIds.add(dwarf.id);
+
+  // Create lasting positive memories for the creator
+  createArtifactMemory(dwarf, state, ctx.year);
+  // Masterwork-tier items also add a separate, shorter-lived memory of craft pride
+  if (quality === 'masterwork' || quality === 'artifact') {
+    createMasterworkMemory(dwarf, state, ctx.year);
+  }
 
   // Fire artifact_created event
   state.pendingEvents.push({

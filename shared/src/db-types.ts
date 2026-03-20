@@ -1,4 +1,23 @@
 // ============================================================
+// Dwarf memory (stored as JSONB in dwarves.memories)
+// ============================================================
+
+export type DwarfMemoryType = 'witnessed_death' | 'created_masterwork' | 'created_artifact';
+
+/**
+ * A single emotional memory stored in a dwarf's memories JSONB array.
+ * Positive intensity → ongoing stress gain per tick.
+ * Negative intensity → ongoing stress relief per tick.
+ * Memory expires when the current in-game year exceeds expires_year.
+ */
+export interface DwarfMemory {
+  type: DwarfMemoryType;
+  intensity: number;
+  year: number;
+  expires_year: number;
+}
+
+// ============================================================
 // Enum types (matching Postgres enums as string unions)
 // ============================================================
 
