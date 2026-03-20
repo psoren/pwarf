@@ -1,0 +1,229 @@
+import { randomUUID } from "node:crypto";
+import type { Dwarf, Item, Task } from "@pwarf/shared";
+import type { CachedState } from "./sim-context.js";
+import { createEmptyCachedState } from "./sim-context.js";
+
+export interface ScenarioDefinition {
+  name: string;
+  description: string;
+  seed: number;
+  dwarfCount: number;
+  initialFood: number;
+  initialDrink: number;
+  defaultTicks: number;
+}
+
+export const SCENARIOS: Record<string, ScenarioDefinition> = {
+  starvation: {
+    name: "starvation",
+    description: "Scarce food supply — will dwarves starve before finding alternatives?",
+    seed: 42,
+    dwarfCount: 7,
+    initialFood: 3,
+    initialDrink: 20,
+    defaultTicks: 500,
+  },
+  "idle-fortress": {
+    name: "idle-fortress",
+    description: "Plenty of food and drink but no tasks designated — do dwarves go idle?",
+    seed: 99,
+    dwarfCount: 7,
+    initialFood: 30,
+    initialDrink: 30,
+    defaultTicks: 300,
+  },
+  "long-run-stability": {
+    name: "long-run-stability",
+    description: "Balanced starting conditions — regression check for crashes and stuck states over many ticks.",
+    seed: 1337,
+    dwarfCount: 7,
+    initialFood: 20,
+    initialDrink: 20,
+    defaultTicks: 5000,
+  },
+  overcrowding: {
+    name: "overcrowding",
+    description: "More dwarves than resources — tests stress accumulation and social need collapse.",
+    seed: 7,
+    dwarfCount: 20,
+    initialFood: 10,
+    initialDrink: 10,
+    defaultTicks: 500,
+  },
+};
+
+function makeDwarf(civId: string, index: number, needFood: number, needDrink: number): Dwarf {
+  const names = [
+    "Urist", "Zon", "Meng", "Datan", "Reg", "Ast", "Domas",
+    "Logem", "Onol", "Sodel", "Iden", "Bim", "Erith", "Kubuk",
+    "Tosid", "Mosus", "Avuz", "Rigoth", "Nish", "Edem",
+  ];
+  const surnames = [
+    "McTestdwarf", "Hammerfall", "Stonebrew", "Axebeard", "Ironpick",
+    "Gravelfoot", "Deepdelver", "Boulderback", "Caveshout", "Flintmark",
+    "Slatefist", "Copperkettle", "Graniteborn", "Quarrytoe", "Minechant",
+    "Boulderhew", "Rocksong", "Dirtplow", "Crystalvein", "Shadowdig",
+  ];
+
+  return {
+    id: randomUUID(),
+    civilization_id: civId,
+    name: names[index % names.length] ?? "Urist",
+    surname: surnames[index % surnames.length] ?? "McTestdwarf",
+    status: "alive",
+    age: 25 + (index % 20),
+    gender: index % 2 === 0 ? "male" : "female",
+    need_food: needFood,
+    need_drink: needDrink,
+    need_sleep: 80,
+    need_social: 50,
+    need_purpose: 50,
+    need_beauty: 50,
+    stress_level: 0,
+    is_in_tantrum: false,
+    health: 100,
+    injuries: [],
+    memories: [],
+    trait_openness: null,
+    trait_conscientiousness: null,
+    trait_extraversion: null,
+    trait_agreeableness: null,
+    trait_neuroticism: null,
+    religious_devotion: 0,
+    faction_id: null,
+    born_year: null,
+    died_year: null,
+    cause_of_death: null,
+    current_task_id: null,
+    position_x: 100 + (index % 5),
+    position_y: 100 + Math.floor(index / 5),
+    position_z: 0,
+    created_at: new Date().toISOString(),
+  };
+}
+
+function makeFood(civId: string, count: number): Item[] {
+  const items: Item[] = [];
+  for (let i = 0; i < count; i++) {
+    items.push({
+      id: randomUUID(),
+      name: "Plump helmet",
+      category: "food",
+      quality: "standard",
+      material: "plant",
+      weight: 1,
+      value: 2,
+      is_artifact: false,
+      created_by_dwarf_id: null,
+      created_in_civ_id: civId,
+      created_year: 1,
+      held_by_dwarf_id: null,
+      located_in_civ_id: civId,
+      located_in_ruin_id: null,
+      position_x: 100 + (i % 10),
+      position_y: 95,
+      position_z: 0,
+      lore: null,
+      properties: {},
+      created_at: new Date().toISOString(),
+    });
+  }
+  return items;
+}
+
+function makeDrink(civId: string, count: number): Item[] {
+  const items: Item[] = [];
+  for (let i = 0; i < count; i++) {
+    items.push({
+      id: randomUUID(),
+      name: "Dwarven ale",
+      category: "drink",
+      quality: "standard",
+      material: "plant",
+      weight: 1,
+      value: 3,
+      is_artifact: false,
+      created_by_dwarf_id: null,
+      created_in_civ_id: civId,
+      created_year: 1,
+      held_by_dwarf_id: null,
+      located_in_civ_id: civId,
+      located_in_ruin_id: null,
+      position_x: 101 + (i % 10),
+      position_y: 96,
+      position_z: 0,
+      lore: null,
+      properties: {},
+      created_at: new Date().toISOString(),
+    });
+  }
+  return items;
+}
+
+/** Build initial CachedState from a scenario definition. */
+export function buildScenarioState(scenario: ScenarioDefinition): CachedState {
+  const civId = "headless-civ";
+  const state = createEmptyCachedState();
+
+  // Dwarves start with full needs so food/drink scarcity is tested by supply, not starting levels
+  const needFood = scenario.initialFood === 0 ? 80 : 80;
+  const needDrink = scenario.initialDrink === 0 ? 80 : 80;
+
+  state.dwarves = Array.from({ length: scenario.dwarfCount }, (_, i) =>
+    makeDwarf(civId, i, needFood, needDrink)
+  );
+
+  state.items = [
+    ...makeFood(civId, scenario.initialFood),
+    ...makeDrink(civId, scenario.initialDrink),
+  ];
+
+  return state;
+}
+
+/** Build eat/drink tasks so dwarves know where food is. */
+export function buildEatDrinkTasks(state: CachedState): Task[] {
+  const civId = "headless-civ";
+  const tasks: Task[] = [];
+
+  for (const item of state.items) {
+    if (item.position_x == null || item.position_y == null || item.position_z == null) continue;
+    if (item.category === "food") {
+      tasks.push({
+        id: randomUUID(),
+        civilization_id: civId,
+        task_type: "eat",
+        status: "pending",
+        priority: 5,
+        assigned_dwarf_id: null,
+        target_x: item.position_x,
+        target_y: item.position_y,
+        target_z: item.position_z,
+        target_item_id: item.id,
+        work_progress: 0,
+        work_required: 10,
+        created_at: new Date().toISOString(),
+        completed_at: null,
+      });
+    } else if (item.category === "drink") {
+      tasks.push({
+        id: randomUUID(),
+        civilization_id: civId,
+        task_type: "drink",
+        status: "pending",
+        priority: 5,
+        assigned_dwarf_id: null,
+        target_x: item.position_x,
+        target_y: item.position_y,
+        target_z: item.position_z,
+        target_item_id: item.id,
+        work_progress: 0,
+        work_required: 10,
+        created_at: new Date().toISOString(),
+        completed_at: null,
+      });
+    }
+  }
+
+  return tasks;
+}
