@@ -1,46 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateArtifactName, randomArtifactCategory, randomArtifactMaterial, randomArtifactQuality } from './artifact-names.js';
 import { createRng } from './rng.js';
-import type { Dwarf } from '@pwarf/shared';
-
-function makeDwarf(overrides: Partial<Dwarf> = {}): Dwarf {
-  return {
-    id: 'dwarf-1',
-    civilization_id: 'civ-1',
-    name: 'Urist',
-    surname: 'McStone',
-    status: 'alive',
-    age: 30,
-    gender: 'male',
-    need_food: 80,
-    need_drink: 80,
-    need_sleep: 80,
-    need_social: 80,
-    need_purpose: 80,
-    need_beauty: 80,
-    stress_level: 0,
-    is_in_tantrum: false,
-    health: 100,
-    injuries: [],
-    memories: [],
-    trait_openness: null,
-    trait_conscientiousness: null,
-    trait_extraversion: null,
-    trait_agreeableness: null,
-    trait_neuroticism: null,
-    religious_devotion: 0,
-    faction_id: null,
-    born_year: null,
-    died_year: null,
-    cause_of_death: null,
-    current_task_id: null,
-    position_x: 5,
-    position_y: 5,
-    position_z: 0,
-    created_at: new Date().toISOString(),
-    ...overrides,
-  };
-}
+import { makeDwarf } from './__tests__/test-helpers.js';
 
 describe('generateArtifactName', () => {
   it('returns a string starting with "The"', () => {

@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { tantrumCheck, getTantrumDuration } from "./tantrum-check.js";
 import { makeDwarf, makeTask, makeContext } from "../__tests__/test-helpers.js";
-import { createRng } from "../rng.js";
 import {
   STRESS_TANTRUM_THRESHOLD,
   STRESS_TANTRUM_MILD,
