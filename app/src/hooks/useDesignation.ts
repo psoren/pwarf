@@ -8,18 +8,22 @@ import {
   WORK_BUILD_WALL,
   WORK_BUILD_FLOOR,
   WORK_BUILD_BED,
+  WORK_BUILD_WELL,
+  WORK_BUILD_MUSHROOM_GARDEN,
   WORK_DECONSTRUCT,
 } from "@pwarf/shared";
 import { supabase } from "../lib/supabase";
 import type { FortressViewTile } from "./useFortressTiles";
 import type { OptimisticDesignation } from "./useTasks";
 
-export type DesignationMode = "none" | "mine" | "build_wall" | "build_floor" | "build_bed" | "stockpile" | "deconstruct";
+export type DesignationMode = "none" | "mine" | "build_wall" | "build_floor" | "build_bed" | "build_well" | "build_mushroom_garden" | "stockpile" | "deconstruct";
 
 const BUILD_WORK: Record<string, number> = {
   build_wall: WORK_BUILD_WALL,
   build_floor: WORK_BUILD_FLOOR,
   build_bed: WORK_BUILD_BED,
+  build_well: WORK_BUILD_WELL,
+  build_mushroom_garden: WORK_BUILD_MUSHROOM_GARDEN,
 };
 
 /** Tile types that can be deconstructed. */
