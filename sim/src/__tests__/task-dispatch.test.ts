@@ -473,6 +473,9 @@ describe("stress update", () => {
       need_food: 80,
       need_drink: 80,
       need_sleep: 80,
+      need_social: 80,
+      need_purpose: 80,
+      need_beauty: 80,
       stress_level: 50,
     });
     const ctx = makeContext({ dwarves: [dwarf] });

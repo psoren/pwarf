@@ -86,6 +86,24 @@ export const BEAUTY_RESTORE_NEAR_STRUCTURE = 0.15;
 export const BEAUTY_STRUCTURE_RADIUS = 6;
 
 // ============================================================
+// Personality trait modifiers
+// ============================================================
+
+/**
+ * How much neuroticism scales stress gains.
+ * At trait=1.0: gains × (1 + 0.5×1.0) = 1.5×
+ * At trait=0.5: gains × (1 + 0.5×0.0) = 1.0× (no effect)
+ * At trait=0.0: gains × (1 + 0.5×-0.5) = 0.75×
+ */
+export const NEUROTICISM_STRESS_MULTIPLIER = 1.0;
+
+/**
+ * Passive stress recovery added per tick at agreeableness=1.0.
+ * Stacks on top of the base recovery when all needs are comfortable.
+ */
+export const AGREEABLENESS_RECOVERY_BONUS = 0.1;
+
+// ============================================================
 // Stress severity tiers
 // ============================================================
 
