@@ -353,6 +353,30 @@ describe("combatResolution", () => {
     expect(battleEvents.length).toBe(1);
   });
 
+  it("fires monster_siege on first contact with any dwarf", async () => {
+    const ctx = createTestContext();
+    const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
+    ctx.state.dwarves = [dwarf];
+    ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 })];
+    await combatResolution(ctx);
+    const evt = ctx.state.pendingEvents.find(e => e.category === "monster_siege");
+    expect(evt).toBeDefined();
+    expect(evt?.monster_id).toBe("monster-1");
+  });
+
+  it("fires monster_siege only once even across multiple dwarves", async () => {
+    const ctx = createTestContext();
+    const dwarf1 = makeDwarf({ id: "d1", position_x: 5, position_y: 5, health: 100 });
+    const dwarf2 = makeDwarf({ id: "d2", position_x: 5, position_y: 5, health: 100 });
+    ctx.state.dwarves = [dwarf1, dwarf2];
+    ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 })];
+    // Pre-seed one combat pair so the monster is already in combat
+    ctx.state.activeCombatPairs.add(`monster-1:d1`);
+    await combatResolution(ctx);
+    const siegeEvents = ctx.state.pendingEvents.filter(e => e.category === "monster_siege");
+    expect(siegeEvents.length).toBe(0);
+  });
+
   it("clears combat pair when monster is slain", async () => {
     const ctx = createTestContext();
     const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });

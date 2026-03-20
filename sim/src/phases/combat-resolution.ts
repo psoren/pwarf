@@ -44,6 +44,31 @@ export async function combatResolution(ctx: SimContext): Promise<void> {
     // Fire a battle event the first time this monster/dwarf pair engage
     const combatPairKey = `${monster.id}:${target.id}`;
     if (!state.activeCombatPairs.has(combatPairKey)) {
+      // Fire monster_siege on first engagement of this monster with any dwarf
+      const isFirstEngagement = !Array.from(state.activeCombatPairs).some(k => k.startsWith(`${monster.id}:`));
+      if (isFirstEngagement) {
+        state.pendingEvents.push({
+          id: rng.uuid(),
+          world_id: ctx.worldId,
+          year: ctx.year,
+          category: 'monster_siege',
+          civilization_id: ctx.civilizationId,
+          ruin_id: null,
+          dwarf_id: null,
+          item_id: null,
+          faction_id: null,
+          monster_id: monster.id,
+          description: `The ${monster.name} begins attacking the fortress!`,
+          event_data: {
+            monster_type: monster.type,
+            threat_level: monster.threat_level,
+            tile_x: monster.current_tile_x,
+            tile_y: monster.current_tile_y,
+          },
+          created_at: new Date().toISOString(),
+        });
+      }
+
       state.activeCombatPairs.add(combatPairKey);
       state.pendingEvents.push({
         id: rng.uuid(),

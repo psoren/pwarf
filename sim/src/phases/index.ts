@@ -22,3 +22,4 @@ export { haulAssignment } from "./haul-assignment.js";
 export { beautyRestoration } from "./beauty-restoration.js";
 export { diseasePhase, hasWell } from "./disease.js";
 export { haunting, putGhostToRest } from "./haunting.js";
+export { autoCookPhase } from "./auto-cook.js";
