@@ -231,7 +231,6 @@ export async function dispatchCommand(
 export interface StepModeOptions {
   seed?: number;
   scenario?: string;
-  dwarves?: number;
 }
 
 export function createStepSession(opts: StepModeOptions = {}): StepSession {
