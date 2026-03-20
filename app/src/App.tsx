@@ -137,6 +137,8 @@ export default function App() {
           surname: d.surname,
           status: d.status,
           age: d.age ?? null,
+          gender: d.gender ?? null,
+          is_in_tantrum: d.is_in_tantrum,
           position_x: d.position_x,
           position_y: d.position_y,
           position_z: d.position_z,
