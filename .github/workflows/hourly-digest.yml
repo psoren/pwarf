@@ -1,0 +1,35 @@
+name: Hourly Digest
+
+on:
+  schedule:
+    # Runs at the top of every hour
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      lookback_minutes:
+        description: 'How far back to look for merged PRs (minutes). Default: 65. Use a large number (e.g. 525600) for a full-history run.'
+        required: false
+        default: '65'
+
+permissions:
+  contents: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Use a token with push access so the commit triggers the deploy workflow
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Generate and commit digest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          LOOKBACK_MINUTES: ${{ github.event.inputs.lookback_minutes || '65' }}
+        run: node .github/scripts/hourly-digest.mjs
