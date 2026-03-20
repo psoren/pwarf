@@ -1,9 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { groupConsecutiveEvents } from "./RightPanel";
+import { groupConsecutiveEvents, groupEventsByYear } from "./RightPanel";
 import type { LiveEvent } from "../hooks/useEvents";
 
-function makeEvent(id: string, description: string, category = "discovery"): LiveEvent {
-  return { id, description, category, created_at: new Date().toISOString() } as LiveEvent;
+function makeEvent(id: string, description: string, category = "discovery", year = 1): LiveEvent {
+  return { id, description, category, year, created_at: new Date().toISOString() };
 }
 
 describe("groupConsecutiveEvents", () => {
@@ -58,5 +58,42 @@ describe("groupConsecutiveEvents", () => {
     expect(groups[0]).toEqual({ event: events[0], count: 2 });
     expect(groups[1]).toEqual({ event: events[2], count: 3 });
     expect(groups[2]).toEqual({ event: events[5], count: 1 });
+  });
+});
+
+describe("groupEventsByYear", () => {
+  it("returns empty for no events", () => {
+    expect(groupEventsByYear([])).toEqual([]);
+  });
+
+  it("filters out non-legend categories (year_rollup, etc.)", () => {
+    const e = makeEvent("1", "Year ends", "year_rollup", 3);
+    expect(groupEventsByYear([e])).toEqual([]);
+  });
+
+  it("groups significant events by year newest first", () => {
+    const e1 = makeEvent("1", "A dwarf died", "death", 1);
+    const e2 = makeEvent("2", "Migrants arrived", "migration", 2);
+    const e3 = makeEvent("3", "Another death", "death", 1);
+    const groups = groupEventsByYear([e1, e2, e3]);
+    expect(groups).toHaveLength(2);
+    expect(groups[0].year).toBe(2);
+    expect(groups[1].year).toBe(1);
+    expect(groups[1].events).toHaveLength(2);
+  });
+
+  it("includes artifact_created and discovery categories", () => {
+    const e1 = makeEvent("1", "Artifact forged", "artifact_created", 5);
+    const e2 = makeEvent("2", "A discovery", "discovery", 5);
+    const groups = groupEventsByYear([e1, e2]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].events).toHaveLength(2);
+  });
+
+  it("includes fortress_fallen category", () => {
+    const e = makeEvent("1", "Fortress fallen", "fortress_fallen", 7);
+    const groups = groupEventsByYear([e]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0].year).toBe(7);
   });
 });

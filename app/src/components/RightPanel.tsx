@@ -10,12 +10,22 @@ interface RightPanelProps {
 const TABS = ["Log", "Legends"] as const;
 type Tab = (typeof TABS)[number];
 
-const PLACEHOLDER_LEGENDS = [
-  "Year 201 — Stonegear founded",
-  "Year 202 — First goblin siege",
-  "Year 203 — Discovered adamantine",
-  "Year 204 — Great flood",
-];
+/** Categories that appear in the Legends tab (significant history). */
+const LEGEND_CATEGORIES = new Set(['death', 'fortress_fallen', 'migration', 'discovery', 'artifact_created']);
+
+/** Group significant events by year, newest year first. */
+export function groupEventsByYear(events: LiveEvent[]): Array<{ year: number; events: LiveEvent[] }> {
+  const byYear = new Map<number, LiveEvent[]>();
+  for (const event of events) {
+    if (!LEGEND_CATEGORIES.has(event.category)) continue;
+    const list = byYear.get(event.year) ?? [];
+    list.push(event);
+    byYear.set(event.year, list);
+  }
+  return [...byYear.entries()]
+    .sort((a, b) => b[0] - a[0])
+    .map(([year, evts]) => ({ year, events: evts }));
+}
 
 /** Group consecutive events with the same description into (event, count) pairs. */
 export function groupConsecutiveEvents(events: LiveEvent[]): Array<{ event: LiveEvent; count: number }> {
@@ -109,13 +119,25 @@ export default function RightPanel({ collapsed, onToggle, events }: RightPanelPr
                 </ul>
               )
             ) : (
-              <ul className="space-y-0.5">
-                {PLACEHOLDER_LEGENDS.map((entry, i) => (
-                  <li key={i} className="text-[var(--amber)]">
-                    {entry}
-                  </li>
-                ))}
-              </ul>
+              groupEventsByYear(events).length === 0 ? (
+                <p className="text-[var(--text)] opacity-50 italic">No history yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {groupEventsByYear(events).map(({ year, events: yearEvents }) => (
+                    <div key={year}>
+                      <div className="text-[var(--amber)] font-bold mb-0.5">Year {year}</div>
+                      <ul className="space-y-0.5 pl-1">
+                        {yearEvents.map((event) => (
+                          <li key={event.id} className="text-[var(--text)]">
+                            <span style={{ color: categoryColor(event.category) }} className="mr-1">*</span>
+                            {event.description}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )
             )}
           </div>
         </>
