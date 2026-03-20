@@ -328,4 +328,50 @@ describe("combatResolution", () => {
     await combatResolution(ctx);
     expect(dwarf.health).toBe(100);
   });
+
+  it("fires a battle event on first contact", async () => {
+    const ctx = createTestContext();
+    const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
+    ctx.state.dwarves = [dwarf];
+    ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 })];
+    await combatResolution(ctx);
+    const evt = ctx.state.pendingEvents.find(e => e.category === "battle");
+    expect(evt).toBeDefined();
+    expect(evt?.dwarf_id).toBe(dwarf.id);
+    expect(evt?.monster_id).toBe("monster-1");
+  });
+
+  it("fires battle event only once per pair across multiple ticks", async () => {
+    const ctx = createTestContext();
+    const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
+    ctx.state.dwarves = [dwarf];
+    ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 })];
+    await combatResolution(ctx);
+    await combatResolution(ctx);
+    await combatResolution(ctx);
+    const battleEvents = ctx.state.pendingEvents.filter(e => e.category === "battle");
+    expect(battleEvents.length).toBe(1);
+  });
+
+  it("clears combat pair when monster is slain", async () => {
+    const ctx = createTestContext();
+    const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
+    ctx.state.dwarves = [dwarf];
+    const monster = makeMonster({ id: "m1", current_tile_x: 5, current_tile_y: 5, health: 1 });
+    ctx.state.monsters = [monster];
+    await combatResolution(ctx);
+    expect(monster.status).toBe("slain");
+    expect(ctx.state.activeCombatPairs.has(`m1:${dwarf.id}`)).toBe(false);
+  });
+
+  it("clears combat pair when dwarf dies", async () => {
+    const ctx = createTestContext();
+    const dwarf = makeDwarf({ id: "d1", position_x: 5, position_y: 5, health: 1 });
+    ctx.state.dwarves = [dwarf];
+    const monster = makeMonster({ id: "m1", current_tile_x: 5, current_tile_y: 5, health: 100 });
+    ctx.state.monsters = [monster];
+    await combatResolution(ctx);
+    expect(dwarf.status).toBe("dead");
+    expect(ctx.state.activeCombatPairs.has(`m1:d1`)).toBe(false);
+  });
 });
