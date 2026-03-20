@@ -178,6 +178,34 @@ export const DWARF_SURNAMES = [
 ];
 
 // ============================================================
+// Disease
+// ============================================================
+
+/** Per-year probability of a disease outbreak starting */
+export const DISEASE_OUTBREAK_CHANCE = 0.07;
+
+/** Per-year probability that each healthy dwarf adjacent to an infected dwarf catches the disease */
+export const DISEASE_SPREAD_CHANCE = 0.4;
+
+/**
+ * Per-year probability that disease spreads when a well exists in the fortress.
+ * Wells represent clean water access which reduces transmission.
+ */
+export const DISEASE_SPREAD_CHANCE_WITH_WELL = 0.2;
+
+/** Health lost per year by an infected dwarf */
+export const DISEASE_HEALTH_DAMAGE_PER_YEAR = 15;
+
+/**
+ * Per-year probability that an infected dwarf recovers naturally.
+ * Dwarves at full health recover faster; this applies regardless.
+ */
+export const DISEASE_RECOVERY_CHANCE = 0.5;
+
+/** Manhattan-distance radius within which dwarves can spread disease */
+export const DISEASE_SPREAD_RADIUS = 4;
+
+// ============================================================
 // Stress severity tiers
 // ============================================================
 
@@ -470,3 +498,4 @@ export const POLL_EVENTS_MS = 3_000;
 
 /** How often the frontend polls for fortress tile overrides */
 export const POLL_FORTRESS_TILES_MS = 3_000;
+
