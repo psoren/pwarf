@@ -46,6 +46,9 @@ export interface CachedState {
   /** Tracks ticks at zero need for starvation/dehydration death. */
   zeroFoodTicks: Map<string, number>;
   zeroDrinkTicks: Map<string, number>;
+
+  /** Tracks remaining tantrum ticks per dwarf. Entry removed when tantrum ends. */
+  tantrumTicks: Map<string, number>;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */
@@ -70,6 +73,7 @@ export function createEmptyCachedState(): CachedState {
     dirtyFortressTileKeys: new Set(),
     zeroFoodTicks: new Map(),
     zeroDrinkTicks: new Map(),
+    tantrumTicks: new Map(),
   };
 }
 
