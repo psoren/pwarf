@@ -85,6 +85,7 @@ export async function loadStateFromSupabase(
     dirtyStructureIds: new Set(),
     dirtyMonsterIds: new Set(),
     dirtyTaskIds: new Set(),
+    dirtyDwarfSkillIds: new Set(),
     newTasks: [],
     pendingEvents: [],
     stockpileTiles,
