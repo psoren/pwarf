@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { STEPS_PER_YEAR } from "@pwarf/shared";
-import type { Dwarf, Item, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
+import type { Dwarf, FortressTile, Item, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext, CachedState } from "./sim-context.js";
 import { createEmptyCachedState, createRng } from "./sim-context.js";
 import { DEFAULT_TEST_SEED } from "./rng.js";
@@ -49,6 +49,8 @@ export interface ScenarioResult {
   ticks: number;
   /** Final in-game year. */
   year: number;
+  /** All fortress tile overrides (mined/built tiles) at end of run. */
+  fortressTileOverrides: FortressTile[];
 }
 
 /**
@@ -127,5 +129,6 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     tasks: state.tasks,
     ticks: stepCount,
     year: currentYear,
+    fortressTileOverrides: [...state.fortressTileOverrides.values()],
   };
 }
