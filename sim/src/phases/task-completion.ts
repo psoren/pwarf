@@ -498,13 +498,8 @@ function completeSmooth(task: Task, ctx: SimContext): void {
 
   const key = `${task.target_x},${task.target_y},${task.target_z}`;
   const existing = ctx.state.fortressTileOverrides.get(key);
-  const currentType = existing?.tile_type ?? null;
 
-  // Floors become engraved_floor candidate; walls become smooth_stone
-  const resultType: FortressTileType =
-    currentType === 'cavern_floor' || currentType === 'constructed_floor' ? 'smooth_stone' : 'smooth_stone';
-
-  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, resultType, existing?.material ?? null, existing?.is_mined ?? false);
+  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'smooth_stone', existing?.material ?? null, existing?.is_mined ?? false);
 }
 
 function completeArtifact(dwarf: Dwarf, ctx: SimContext): void {
