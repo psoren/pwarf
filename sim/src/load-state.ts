@@ -133,5 +133,6 @@ export async function loadStateFromSupabase(
     civDirty: false,
     civFallen: false,
     civFallenCause: 'unknown',
+    civPeakPopulation: (civResult.data as { population: number } | null)?.population ?? 0,
   };
 }

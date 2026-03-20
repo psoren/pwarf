@@ -100,6 +100,9 @@ export interface CachedState {
 
   /** Cause of death to record on the civilization row when civFallen becomes true. */
   civFallenCause: string;
+
+  /** High-water mark of live population — recorded on the ruin row when the fortress falls. */
+  civPeakPopulation: number;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */
@@ -138,6 +141,7 @@ export function createEmptyCachedState(): CachedState {
     civDirty: false,
     civFallen: false,
     civFallenCause: 'unknown',
+    civPeakPopulation: 0,
   };
 }
 
@@ -155,6 +159,13 @@ export interface SimContext {
 
   /** The world this civilization belongs to. */
   worldId: string;
+
+  /** The civilization's name (used when creating the ruin record on fall). */
+  civName: string;
+
+  /** World-map tile coordinates of the embark site. */
+  civTileX: number;
+  civTileY: number;
 
   /** Fortress tile deriver for looking up procedurally generated tile types. */
   fortressDeriver: FortressDeriver | null;
@@ -197,6 +208,9 @@ export function createTestContext(
     supabase: null as unknown as SupabaseClient,
     civilizationId: "civ-1",
     worldId: "world-1",
+    civName: "Test Fortress",
+    civTileX: 0,
+    civTileY: 0,
     fortressDeriver: null,
     step: 0,
     year: 1,
