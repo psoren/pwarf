@@ -65,7 +65,7 @@ pwarf/
 ├── sim/          Node.js headless simulation engine
 ├── shared/       Shared TypeScript types and constants
 ├── supabase/     Database migrations
-└── designDocs/   Game design specifications
+└── docs/         Documentation (design docs, brainstorming, system overviews)
 ```
 
 ## Database Setup
