@@ -91,6 +91,7 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
       surname,
       status: 'alive',
       age: 20 + Math.floor(Math.random() * 30),
+      gender: Math.random() < 0.5 ? 'male' : 'female',
       need_food: 100,
       need_drink: 100,
       need_sleep: 100,
