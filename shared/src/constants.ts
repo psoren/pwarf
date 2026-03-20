@@ -206,6 +206,19 @@ export const DISEASE_RECOVERY_CHANCE = 0.5;
 export const DISEASE_SPREAD_RADIUS = 4;
 
 // ============================================================
+// Strange moods (artifact creation)
+// ============================================================
+
+/**
+ * Probability that a dwarf at severe stress enters a strange mood
+ * (producing an artifact) instead of a tantrum.
+ */
+export const STRANGE_MOOD_CHANCE = 0.05;
+
+/** Work ticks required to complete an artifact during a strange mood */
+export const STRANGE_MOOD_WORK = 500;
+
+// ============================================================
 // Witness stress (death trauma)
 // ============================================================
 

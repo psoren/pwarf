@@ -21,6 +21,8 @@ export function haunting(ctx: SimContext): void {
     if (!pos) continue;
 
     for (const dwarf of aliveDwarves) {
+      // Dwarves in a strange mood are focused on their work — ghosts cannot reach them
+      if (state.strangeMoodDwarfIds.has(dwarf.id)) continue;
       if (dwarf.position_z !== pos.z) continue;
       const dist =
         Math.abs(dwarf.position_x - pos.x) +

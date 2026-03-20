@@ -73,6 +73,13 @@ export interface CachedState {
    * Used to determine haunting radius and memorial targeting.
    */
   ghostPositions: Map<string, { x: number; y: number; z: number }>;
+
+  /**
+   * IDs of dwarves currently in a strange mood (creating an artifact).
+   * These dwarves skip haunting stress and cannot be assigned other tasks.
+   * In-memory only; not persisted across sim restarts.
+   */
+  strangeMoodDwarfIds: Set<string>;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */
@@ -103,6 +110,7 @@ export function createEmptyCachedState(): CachedState {
     warnedNeedIds: new Map(),
     ghostDwarfIds: new Set(),
     ghostPositions: new Map(),
+    strangeMoodDwarfIds: new Set(),
   };
 }
 

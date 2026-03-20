@@ -168,7 +168,8 @@ export type TaskType =
   | 'brew'
   | 'cook'
   | 'smith'
-  | 'engrave_memorial';
+  | 'engrave_memorial'
+  | 'create_artifact';
 
 export type TaskStatus =
   | 'pending'
