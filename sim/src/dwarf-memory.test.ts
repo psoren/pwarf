@@ -6,6 +6,8 @@ import {
   decayMemories,
   createWitnessDeathMemories,
   createGriefFriendMemories,
+  createGriefSpouseMemories,
+  createMarriageMemories,
   createArtifactMemory,
   createMasterworkMemory,
 } from './dwarf-memory.js';
@@ -285,5 +287,67 @@ describe('createGriefFriendMemories', () => {
     const mems = getMemories(friend);
     expect(mems).toHaveLength(1);
     expect(mems[0].type).toBe('grief_friend');
+  });
+});
+
+describe('createGriefSpouseMemories', () => {
+  it('adds grief_spouse memory and immediate stress to surviving spouse', () => {
+    const deceased = makeDwarf({ status: 'dead' });
+    const spouse = makeDwarf({ memories: [], stress_level: 0 });
+    const rel = makeRelationship(deceased.id, spouse.id, 'spouse');
+    const ctx = makeContext({ dwarves: [deceased, spouse] });
+    ctx.state.dwarfRelationships.push(rel);
+
+    createGriefSpouseMemories(deceased, ctx.state, 5);
+
+    const mems = getMemories(spouse);
+    expect(mems).toHaveLength(1);
+    expect(mems[0].type).toBe('grief_spouse');
+    expect(mems[0].intensity).toBeGreaterThan(0);
+    expect(spouse.stress_level).toBeGreaterThan(0);
+  });
+
+  it('applies greater stress than friend grief', () => {
+    const deceased = makeDwarf({ status: 'dead' });
+    const spouse = makeDwarf({ memories: [], stress_level: 0 });
+    const rel = makeRelationship(deceased.id, spouse.id, 'spouse');
+    const ctx = makeContext({ dwarves: [deceased, spouse] });
+    ctx.state.dwarfRelationships.push(rel);
+
+    createGriefSpouseMemories(deceased, ctx.state, 5);
+
+    // GRIEF_SPOUSE_STRESS (35) > GRIEF_FRIEND_STRESS (20)
+    expect(spouse.stress_level).toBeGreaterThan(20);
+  });
+
+  it('does not affect dwarves with only friend relationships', () => {
+    const deceased = makeDwarf({ status: 'dead' });
+    const friend = makeDwarf({ memories: [], stress_level: 0 });
+    const rel = makeRelationship(deceased.id, friend.id, 'friend');
+    const ctx = makeContext({ dwarves: [deceased, friend] });
+    ctx.state.dwarfRelationships.push(rel);
+
+    createGriefSpouseMemories(deceased, ctx.state, 5);
+
+    expect(getMemories(friend)).toHaveLength(0);
+    expect(friend.stress_level).toBe(0);
+  });
+});
+
+describe('createMarriageMemories', () => {
+  it('adds married_joy memory to both spouses', () => {
+    const spouseA = makeDwarf({ memories: [] });
+    const spouseB = makeDwarf({ memories: [] });
+    const ctx = makeContext({ dwarves: [spouseA, spouseB] });
+
+    createMarriageMemories(spouseA, spouseB, ctx.state, 3);
+
+    const memA = getMemories(spouseA);
+    const memB = getMemories(spouseB);
+    expect(memA).toHaveLength(1);
+    expect(memA[0].type).toBe('married_joy');
+    expect(memA[0].intensity).toBeLessThan(0);
+    expect(memB).toHaveLength(1);
+    expect(memB[0].type).toBe('married_joy');
   });
 });

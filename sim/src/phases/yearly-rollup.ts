@@ -10,7 +10,7 @@ import { dwarfName } from "../dwarf-utils.js";
 import { createImmigrantDwarf } from "../dwarf-factory.js";
 import { diseasePhase } from "./disease.js";
 import { applyWitnessStress } from "./deprivation.js";
-import { createGriefFriendMemories, createWitnessDeathMemories, decayMemories } from "../dwarf-memory.js";
+import { createGriefFriendMemories, createGriefSpouseMemories, createWitnessDeathMemories, decayMemories } from "../dwarf-memory.js";
 import { relationshipFormationPhase } from "./relationship-formation.js";
 
 /**
@@ -47,6 +47,7 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
         applyWitnessStress(dwarf, state);
         createWitnessDeathMemories(dwarf, state, year);
         createGriefFriendMemories(dwarf, state, year);
+        createGriefSpouseMemories(dwarf, state, year);
 
         if (dwarf.current_task_id) {
           const task = state.tasks.find(t => t.id === dwarf.current_task_id);
