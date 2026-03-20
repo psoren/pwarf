@@ -104,6 +104,24 @@ export const NEUROTICISM_STRESS_MULTIPLIER = 1.0;
  */
 export const AGREEABLENESS_RECOVERY_BONUS = 0.1;
 
+/**
+ * How much conscientiousness scales work speed.
+ * Formula: workRate × (1 + (trait - 0.5) × CONSCIENTIOUSNESS_WORK_MULTIPLIER)
+ * At trait=1.0: workRate × 1.25 (diligent — finishes faster)
+ * At trait=0.5: workRate × 1.0 (average — no effect)
+ * At trait=0.0: workRate × 0.75 (lazy — finishes slower)
+ */
+export const CONSCIENTIOUSNESS_WORK_MULTIPLIER = 0.5;
+
+/**
+ * How much extraversion scales social need decay.
+ * Formula: socialDecay × (1 + (trait - 0.5) × EXTRAVERSION_SOCIAL_DECAY_MULTIPLIER)
+ * At trait=1.0: decay × 1.5 (extravert — craves social contact more urgently)
+ * At trait=0.5: decay × 1.0 (average — no effect)
+ * At trait=0.0: decay × 0.5 (introvert — comfortable alone)
+ */
+export const EXTRAVERSION_SOCIAL_DECAY_MULTIPLIER = 1.0;
+
 // ============================================================
 // Stress severity tiers
 // ============================================================

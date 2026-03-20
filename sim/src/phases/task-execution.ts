@@ -7,6 +7,7 @@ import {
   HARDNESS_IGNITE,
   HARDNESS_ORE,
   HARDNESS_GEM,
+  CONSCIENTIOUSNESS_WORK_MULTIPLIER,
 } from "@pwarf/shared";
 import type { Dwarf, Task } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -80,7 +81,11 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
       hardness = getTileHardness(tileType);
     }
 
-    const workRate = (BASE_WORK_RATE * (1 + skillLevel * 0.1)) / hardness;
+    // Apply conscientiousness modifier: trait=0.5 → no effect, 1.0 → +25%, 0.0 → -25%
+    const conscientiousnessModifier = dwarf.trait_conscientiousness !== null
+      ? 1 + (dwarf.trait_conscientiousness - 0.5) * CONSCIENTIOUSNESS_WORK_MULTIPLIER
+      : 1;
+    const workRate = (BASE_WORK_RATE * (1 + skillLevel * 0.1) * conscientiousnessModifier) / hardness;
 
     task.work_progress += workRate;
     state.dirtyTaskIds.add(task.id);
