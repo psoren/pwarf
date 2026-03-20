@@ -95,6 +95,22 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
     );
   }
 
+  if (state.dirtyDwarfSkillIds.size > 0) {
+    const dirtySkills = state.dwarfSkills.filter((s) =>
+      state.dirtyDwarfSkillIds.has(s.id),
+    );
+    if (dirtySkills.length > 0) {
+      promises.push(
+        supabase
+          .from("dwarf_skills")
+          .upsert(dirtySkills)
+          .then(({ error }) => {
+            if (error) console.warn(`[flush] dwarf_skills upsert failed: ${error.message}`);
+          }),
+      );
+    }
+  }
+
   if (state.dirtyFortressTileKeys.size > 0) {
     const dirtyTiles = [...state.dirtyFortressTileKeys]
       .map((key) => state.fortressTileOverrides.get(key))
@@ -133,6 +149,7 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   state.dirtyStructureIds.clear();
   state.dirtyMonsterIds.clear();
   state.dirtyTaskIds.clear();
+  state.dirtyDwarfSkillIds.clear();
   state.dirtyFortressTileKeys.clear();
   state.newTasks = [];
   state.pendingEvents = [];

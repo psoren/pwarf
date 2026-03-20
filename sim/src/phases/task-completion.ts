@@ -17,6 +17,7 @@ import {
   PURPOSE_RESTORE_SKILLED,
   PURPOSE_RESTORE_HAUL,
   PURPOSE_RESTORE_DEFAULT,
+  SKILL_TIER_NAMES,
 } from "@pwarf/shared";
 import type { Dwarf, FortressTile, FortressTileType, Task, Item, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -69,21 +70,21 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   switch (task.task_type) {
     case 'mine':
       completeMine(dwarf, task, ctx);
-      awardXp(dwarf.id, 'mining', XP_MINE, state);
+      awardXp(dwarf.id, 'mining', XP_MINE, ctx, dwarf);
       break;
     case 'haul':
       completeHaul(dwarf, task, ctx);
-      awardXp(dwarf.id, 'hauling', XP_HAUL, state);
+      awardXp(dwarf.id, 'hauling', XP_HAUL, ctx, dwarf);
       break;
     case 'farm_till':
-      awardXp(dwarf.id, 'farming', XP_FARM_TILL, state);
+      awardXp(dwarf.id, 'farming', XP_FARM_TILL, ctx, dwarf);
       break;
     case 'farm_plant':
-      awardXp(dwarf.id, 'farming', XP_FARM_PLANT, state);
+      awardXp(dwarf.id, 'farming', XP_FARM_PLANT, ctx, dwarf);
       break;
     case 'farm_harvest':
       completeFarmHarvest(task, ctx);
-      awardXp(dwarf.id, 'farming', XP_FARM_HARVEST, state);
+      awardXp(dwarf.id, 'farming', XP_FARM_HARVEST, ctx, dwarf);
       break;
     case 'eat':
       completeEat(dwarf, task, ctx);
@@ -97,43 +98,43 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'build_wall':
     case 'build_floor':
       completeBuild(task, ctx);
-      awardXp(dwarf.id, 'building', XP_BUILD, state);
+      awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
       break;
     case 'build_bed':
       completeBuildBed(task, ctx);
-      awardXp(dwarf.id, 'building', XP_BUILD, state);
+      awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
       break;
     case 'build_well':
       completeBuildStructure(task, ctx, 'well', 'well');
-      awardXp(dwarf.id, 'building', XP_BUILD, state);
+      awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
       break;
     case 'build_mushroom_garden':
       completeBuildStructure(task, ctx, 'mushroom_garden', 'mushroom_garden');
-      awardXp(dwarf.id, 'building', XP_BUILD, state);
+      awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
       break;
     case 'deconstruct':
       completeDeconstruct(task, ctx);
-      awardXp(dwarf.id, 'building', XP_BUILD, state);
+      awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
       break;
     case 'smooth':
       completeSmooth(task, ctx);
-      awardXp(dwarf.id, 'building', XP_SMOOTH, state);
+      awardXp(dwarf.id, 'building', XP_SMOOTH, ctx, dwarf);
       break;
     case 'engrave':
       completeEngrave(task, ctx);
-      awardXp(dwarf.id, 'engraving', XP_ENGRAVE, state);
+      awardXp(dwarf.id, 'engraving', XP_ENGRAVE, ctx, dwarf);
       break;
     case 'brew':
       completeBrew(dwarf, task, ctx);
-      awardXp(dwarf.id, 'brewing', XP_BREW, state);
+      awardXp(dwarf.id, 'brewing', XP_BREW, ctx, dwarf);
       break;
     case 'cook':
       completeCook(dwarf, task, ctx);
-      awardXp(dwarf.id, 'cooking', XP_COOK, state);
+      awardXp(dwarf.id, 'cooking', XP_COOK, ctx, dwarf);
       break;
     case 'smith':
       completeSmith(dwarf, task, ctx);
-      awardXp(dwarf.id, 'smithing', XP_SMITH, state);
+      awardXp(dwarf.id, 'smithing', XP_SMITH, ctx, dwarf);
       break;
   }
 
@@ -649,13 +650,33 @@ function findItemHeldBy(ctx: SimContext, dwarfId: string, category: string): Ite
   return ctx.state.items.find(i => i.category === category && i.held_by_dwarf_id === dwarfId);
 }
 
-function awardXp(dwarfId: string, skillName: string, xpAmount: number, state: SimContext['state']): void {
+function awardXp(dwarfId: string, skillName: string, xpAmount: number, ctx: SimContext, dwarf: Dwarf): void {
+  const { state } = ctx;
   const skill = state.dwarfSkills.find(s => s.dwarf_id === dwarfId && s.skill_name === skillName);
   if (skill) {
     skill.xp += xpAmount;
     const newLevel = Math.floor(skill.xp / 100);
     if (newLevel > skill.level && newLevel <= 20) {
       skill.level = newLevel;
+      state.dirtyDwarfSkillIds.add(skill.id);
+      const tierName = SKILL_TIER_NAMES[newLevel] ?? `Level ${newLevel}`;
+      const dwarfLabel = dwarfName(dwarf);
+      const readableSkill = skillName.replace(/_/g, ' ');
+      state.pendingEvents.push({
+        id: ctx.rng.uuid(),
+        world_id: '',
+        year: ctx.year,
+        category: 'discovery',
+        civilization_id: ctx.civilizationId,
+        ruin_id: null,
+        dwarf_id: dwarf.id,
+        item_id: null,
+        faction_id: null,
+        monster_id: null,
+        description: `${dwarfLabel} has become a ${tierName} ${readableSkill}!`,
+        event_data: { skill_name: skillName, new_level: newLevel, tier: tierName },
+        created_at: new Date().toISOString(),
+      });
     }
   }
 }
