@@ -22,6 +22,7 @@ import {
   thoughtGeneration,
   haulAssignment,
   beautyRestoration,
+  haunting,
 } from "./phases/index.js";
 
 /** Snapshot of sim state emitted after every tick for live UI rendering. */
@@ -169,6 +170,7 @@ export class SimRunner {
     await eventFiring(this.ctx);
     await thoughtGeneration(this.ctx);
     await beautyRestoration(this.ctx);
+    haunting(this.ctx);
 
     if (this.stepCount % STEPS_PER_YEAR === 0) {
       this.currentYear++;
