@@ -169,6 +169,18 @@ export default function App() {
     return map;
   }, [liveDwarves, zLevel]);
 
+  // Monster positions for rendering
+  const monsterPositions = useMemo(() => {
+    const monsters = snapshot?.monsters ?? [];
+    const map = new Map<string, { name: string; health: number }>();
+    for (const m of monsters) {
+      if (m.status === 'active' && m.current_tile_x !== null && m.current_tile_y !== null) {
+        map.set(`${m.current_tile_x},${m.current_tile_y}`, { name: m.name, health: m.health });
+      }
+    }
+    return map;
+  }, [snapshot]);
+
   // Stockpile tiles
   const stockpileTiles = useStockpileTiles(world.civId);
 
@@ -435,6 +447,7 @@ export default function App() {
           groundItems={world.mode === "fortress" ? groundItems : undefined}
           zLevel={zLevel}
           buildProgressTiles={world.mode === "fortress" ? buildProgressTiles : undefined}
+          monsterPositions={world.mode === "fortress" ? monsterPositions : undefined}
         />
 
         {modalDwarf && (

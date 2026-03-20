@@ -9,6 +9,7 @@ import {
   needSatisfaction,
   stressUpdate,
   tantrumCheck,
+  monsterSpawning,
   monsterPathfinding,
   combatResolution,
   constructionProgress,
@@ -18,6 +19,7 @@ import {
   idleWandering,
   thoughtGeneration,
   haulAssignment,
+  beautyRestoration,
 } from "./phases/index.js";
 import { SCENARIOS, buildScenarioState, buildEatDrinkTasks } from "./scenarios.js";
 import { serializeState } from "./state-serializer.js";
@@ -107,6 +109,7 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
     await needSatisfaction(ctx);
     await stressUpdate(ctx);
     await tantrumCheck(ctx);
+    await monsterSpawning(ctx);
     await monsterPathfinding(ctx);
     await combatResolution(ctx);
     await constructionProgress(ctx);
@@ -115,6 +118,7 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
     await jobClaiming(ctx);
     await eventFiring(ctx);
     await thoughtGeneration(ctx);
+    await beautyRestoration(ctx);
 
     if (stepCount % STEPS_PER_YEAR === 0) {
       currentYear++;

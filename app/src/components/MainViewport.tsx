@@ -40,6 +40,8 @@ interface MainViewportProps {
   zLevel?: number;
   /** Build progress (0-100) for in_progress build tasks keyed by "x,y" */
   buildProgressTiles?: Map<string, number>;
+  /** Active monster positions keyed by "x,y" */
+  monsterPositions?: Map<string, { name: string; health: number }>;
 }
 
 // Character cell dimensions (monospace)
@@ -84,6 +86,7 @@ export default function MainViewport({
   groundItems,
   zLevel = 0,
   buildProgressTiles,
+  monsterPositions,
 }: MainViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -121,6 +124,8 @@ export default function MainViewport({
   zLevelRef.current = zLevel;
   const buildProgressTilesRef = useRef(buildProgressTiles);
   buildProgressTilesRef.current = buildProgressTiles;
+  const monsterPositionsRef = useRef(monsterPositions);
+  monsterPositionsRef.current = monsterPositions;
 
   // Increment to force re-render when data (not offset) changes
   const [dataVersion, setDataVersion] = useState(0);
@@ -131,6 +136,7 @@ export default function MainViewport({
   const prevStockpileTiles = useRef(stockpileTiles);
   const prevGroundItems = useRef(groundItems);
   const prevBuildProgressTiles = useRef(buildProgressTiles);
+  const prevMonsterPositions = useRef(monsterPositions);
 
   if (
     getWorldTileData !== prevGetWorldTileData.current ||
@@ -139,7 +145,8 @@ export default function MainViewport({
     designatedTiles !== prevDesignatedTiles.current ||
     stockpileTiles !== prevStockpileTiles.current ||
     groundItems !== prevGroundItems.current ||
-    buildProgressTiles !== prevBuildProgressTiles.current
+    buildProgressTiles !== prevBuildProgressTiles.current ||
+    monsterPositions !== prevMonsterPositions.current
   ) {
     prevGetWorldTileData.current = getWorldTileData;
     prevGetFortressTileData.current = getFortressTileData;
@@ -148,6 +155,7 @@ export default function MainViewport({
     prevStockpileTiles.current = stockpileTiles;
     prevGroundItems.current = groundItems;
     prevBuildProgressTiles.current = buildProgressTiles;
+    prevMonsterPositions.current = monsterPositions;
     setDataVersion((v) => v + 1);
   }
 
@@ -168,6 +176,11 @@ export default function MainViewport({
   const getFortressTileGlyph = useCallback(
     (wx: number, wy: number): { ch: string; fg: string; bg?: string } => {
       const key = `${wx},${wy}`;
+
+      // Check for monster at this position (rendered above dwarves)
+      if (monsterPositionsRef.current?.has(key)) {
+        return { ch: "M", fg: "#ff2222" };
+      }
 
       // Check for dwarf at this position
       if (dwarfPositionsRef.current?.has(key)) {
