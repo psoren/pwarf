@@ -122,6 +122,29 @@ export const CONSCIENTIOUSNESS_WORK_MULTIPLIER = 0.5;
  */
 export const EXTRAVERSION_SOCIAL_DECAY_MULTIPLIER = 1.0;
 
+/**
+ * How much openness scales beauty restoration from nearby structures.
+ * Formula: bonus × (1 + (trait - 0.5) × OPENNESS_BEAUTY_MULTIPLIER)
+ * At trait=1.0: bonus × 1.5 (appreciates art and beauty more)
+ * At trait=0.5: bonus × 1.0 (average — no effect)
+ * At trait=0.0: bonus × 0.5 (philistine — unmoved by surroundings)
+ */
+export const OPENNESS_BEAUTY_MULTIPLIER = 1.0;
+
+// ============================================================
+// Aging
+// ============================================================
+
+/** Age at which dwarves start rolling for natural death each year */
+export const ELDER_DEATH_AGE = 80;
+
+/**
+ * Probability of natural death per year past ELDER_DEATH_AGE.
+ * Compounds: a dwarf aged 85 has 5 extra years × 10% = ~50% accumulated risk.
+ * Each year past 80 rolls independently at this probability.
+ */
+export const ELDER_DEATH_CHANCE_PER_YEAR = 0.1;
+
 // ============================================================
 // Stress severity tiers
 // ============================================================

@@ -3,6 +3,7 @@ import {
   BEAUTY_RESTORE_PASSIVE,
   BEAUTY_RESTORE_NEAR_STRUCTURE,
   BEAUTY_STRUCTURE_RADIUS,
+  OPENNESS_BEAUTY_MULTIPLIER,
 } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 
@@ -16,6 +17,7 @@ const BEAUTY_STRUCTURES = new Set(['well', 'mushroom_garden', 'bed']);
  * - A passive baseline restoration (always applies)
  * - A bonus if near a well, mushroom garden, or similar structure
  *
+ * trait_openness scales the structure bonus: open dwarves appreciate beauty more.
  * Beauty decays slowly (0.03/tick) so even the passive rate provides
  * meaningful recovery for dwarves who aren't in a barren fortress.
  */
@@ -38,7 +40,11 @@ export async function beautyRestoration(ctx: SimContext): Promise<void> {
         + Math.abs(structure.position_y - dwarf.position_y);
 
       if (dist <= BEAUTY_STRUCTURE_RADIUS) {
-        restore += BEAUTY_RESTORE_NEAR_STRUCTURE;
+        // trait_openness: 0.5=average (no effect), 1.0=+50% bonus, 0.0=-50% bonus
+        const opennessModifier = dwarf.trait_openness !== null
+          ? 1 + (dwarf.trait_openness - 0.5) * OPENNESS_BEAUTY_MULTIPLIER
+          : 1;
+        restore += BEAUTY_RESTORE_NEAR_STRUCTURE * opennessModifier;
         break; // only one bonus per tick regardless of how many structures
       }
     }
