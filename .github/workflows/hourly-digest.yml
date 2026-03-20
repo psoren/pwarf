@@ -21,8 +21,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          # Use a token with push access so the commit triggers the deploy workflow
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # BOT_GITHUB_TOKEN is a PAT from an admin account; required because
+          # GITHUB_TOKEN can't bypass the "typecheck-and-test" required status check
+          # on direct pushes to main. The PAT works when "Include administrators"
+          # is unchecked in branch protection settings.
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
 
       - uses: actions/setup-node@v4
         with:
