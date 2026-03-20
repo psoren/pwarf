@@ -87,8 +87,8 @@ Follow these when writing or modifying code to keep the codebase clean:
 
 ## PR Self-Review
 
-- **Every PR must be self-reviewed before it is created.** Run `/review-pr` to check the diff, tests, types, and code quality before pushing.
-- Fix any blocking issues found before opening the PR.
+- **Every PR must be self-reviewed after creation, before merging.** The workflow is: push branch → create PR → run `/review-pr` → fix blocking issues → merge.
+- `/review-pr` checks diff, tests, types, code quality, and embeds the Claude cost in the PR description.
 
 ## Playtesting
 
