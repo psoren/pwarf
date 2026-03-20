@@ -82,8 +82,9 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
     }
 
     // Apply conscientiousness modifier: trait=0.5 → no effect, 1.0 → +25%, 0.0 → -25%
+    // Clamp to 0.1 minimum to guard against out-of-range trait values (e.g. old -3..3 DB rows).
     const conscientiousnessModifier = dwarf.trait_conscientiousness !== null
-      ? 1 + (dwarf.trait_conscientiousness - 0.5) * CONSCIENTIOUSNESS_WORK_MULTIPLIER
+      ? Math.max(0.1, 1 + (dwarf.trait_conscientiousness - 0.5) * CONSCIENTIOUSNESS_WORK_MULTIPLIER)
       : 1;
     const workRate = (BASE_WORK_RATE * (1 + skillLevel * 0.1) * conscientiousnessModifier) / hardness;
 

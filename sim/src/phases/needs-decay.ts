@@ -25,8 +25,9 @@ export async function needsDecay(ctx: SimContext): Promise<void> {
     if (dwarf.status !== "alive") continue;
 
     // trait_extraversion: 0.5=average (no effect), 1.0=extravert (+50% faster decay), 0.0=introvert (-50%)
+    // Clamp to 0.1 minimum to guard against out-of-range trait values.
     const extraversionModifier = dwarf.trait_extraversion !== null
-      ? 1 + (dwarf.trait_extraversion - 0.5) * EXTRAVERSION_SOCIAL_DECAY_MULTIPLIER
+      ? Math.max(0.1, 1 + (dwarf.trait_extraversion - 0.5) * EXTRAVERSION_SOCIAL_DECAY_MULTIPLIER)
       : 1;
 
     dwarf.need_food = Math.max(MIN_NEED, dwarf.need_food - FOOD_DECAY_PER_TICK);
