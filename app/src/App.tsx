@@ -403,7 +403,7 @@ export default function App() {
         onSignOut={signOut}
         onRestart={world.handleRestart}
         population={liveDwarves.length}
-        year={1}
+        year={snapshot?.year ?? 1}
         civName={world.mode === "fortress" ? "Stonegear" : undefined}
         items={liveItems}
       />
