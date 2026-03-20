@@ -61,9 +61,12 @@ export class SimRunner {
 
     let fortressDeriver = null;
     if (worldId) {
-      const seed = await this.adapter.getWorldSeed(worldId);
+      const [seed, terrain] = await Promise.all([
+        this.adapter.getWorldSeed(worldId),
+        this.adapter.getTerrainForCiv(civilizationId),
+      ]);
       if (seed != null) {
-        fortressDeriver = createFortressDeriver(seed, civilizationId);
+        fortressDeriver = createFortressDeriver(seed, civilizationId, terrain ?? 'plains');
       }
     }
 

@@ -17,6 +17,11 @@ describe("InMemoryStateAdapter", () => {
     expect(await adapter.getWorldSeed("world-1")).toBeNull();
   });
 
+  it("getTerrainForCiv returns null", async () => {
+    const adapter = new InMemoryStateAdapter();
+    expect(await adapter.getTerrainForCiv("civ-1")).toBeNull();
+  });
+
   it("pollNewTasks returns queued tasks and clears queue", async () => {
     const adapter = new InMemoryStateAdapter();
     const task: Task = {
