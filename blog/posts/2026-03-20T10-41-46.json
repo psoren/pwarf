@@ -1,7 +1,7 @@
 {
   "id": "2026-03-20T10-41-46",
   "timestamp": "2026-03-20T10:41:46.270Z",
-  "title": "Digest — Mar 20, 2026, 10:41 AM UTC",
+  "title": "Digest \u2014 Mar 20, 2026, 10:41 AM UTC",
   "summary": "# pwarf Devlog Digest\n\nWe're excited to share some important updates that have just made their way into the main branch! Here's a quick summary of the recent additions and fixes:\n\n## Gameplay Enhancements\n\n- **Mining Speed Adjustment**: Dwarves now mine at variable speeds based on the hardness of the tile type they are working on. The newly added hardness metrics ensure a more realistic mining experience.\n  \n- **Social and Purpose Needs Restoration**: We've implemented a need restoration system for dwarves that helps maintain their social interactions and purpose. Dwarves can now restore their social needs and experience a sense of purpose depending on their activities.\n\n## Testing and Simulation Improvements\n\n- **Scenario Testing**: We introduced end-to-end scenario tests for mining and building tasks, enhancing our ability to ensure core game mechanics function properly.\n\n- **Headless Simulation with Health Checks**: Each hourly digest now includes a health check of the fortress based on a quick simulation snapshot, allowing you to track the well-being of your dwarves!\n\n- **Custom Map Fixtures**: Adding support for custom map fixtures in our headless test runner will improve scenario setup, making our testing process more flexible and reliable.\n\n- **Run Scenario Functionality**: A new headless in-memory tick runner allows us to simulate scenarios without dependence on Supabase, ensuring tests are performed quickly and efficiently.\n\n## Bug Fixes\n\n- **Stockpile Tiles Migration**: We addressed a critical bug that caused the sim to crash by adding the missing migration for the `stockpile_tiles` table, ensuring all environments run smoothly.\n\nWith these changes, we're on our way to creating a more engaging and dynamic game experience for you! \n\n## Merged PRs\n- #317\n- #315\n- #314\n- #313\n- #311\n- #310\n- #309\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 174\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
   "simStats": {
     "ticks": 500,
@@ -40,7 +40,7 @@
     },
     {
       "number": 310,
-      "title": "feat: runScenario — headless in-memory tick runner (closes #281)",
+      "title": "feat: runScenario \u2014 headless in-memory tick runner (closes #281)",
       "url": "https://github.com/psoren/pwarf/pull/310"
     },
     {

@@ -1,8 +1,8 @@
 {
   "id": "2026-03-20T09-06-29",
   "timestamp": "2026-03-20T09:06:29.261Z",
-  "title": "Digest — Mar 20, 2026, 09:06 AM UTC",
-  "summary": "# Devlog for pwarf\n\n## New Features\n- Introduced `WRITE_INTERVAL` and `WRITE_TICKS` constants to `shared/src/constants.ts`, enhancing our code's configurability without changing runtime behavior.\n\n## Testing\n- All simulation tests have passed successfully, with a perfect score of 17 out of 17.\n\n## Cost\n- The cost associated with this change is approximately $3.13 for Claude's processing.\n\nWe’re excited about these updates and are looking forward to your feedback!\n\n## Merged PRs\n- #304: feat: add WRITE_INTERVAL and WRITE_TICKS constants (closes #195)",
+  "title": "Digest \u2014 Mar 20, 2026, 09:06 AM UTC",
+  "summary": "# Devlog for pwarf\n\n## New Features\n- Introduced `WRITE_INTERVAL` and `WRITE_TICKS` constants to `shared/src/constants.ts`, enhancing our code's configurability without changing runtime behavior.\n\n## Testing\n- All simulation tests have passed successfully, with a perfect score of 17 out of 17.\n\n## Cost\n- The cost associated with this change is approximately $3.13 for Claude's processing.\n\nWe\u2019re excited about these updates and are looking forward to your feedback!\n\n## Merged PRs\n- #304: feat: add WRITE_INTERVAL and WRITE_TICKS constants (closes #195)",
   "prs": [
     {
       "number": 304,

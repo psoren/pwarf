@@ -1,8 +1,8 @@
 {
   "id": "2026-03-20T07-58-28",
   "timestamp": "2026-03-20T07:58:28.882Z",
-  "title": "Digest — Mar 20, 2026, 07:58 AM UTC",
-  "summary": "# Pwarf Devlog - Recent Merges\n\nWe've had a bustling hour with numerous enhancements and fixes in Pwarf! Here’s a roundup of the latest changes:\n\n## Development Enhancements\n- **Self-Review Process**: We've implemented a new `/review-pr` skill that checks for code quality and requires self-review before submitting PRs to ensure high standards. \n- **Live Sim Snapshots**: The simulation now emits real-time snapshots, allowing UI updates at around 10 frames per second, making the game feel more dynamic and responsive.\n\n## Gameplay Features\n- **Dwarven Comfort**: Beds can now be built and used by dwarves who will seek them out when tired, with penalties for sleeping on the floor.\n- **Inventory and Stockpile System**: Dwarves now carry items with weight limits, and stockpile zones will automatically receive items, making resources management far easier.\n- **Thought System**: Dwarves will now generate thoughts based on their needs, stress, and personality traits, adding depth to their interactions and behaviors.\n- **Pathfinding Improvements**: Surfaces now allow traversal by dwarves, enhancing navigation and exploration in the game environment.\n\n## User Experience Improvements\n- **Dwarf Interaction**: Clicking a dwarf now brings up a dedicated info modal that is easier to read and interact with.\n- **Canceling Designations**: We've added a shift-drag feature that allows players to cancel mining tasks intuitively.\n- **Reduced Polling Frequency**: Optimizations have been made to reduce database calls significantly, improving overall performance.\n\n## Fixes and Usability\n- We've addressed several bug fixes related to pathfinding, UI displays, and designation handling to ensure smoother gameplay experience.\n\nThese changes are aimed at making gameplay more engaging, intuitive, and efficient. We can’t wait for you to try out these features!\n\n## Merged PRs\n- PR #301, PR #297, PR #287, PR #292, PR #279, PR #286, PR #274, PR #277, PR #271, PR #270, PR #266, PR #267, PR #263, PR #261, PR #259, PR #257, PR #256, PR #254, PR #252, PR #250, PR #249, PR #247, PR #246, PR #245, PR #243, PR #241, PR #233, PR #234, PR #238.",
+  "title": "Digest \u2014 Mar 20, 2026, 07:58 AM UTC",
+  "summary": "# Pwarf Devlog - Recent Merges\n\nWe've had a bustling hour with numerous enhancements and fixes in Pwarf! Here\u2019s a roundup of the latest changes:\n\n## Development Enhancements\n- **Self-Review Process**: We've implemented a new `/review-pr` skill that checks for code quality and requires self-review before submitting PRs to ensure high standards. \n- **Live Sim Snapshots**: The simulation now emits real-time snapshots, allowing UI updates at around 10 frames per second, making the game feel more dynamic and responsive.\n\n## Gameplay Features\n- **Dwarven Comfort**: Beds can now be built and used by dwarves who will seek them out when tired, with penalties for sleeping on the floor.\n- **Inventory and Stockpile System**: Dwarves now carry items with weight limits, and stockpile zones will automatically receive items, making resources management far easier.\n- **Thought System**: Dwarves will now generate thoughts based on their needs, stress, and personality traits, adding depth to their interactions and behaviors.\n- **Pathfinding Improvements**: Surfaces now allow traversal by dwarves, enhancing navigation and exploration in the game environment.\n\n## User Experience Improvements\n- **Dwarf Interaction**: Clicking a dwarf now brings up a dedicated info modal that is easier to read and interact with.\n- **Canceling Designations**: We've added a shift-drag feature that allows players to cancel mining tasks intuitively.\n- **Reduced Polling Frequency**: Optimizations have been made to reduce database calls significantly, improving overall performance.\n\n## Fixes and Usability\n- We've addressed several bug fixes related to pathfinding, UI displays, and designation handling to ensure smoother gameplay experience.\n\nThese changes are aimed at making gameplay more engaging, intuitive, and efficient. We can\u2019t wait for you to try out these features!\n\n## Merged PRs\n- PR #301, PR #297, PR #287, PR #292, PR #279, PR #286, PR #274, PR #277, PR #271, PR #270, PR #266, PR #267, PR #263, PR #261, PR #259, PR #257, PR #256, PR #254, PR #252, PR #250, PR #249, PR #247, PR #246, PR #245, PR #243, PR #241, PR #233, PR #234, PR #238.",
   "prs": [
     {
       "number": 301,
@@ -21,7 +21,7 @@
     },
     {
       "number": 292,
-      "title": "feat: beds — buildable structure with sleep-seeking AI (closes #288)",
+      "title": "feat: beds \u2014 buildable structure with sleep-seeking AI (closes #288)",
       "url": "https://github.com/psoren/pwarf/pull/292"
     },
     {
@@ -96,7 +96,7 @@
     },
     {
       "number": 254,
-      "title": "fix: wander system — validate walkability, clear spawn area, fix orphaned tasks",
+      "title": "fix: wander system \u2014 validate walkability, clear spawn area, fix orphaned tasks",
       "url": "https://github.com/psoren/pwarf/pull/254"
     },
     {
@@ -111,7 +111,7 @@
     },
     {
       "number": 249,
-      "title": "fix: surface tiles not walkable — dwarves stuck when wandering",
+      "title": "fix: surface tiles not walkable \u2014 dwarves stuck when wandering",
       "url": "https://github.com/psoren/pwarf/pull/249"
     },
     {
@@ -131,7 +131,7 @@
     },
     {
       "number": 243,
-      "title": "feat: survival basics — well, mushroom garden, and idle wandering",
+      "title": "feat: survival basics \u2014 well, mushroom garden, and idle wandering",
       "url": "https://github.com/psoren/pwarf/pull/243"
     },
     {
@@ -158,12 +158,12 @@
   "images": [
     {
       "prNumber": 292,
-      "prTitle": "feat: beds — buildable structure with sleep-seeking AI (closes #288)",
+      "prTitle": "feat: beds \u2014 buildable structure with sleep-seeking AI (closes #288)",
       "url": "https://github.com/user-attachments/assets/placeholder-build-menu"
     },
     {
       "prNumber": 292,
-      "prTitle": "feat: beds — buildable structure with sleep-seeking AI (closes #288)",
+      "prTitle": "feat: beds \u2014 buildable structure with sleep-seeking AI (closes #288)",
       "url": "https://github.com/user-attachments/assets/placeholder-designation"
     },
     {
@@ -233,12 +233,12 @@
     },
     {
       "prNumber": 243,
-      "prTitle": "feat: survival basics — well, mushroom garden, and idle wandering",
+      "prTitle": "feat: survival basics \u2014 well, mushroom garden, and idle wandering",
       "url": "https://github.com/user-attachments/assets/placeholder-well"
     },
     {
       "prNumber": 243,
-      "prTitle": "feat: survival basics — well, mushroom garden, and idle wandering",
+      "prTitle": "feat: survival basics \u2014 well, mushroom garden, and idle wandering",
       "url": "https://github.com/user-attachments/assets/placeholder-garden"
     },
     {

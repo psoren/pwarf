@@ -1,7 +1,7 @@
 {
   "id": "2026-03-20T13-06-43",
   "timestamp": "2026-03-20T13:06:43.764Z",
-  "title": "Digest — Mar 20, 2026, 01:06 PM UTC",
+  "title": "Digest \u2014 Mar 20, 2026, 01:06 PM UTC",
   "summary": "# Devlog: Recent Updates to Pwarf\n\nWe're excited to share some recent updates that enhance gameplay and fix critical issues in Pwarf!\n\n## Game Mechanics Improvements\n\n- **Wander Task Fix**: \n  - Dwarves experiencing an interrupt for needs (like thirst) previously left their wander tasks orphaned and stuck in a pending state. \n  - Now, when a wander task is interrupted, it is marked as completed rather than pending. This adjustment prevents dwarves from endlessly cycling through tasks and potentially dehydrating themselves.\n\n## User Experience Enhancements\n\n- **Build Progress Visualization**:\n  - Introduction of an overlay on construction tiles that visually indicates progress, transitioning from dark brown to gold as the build nears completion.\n  - Tools now display task progress in the BottomBar and dwarf modal, showing structures like `[building: build wall 73%]`, making it easier to monitor ongoing tasks.\n\n## Trait System Corrections\n\n- **Trait Value Clamping**:\n  - Fixed the trait generation issue where values were outside the acceptable range (0-1). Previous integer generation could negatively affect tasks and, consequently, dwarf survival.\n  - Traits are now generated as floats between 0.0 and 1.0, ensuring a balanced work rate and preventing completion issues for necessary tasks like eating and drinking. \n\nThese updates aim to improve both functionality and experience, ensuring your dwarves thrive in their colony!\n\n## Merged PRs\n- #347\n- #345\n- #343\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 183\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
   "simStats": {
     "ticks": 500,
@@ -25,15 +25,6 @@
       "cost": {
         "amount": "$81.06",
         "tokens": "217.4M tokens"
-      }
-    },
-    {
-      "number": 343,
-      "title": "fix: trait values must be 0-1 floats; clamp sim formulas for old DB rows (closes #342)",
-      "url": "https://github.com/psoren/pwarf/pull/343",
-      "cost": {
-        "amount": "$78.91",
-        "tokens": "212.0M tokens"
       }
     }
   ],
