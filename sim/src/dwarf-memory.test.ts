@@ -229,9 +229,9 @@ describe('createMasterworkMemory', () => {
 });
 
 describe('createGriefFriendMemories', () => {
-  it('adds grief_friend memory to alive friends of the deceased', () => {
+  it('adds grief_friend memory and immediate stress to alive friends of the deceased', () => {
     const deceased = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
-    const friend = makeDwarf({ memories: [] });
+    const friend = makeDwarf({ memories: [], stress_level: 0 });
     const rel = makeRelationship(deceased.id, friend.id, 'friend');
     const ctx = makeContext({ dwarves: [deceased, friend] });
     ctx.state.dwarfRelationships.push(rel);
@@ -244,6 +244,7 @@ describe('createGriefFriendMemories', () => {
     expect(mems[0].type).toBe('grief_friend');
     expect(mems[0].intensity).toBeGreaterThan(0);
     expect(mems[0].year).toBe(2);
+    expect(friend.stress_level).toBeGreaterThan(0);
   });
 
   it('does not add grief to dwarves with only acquaintance relationship', () => {

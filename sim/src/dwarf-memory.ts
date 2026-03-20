@@ -7,6 +7,7 @@ import {
   MEMORY_MASTERWORK_DURATION_YEARS,
   MEMORY_GRIEF_FRIEND_INTENSITY,
   MEMORY_GRIEF_FRIEND_DURATION_YEARS,
+  GRIEF_FRIEND_STRESS,
   WITNESS_DEATH_RADIUS,
 } from "@pwarf/shared";
 import type { Dwarf, DwarfMemory } from "@pwarf/shared";
@@ -129,6 +130,10 @@ export function createGriefFriendMemories(
 
     const friend = state.dwarves.find(d => d.id === friendId);
     if (!friend || friend.status !== 'alive') continue;
+
+    // Immediate stress spike
+    friend.stress_level = Math.min(100, friend.stress_level + GRIEF_FRIEND_STRESS);
+    state.dirtyDwarfIds.add(friend.id);
 
     addMemory(friend, {
       type: 'grief_friend',
