@@ -213,6 +213,7 @@ export default function App() {
           id: e.id,
           description: e.description,
           category: e.category,
+          year: e.year,
           created_at: e.created_at ?? new Date().toISOString(),
         }));
     }

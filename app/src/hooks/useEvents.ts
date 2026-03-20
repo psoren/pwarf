@@ -6,6 +6,7 @@ export interface LiveEvent {
   id: string;
   description: string;
   category: string;
+  year: number;
   created_at: string;
 }
 
@@ -28,7 +29,7 @@ export function useEvents(civId: string | null): LiveEvent[] {
     async function poll() {
       const query = supabase
         .from('world_events')
-        .select('id, description, category, created_at')
+        .select('id, description, category, year, created_at')
         .eq('civilization_id', civId)
         .order('created_at', { ascending: false })
         .limit(MAX_EVENTS);
