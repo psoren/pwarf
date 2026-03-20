@@ -15,9 +15,10 @@ interface ToolbarProps {
   year?: number;
   civName?: string;
   items?: Item[];
+  wealth?: number;
 }
 
-export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [] }: ToolbarProps) {
+export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0 }: ToolbarProps) {
   return (
     <header className="flex items-center justify-between px-3 py-1 border-b border-[var(--border)] bg-[var(--bg-panel)] text-xs select-none shrink-0">
       <div className="flex gap-4 items-center">
@@ -32,6 +33,7 @@ export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isP
 
       <div className="flex gap-4 items-center">
         <span>Pop: {population}</span>
+        {mode === "fortress" && <span className="text-[var(--amber)]">§ {wealth.toLocaleString()}</span>}
         {mode === "fortress" && items.length > 0 && <ResourceCounter items={items} />}
         <span className="text-[var(--amber)]">No alerts</span>
         {mode === "fortress" && onTogglePause && (
