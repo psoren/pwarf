@@ -37,17 +37,25 @@ export function useDesignation(opts: {
 
   // Optimistic designations — shown immediately before poll picks them up
   const [optimisticTiles, setOptimisticTiles] = useState<Map<string, string>>(new Map());
-  const prevDesignatedTiles = useRef(designatedTiles);
 
-  // Clear optimistic tiles once the real data arrives (designatedTiles changes)
+  // Clear optimistic tiles per-key once the real data catches up.
+  // Must be content-based (not reference-based): designatedTiles gets a new Map
+  // reference on every sim tick even when its content hasn't changed, so
+  // reference comparison would wipe optimistic state before the real data arrives.
   useEffect(() => {
-    if (designatedTiles !== prevDesignatedTiles.current) {
-      prevDesignatedTiles.current = designatedTiles;
-      if (optimisticTiles.size > 0) {
-        setOptimisticTiles(new Map());
+    if (optimisticTiles.size === 0) return;
+    let changed = false;
+    const next = new Map(optimisticTiles);
+    for (const key of optimisticTiles.keys()) {
+      if (designatedTiles.has(key)) {
+        next.delete(key);
+        changed = true;
       }
     }
-  }, [designatedTiles, optimisticTiles.size]);
+    if (changed) {
+      setOptimisticTiles(next);
+    }
+  }, [designatedTiles, optimisticTiles]);
 
   const handleDesignateArea = useCallback(async (x1: number, y1: number, x2: number, y2: number) => {
     if (designationMode === 'none' || !civId) return;
