@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { groupConsecutiveEvents, groupEventsByYear } from "./RightPanel";
+import { groupConsecutiveEvents, groupEventsByYear, causeLabel } from "./RightPanel";
 import type { LiveEvent } from "../hooks/useEvents";
 
 function makeEvent(id: string, description: string, category = "discovery", year = 1): LiveEvent {
@@ -95,5 +95,20 @@ describe("groupEventsByYear", () => {
     const groups = groupEventsByYear([e]);
     expect(groups).toHaveLength(1);
     expect(groups[0].year).toBe(7);
+  });
+});
+
+describe("causeLabel", () => {
+  it("maps known causes to short labels", () => {
+    expect(causeLabel("starvation")).toBe("starved");
+    expect(causeLabel("dehydration")).toBe("thirsted");
+    expect(causeLabel("tantrum_spiral")).toBe("tantrum");
+    expect(causeLabel("plague")).toBe("plague");
+    expect(causeLabel("combat")).toBe("slain");
+    expect(causeLabel("unknown")).toBe("unknown");
+  });
+
+  it("returns the raw value for unrecognized causes", () => {
+    expect(causeLabel("magma")).toBe("magma");
   });
 });
