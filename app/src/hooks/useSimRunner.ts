@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { SimRunner } from '@pwarf/sim';
+import { SimRunner, SupabaseStateAdapter } from '@pwarf/sim';
 import type { SimSnapshot } from '@pwarf/sim';
 import { supabase } from '../lib/supabase';
 
@@ -37,7 +37,8 @@ export function useSimRunner(civId: string | null, worldId: string | null) {
     // Cast to satisfy cross-package SupabaseClient type mismatch
     // (both app and sim depend on the same @supabase/supabase-js version)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const runner = new SimRunner(supabase as any);
+    const adapter = new SupabaseStateAdapter(supabase as any);
+    const runner = new SimRunner(adapter);
     runner.onTick = handleTick;
     runnerRef.current = runner;
     runner.start(civId, worldId).catch((err: unknown) => {
