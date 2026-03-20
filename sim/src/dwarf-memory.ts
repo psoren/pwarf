@@ -8,6 +8,11 @@ import {
   MEMORY_GRIEF_FRIEND_INTENSITY,
   MEMORY_GRIEF_FRIEND_DURATION_YEARS,
   GRIEF_FRIEND_STRESS,
+  MEMORY_MARRIAGE_JOY_INTENSITY,
+  MEMORY_MARRIAGE_JOY_DURATION_YEARS,
+  GRIEF_SPOUSE_STRESS,
+  MEMORY_SPOUSE_GRIEF_INTENSITY,
+  MEMORY_SPOUSE_GRIEF_DURATION_YEARS,
   WITNESS_DEATH_RADIUS,
 } from "@pwarf/shared";
 import type { Dwarf, DwarfMemory } from "@pwarf/shared";
@@ -108,6 +113,58 @@ export function createMasterworkMemory(dwarf: Dwarf, state: CachedState, current
     year: currentYear,
     expires_year: currentYear + MEMORY_MASTERWORK_DURATION_YEARS,
   }, state);
+}
+
+/**
+ * Applies a married_joy memory to both spouses on marriage.
+ */
+export function createMarriageMemories(
+  spouseA: Dwarf,
+  spouseB: Dwarf,
+  state: CachedState,
+  currentYear: number,
+): void {
+  for (const spouse of [spouseA, spouseB]) {
+    addMemory(spouse, {
+      type: 'married_joy',
+      intensity: MEMORY_MARRIAGE_JOY_INTENSITY,
+      year: currentYear,
+      expires_year: currentYear + MEMORY_MARRIAGE_JOY_DURATION_YEARS,
+    }, state);
+  }
+}
+
+/**
+ * Applies a grief_spouse memory + immediate stress to the surviving spouse of the deceased.
+ * Called from all death paths.
+ */
+export function createGriefSpouseMemories(
+  deceased: Dwarf,
+  state: CachedState,
+  currentYear: number,
+): void {
+  for (const rel of state.dwarfRelationships) {
+    if (rel.type !== 'spouse') continue;
+    const spouseId = rel.dwarf_a_id === deceased.id
+      ? rel.dwarf_b_id
+      : rel.dwarf_b_id === deceased.id
+        ? rel.dwarf_a_id
+        : null;
+    if (!spouseId) continue;
+
+    const spouse = state.dwarves.find(d => d.id === spouseId);
+    if (!spouse || spouse.status !== 'alive') continue;
+
+    spouse.stress_level = Math.min(100, spouse.stress_level + GRIEF_SPOUSE_STRESS);
+    state.dirtyDwarfIds.add(spouse.id);
+
+    addMemory(spouse, {
+      type: 'grief_spouse',
+      intensity: MEMORY_SPOUSE_GRIEF_INTENSITY,
+      year: currentYear,
+      expires_year: currentYear + MEMORY_SPOUSE_GRIEF_DURATION_YEARS,
+    }, state);
+  }
 }
 
 /**
