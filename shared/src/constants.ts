@@ -85,6 +85,15 @@ export const BEAUTY_RESTORE_NEAR_STRUCTURE = 0.15;
 /** Manhattan-distance radius for beauty structure proximity */
 export const BEAUTY_STRUCTURE_RADIUS = 6;
 
+/** Bonus beauty restoration per tick when near an engraved stone tile */
+export const BEAUTY_RESTORE_NEAR_ENGRAVING = 0.08;
+
+/** Manhattan-distance radius within which an engraved tile provides beauty */
+export const BEAUTY_ENGRAVING_RADIUS = 4;
+
+/** Number of recent world events to load at startup for engrave scene generation */
+export const WORLD_EVENTS_RECENT_LIMIT = 20;
+
 // ============================================================
 // Personality trait modifiers
 // ============================================================

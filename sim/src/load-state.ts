@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { StockpileTile } from "@pwarf/shared";
+import type { StockpileTile, WorldEvent } from "@pwarf/shared";
+import { WORLD_EVENTS_RECENT_LIMIT } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 
 /**
@@ -12,7 +13,7 @@ export async function loadStateFromSupabase(
   civilizationId: string,
   worldId: string,
 ): Promise<CachedState> {
-  const [dwarvesResult, itemsResult, structuresResult, monstersResult, tasksResult, skillsResult, stockpileResult] =
+  const [dwarvesResult, itemsResult, structuresResult, monstersResult, tasksResult, skillsResult, stockpileResult, eventsResult] =
     await Promise.all([
       supabase
         .from("dwarves")
@@ -45,6 +46,12 @@ export async function loadStateFromSupabase(
         .from("stockpile_tiles")
         .select("*")
         .eq("civilization_id", civilizationId),
+      supabase
+        .from("world_events")
+        .select("*")
+        .eq("civilization_id", civilizationId)
+        .order("created_at", { ascending: false })
+        .limit(WORLD_EVENTS_RECENT_LIMIT),
     ]);
 
   if (dwarvesResult.error) throw new Error(`Failed to load dwarves: ${dwarvesResult.error.message}`);
@@ -79,7 +86,7 @@ export async function loadStateFromSupabase(
     monsters: monstersResult.data ?? [],
     tasks: tasksResult.data ?? [],
     dwarfSkills: dwarfSkills as never[],
-    worldEvents: [],
+    worldEvents: (eventsResult.data ?? []) as WorldEvent[],
     dirtyDwarfIds: new Set(),
     dirtyItemIds: new Set(),
     dirtyStructureIds: new Set(),
