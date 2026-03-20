@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "github-upload-image-to-pr": {
+      "source": "tonkotsuboy/github-upload-image-to-pr",
+      "sourceType": "github",
+      "computedHash": "938e2972d61e863a91825a16738b5706725c6f68e9dc7381696fbc72ca9be173"
+    }
+  }
+}
