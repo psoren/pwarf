@@ -1,6 +1,6 @@
-import { STARVATION_TICKS, DEHYDRATION_TICKS } from "@pwarf/shared";
+import { STARVATION_TICKS, DEHYDRATION_TICKS, WITNESS_DEATH_STRESS, WITNESS_DEATH_RADIUS } from "@pwarf/shared";
 import type { Dwarf } from "@pwarf/shared";
-import type { SimContext } from "../sim-context.js";
+import type { CachedState, SimContext } from "../sim-context.js";
 
 /**
  * Handles starvation and dehydration death tracking for all alive dwarves.
@@ -74,7 +74,11 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
     }
   }
 
+  // Apply witness stress to nearby alive dwarves
+  applyWitnessStress(dwarf, state);
+
   // Check if all dwarves are dead — fortress falls
+  // Note: dwarf.status is already 'dead' at this point, so filter it out
   const aliveDwarves = state.dwarves.filter(d => d.status === 'alive');
   if (aliveDwarves.length === 0) {
     state.pendingEvents.push({
@@ -92,5 +96,24 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
       event_data: { cause },
       created_at: new Date().toISOString(),
     });
+  }
+}
+
+/**
+ * Applies stress to alive dwarves who are close enough to witness the death.
+ * Exported for unit testing.
+ */
+export function applyWitnessStress(deceased: Dwarf, state: CachedState): void {
+  for (const witness of state.dwarves) {
+    if (witness.id === deceased.id) continue;
+    if (witness.status !== 'alive') continue;
+    if (witness.position_z !== deceased.position_z) continue;
+    const dist =
+      Math.abs(witness.position_x - deceased.position_x) +
+      Math.abs(witness.position_y - deceased.position_y);
+    if (dist <= WITNESS_DEATH_RADIUS) {
+      witness.stress_level = Math.min(100, witness.stress_level + WITNESS_DEATH_STRESS);
+      state.dirtyDwarfIds.add(witness.id);
+    }
   }
 }
