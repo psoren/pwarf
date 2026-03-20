@@ -97,6 +97,14 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       completeBuildBed(task, ctx);
       awardXp(dwarf.id, 'building', XP_BUILD, state);
       break;
+    case 'build_well':
+      completeBuildStructure(task, ctx, 'well', 'well');
+      awardXp(dwarf.id, 'building', XP_BUILD, state);
+      break;
+    case 'build_mushroom_garden':
+      completeBuildStructure(task, ctx, 'mushroom_garden', 'mushroom_garden');
+      awardXp(dwarf.id, 'building', XP_BUILD, state);
+      break;
   }
 
   // Purpose restoration: work gives dwarves a sense of meaning
@@ -109,7 +117,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
  * Exported for unit testing.
  */
 export function restorePurposeNeed(dwarf: Dwarf, taskType: string): void {
-  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'farm_till', 'farm_plant', 'farm_harvest']);
+  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'farm_till', 'farm_plant', 'farm_harvest']);
   const restore = SKILLED_TASKS.has(taskType)
     ? PURPOSE_RESTORE_SKILLED
     : taskType === 'haul'
@@ -347,6 +355,40 @@ function completeBuildBed(task: Task, ctx: SimContext): void {
 
   // Place bed tile for rendering
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'bed', 'wood', false);
+}
+
+/**
+ * Generic handler for structures that don't need special logic beyond
+ * creating a Structure record and placing a tile (well, mushroom_garden, etc.).
+ */
+function completeBuildStructure(
+  task: Task,
+  ctx: SimContext,
+  structureType: string,
+  tileType: FortressTileType,
+): void {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+
+  const structure: Structure = {
+    id: ctx.rng.uuid(),
+    civilization_id: ctx.civilizationId,
+    name: null,
+    type: structureType,
+    completion_pct: 100,
+    built_year: ctx.year,
+    ruin_id: null,
+    quality: 'standard',
+    notes: null,
+    position_x: task.target_x,
+    position_y: task.target_y,
+    position_z: task.target_z,
+    occupied_by_dwarf_id: null,
+  };
+
+  ctx.state.structures.push(structure);
+  ctx.state.dirtyStructureIds.add(structure.id);
+
+  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, tileType, 'stone', false);
 }
 
 function awardXp(dwarfId: string, skillName: string, xpAmount: number, state: SimContext['state']): void {

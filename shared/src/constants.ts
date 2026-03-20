@@ -191,6 +191,12 @@ export const WORK_BUILD_FLOOR = 50;
 /** Work required to build a bed */
 export const WORK_BUILD_BED = 60;
 
+/** Work required to build a well */
+export const WORK_BUILD_WELL = 120;
+
+/** Work required to build a mushroom garden */
+export const WORK_BUILD_MUSHROOM_GARDEN = 100;
+
 /** Work required to wander (just walking, instant once arrived) */
 export const WORK_WANDER = 1;
 

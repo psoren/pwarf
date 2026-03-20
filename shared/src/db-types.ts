@@ -159,6 +159,8 @@ export type TaskType =
   | 'build_wall'
   | 'build_floor'
   | 'build_bed'
+  | 'build_well'
+  | 'build_mushroom_garden'
   | 'wander';
 
 export type TaskStatus =
