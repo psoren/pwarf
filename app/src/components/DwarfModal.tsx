@@ -171,6 +171,19 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [], tasks }: DwarfM
           </div>
         )}
 
+        {(dwarf.trait_openness !== null || dwarf.trait_conscientiousness !== null || dwarf.trait_extraversion !== null || dwarf.trait_agreeableness !== null || dwarf.trait_neuroticism !== null) && (
+          <div className="border-t border-[var(--border)] pt-2 mt-2">
+            <div className="text-[var(--amber)] font-bold mb-0.5">Personality</div>
+            <div className="space-y-1">
+              {dwarf.trait_openness !== null && needBar("Open", dwarf.trait_openness * 100, "var(--cyan)")}
+              {dwarf.trait_conscientiousness !== null && needBar("Consc.", dwarf.trait_conscientiousness * 100, "var(--green)")}
+              {dwarf.trait_extraversion !== null && needBar("Extra.", dwarf.trait_extraversion * 100, "#44ccaa")}
+              {dwarf.trait_agreeableness !== null && needBar("Agree.", dwarf.trait_agreeableness * 100, "var(--green)")}
+              {dwarf.trait_neuroticism !== null && needBar("Neuro.", dwarf.trait_neuroticism * 100, "var(--red, #f87171)")}
+            </div>
+          </div>
+        )}
+
         {dwarf.memories && dwarf.memories.length > 0 && (
           <div className="border-t border-[var(--border)] pt-2 mt-2">
             <div className="text-[var(--amber)] font-bold mb-0.5">Thoughts</div>
