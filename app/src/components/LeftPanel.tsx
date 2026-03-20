@@ -1,5 +1,8 @@
 import type { WorldTile, Item } from "@pwarf/shared";
 import type { LiveDwarf } from "../hooks/useDwarves";
+import type { ActiveTask } from "../hooks/useTasks";
+
+const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
 
 interface LeftPanelProps {
   mode: "fortress" | "world";
@@ -10,17 +13,23 @@ interface LeftPanelProps {
   dwarves?: LiveDwarf[];
   onDwarfClick?: (dwarfId: string) => void;
   items?: Item[];
+  tasks?: ActiveTask[];
   selectedFortressTile?: { x: number; y: number } | null;
   stockpileTiles?: Set<string>;
   zLevel?: number;
 }
 
-function dwarfJobLabel(d: LiveDwarf): string {
-  if (d.current_task_id) return "Working";
-  return "Idle";
+function dwarfJobLabel(d: LiveDwarf, tasks?: ActiveTask[]): string {
+  if (!d.current_task_id) return "Idle";
+  const task = tasks?.find(t => t.id === d.current_task_id);
+  if (!task) return "Working";
+  const label = task.task_type.replace(/_/g, " ");
+  if (AUTONOMOUS_TASK_TYPES.has(task.task_type) || task.work_required === 0) return label;
+  const pct = Math.round((task.work_progress / task.work_required) * 100);
+  return `${label} (${pct}%)`;
 }
 
-export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmbark, dwarves = [], onDwarfClick, items = [], selectedFortressTile, stockpileTiles, zLevel = 0 }: LeftPanelProps) {
+export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmbark, dwarves = [], onDwarfClick, items = [], tasks, selectedFortressTile, stockpileTiles, zLevel = 0 }: LeftPanelProps) {
   const isOcean = cursorTile?.terrain === "ocean";
 
   return (
@@ -86,7 +95,7 @@ export default function LeftPanel({ mode, collapsed, onToggle, cursorTile, onEmb
                       <span className="text-[var(--green)]">{d.name}</span>
                       <span className="text-[var(--text)]">
                         <span className="text-[var(--border)] mr-1">z{d.position_z}</span>
-                        {dwarfJobLabel(d)}
+                        {dwarfJobLabel(d, tasks)}
                       </span>
                     </li>
                   ))}

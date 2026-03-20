@@ -252,19 +252,19 @@ export const WORK_SLEEP = 16;
 export const SLEEP_RESTORE_PER_TICK = SLEEP_RESTORE_AMOUNT / WORK_SLEEP;
 
 /** Work required to build a wall */
-export const WORK_BUILD_WALL = 80;
+export const WORK_BUILD_WALL = 40;
 
 /** Work required to build a floor */
-export const WORK_BUILD_FLOOR = 50;
+export const WORK_BUILD_FLOOR = 25;
 
 /** Work required to build a bed */
-export const WORK_BUILD_BED = 60;
+export const WORK_BUILD_BED = 30;
 
 /** Work required to build a well */
-export const WORK_BUILD_WELL = 120;
+export const WORK_BUILD_WELL = 60;
 
 /** Work required to build a mushroom garden */
-export const WORK_BUILD_MUSHROOM_GARDEN = 100;
+export const WORK_BUILD_MUSHROOM_GARDEN = 50;
 
 /** Work required to wander (just walking, instant once arrived) */
 export const WORK_WANDER = 1;

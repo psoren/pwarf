@@ -398,6 +398,7 @@ export default function App() {
           dwarves={liveDwarves}
           onDwarfClick={world.mode === "fortress" ? (id: string) => setModalDwarfId(id) : undefined}
           items={liveItems}
+          tasks={world.mode === "fortress" ? liveTasks : undefined}
           selectedFortressTile={world.mode === "fortress" ? selectedFortressTile : undefined}
           stockpileTiles={world.mode === "fortress" ? stockpileTiles : undefined}
           zLevel={zLevel}
