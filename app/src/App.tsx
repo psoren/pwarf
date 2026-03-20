@@ -273,9 +273,15 @@ export default function App() {
           designation.cancelDesignation();
           setFollowedDwarfId(null);
           break;
+        case "toggle_pause":
+          if (world.mode === "fortress" && world.civId) togglePause();
+          break;
+        case "set_speed":
+          if (world.mode === "fortress" && world.civId) setSpeed(action.multiplier);
+          break;
       }
     },
-    [viewport.pan, world.civId, world.mode, designation],
+    [viewport.pan, world.civId, world.mode, designation, togglePause, setSpeed],
   );
 
   useKeyboard(handleKeyAction);
