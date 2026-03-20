@@ -136,39 +136,6 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
     if (skillError) throw new Error(`Failed to create dwarf skills: ${skillError.message}`);
   }
 
-  // Create starting items
-  const startingItems = [
-    // Food and drink are provided by infinite sources (meat roast / beer fountain)
-    ...Array.from({ length: 10 }, () => ({
-      name: 'Plump helmet seed',
-      category: 'raw_material',
-      quality: 'standard',
-      material: 'plant',
-      weight: 1,
-      value: 1,
-      is_artifact: false,
-      located_in_civ_id: civ.id,
-      created_in_civ_id: civ.id,
-      created_year: 1,
-      properties: {},
-    })),
-    ...Array.from({ length: 2 }, () => ({
-      name: 'Stone pickaxe',
-      category: 'tool',
-      quality: 'standard',
-      material: 'stone',
-      weight: 5,
-      value: 10,
-      is_artifact: false,
-      located_in_civ_id: civ.id,
-      created_in_civ_id: civ.id,
-      created_year: 1,
-      properties: {},
-    })),
-  ];
-
-  const { error: itemError } = await supabase.from('items').insert(startingItems);
-  if (itemError) throw new Error(`Failed to create starting items: ${itemError.message}`);
 
   // Place a well and mushroom garden near fortress center
   const fortressTiles = [
