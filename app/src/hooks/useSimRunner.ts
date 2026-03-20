@@ -34,10 +34,7 @@ export function useSimRunner(civId: string | null, worldId: string | null) {
       return;
     }
 
-    // Cast to satisfy cross-package SupabaseClient type mismatch
-    // (both app and sim depend on the same @supabase/supabase-js version)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const adapter = new SupabaseStateAdapter(supabase as any);
+    const adapter = new SupabaseStateAdapter(supabase);
     const runner = new SimRunner(adapter);
     runner.onTick = handleTick;
     runnerRef.current = runner;

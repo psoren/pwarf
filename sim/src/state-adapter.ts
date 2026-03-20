@@ -30,8 +30,12 @@ export interface StateAdapter {
 // Supabase implementation
 // ---------------------------------------------------------------------------
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export class SupabaseStateAdapter implements StateAdapter {
-  constructor(private readonly supabase: SupabaseClient) {}
+  // Accepts SupabaseClient<any> so app/ and sim/ can use different
+  // moduleResolution settings without triggering structural incompatibility.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  constructor(private readonly supabase: SupabaseClient<any>) {}
 
   async loadState(civilizationId: string, worldId: string): Promise<CachedState> {
     return loadStateFromSupabase(this.supabase, civilizationId, worldId);
