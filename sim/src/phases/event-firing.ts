@@ -1,5 +1,11 @@
 import type { SimContext } from "../sim-context.js";
 
+/** Need threshold below which a critical warning fires */
+const CRITICAL_NEED_THRESHOLD = 10;
+
+/** Need value above which the warning resets (allows re-firing on next crossing) */
+const CRITICAL_NEED_RESET = 20;
+
 /**
  * Event Firing Phase
  *
@@ -9,52 +15,65 @@ import type { SimContext } from "../sim-context.js";
  * Phase 0 events:
  * - Dwarf death (starvation, dehydration)
  * - Task completion (mining, farming)
- * - Critical need warnings
+ * - Critical need warnings (fires once per crossing, resets when need recovers)
  * - Fortress fallen
  */
 export async function eventFiring(ctx: SimContext): Promise<void> {
   const { state } = ctx;
 
-  // Check for critical needs (fire event once when crossing threshold)
   for (const dwarf of state.dwarves) {
     if (dwarf.status !== 'alive') continue;
 
-    // Critical food warning at need_food < 10
-    if (dwarf.need_food < 10 && dwarf.need_food >= 9.8) {
-      state.pendingEvents.push({
-        id: ctx.rng.uuid(),
-        world_id: '',
-        year: ctx.year,
-        category: 'death', // Using existing category — will be 'warning' later
-        civilization_id: ctx.civilizationId,
-        ruin_id: null,
-        dwarf_id: dwarf.id,
-        item_id: null,
-        faction_id: null,
-        monster_id: null,
-        description: `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''} is starving.`,
-        event_data: { need: 'food', value: dwarf.need_food },
-        created_at: new Date().toISOString(),
-      });
+    const warned = state.warnedNeedIds.get(dwarf.id) ?? new Set<string>();
+
+    // Critical food warning — fires once when crossing below threshold
+    if (dwarf.need_food < CRITICAL_NEED_THRESHOLD) {
+      if (!warned.has('food')) {
+        warned.add('food');
+        state.warnedNeedIds.set(dwarf.id, warned);
+        state.pendingEvents.push({
+          id: ctx.rng.uuid(),
+          world_id: '',
+          year: ctx.year,
+          category: 'discovery',
+          civilization_id: ctx.civilizationId,
+          ruin_id: null,
+          dwarf_id: dwarf.id,
+          item_id: null,
+          faction_id: null,
+          monster_id: null,
+          description: `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''} is starving.`,
+          event_data: { need: 'food', value: dwarf.need_food },
+          created_at: new Date().toISOString(),
+        });
+      }
+    } else if (dwarf.need_food >= CRITICAL_NEED_RESET) {
+      warned.delete('food');
     }
 
-    // Critical drink warning
-    if (dwarf.need_drink < 10 && dwarf.need_drink >= 9.8) {
-      state.pendingEvents.push({
-        id: ctx.rng.uuid(),
-        world_id: '',
-        year: ctx.year,
-        category: 'death',
-        civilization_id: ctx.civilizationId,
-        ruin_id: null,
-        dwarf_id: dwarf.id,
-        item_id: null,
-        faction_id: null,
-        monster_id: null,
-        description: `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''} is dehydrated.`,
-        event_data: { need: 'drink', value: dwarf.need_drink },
-        created_at: new Date().toISOString(),
-      });
+    // Critical drink warning — fires once when crossing below threshold
+    if (dwarf.need_drink < CRITICAL_NEED_THRESHOLD) {
+      if (!warned.has('drink')) {
+        warned.add('drink');
+        state.warnedNeedIds.set(dwarf.id, warned);
+        state.pendingEvents.push({
+          id: ctx.rng.uuid(),
+          world_id: '',
+          year: ctx.year,
+          category: 'discovery',
+          civilization_id: ctx.civilizationId,
+          ruin_id: null,
+          dwarf_id: dwarf.id,
+          item_id: null,
+          faction_id: null,
+          monster_id: null,
+          description: `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''} is dehydrated.`,
+          event_data: { need: 'drink', value: dwarf.need_drink },
+          created_at: new Date().toISOString(),
+        });
+      }
+    } else if (dwarf.need_drink >= CRITICAL_NEED_RESET) {
+      warned.delete('drink');
     }
   }
 

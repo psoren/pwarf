@@ -49,6 +49,13 @@ export interface CachedState {
 
   /** Tracks remaining tantrum ticks per dwarf. Entry removed when tantrum ends. */
   tantrumTicks: Map<string, number>;
+
+  /**
+   * Tracks which (dwarf, need) pairs have already fired a critical-need warning
+   * this crossing. Maps dwarfId → Set of need names ('food' | 'drink').
+   * Cleared when the need recovers above the warning threshold.
+   */
+  warnedNeedIds: Map<string, Set<string>>;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */
@@ -74,6 +81,7 @@ export function createEmptyCachedState(): CachedState {
     zeroFoodTicks: new Map(),
     zeroDrinkTicks: new Map(),
     tantrumTicks: new Map(),
+    warnedNeedIds: new Map(),
   };
 }
 
