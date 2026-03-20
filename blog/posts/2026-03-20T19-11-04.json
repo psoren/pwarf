@@ -1,0 +1,307 @@
+{
+  "id": "2026-03-20T19-11-04",
+  "timestamp": "2026-03-20T19:11:04.044Z",
+  "title": "Digest — Mar 20, 2026, 07:11 PM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nHello, fellow dwarven architects! Exciting updates have been brewed for you in the latest round of changes. Here’s a quick overview of what’s new and improved in Pwarf:\n\n## Quality of Life Improvements\n- **Digest Automation**: Improved CI workflows to allow the digest to push to the main branch every 5 minutes without requiring a passing CI. (PR #461)\n- **Interactive Tutorial**: A new `?` button in the toolbar provides a 7-step guided tour of the key UI areas, enhancing user onboarding. (PR #462)\n\n## Gameplay Features\n- **Failed Task Recovery**: Tasks will now be reset to pending if a dwarf dies while working, allowing for better management of abandoned tasks. (PR #460)\n- **Trade Caravan Arrivals**: Celebrate with periodic supply drops of Dwarven ale and other resources every 5 years! (PR #454)\n- **Auto-Brew and Auto-Cook**: Your dwarves will now automatically brew drinks and cook meals when stocks are low, streamlining resource management. (PR #450, PR #451)\n\n## Combat and Events\n- **New World Events**: The game now features events for battles, sieges, and marriages, adding more depth to the Legends tab. (PR #458)\n- **First Engagement Tracking**: Battle and monster siege events will now trigger on first contact between dwarves and monsters, enhancing the combat experience. (PR #449, PR #453)\n\n## UI Enhancements\n- **Dwarves’ Personality Traits**: Added OCEAN traits display in the DwarfModal, so you can get to know your dwarves better! (PR #444)\n- **Improved Roster Appearance**: Skill stars are now displayed in the DwarfModal, and activity icons have been introduced in the roster. (PR #439)\n\n## Simulation Adjustments\n- **Fossilize Fortress on Fall**: Automatic creation and publishing of ruins when the last dwarf dies enhances the narrative experience. (PR #436)\n- **Civilization Wealth Display**: Added a wealth indicator in the toolbar for better tracking of your civilization's resources. (PR #411)\n\n## General Fixes and Tweaks\n- The digest prompt has been truncated to comply with token limits, ensuring smoother operation. (PR #455)\n- Multiple performance and interface fixes have been implemented to fight bugs and improve usability.\n\nThat’s it for this digest! Dive into the game and start building your legendary dwarf fortress today!\n\n## Merged PRs\n- #461\n- #462\n- #460\n- #458\n- #455\n- #454\n- #450\n- #451\n- #439\n- #444\n- #436\n- #411\n- #403\n- #449\n- #453\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 176\n- **Avg stress:** 67.4\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 67.4,
+    "tasks_completed": 176
+  },
+  "prs": [
+    {
+      "number": 461,
+      "title": "fix: digest push to main + 5-min polling with 5-PR threshold",
+      "url": "https://github.com/psoren/pwarf/pull/461"
+    },
+    {
+      "number": 462,
+      "title": "feat: interactive tutorial overlay — guided tour of key UI areas",
+      "url": "https://github.com/psoren/pwarf/pull/462",
+      "cost": {
+        "amount": "$5.01",
+        "tokens": "11.2M tokens"
+      }
+    },
+    {
+      "number": 460,
+      "title": "feat: failed task recovery — reset design tasks to pending when dwarf dies",
+      "url": "https://github.com/psoren/pwarf/pull/460",
+      "cost": {
+        "amount": "$1.91",
+        "tokens": "estimated delta from session baseline of $8.16"
+      }
+    },
+    {
+      "number": 458,
+      "title": "feat: show battle, siege, caravan, and marriage events in Legends tab",
+      "url": "https://github.com/psoren/pwarf/pull/458",
+      "cost": {
+        "amount": "$5.82",
+        "tokens": "15.2M tokens"
+      }
+    },
+    {
+      "number": 455,
+      "title": "fix: truncate hourly digest prompt to stay within gpt-4o-mini 8k token limit",
+      "url": "https://github.com/psoren/pwarf/pull/455",
+      "cost": {
+        "amount": "$5.79",
+        "tokens": "14.7M tokens"
+      }
+    },
+    {
+      "number": 454,
+      "title": "feat: trade caravan arrivals — periodic supply drops every 5 years",
+      "url": "https://github.com/psoren/pwarf/pull/454",
+      "cost": {
+        "amount": "$2.67",
+        "tokens": "7.3M tokens"
+      }
+    },
+    {
+      "number": 450,
+      "title": "feat: auto-brew phase — dwarves brew drinks when stocks are low",
+      "url": "https://github.com/psoren/pwarf/pull/450",
+      "cost": {
+        "amount": "$17.63",
+        "tokens": "49.2M tokens"
+      }
+    },
+    {
+      "number": 453,
+      "title": "feat: fire monster_siege world event when monster first attacks the fortress (closes #452)",
+      "url": "https://github.com/psoren/pwarf/pull/453",
+      "cost": {
+        "amount": "$0.00",
+        "tokens": "0k tokens"
+      }
+    },
+    {
+      "number": 451,
+      "title": "feat: auto-cook phase — dwarves cook meals when food stocks are low",
+      "url": "https://github.com/psoren/pwarf/pull/451",
+      "cost": {
+        "amount": "$140.07",
+        "tokens": "381.6M tokens"
+      }
+    },
+    {
+      "number": 449,
+      "title": "feat: fire battle world event on first dwarf/monster combat contact (closes #448)",
+      "url": "https://github.com/psoren/pwarf/pull/449",
+      "cost": {
+        "amount": "$16.01",
+        "tokens": "44.7M tokens"
+      }
+    },
+    {
+      "number": 444,
+      "title": "feat: show personality traits (OCEAN) in DwarfModal",
+      "url": "https://github.com/psoren/pwarf/pull/444",
+      "cost": {
+        "amount": "$135.90",
+        "tokens": "369.7M tokens"
+      }
+    },
+    {
+      "number": 440,
+      "title": "feat: graveyard browser — show published ruins in right panel",
+      "url": "https://github.com/psoren/pwarf/pull/440",
+      "cost": {
+        "amount": "$104.12",
+        "tokens": "289.9M tokens"
+      }
+    },
+    {
+      "number": 439,
+      "title": "feat: skill star ratings in DwarfModal and activity icons in roster",
+      "url": "https://github.com/psoren/pwarf/pull/439",
+      "cost": {
+        "amount": "$85.64",
+        "tokens": "243.6M tokens"
+      }
+    },
+    {
+      "number": 436,
+      "title": "feat: fossilize fortress on fall — auto-create ruin and publish button",
+      "url": "https://github.com/psoren/pwarf/pull/436",
+      "cost": {
+        "amount": "$129.63",
+        "tokens": "351.7M tokens"
+      }
+    },
+    {
+      "number": 434,
+      "title": "feat: live alerts in toolbar (tantrum, starvation, critical health, stress)",
+      "url": "https://github.com/psoren/pwarf/pull/434",
+      "cost": {
+        "amount": "$28.69",
+        "tokens": "77.8M tokens"
+      }
+    },
+    {
+      "number": 430,
+      "title": "feat: stress bar and sort-by-stress in dwarf roster",
+      "url": "https://github.com/psoren/pwarf/pull/430",
+      "cost": {
+        "amount": "$0.12",
+        "tokens": "346k tokens"
+      }
+    },
+    {
+      "number": 428,
+      "title": "feat: keyboard shortcuts for pause (Space) and speed (1/2/5)",
+      "url": "https://github.com/psoren/pwarf/pull/428",
+      "cost": {
+        "amount": "$78.90",
+        "tokens": "224.1M tokens"
+      }
+    },
+    {
+      "number": 411,
+      "title": "feat: show civilization wealth in toolbar",
+      "url": "https://github.com/psoren/pwarf/pull/411"
+    },
+    {
+      "number": 424,
+      "title": "feat: generate random fortress names on embark (closes #413)",
+      "url": "https://github.com/psoren/pwarf/pull/424",
+      "cost": {
+        "amount": "$47.09",
+        "tokens": "127.8M tokens"
+      }
+    },
+    {
+      "number": 426,
+      "title": "feat: farm designation — designate soil tiles as farm plots",
+      "url": "https://github.com/psoren/pwarf/pull/426",
+      "cost": {
+        "amount": "$77.44",
+        "tokens": "220.0M tokens"
+      }
+    },
+    {
+      "number": 423,
+      "title": "feat: simulation speed controls 1×/2×/5× in toolbar",
+      "url": "https://github.com/psoren/pwarf/pull/423",
+      "cost": {
+        "amount": "$96.58",
+        "tokens": "268.1M tokens"
+      }
+    },
+    {
+      "number": 419,
+      "title": "feat: pause/resume button in toolbar",
+      "url": "https://github.com/psoren/pwarf/pull/419",
+      "cost": {
+        "amount": "$74.52",
+        "tokens": "211.7M tokens"
+      }
+    },
+    {
+      "number": 420,
+      "title": "refactor: simplify completeSmooth — remove dead ternary branch",
+      "url": "https://github.com/psoren/pwarf/pull/420"
+    },
+    {
+      "number": 418,
+      "title": "feat: add smooth and engrave designation modes to fortress UI",
+      "url": "https://github.com/psoren/pwarf/pull/418",
+      "cost": {
+        "amount": "$0.36",
+        "tokens": "984k tokens"
+      }
+    },
+    {
+      "number": 415,
+      "title": "feat: game over epitaph screen when civilization falls",
+      "url": "https://github.com/psoren/pwarf/pull/415",
+      "cost": {
+        "amount": "$71.08",
+        "tokens": "201.2M tokens"
+      }
+    },
+    {
+      "number": 414,
+      "title": "feat: add well and mushroom garden to build menu",
+      "url": "https://github.com/psoren/pwarf/pull/414",
+      "cost": {
+        "amount": "$0.17",
+        "tokens": "470k tokens"
+      }
+    },
+    {
+      "number": 410,
+      "title": "feat: show actual sim year in toolbar",
+      "url": "https://github.com/psoren/pwarf/pull/410",
+      "cost": {
+        "amount": "$68.32",
+        "tokens": "193.1M tokens"
+      }
+    },
+    {
+      "number": 405,
+      "title": "fix: mark civilization as fallen and stop sim when last dwarf dies",
+      "url": "https://github.com/psoren/pwarf/pull/405",
+      "cost": {
+        "amount": "$46.92",
+        "tokens": "126.1M tokens"
+      }
+    },
+    {
+      "number": 406,
+      "title": "fix: skip designation overlay when tile is already built",
+      "url": "https://github.com/psoren/pwarf/pull/406",
+      "cost": {
+        "amount": "$66.46",
+        "tokens": "187.6M tokens"
+      }
+    },
+    {
+      "number": 403,
+      "title": "feat: color-code dwarf names by stress level in left panel",
+      "url": "https://github.com/psoren/pwarf/pull/403",
+      "cost": {
+        "amount": "$85.57",
+        "tokens": "235.7M tokens"
+      }
+    }
+  ],
+  "images": [
+    {
+      "prNumber": 462,
+      "prTitle": "feat: interactive tutorial overlay — guided tour of key UI areas",
+      "url": "https://github.com/user-attachments/assets/a102afa0-dc84-4c04-b5f5-933f3f6b2bad"
+    },
+    {
+      "prNumber": 462,
+      "prTitle": "feat: interactive tutorial overlay — guided tour of key UI areas",
+      "url": "https://github.com/user-attachments/assets/44cd67b1-7361-4dc2-b410-abbf97b8e3bc"
+    },
+    {
+      "prNumber": 462,
+      "prTitle": "feat: interactive tutorial overlay — guided tour of key UI areas",
+      "url": "https://github.com/user-attachments/assets/d9f1b224-0066-4187-912e-e6ed44a22e44"
+    },
+    {
+      "prNumber": 462,
+      "prTitle": "feat: interactive tutorial overlay — guided tour of key UI areas",
+      "url": "https://github.com/user-attachments/assets/2777f5a7-065c-46c0-b109-6603fe1fc341"
+    },
+    {
+      "prNumber": 462,
+      "prTitle": "feat: interactive tutorial overlay — guided tour of key UI areas",
+      "url": "https://github.com/user-attachments/assets/01c33dd7-733a-42e7-ac88-b038f2f28b19"
+    },
+    {
+      "prNumber": 462,
+      "prTitle": "feat: interactive tutorial overlay — guided tour of key UI areas",
+      "url": "https://github.com/user-attachments/assets/94503a43-5411-40a1-bf9c-496df1ca300f"
+    }
+  ]
+}

@@ -24,3 +24,4 @@ export { diseasePhase, hasWell } from "./disease.js";
 export { haunting, putGhostToRest } from "./haunting.js";
 export { autoCookPhase } from "./auto-cook.js";
 export { autoBrew } from "./auto-brew.js";
+export { taskRecovery } from "./task-recovery.js";

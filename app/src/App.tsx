@@ -22,6 +22,8 @@ import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
 import TaskPriorities from "./components/TaskPriorities";
 import { DwarfModal } from "./components/DwarfModal";
 import { EpitaphScreen } from "./components/EpitaphScreen";
+import { TutorialOverlay } from "./components/TutorialOverlay";
+import { useTutorial } from "./hooks/useTutorial";
 import { SURFACE_Z, CAVE_Z } from "@pwarf/shared";
 import type { Item } from "@pwarf/shared";
 import type { LiveDwarf } from "./hooks/useDwarves";
@@ -315,6 +317,8 @@ export default function App() {
     designation.cancelDesignation();
   }, [selectedWorldTile, selectedTileData, world, designation]);
 
+  const tutorial = useTutorial();
+
   // Follow mode — camera tracks a selected dwarf every tick
   const [followedDwarfId, setFollowedDwarfId] = useState<string | null>(null);
 
@@ -443,7 +447,19 @@ export default function App() {
         items={liveItems}
         wealth={civWealth}
         dwarves={liveDwarves}
+        onTutorial={tutorial.start}
       />
+
+      {tutorial.active && (
+        <TutorialOverlay
+          stepIndex={tutorial.stepIndex}
+          isFirst={tutorial.isFirst}
+          isLast={tutorial.isLast}
+          onNext={tutorial.next}
+          onPrev={tutorial.prev}
+          onDismiss={tutorial.dismiss}
+        />
+      )}
 
       <div className="flex flex-1 min-h-0 relative">
         {snapshot?.civFallen && world.mode === "fortress" && (
