@@ -58,7 +58,7 @@ describe("job claiming", () => {
     const skill = makeSkill(dwarf.id, "mining", 5);
     const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
 
-    createTask(ctx.state, "civ-1", {
+    createTask(ctx, {
       task_type: "mine",
       target_x: 10,
       target_y: 10,
@@ -78,7 +78,7 @@ describe("job claiming", () => {
     // No mining skill
     const ctx = makeContext({ dwarves: [dwarf] });
 
-    createTask(ctx.state, "civ-1", {
+    createTask(ctx, {
       task_type: "mine",
       target_x: 10,
       target_y: 10,
@@ -95,7 +95,7 @@ describe("job claiming", () => {
     const dwarf = makeDwarf();
     const ctx = makeContext({ dwarves: [dwarf] });
 
-    createTask(ctx.state, "civ-1", {
+    createTask(ctx, {
       task_type: "haul",
       target_x: 5,
       target_y: 5,
@@ -112,14 +112,14 @@ describe("job claiming", () => {
     const dwarf = makeDwarf();
     const ctx = makeContext({ dwarves: [dwarf] });
 
-    createTask(ctx.state, "civ-1", {
+    createTask(ctx, {
       task_type: "haul",
       priority: 3,
       target_x: 5,
       target_y: 5,
       target_z: 0,
     });
-    createTask(ctx.state, "civ-1", {
+    createTask(ctx, {
       task_type: "haul",
       priority: 8,
       target_x: 5,
@@ -138,7 +138,7 @@ describe("job claiming", () => {
     const dwarf2 = makeDwarf();
     const ctx = makeContext({ dwarves: [dwarf1, dwarf2] });
 
-    createTask(ctx.state, "civ-1", {
+    createTask(ctx, {
       task_type: "haul",
       target_x: 5,
       target_y: 5,
@@ -161,7 +161,7 @@ describe("task execution", () => {
     const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
     const ctx = makeContext({ dwarves: [dwarf] });
 
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "haul",
       target_x: 10,
       target_y: 10,
@@ -182,7 +182,7 @@ describe("task execution", () => {
     const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
     const ctx = makeContext({ dwarves: [dwarf] });
 
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "haul",
       target_x: 10,
       target_y: 10,
@@ -206,7 +206,7 @@ describe("task execution", () => {
     });
     const ctx = makeContext({ dwarves: [dwarf] });
 
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "eat",
       target_x: 0,
       target_y: 0,
@@ -231,7 +231,7 @@ describe("task execution", () => {
     });
     const ctx = makeContext({ dwarves: [dwarf] });
 
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "drink",
       target_x: 0,
       target_y: 0,
@@ -256,7 +256,7 @@ describe("task execution", () => {
     });
     const ctx = makeContext({ dwarves: [dwarf] });
 
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "sleep",
       target_x: 0,
       target_y: 0,
@@ -284,7 +284,7 @@ describe("task execution", () => {
     const skill = makeSkill(dwarf.id, "mining", 0);
     const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
 
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "mine",
       target_x: 10,
       target_y: 10,
@@ -315,7 +315,7 @@ describe("task execution", () => {
       },
     };
 
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "haul",
       target_x: 5,
       target_y: 3,
@@ -353,7 +353,7 @@ describe("task execution", () => {
       },
     };
 
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "mine",
       target_x: 0,
       target_y: 0,
@@ -405,7 +405,7 @@ describe("need satisfaction", () => {
     const ctx = makeContext({ dwarves: [dwarf] });
 
     // Give dwarf a haul task
-    const haulTask = createTask(ctx.state, "civ-1", {
+    const haulTask = createTask(ctx, {
       task_type: "haul",
       target_x: 5,
       target_y: 5,
@@ -432,7 +432,7 @@ describe("need satisfaction", () => {
     const ctx = makeContext({ dwarves: [dwarf] });
 
     // Dwarf is already eating
-    const eatTask = createTask(ctx.state, "civ-1", {
+    const eatTask = createTask(ctx, {
       task_type: "eat",
       target_x: 0,
       target_y: 0,
@@ -524,7 +524,7 @@ describe("starvation scenario", () => {
     expect(dwarf.status).toBe("alive");
 
     // Now eat (infinite source — no target item needed)
-    const eatTask = createTask(ctx.state, "civ-1", {
+    const eatTask = createTask(ctx, {
       task_type: "eat",
       target_x: 0,
       target_y: 0,
@@ -799,14 +799,14 @@ describe("skill-based task preferences", () => {
     ];
     const ctx = makeContext({ dwarves: [miner], skills });
 
-    const buildTask = createTask(ctx.state, "civ-1", {
+    const buildTask = createTask(ctx, {
       task_type: "build_wall",
       priority: 5,
       target_x: 5,
       target_y: 0,
       target_z: 0,
     });
-    const mineTask = createTask(ctx.state, "civ-1", {
+    const mineTask = createTask(ctx, {
       task_type: "mine",
       priority: 5,
       target_x: 5,
@@ -831,14 +831,14 @@ describe("skill-based task preferences", () => {
     const ctx = makeContext({ dwarves: [dwarf], skills });
 
     // Build task with much higher priority
-    const buildTask = createTask(ctx.state, "civ-1", {
+    const buildTask = createTask(ctx, {
       task_type: "build_wall",
       priority: 10,
       target_x: 5,
       target_y: 0,
       target_z: 0,
     });
-    const mineTask = createTask(ctx.state, "civ-1", {
+    const mineTask = createTask(ctx, {
       task_type: "mine",
       priority: 1,
       target_x: 5,
@@ -863,14 +863,14 @@ describe("skill-based task preferences", () => {
     ];
     const ctx = makeContext({ dwarves: [miner, builder], skills });
 
-    const mineTask = createTask(ctx.state, "civ-1", {
+    const mineTask = createTask(ctx, {
       task_type: "mine",
       priority: 5,
       target_x: 5,
       target_y: 0,
       target_z: 0,
     });
-    const buildTask = createTask(ctx.state, "civ-1", {
+    const buildTask = createTask(ctx, {
       task_type: "build_wall",
       priority: 5,
       target_x: 5,

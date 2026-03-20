@@ -1,5 +1,5 @@
 import type { Dwarf, DwarfSkill, Task, TaskType, Item } from "@pwarf/shared";
-import type { CachedState } from "./sim-context.js";
+import type { CachedState, SimContext } from "./sim-context.js";
 
 /** Map task types to the skill name required. null means any dwarf can do it. */
 const TASK_SKILL_MAP: Record<TaskType, string | null> = {
@@ -64,8 +64,7 @@ export function getBestSkill(dwarfId: string, skills: DwarfSkill[]): string | nu
 
 /** Create a new task and add it to the cached state. */
 export function createTask(
-  state: CachedState,
-  civilizationId: string,
+  ctx: SimContext,
   opts: {
     task_type: TaskType;
     priority?: number;
@@ -78,8 +77,8 @@ export function createTask(
   },
 ): Task {
   const task: Task = {
-    id: crypto.randomUUID(),
-    civilization_id: civilizationId,
+    id: ctx.rng.uuid(),
+    civilization_id: ctx.civilizationId,
     task_type: opts.task_type,
     status: 'pending',
     priority: opts.priority ?? 5,
@@ -94,8 +93,8 @@ export function createTask(
     completed_at: null,
   };
 
-  state.tasks.push(task);
-  state.newTasks.push(task);
+  ctx.state.tasks.push(task);
+  ctx.state.newTasks.push(task);
   return task;
 }
 

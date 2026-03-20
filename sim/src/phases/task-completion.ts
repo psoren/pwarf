@@ -40,7 +40,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     const dwarfLabel = `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''}`;
     const taskLabel = task.task_type.replace(/_/g, ' ');
     state.pendingEvents.push({
-      id: crypto.randomUUID(),
+      id: ctx.rng.uuid(),
       world_id: '',
       year: ctx.year,
       category: 'discovery',
@@ -112,7 +112,7 @@ function completeMine(dwarf: Dwarf, task: Task, ctx: SimContext): void {
 
   if (itemName) {
     const minedItem: Item = {
-      id: crypto.randomUUID(),
+      id: ctx.rng.uuid(),
       name: itemName,
       category: 'raw_material',
       quality: 'standard',
@@ -196,7 +196,7 @@ function upsertFortressTile(
     existing.is_mined = isMined;
   } else {
     const tile: FortressTile = {
-      id: crypto.randomUUID(),
+      id: ctx.rng.uuid(),
       civilization_id: ctx.civilizationId,
       x, y, z,
       tile_type: tileType,
@@ -228,7 +228,7 @@ function completeHaul(dwarf: Dwarf, task: Task, ctx: SimContext): void {
 
 function completeFarmHarvest(task: Task, ctx: SimContext): void {
   const food: Item = {
-    id: crypto.randomUUID(),
+    id: ctx.rng.uuid(),
     name: 'Plump helmet',
     category: 'food',
     quality: 'standard',
@@ -301,7 +301,7 @@ function completeBuildBed(task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
   const bed: Structure = {
-    id: crypto.randomUUID(),
+    id: ctx.rng.uuid(),
     civilization_id: ctx.civilizationId,
     name: null,
     type: 'bed',

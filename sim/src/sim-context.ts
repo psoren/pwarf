@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createRng, DEFAULT_TEST_SEED, type Rng } from "./rng.js";
 import type {
   Dwarf,
   DwarfSkill,
@@ -99,6 +100,43 @@ export interface SimContext {
   /** Current in-game day within the year. */
   day: number;
 
+  /** Seeded RNG — use instead of Math.random() or crypto.randomUUID(). */
+  rng: Rng;
+
   /** Mutable cached world state, loaded at start and patched each tick. */
   state: CachedState;
 }
+
+/** Creates a SimContext with a default test seed. Used in tests. */
+export function createTestContext(
+  opts?: {
+    dwarves?: Dwarf[];
+    skills?: DwarfSkill[];
+    tasks?: Task[];
+    items?: Item[];
+    structures?: Structure[];
+  },
+  seed = DEFAULT_TEST_SEED
+): SimContext {
+  const state = createEmptyCachedState();
+  state.dwarves = opts?.dwarves ?? [];
+  state.dwarfSkills = opts?.skills ?? [];
+  state.tasks = opts?.tasks ?? [];
+  state.items = opts?.items ?? [];
+  state.structures = opts?.structures ?? [];
+
+  return {
+    supabase: null as unknown as SupabaseClient,
+    civilizationId: "civ-1",
+    worldId: "world-1",
+    fortressDeriver: null,
+    step: 0,
+    year: 1,
+    day: 1,
+    rng: createRng(seed),
+    state,
+  };
+}
+
+export { createRng, DEFAULT_TEST_SEED };
+export type { Rng };
