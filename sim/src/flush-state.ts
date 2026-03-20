@@ -23,6 +23,10 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   const dirtyTasks = state.tasks.filter((t) => state.dirtyTaskIds.has(t.id));
   const newTasks = [...state.newTasks];
   const events = [...state.pendingEvents];
+  const newRelationships = [...state.newDwarfRelationships];
+  const dirtyRelationships = state.dwarfRelationships.filter((r) =>
+    state.dirtyDwarfRelationshipIds.has(r.id),
+  );
 
   // Flush tasks BEFORE dwarves — dwarves.current_task_id has a FK to tasks,
   // so the referenced task row must exist first.
@@ -127,6 +131,28 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
     }
   }
 
+  if (newRelationships.length > 0) {
+    promises.push(
+      supabase
+        .from("dwarf_relationships")
+        .insert(newRelationships)
+        .then(({ error }) => {
+          if (error) console.warn(`[flush] dwarf_relationships insert failed: ${error.message}`);
+        }),
+    );
+  }
+
+  if (dirtyRelationships.length > 0) {
+    promises.push(
+      supabase
+        .from("dwarf_relationships")
+        .upsert(dirtyRelationships)
+        .then(({ error }) => {
+          if (error) console.warn(`[flush] dwarf_relationships upsert failed: ${error.message}`);
+        }),
+    );
+  }
+
   if (events.length > 0) {
     // Stamp world_id on events (phases leave it empty)
     const worldId = ctx.worldId;
@@ -151,6 +177,8 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   state.dirtyTaskIds.clear();
   state.dirtyDwarfSkillIds.clear();
   state.dirtyFortressTileKeys.clear();
+  state.dirtyDwarfRelationshipIds.clear();
   state.newTasks = [];
+  state.newDwarfRelationships = [];
   state.pendingEvents = [];
 }

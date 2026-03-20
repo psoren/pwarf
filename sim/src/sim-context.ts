@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createRng, DEFAULT_TEST_SEED, type Rng } from "./rng.js";
 import type {
   Dwarf,
+  DwarfRelationship,
   DwarfSkill,
   FortressDeriver,
   FortressTile,
@@ -21,6 +22,7 @@ export interface CachedState {
   monsters: Monster[];
   tasks: Task[];
   dwarfSkills: DwarfSkill[];
+  dwarfRelationships: DwarfRelationship[];
   worldEvents: WorldEvent[];
 
   /** IDs of entities modified during the current tick, to be flushed to DB. */
@@ -30,9 +32,13 @@ export interface CachedState {
   dirtyMonsterIds: Set<string>;
   dirtyTaskIds: Set<string>;
   dirtyDwarfSkillIds: Set<string>;
+  dirtyDwarfRelationshipIds: Set<string>;
 
   /** New tasks created this tick that need to be inserted (not upserted). */
   newTasks: Task[];
+
+  /** New relationships created that need to be inserted (not upserted). */
+  newDwarfRelationships: DwarfRelationship[];
 
   /** Events queued during a tick, flushed by the event-firing phase. */
   pendingEvents: WorldEvent[];
@@ -87,6 +93,7 @@ export function createEmptyCachedState(): CachedState {
     monsters: [],
     tasks: [],
     dwarfSkills: [],
+    dwarfRelationships: [],
     worldEvents: [],
     dirtyDwarfIds: new Set(),
     dirtyItemIds: new Set(),
@@ -94,7 +101,9 @@ export function createEmptyCachedState(): CachedState {
     dirtyMonsterIds: new Set(),
     dirtyTaskIds: new Set(),
     dirtyDwarfSkillIds: new Set(),
+    dirtyDwarfRelationshipIds: new Set(),
     newTasks: [],
+    newDwarfRelationships: [],
     pendingEvents: [],
     stockpileTiles: new Map(),
     fortressTileOverrides: new Map(),
