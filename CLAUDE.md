@@ -53,13 +53,19 @@ Before merging any new sim system:
 
 Every PR description includes a `## Claude Cost` section showing the token count and USD cost for the conversation that produced it. This data flows automatically into the hourly digest blog posts.
 
-To generate the cost line for the current session, run from the repo root:
-
+**Normal (one conversation per ticket):** The full session cost equals the ticket cost:
 ```sh
 node scripts/session-cost.mjs
 ```
 
-This is done as part of the `/review-pr` skill — no need to run it manually.
+**Multi-ticket sessions (e.g. Ralph overnight runs):** Snapshot cost before starting a ticket, diff after:
+```sh
+COST_BEFORE=$(node scripts/session-cost.mjs --snapshot)
+# ... do the work ...
+node scripts/session-cost.mjs --delta $COST_BEFORE
+```
+
+This is done as part of the `/review-pr` skill — no need to run it manually for normal sessions.
 
 ## Build & Typecheck
 
