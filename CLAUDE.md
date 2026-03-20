@@ -46,6 +46,19 @@ Before merging any new sim system:
 - **Every change must have a GitHub issue filed first.** Include a description and apply appropriate labels (`bug`, `documentation`, `enhancement`, `phase-0` through `phase-5`, etc.).
 - Reference the issue number in commits and PRs (e.g., `closes #123`).
 - Close the issue when the PR is merged.
+- **One conversation per ticket.** Start a new Claude Code conversation for each ticket/PR. This keeps cost tracking accurate — the session cost reported in the PR description reflects exactly that ticket's work.
+
+## Cost Tracking
+
+Every PR description includes a `## Claude Cost` section showing the token count and USD cost for the conversation that produced it. This data flows automatically into the hourly digest blog posts.
+
+To generate the cost line for the current session, run from the repo root:
+
+```sh
+node scripts/session-cost.mjs
+```
+
+This is done as part of the `/review-pr` skill — no need to run it manually.
 
 ## Build & Typecheck
 

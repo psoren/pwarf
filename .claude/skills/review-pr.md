@@ -46,7 +46,12 @@ Self-review the open PR (or staged changes) before pushing, catching issues befo
    - Confirm it references the correct issue number (`closes #NNN`)
    - Confirm a playtest report is included with screenshots
 
-5. **Report**
+5. **Embed Claude cost in the PR description**
+   - Run `node scripts/session-cost.mjs` from the repo root to get the cost for this conversation
+   - Append a `## Claude Cost` section to the PR description via `gh pr edit <N> --body "$(gh pr view <N> --json body -q .body)\n\n## Claude Cost\n<output from script>"`
+   - This ensures cost data flows into the hourly digest blog posts automatically
+
+6. **Report**
    - List any issues found, grouped by severity: **Blocking** (must fix) vs **Suggestions** (nice to have)
    - If blocking issues exist, fix them and re-run this skill
    - If clean, state clearly: "PR looks good — no blocking issues found"
