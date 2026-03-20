@@ -213,6 +213,7 @@ export default function App() {
         case "toggle_mode":
           if (world.civId) {
             world.setMode((m) => (m === "fortress" ? "world" : "fortress"));
+            setFollowedDwarfId(null);
           }
           break;
         case "toggle_left_panel":
@@ -244,6 +245,7 @@ export default function App() {
           break;
         case "cancel_designation":
           designation.cancelDesignation();
+          setFollowedDwarfId(null);
           break;
       }
     },
@@ -266,22 +268,38 @@ export default function App() {
     designation.cancelDesignation();
   }, [selectedWorldTile, selectedTileData, world, designation]);
 
-  const handleGoToDwarf = useCallback((dwarf: LiveDwarf) => {
+  // Follow mode — camera tracks a selected dwarf every tick
+  const [followedDwarfId, setFollowedDwarfId] = useState<string | null>(null);
+
+  // Center viewport on followed dwarf whenever positions update
+  useEffect(() => {
+    if (!followedDwarfId) return;
+    const dwarf = liveDwarves.find(d => d.id === followedDwarfId);
+    if (!dwarf) {
+      setFollowedDwarfId(null);
+      return;
+    }
     setZLevel(dwarf.position_z);
     viewport.setOffset(
       dwarf.position_x - Math.floor(vpCols / 2),
       dwarf.position_y - Math.floor(vpRows / 2),
     );
-  }, [viewport.setOffset, vpCols, vpRows]);
+  }, [followedDwarfId, liveDwarves, vpCols, vpRows, viewport.setOffset]);
+
+  const handleGoToDwarf = useCallback((dwarf: LiveDwarf) => {
+    setFollowedDwarfId(dwarf.id);
+  }, []);
 
   // Dwarf info modal
   const [modalDwarfId, setModalDwarfId] = useState<string | null>(null);
   const modalDwarf = modalDwarfId ? liveDwarves.find(d => d.id === modalDwarfId) ?? null : null;
 
   const handleDwarfClick = useCallback((x: number, y: number) => {
-    const key = `${x},${y}`;
     const dwarf = liveDwarves.find(d => d.position_x === x && d.position_y === y && d.position_z === zLevel);
-    if (dwarf) setModalDwarfId(dwarf.id);
+    if (dwarf) {
+      setModalDwarfId(dwarf.id);
+      setFollowedDwarfId(dwarf.id);
+    }
   }, [liveDwarves, zLevel]);
 
   // Keyboard shortcuts for build menu items when the menu is open
@@ -395,7 +413,7 @@ export default function App() {
           cursorTile={world.mode === "world" ? (selectedTileData ?? cursorTile) : cursorTile}
           onEmbark={world.mode === "world" && selectedWorldTile ? handleEmbark : undefined}
           dwarves={liveDwarves}
-          onDwarfClick={world.mode === "fortress" ? (id: string) => setModalDwarfId(id) : undefined}
+          onDwarfClick={world.mode === "fortress" ? (id: string) => { setModalDwarfId(id); setFollowedDwarfId(id); } : undefined}
           items={liveItems}
           tasks={world.mode === "fortress" ? liveTasks : undefined}
           selectedFortressTile={world.mode === "fortress" ? selectedFortressTile : undefined}
@@ -424,7 +442,7 @@ export default function App() {
           onTileClick={world.mode === "world"
             ? (x: number, y: number) => setSelectedWorldTile({ x, y })
             : world.mode === "fortress"
-              ? (x: number, y: number) => setSelectedFortressTile({ x, y })
+              ? (x: number, y: number) => { setSelectedFortressTile({ x, y }); setFollowedDwarfId(null); }
               : undefined}
           onDwarfClick={world.mode === "fortress" ? handleDwarfClick : undefined}
           selectedTile={world.mode === "world" ? selectedWorldTile : undefined}
@@ -461,7 +479,7 @@ export default function App() {
         </button>
         <span className="text-[var(--border)]">|</span>
         <button
-          onClick={() => world.setMode("world")}
+          onClick={() => { world.setMode("world"); setFollowedDwarfId(null); }}
           className={`px-2 py-0.5 cursor-pointer ${world.mode === "world" ? "text-[var(--green)]" : "text-[var(--text)] hover:text-[var(--amber)]"}`}
         >
           World
