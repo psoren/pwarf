@@ -60,6 +60,7 @@ export async function loadStateFromSupabase(
   if (monstersResult.error) throw new Error(`Failed to load monsters: ${monstersResult.error.message}`);
   if (tasksResult.error) throw new Error(`Failed to load tasks: ${tasksResult.error.message}`);
   if (stockpileResult.error) throw new Error(`Failed to load stockpile_tiles: ${stockpileResult.error.message}`);
+  if (eventsResult.error) console.warn(`[load-state] Failed to load world_events: ${eventsResult.error.message}`);
 
   // Load skills for the alive dwarves
   const dwarfIds = (dwarvesResult.data ?? []).map(d => d.id);
