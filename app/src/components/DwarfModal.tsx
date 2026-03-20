@@ -141,6 +141,15 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [], tasks }: DwarfM
           {needBar("HP", dwarf.health, "var(--green)")}
         </div>
 
+        <div className="border-t border-[var(--border)] pt-2 mt-2">
+          <div className="text-[var(--amber)] font-bold mb-0.5">Personality</div>
+          {needBar("Open", dwarf.trait_openness * 100, "#6699cc")}
+          {needBar("Consc.", dwarf.trait_conscientiousness * 100, "#6699cc")}
+          {needBar("Extrav.", dwarf.trait_extraversion * 100, "#6699cc")}
+          {needBar("Agree.", dwarf.trait_agreeableness * 100, "#44ccaa")}
+          {needBar("Neuro.", dwarf.trait_neuroticism * 100, "#f97316")}
+        </div>
+
         {skills.length > 0 && (
           <div className="border-t border-[var(--border)] pt-2 mt-2">
             <div className="text-[var(--amber)] font-bold mb-0.5">Skills</div>
