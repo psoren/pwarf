@@ -3,17 +3,28 @@ import type { DwarfSkill, Item } from "@pwarf/shared";
 import { DWARF_CARRY_CAPACITY } from "@pwarf/shared";
 import { supabase } from "../lib/supabase";
 import type { LiveDwarf, DwarfThought } from "../hooks/useDwarves";
+import type { ActiveTask } from "../hooks/useTasks";
 
 interface DwarfModalProps {
   dwarf: LiveDwarf;
   onClose: () => void;
   onGoTo: (dwarf: LiveDwarf) => void;
   items?: Item[];
+  tasks?: ActiveTask[];
 }
 
-function dwarfJobLabel(d: LiveDwarf): string {
-  if (d.current_task_id) return "Working";
-  return "Idle";
+const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
+
+function dwarfJobLabel(d: LiveDwarf, tasks?: ActiveTask[]): string {
+  if (!d.current_task_id) return "Idle";
+  const task = tasks?.find(t => t.id === d.current_task_id);
+  if (!task) return "Working";
+  const label = task.task_type.replace(/_/g, " ");
+  if (AUTONOMOUS_TASK_TYPES.has(task.task_type) || task.work_required === 0) {
+    return label;
+  }
+  const pct = Math.round((task.work_progress / task.work_required) * 100);
+  return `${label} (${pct}%)`;
 }
 
 function needBar(label: string, value: number, color: string) {
@@ -33,7 +44,7 @@ function needBar(label: string, value: number, color: string) {
   );
 }
 
-export function DwarfModal({ dwarf, onClose, onGoTo, items = [] }: DwarfModalProps) {
+export function DwarfModal({ dwarf, onClose, onGoTo, items = [], tasks }: DwarfModalProps) {
   const [skills, setSkills] = useState<DwarfSkill[]>([]);
 
   useEffect(() => {
@@ -85,7 +96,7 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [] }: DwarfModalPro
         </div>
 
         <div className="text-[var(--text)] mb-1 flex gap-3">
-          <span>Status: <span className="text-[var(--green)]">{dwarfJobLabel(dwarf)}</span></span>
+          <span>Status: <span className="text-[var(--green)]">{dwarfJobLabel(dwarf, tasks)}</span></span>
           {dwarf.age != null && (
             <span>Age: <span className="text-[var(--green)]">{dwarf.age}</span></span>
           )}

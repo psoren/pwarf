@@ -38,6 +38,8 @@ interface MainViewportProps {
   groundItems?: Map<string, number>;
   /** Current z-level for stockpile rendering */
   zLevel?: number;
+  /** Build progress (0-100) for in_progress build tasks keyed by "x,y" */
+  buildProgressTiles?: Map<string, number>;
 }
 
 // Character cell dimensions (monospace)
@@ -81,6 +83,7 @@ export default function MainViewport({
   stockpileTiles,
   groundItems,
   zLevel = 0,
+  buildProgressTiles,
 }: MainViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -116,6 +119,8 @@ export default function MainViewport({
   groundItemsRef.current = groundItems;
   const zLevelRef = useRef(zLevel);
   zLevelRef.current = zLevel;
+  const buildProgressTilesRef = useRef(buildProgressTiles);
+  buildProgressTilesRef.current = buildProgressTiles;
 
   // Increment to force re-render when data (not offset) changes
   const [dataVersion, setDataVersion] = useState(0);
@@ -125,6 +130,7 @@ export default function MainViewport({
   const prevDesignatedTiles = useRef(designatedTiles);
   const prevStockpileTiles = useRef(stockpileTiles);
   const prevGroundItems = useRef(groundItems);
+  const prevBuildProgressTiles = useRef(buildProgressTiles);
 
   if (
     getWorldTileData !== prevGetWorldTileData.current ||
@@ -132,7 +138,8 @@ export default function MainViewport({
     dwarfPositions !== prevDwarfPositions.current ||
     designatedTiles !== prevDesignatedTiles.current ||
     stockpileTiles !== prevStockpileTiles.current ||
-    groundItems !== prevGroundItems.current
+    groundItems !== prevGroundItems.current ||
+    buildProgressTiles !== prevBuildProgressTiles.current
   ) {
     prevGetWorldTileData.current = getWorldTileData;
     prevGetFortressTileData.current = getFortressTileData;
@@ -140,6 +147,7 @@ export default function MainViewport({
     prevDesignatedTiles.current = designatedTiles;
     prevStockpileTiles.current = stockpileTiles;
     prevGroundItems.current = groundItems;
+    prevBuildProgressTiles.current = buildProgressTiles;
     setDataVersion((v) => v + 1);
   }
 
@@ -181,11 +189,16 @@ export default function MainViewport({
           const glyph = FORTRESS_GLYPHS[tile.tileType] ?? { ch: "?", fg: "#f00" };
           const isStockpile = stockpileTilesRef.current?.has(`${wx},${wy},${zLevelRef.current}`);
           if (taskType) {
+            const buildPct = buildProgressTilesRef.current?.get(key);
+            // Interpolate bg from dark brown (#442200) to amber (#886600) as progress increases
+            const bg = buildPct !== undefined && buildPct > 0
+              ? `rgb(${Math.round(0x44 + (0x88 - 0x44) * buildPct / 100)},${Math.round(0x22 + (0x66 - 0x22) * buildPct / 100)},0)`
+              : "#442200";
             const preview = DESIGNATION_PREVIEW[taskType];
             if (preview) {
-              return { ch: preview.ch, fg: preview.fg, bg: "#442200" };
+              return { ch: preview.ch, fg: preview.fg, bg };
             }
-            return { ...glyph, bg: "#442200" };
+            return { ...glyph, bg };
           }
           if (isStockpile) {
             return { ...glyph, bg: STOCKPILE_GLYPH.bg };
