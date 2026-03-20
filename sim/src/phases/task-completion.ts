@@ -9,6 +9,9 @@ import {
   XP_FARM_HARVEST,
   XP_BUILD,
   XP_HAUL,
+  PURPOSE_RESTORE_SKILLED,
+  PURPOSE_RESTORE_HAUL,
+  PURPOSE_RESTORE_DEFAULT,
 } from "@pwarf/shared";
 import type { Dwarf, FortressTile, FortressTileType, Task, Item, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -94,6 +97,29 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       completeBuildBed(task, ctx);
       awardXp(dwarf.id, 'building', XP_BUILD, state);
       break;
+  }
+
+  // Purpose restoration: work gives dwarves a sense of meaning
+  restorePurposeNeed(dwarf, task.task_type);
+}
+
+/**
+ * Restores purpose need on task completion.
+ * Skilled tasks restore more than hauling or wander.
+ * Exported for unit testing.
+ */
+export function restorePurposeNeed(dwarf: Dwarf, taskType: string): void {
+  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'farm_till', 'farm_plant', 'farm_harvest']);
+  const restore = SKILLED_TASKS.has(taskType)
+    ? PURPOSE_RESTORE_SKILLED
+    : taskType === 'haul'
+      ? PURPOSE_RESTORE_HAUL
+      : taskType === 'eat' || taskType === 'drink' || taskType === 'sleep' || taskType === 'wander'
+        ? 0  // autonomous tasks don't restore purpose
+        : PURPOSE_RESTORE_DEFAULT;
+
+  if (restore > 0) {
+    dwarf.need_purpose = Math.min(MAX_NEED, dwarf.need_purpose + restore);
   }
 }
 

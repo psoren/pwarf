@@ -55,6 +55,37 @@ export const PURPOSE_DECAY_PER_TICK = 0.04;
 export const BEAUTY_DECAY_PER_TICK = 0.03;
 
 // ============================================================
+// Social / purpose / beauty need restoration
+// ============================================================
+
+/** How much social need restored per tick per nearby dwarf */
+export const SOCIAL_RESTORE_PER_NEARBY_DWARF = 0.3;
+
+/** Manhattan-distance radius within which dwarves count as "nearby" for social need */
+export const SOCIAL_PROXIMITY_RADIUS = 8;
+
+/** Max number of nearby dwarves that contribute to social restore (diminishing returns beyond this) */
+export const SOCIAL_PROXIMITY_MAX_DWARVES = 3;
+
+/** Purpose restored on completing a skilled work task (mine, build, farm, brew) */
+export const PURPOSE_RESTORE_SKILLED = 15;
+
+/** Purpose restored on completing a hauling task */
+export const PURPOSE_RESTORE_HAUL = 5;
+
+/** Purpose restored on completing any other work task */
+export const PURPOSE_RESTORE_DEFAULT = 8;
+
+/** Baseline beauty restoration per tick (passive, always applies) */
+export const BEAUTY_RESTORE_PASSIVE = 0.02;
+
+/** Bonus beauty restoration per tick when near a well or mushroom garden */
+export const BEAUTY_RESTORE_NEAR_STRUCTURE = 0.15;
+
+/** Manhattan-distance radius for beauty structure proximity */
+export const BEAUTY_STRUCTURE_RADIUS = 6;
+
+// ============================================================
 // Stress severity tiers
 // ============================================================
 
