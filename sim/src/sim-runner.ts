@@ -1,5 +1,5 @@
 import { STEPS_PER_SECOND, STEPS_PER_YEAR, SIM_FLUSH_INTERVAL_MS, createFortressDeriver } from "@pwarf/shared";
-import type { Dwarf, Item, Task, WorldEvent } from "@pwarf/shared";
+import type { Dwarf, Item, Task, WorldEvent, FortressTile } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng } from "./rng.js";
@@ -28,6 +28,9 @@ export interface SimSnapshot {
   items: Item[];
   tasks: Task[];
   events: WorldEvent[];
+  /** All current fortress tile overrides (built/mined tiles). Used so the UI
+   * can show tile changes immediately without waiting for the DB flush. */
+  fortressTileOverrides: FortressTile[];
 }
 
 /**
@@ -176,6 +179,7 @@ export class SimRunner {
         items: this.ctx.state.items,
         tasks: this.ctx.state.tasks,
         events: this.ctx.state.worldEvents,
+        fortressTileOverrides: [...this.ctx.state.fortressTileOverrides.values()],
       });
     }
   }
