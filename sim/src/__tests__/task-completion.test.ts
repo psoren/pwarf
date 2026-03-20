@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { FOOD_RESTORE_AMOUNT, DRINK_RESTORE_AMOUNT, MAX_NEED } from "@pwarf/shared";
+import { FOOD_RESTORE_AMOUNT, DRINK_RESTORE_AMOUNT, FLOOR_SLEEP_STRESS, MAX_NEED } from "@pwarf/shared";
 import { completeTask } from "../phases/task-completion.js";
 import { createTask } from "../task-helpers.js";
-import { makeDwarf, makeSkill, makeItem, makeContext } from "./test-helpers.js";
+import { makeDwarf, makeSkill, makeItem, makeContext, makeStructure } from "./test-helpers.js";
 
 describe("completeTask", () => {
   it("marks task completed and clears dwarf assignment", () => {
@@ -183,5 +183,64 @@ describe("completeTask", () => {
     const food = ctx.state.items.filter(i => i.category === "food");
     expect(food).toHaveLength(1);
     expect(food[0]!.name).toBe("Plump helmet");
+  });
+});
+
+describe("bed sleep completion", () => {
+  it("floor sleep applies stress penalty", () => {
+    const dwarf = makeDwarf({ need_sleep: 10, stress_level: 20 });
+    const ctx = makeContext({ dwarves: [dwarf] });
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "sleep",
+      work_required: 1,
+      target_item_id: null,
+    });
+    task.status = "in_progress";
+    dwarf.current_task_id = task.id;
+
+    completeTask(dwarf, task, ctx);
+
+    expect(dwarf.stress_level).toBe(20 + FLOOR_SLEEP_STRESS);
+  });
+
+  it("bed sleep does not apply stress penalty and releases bed", () => {
+    const bed = makeStructure({ occupied_by_dwarf_id: "some-dwarf" });
+    const dwarf = makeDwarf({ need_sleep: 10, stress_level: 20 });
+    const ctx = makeContext({ dwarves: [dwarf], structures: [bed] });
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "sleep",
+      work_required: 1,
+      target_item_id: bed.id,
+    });
+    task.status = "in_progress";
+    dwarf.current_task_id = task.id;
+
+    completeTask(dwarf, task, ctx);
+
+    expect(dwarf.stress_level).toBe(20);
+    expect(bed.occupied_by_dwarf_id).toBeNull();
+  });
+
+  it("build_bed creates bed structure and bed tile", () => {
+    const dwarf = makeDwarf();
+    const skill = makeSkill(dwarf.id, "building", 0);
+    const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
+    const task = createTask(ctx.state, "civ-1", {
+      task_type: "build_bed",
+      target_x: 5,
+      target_y: 5,
+      target_z: 0,
+      work_required: 1,
+    });
+    task.status = "in_progress";
+    dwarf.current_task_id = task.id;
+
+    completeTask(dwarf, task, ctx);
+
+    const beds = ctx.state.structures.filter(s => s.type === "bed");
+    expect(beds).toHaveLength(1);
+    expect(beds[0]!.position_x).toBe(5);
+    expect(beds[0]!.position_y).toBe(5);
+    expect(ctx.state.fortressTileOverrides.get("5,5,0")!.tile_type).toBe("bed");
   });
 });

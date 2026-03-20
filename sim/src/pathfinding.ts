@@ -24,6 +24,7 @@ const WALKABLE_TILES: ReadonlySet<FortressTileType> = new Set([
   'tree',
   'bush',
   'rock',
+  'bed',
 ]);
 
 /** Check if a tile type is walkable. */

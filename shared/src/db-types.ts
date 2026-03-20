@@ -158,6 +158,7 @@ export type TaskType =
   | 'sleep'
   | 'build_wall'
   | 'build_floor'
+  | 'build_bed'
   | 'wander';
 
 export type TaskStatus =
@@ -186,6 +187,7 @@ export type FortressTileType =
   | 'cavern_wall'
   | 'constructed_wall'
   | 'constructed_floor'
+  | 'bed'
   | 'well'
   | 'mushroom_garden'
   | 'sand'
@@ -515,6 +517,10 @@ export interface Structure {
   ruin_id: string | null;
   quality: ItemQuality | null;
   notes: string | null;
+  position_x: number | null;
+  position_y: number | null;
+  position_z: number | null;
+  occupied_by_dwarf_id: string | null;
 }
 
 export interface FortressTile {

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Dwarf, DwarfSkill, Task, Item } from "@pwarf/shared";
+import type { Dwarf, DwarfSkill, Task, Item, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createEmptyCachedState } from "../sim-context.js";
 
@@ -80,17 +80,38 @@ export function makeItem(overrides?: Partial<Item>): Item {
   };
 }
 
+export function makeStructure(overrides?: Partial<Structure>): Structure {
+  return {
+    id: randomUUID(),
+    civilization_id: "civ-1",
+    name: null,
+    type: "bed",
+    completion_pct: 100,
+    built_year: 1,
+    ruin_id: null,
+    quality: "standard",
+    notes: null,
+    position_x: 0,
+    position_y: 0,
+    position_z: 0,
+    occupied_by_dwarf_id: null,
+    ...overrides,
+  };
+}
+
 export function makeContext(opts?: {
   dwarves?: Dwarf[];
   skills?: DwarfSkill[];
   tasks?: Task[];
   items?: Item[];
+  structures?: Structure[];
 }): SimContext {
   const state = createEmptyCachedState();
   state.dwarves = opts?.dwarves ?? [];
   state.dwarfSkills = opts?.skills ?? [];
   state.tasks = opts?.tasks ?? [];
   state.items = opts?.items ?? [];
+  state.structures = opts?.structures ?? [];
 
   return {
     supabase: null as unknown as SupabaseClient,

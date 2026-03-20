@@ -195,5 +195,36 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
   const { error: tileOverrideError } = await supabase.from('fortress_tiles').insert(fortressTiles);
   if (tileOverrideError) throw new Error(`Failed to place starting structures: ${tileOverrideError.message}`);
 
+  // Place starting beds near fortress center (one per dwarf)
+  const startingBeds = STARTING_OFFSETS.map((offset) => ({
+    civilization_id: civ.id,
+    type: 'bed',
+    name: null,
+    completion_pct: 100,
+    built_year: 1,
+    quality: 'standard',
+    position_x: FORTRESS_CENTER + offset.dx,
+    position_y: FORTRESS_CENTER + offset.dy + 2,
+    position_z: 0,
+  }));
+
+  const { error: bedError } = await supabase.from('structures').insert(startingBeds);
+  if (bedError) throw new Error(`Failed to place starting beds: ${bedError.message}`);
+
+  // Place bed tiles for rendering
+  const bedTiles = STARTING_OFFSETS.map((offset) => ({
+    civilization_id: civ.id,
+    x: FORTRESS_CENTER + offset.dx,
+    y: FORTRESS_CENTER + offset.dy + 2,
+    z: 0,
+    tile_type: 'bed',
+    material: 'wood',
+    is_revealed: true,
+    is_mined: false,
+  }));
+
+  const { error: bedTileError } = await supabase.from('fortress_tiles').insert(bedTiles);
+  if (bedTileError) throw new Error(`Failed to place bed tiles: ${bedTileError.message}`);
+
   return civ.id;
 }

@@ -6,7 +6,7 @@ import {
   WORK_DRINK,
   WORK_SLEEP,
 } from "@pwarf/shared";
-import type { Dwarf, TaskType } from "@pwarf/shared";
+import type { Dwarf, TaskType, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createTask } from "../task-helpers.js";
 
@@ -45,6 +45,31 @@ export async function needSatisfaction(ctx: SimContext): Promise<void> {
 
 const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep']);
 
+function findNearestBed(
+  structures: Structure[],
+  fromX: number,
+  fromY: number,
+  fromZ: number,
+): Structure | null {
+  let nearest: Structure | null = null;
+  let nearestDist = Infinity;
+
+  for (const s of structures) {
+    if (s.type !== 'bed') continue;
+    if (s.completion_pct < 100) continue;
+    if (s.occupied_by_dwarf_id !== null) continue;
+    if (s.position_x === null || s.position_y === null || s.position_z === null) continue;
+
+    const dist = Math.abs(s.position_x - fromX) + Math.abs(s.position_y - fromY) + Math.abs(s.position_z - fromZ) * 10;
+    if (dist < nearestDist) {
+      nearest = s;
+      nearestDist = dist;
+    }
+  }
+
+  return nearest;
+}
+
 function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext): void {
   const { state } = ctx;
 
@@ -72,6 +97,15 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
       currentTask.assigned_dwarf_id = null;
       currentTask.work_progress = 0;
       state.dirtyTaskIds.add(currentTask.id);
+
+      // Release bed if dropping a sleep task
+      if (currentTask.task_type === 'sleep' && currentTask.target_item_id) {
+        const bed = state.structures.find(s => s.id === currentTask.target_item_id);
+        if (bed) {
+          bed.occupied_by_dwarf_id = null;
+          state.dirtyStructureIds.add(bed.id);
+        }
+      }
     }
     dwarf.current_task_id = null;
     state.dirtyDwarfIds.add(dwarf.id);
@@ -88,13 +122,31 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
     : taskType === 'drink' ? WORK_DRINK
     : WORK_SLEEP;
 
+  // For sleep: try to find an available bed
+  let targetX = dwarf.position_x;
+  let targetY = dwarf.position_y;
+  let targetZ = dwarf.position_z;
+  let targetItemId: string | null = null;
+
+  if (taskType === 'sleep') {
+    const bed = findNearestBed(state.structures, dwarf.position_x, dwarf.position_y, dwarf.position_z);
+    if (bed && bed.position_x !== null && bed.position_y !== null && bed.position_z !== null) {
+      targetX = bed.position_x;
+      targetY = bed.position_y;
+      targetZ = bed.position_z;
+      targetItemId = bed.id;
+      bed.occupied_by_dwarf_id = dwarf.id;
+      state.dirtyStructureIds.add(bed.id);
+    }
+  }
+
   createTask(state, ctx.civilizationId, {
     task_type: taskType,
     priority,
-    target_x: dwarf.position_x,
-    target_y: dwarf.position_y,
-    target_z: dwarf.position_z,
-    target_item_id: null,
+    target_x: targetX,
+    target_y: targetY,
+    target_z: targetZ,
+    target_item_id: targetItemId,
     work_required: workRequired,
     assigned_dwarf_id: dwarf.id,
   });
