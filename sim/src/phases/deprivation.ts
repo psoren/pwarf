@@ -81,7 +81,17 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
   // Check if all dwarves are dead — fortress falls
   // Note: dwarf.status is already 'dead' at this point, so filter it out
   const aliveDwarves = state.dwarves.filter(d => d.status === 'alive');
-  if (aliveDwarves.length === 0) {
+  if (aliveDwarves.length === 0 && !state.civFallen) {
+    // Map sim cause to CauseOfDeath column values
+    const causeOfDeath =
+      cause === 'starvation' || cause === 'dehydration' ? 'starvation' :
+      cause === 'tantrum_spiral' ? 'tantrum_spiral' :
+      cause === 'plague' ? 'plague' :
+      cause === 'monster attack' ? 'siege' : 'unknown';
+
+    state.civFallen = true;
+    state.civFallenCause = causeOfDeath;
+
     state.pendingEvents.push({
       id: ctx.rng.uuid(),
       world_id: '',

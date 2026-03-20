@@ -98,7 +98,14 @@ export class SimRunner {
 
     this.flushTimer = setInterval(() => {
       if (this.ctx) {
-        void this.adapter.flush(this.ctx);
+        const ctx = this.ctx;
+        void this.adapter.flush(ctx).then(() => {
+          // Stop the sim if the civilization has fallen
+          if (ctx.state.civFallen) {
+            console.log(`[sim] civilization ${ctx.civilizationId} has fallen — stopping sim`);
+            void this.stop();
+          }
+        });
         void this.pollNewTasks();
         void this.pollStockpileTiles();
       }

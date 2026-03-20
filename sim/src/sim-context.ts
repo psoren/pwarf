@@ -91,6 +91,15 @@ export interface CachedState {
 
   /** Whether civPopulation or civWealth changed this year and need flushing. */
   civDirty: boolean;
+
+  /**
+   * Set to true when the last dwarf dies. Triggers flush of `civilizations.status = 'fallen'`
+   * and stops the sim runner after the next flush cycle.
+   */
+  civFallen: boolean;
+
+  /** Cause of death to record on the civilization row when civFallen becomes true. */
+  civFallenCause: string;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */
@@ -127,6 +136,8 @@ export function createEmptyCachedState(): CachedState {
     civPopulation: 0,
     civWealth: 0,
     civDirty: false,
+    civFallen: false,
+    civFallenCause: 'unknown',
   };
 }
 

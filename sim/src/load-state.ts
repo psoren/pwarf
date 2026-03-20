@@ -131,5 +131,7 @@ export async function loadStateFromSupabase(
     civPopulation: (civResult.data as { population: number } | null)?.population ?? 0,
     civWealth: (civResult.data as { wealth: number } | null)?.wealth ?? 0,
     civDirty: false,
+    civFallen: false,
+    civFallenCause: 'unknown',
   };
 }
