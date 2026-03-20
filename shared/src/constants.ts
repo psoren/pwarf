@@ -190,6 +190,27 @@ export const TANTRUM_DURATION_MODERATE = 100;
 /** Minimum ticks a severe tantrum lasts (stress 96–100) */
 export const TANTRUM_DURATION_SEVERE = 200;
 
+/** Per-tick probability a mild tantrum dwarf destroys a nearby item */
+export const TANTRUM_DESTROY_CHANCE_MILD = 0.02;
+
+/** Per-tick probability a moderate tantrum dwarf destroys a nearby item */
+export const TANTRUM_DESTROY_CHANCE_MODERATE = 0.05;
+
+/** Per-tick probability a severe tantrum dwarf destroys a nearby item */
+export const TANTRUM_DESTROY_CHANCE_SEVERE = 0.08;
+
+/** Per-tick probability a moderate/severe tantrum dwarf attacks a nearby dwarf */
+export const TANTRUM_ATTACK_CHANCE = 0.02;
+
+/** Damage dealt to victim of a tantrum attack */
+export const TANTRUM_ATTACK_DAMAGE = 10;
+
+/** Stress applied to dwarves who witness a tantrum attack */
+export const TANTRUM_WITNESS_STRESS = 5;
+
+/** Manhattan-distance radius within which tantrum effects apply */
+export const TANTRUM_PROXIMITY_RADIUS = 3;
+
 // ============================================================
 // Skills
 // ============================================================
