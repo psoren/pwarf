@@ -1,0 +1,45 @@
+{
+  "id": "2026-03-20T12-39-12",
+  "timestamp": "2026-03-20T12:39:12.277Z",
+  "title": "Digest — Mar 20, 2026, 12:39 PM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nIn the latest update, several important changes were made to improve both functionality and stability in our dwarf colony simulation.\n\n## Trait System Fixes\n- Resolved an issue where personality traits were generated as integers ranging from `-3` to `3`, leading to incorrect work rate calculations. \n- Updated the trait generation in `embark.ts` to use float values between `0.0` and `1.0`. \n- Introduced clamping in task execution to ensure that modifications from traits do not result in negative work rates, which previously prevented task completion and led to unintended dwarf deaths.\n\n## Scenario Testing Enhancements\n- Introduced a new `dwarfSkills` field to `ScenarioConfig`, enabling headless tests to configure dwarves with specific skills, which were necessary for validating task assignments.\n- Added comprehensive scenario tests covering all build task types, confirming that tasks progress smoothly through creation, claiming, and execution processes.\n\n## Supabase Integration Fix\n- Fixed a critical issue where a null `supabase` client led to failures in data persistence during the flush operation. \n- Changed the system to inject the real Supabase client, ensuring that data is correctly saved and preventing crashes.\n\nThese changes significantly enhance game stability and testing capabilities, paving the way for more engaging gameplay experiences.\n\n## Merged PRs\n- PR #343\n- PR #338\n- PR #340\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 174\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 174
+  },
+  "prs": [
+    {
+      "number": 343,
+      "title": "fix: trait values must be 0-1 floats; clamp sim formulas for old DB rows (closes #342)",
+      "url": "https://github.com/psoren/pwarf/pull/343",
+      "cost": {
+        "amount": "$78.91",
+        "tokens": "212.0M tokens"
+      }
+    },
+    {
+      "number": 338,
+      "title": "feat: scenario tests for all build task types, add dwarfSkills to ScenarioConfig",
+      "url": "https://github.com/psoren/pwarf/pull/338",
+      "cost": {
+        "amount": "$2.19",
+        "tokens": "6.0M tokens"
+      }
+    },
+    {
+      "number": 340,
+      "title": "fix: inject real supabase client into flushToSupabase (closes #339)",
+      "url": "https://github.com/psoren/pwarf/pull/340",
+      "cost": {
+        "amount": "$0.39",
+        "tokens": "1.0M tokens"
+      }
+    }
+  ],
+  "images": []
+}
