@@ -72,7 +72,7 @@ describe("killDwarf", () => {
   it("fails the dwarf's current task", () => {
     const dwarf = makeDwarf();
     const ctx = makeContext({ dwarves: [dwarf] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "haul",
       target_x: 5,
       target_y: 5,

@@ -3,6 +3,7 @@ import { STEPS_PER_SECOND, STEPS_PER_YEAR, SIM_FLUSH_INTERVAL_MS, createFortress
 import type { Dwarf, Item, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
+import { createRng } from "./rng.js";
 import { loadStateFromSupabase } from "./load-state.js";
 import { flushToSupabase } from "./flush-state.js";
 import {
@@ -83,6 +84,7 @@ export class SimRunner {
       step: this.stepCount,
       year: this.currentYear,
       day: this.currentDay,
+      rng: createRng(Date.now()),
       state: cached,
     };
 

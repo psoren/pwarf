@@ -69,7 +69,7 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
   const aliveDwarves = state.dwarves.filter(d => d.status === 'alive');
   if (aliveDwarves.length === 0) {
     state.pendingEvents.push({
-      id: crypto.randomUUID(),
+      id: ctx.rng.uuid(),
       world_id: '',
       year: ctx.year,
       category: 'fortress_fallen',

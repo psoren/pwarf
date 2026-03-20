@@ -9,8 +9,7 @@ import {
   createTask,
   findNearestItem,
 } from "../task-helpers.js";
-import { createEmptyCachedState } from "../sim-context.js";
-import { makeSkill, makeItem } from "./test-helpers.js";
+import { makeSkill, makeItem, makeContext } from "./test-helpers.js";
 
 describe("getRequiredSkill", () => {
   it("returns mining for mine tasks", () => {
@@ -82,20 +81,20 @@ describe("isAutonomousTask", () => {
 
 describe("createTask", () => {
   it("creates a task with defaults", () => {
-    const state = createEmptyCachedState();
-    const task = createTask(state, "civ-1", { task_type: "mine" });
+    const ctx = makeContext();
+    const task = createTask(ctx, { task_type: "mine" });
 
     expect(task.task_type).toBe("mine");
     expect(task.status).toBe("pending");
     expect(task.priority).toBe(5);
     expect(task.work_required).toBe(100);
-    expect(state.tasks).toContain(task);
-    expect(state.newTasks).toContain(task);
+    expect(ctx.state.tasks).toContain(task);
+    expect(ctx.state.newTasks).toContain(task);
   });
 
   it("applies overrides", () => {
-    const state = createEmptyCachedState();
-    const task = createTask(state, "civ-1", {
+    const ctx = makeContext();
+    const task = createTask(ctx, {
       task_type: "haul",
       priority: 8,
       target_x: 10,

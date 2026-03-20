@@ -28,7 +28,7 @@ export async function haulAssignment(ctx: SimContext): Promise<void> {
 
     // Create a haul task for the first carried item
     const item = carried[0];
-    createTask(state, ctx.civilizationId, {
+    createTask(ctx, {
       task_type: 'haul',
       priority: 4,
       target_x: target.x,

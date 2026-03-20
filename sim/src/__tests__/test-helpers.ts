@@ -1,12 +1,14 @@
-import { randomUUID } from "node:crypto";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Dwarf, DwarfSkill, Task, Item, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
-import { createEmptyCachedState } from "../sim-context.js";
+import { createTestContext } from "../sim-context.js";
+import { createRng, DEFAULT_TEST_SEED } from "../rng.js";
+
+// Shared RNG for generating IDs in test factories — uses fixed seed for reproducibility
+const _factoryRng = createRng(DEFAULT_TEST_SEED);
 
 export function makeDwarf(overrides?: Partial<Dwarf>): Dwarf {
   return {
-    id: randomUUID(),
+    id: _factoryRng.uuid(),
     civilization_id: "civ-1",
     name: "Urist",
     surname: "McTestdwarf",
@@ -45,7 +47,7 @@ export function makeDwarf(overrides?: Partial<Dwarf>): Dwarf {
 
 export function makeSkill(dwarfId: string, skillName: string, level = 0, xp = 0): DwarfSkill {
   return {
-    id: randomUUID(),
+    id: _factoryRng.uuid(),
     dwarf_id: dwarfId,
     skill_name: skillName,
     level,
@@ -56,7 +58,7 @@ export function makeSkill(dwarfId: string, skillName: string, level = 0, xp = 0)
 
 export function makeItem(overrides?: Partial<Item>): Item {
   return {
-    id: randomUUID(),
+    id: _factoryRng.uuid(),
     name: "Plump helmet",
     category: "food",
     quality: "standard",
@@ -82,7 +84,7 @@ export function makeItem(overrides?: Partial<Item>): Item {
 
 export function makeStructure(overrides?: Partial<Structure>): Structure {
   return {
-    id: randomUUID(),
+    id: _factoryRng.uuid(),
     civilization_id: "civ-1",
     name: null,
     type: "bed",
@@ -106,21 +108,5 @@ export function makeContext(opts?: {
   items?: Item[];
   structures?: Structure[];
 }): SimContext {
-  const state = createEmptyCachedState();
-  state.dwarves = opts?.dwarves ?? [];
-  state.dwarfSkills = opts?.skills ?? [];
-  state.tasks = opts?.tasks ?? [];
-  state.items = opts?.items ?? [];
-  state.structures = opts?.structures ?? [];
-
-  return {
-    supabase: null as unknown as SupabaseClient,
-    civilizationId: "civ-1",
-    worldId: "world-1",
-    fortressDeriver: null,
-    step: 0,
-    year: 1,
-    day: 1,
-    state,
-  };
+  return createTestContext(opts);
 }

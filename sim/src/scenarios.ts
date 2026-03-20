@@ -1,7 +1,7 @@
-import { randomUUID } from "node:crypto";
 import type { Dwarf, Item, Task } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
+import { createRng, type Rng } from "./rng.js";
 
 export interface ScenarioDefinition {
   name: string;
@@ -52,7 +52,7 @@ export const SCENARIOS: Record<string, ScenarioDefinition> = {
   },
 };
 
-function makeDwarf(civId: string, index: number, needFood: number, needDrink: number): Dwarf {
+function makeDwarf(rng: Rng, civId: string, index: number, needFood: number, needDrink: number): Dwarf {
   const names = [
     "Urist", "Zon", "Meng", "Datan", "Reg", "Ast", "Domas",
     "Logem", "Onol", "Sodel", "Iden", "Bim", "Erith", "Kubuk",
@@ -66,7 +66,7 @@ function makeDwarf(civId: string, index: number, needFood: number, needDrink: nu
   ];
 
   return {
-    id: randomUUID(),
+    id: rng.uuid(),
     civilization_id: civId,
     name: names[index % names.length] ?? "Urist",
     surname: surnames[index % surnames.length] ?? "McTestdwarf",
@@ -102,11 +102,11 @@ function makeDwarf(civId: string, index: number, needFood: number, needDrink: nu
   };
 }
 
-function makeFood(civId: string, count: number): Item[] {
+function makeFood(rng: Rng, civId: string, count: number): Item[] {
   const items: Item[] = [];
   for (let i = 0; i < count; i++) {
     items.push({
-      id: randomUUID(),
+      id: rng.uuid(),
       name: "Plump helmet",
       category: "food",
       quality: "standard",
@@ -131,11 +131,11 @@ function makeFood(civId: string, count: number): Item[] {
   return items;
 }
 
-function makeDrink(civId: string, count: number): Item[] {
+function makeDrink(rng: Rng, civId: string, count: number): Item[] {
   const items: Item[] = [];
   for (let i = 0; i < count; i++) {
     items.push({
-      id: randomUUID(),
+      id: rng.uuid(),
       name: "Dwarven ale",
       category: "drink",
       quality: "standard",
@@ -162,6 +162,7 @@ function makeDrink(civId: string, count: number): Item[] {
 
 /** Build initial CachedState from a scenario definition. */
 export function buildScenarioState(scenario: ScenarioDefinition): CachedState {
+  const rng = createRng(scenario.seed);
   const civId = "headless-civ";
   const state = createEmptyCachedState();
 
@@ -170,19 +171,20 @@ export function buildScenarioState(scenario: ScenarioDefinition): CachedState {
   const needDrink = scenario.initialDrink === 0 ? 80 : 80;
 
   state.dwarves = Array.from({ length: scenario.dwarfCount }, (_, i) =>
-    makeDwarf(civId, i, needFood, needDrink)
+    makeDwarf(rng, civId, i, needFood, needDrink)
   );
 
   state.items = [
-    ...makeFood(civId, scenario.initialFood),
-    ...makeDrink(civId, scenario.initialDrink),
+    ...makeFood(rng, civId, scenario.initialFood),
+    ...makeDrink(rng, civId, scenario.initialDrink),
   ];
 
   return state;
 }
 
 /** Build eat/drink tasks so dwarves know where food is. */
-export function buildEatDrinkTasks(state: CachedState): Task[] {
+export function buildEatDrinkTasks(state: CachedState, seed = 0): Task[] {
+  const rng = createRng(seed);
   const civId = "headless-civ";
   const tasks: Task[] = [];
 
@@ -190,7 +192,7 @@ export function buildEatDrinkTasks(state: CachedState): Task[] {
     if (item.position_x == null || item.position_y == null || item.position_z == null) continue;
     if (item.category === "food") {
       tasks.push({
-        id: randomUUID(),
+        id: rng.uuid(),
         civilization_id: civId,
         task_type: "eat",
         status: "pending",
@@ -207,7 +209,7 @@ export function buildEatDrinkTasks(state: CachedState): Task[] {
       });
     } else if (item.category === "drink") {
       tasks.push({
-        id: randomUUID(),
+        id: rng.uuid(),
         civilization_id: civId,
         task_type: "drink",
         status: "pending",

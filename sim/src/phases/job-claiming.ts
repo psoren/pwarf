@@ -109,7 +109,7 @@ function claimTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     const dwarfLabel = `${dwarf.name}${dwarf.surname ? ' ' + dwarf.surname : ''}`;
     const taskLabel = task.task_type.replace(/_/g, ' ');
     state.pendingEvents.push({
-      id: crypto.randomUUID(),
+      id: ctx.rng.uuid(),
       world_id: '',
       year: ctx.year,
       category: 'discovery',

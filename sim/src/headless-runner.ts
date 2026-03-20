@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { STEPS_PER_YEAR } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
+import { createRng } from "./rng.js";
 import {
   needsDecay,
   taskExecution,
@@ -82,6 +83,7 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
     step: 0,
     year: 1,
     day: 1,
+    rng: createRng(scenarioDef?.seed ?? 0),
     state,
   };
 

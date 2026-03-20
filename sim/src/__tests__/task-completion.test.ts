@@ -8,7 +8,7 @@ describe("completeTask", () => {
   it("marks task completed and clears dwarf assignment", () => {
     const dwarf = makeDwarf();
     const ctx = makeContext({ dwarves: [dwarf] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "haul",
       target_x: 0,
       target_y: 0,
@@ -29,7 +29,7 @@ describe("completeTask", () => {
   it("fires completion event for player tasks", () => {
     const dwarf = makeDwarf();
     const ctx = makeContext({ dwarves: [dwarf] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "haul",
       work_required: 1,
     });
@@ -45,7 +45,7 @@ describe("completeTask", () => {
   it("does not fire event for autonomous tasks (eat/drink/sleep)", () => {
     const dwarf = makeDwarf();
     const ctx = makeContext({ dwarves: [dwarf] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "eat",
       work_required: 1,
     });
@@ -61,7 +61,7 @@ describe("completeTask", () => {
   it("eating from infinite source restores need without consuming items", () => {
     const dwarf = makeDwarf({ need_food: 20 });
     const ctx = makeContext({ dwarves: [dwarf] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "eat",
       work_required: 1,
     });
@@ -77,7 +77,7 @@ describe("completeTask", () => {
     const dwarf = makeDwarf({ need_food: 20 });
     const food = makeItem({ category: "food" });
     const ctx = makeContext({ dwarves: [dwarf], items: [food] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "eat",
       target_item_id: food.id,
       work_required: 1,
@@ -94,7 +94,7 @@ describe("completeTask", () => {
   it("drinking from infinite source restores need without consuming items", () => {
     const dwarf = makeDwarf({ need_drink: 15 });
     const ctx = makeContext({ dwarves: [dwarf] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "drink",
       work_required: 1,
     });
@@ -109,7 +109,7 @@ describe("completeTask", () => {
   it("sleeping completion does not add extra sleep (gradual restore happens in task-execution)", () => {
     const dwarf = makeDwarf({ need_sleep: 10 });
     const ctx = makeContext({ dwarves: [dwarf] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "sleep",
       work_required: 1,
     });
@@ -126,7 +126,7 @@ describe("completeTask", () => {
     const dwarf = makeDwarf();
     const skill = makeSkill(dwarf.id, "mining", 0);
     const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "mine",
       target_x: 10,
       target_y: 10,
@@ -148,7 +148,7 @@ describe("completeTask", () => {
     const dwarf = makeDwarf();
     const skill = makeSkill(dwarf.id, "building", 0, 0);
     const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "build_wall",
       target_x: 5,
       target_y: 5,
@@ -168,7 +168,7 @@ describe("completeTask", () => {
     const dwarf = makeDwarf();
     const skill = makeSkill(dwarf.id, "farming", 0);
     const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "farm_harvest",
       target_x: 0,
       target_y: 0,
@@ -190,7 +190,7 @@ describe("bed sleep completion", () => {
   it("floor sleep applies stress penalty", () => {
     const dwarf = makeDwarf({ need_sleep: 10, stress_level: 20 });
     const ctx = makeContext({ dwarves: [dwarf] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "sleep",
       work_required: 1,
       target_item_id: null,
@@ -207,7 +207,7 @@ describe("bed sleep completion", () => {
     const bed = makeStructure({ occupied_by_dwarf_id: "some-dwarf" });
     const dwarf = makeDwarf({ need_sleep: 10, stress_level: 20 });
     const ctx = makeContext({ dwarves: [dwarf], structures: [bed] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "sleep",
       work_required: 1,
       target_item_id: bed.id,
@@ -225,7 +225,7 @@ describe("bed sleep completion", () => {
     const dwarf = makeDwarf();
     const skill = makeSkill(dwarf.id, "building", 0);
     const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
-    const task = createTask(ctx.state, "civ-1", {
+    const task = createTask(ctx, {
       task_type: "build_bed",
       target_x: 5,
       target_y: 5,

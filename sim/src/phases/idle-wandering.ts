@@ -27,8 +27,8 @@ export async function idleWandering(ctx: SimContext): Promise<void> {
     if (hasWander) continue;
 
     // Pick a random offset within wander radius
-    const dx = Math.floor(Math.random() * (WANDER_RADIUS * 2 + 1)) - WANDER_RADIUS;
-    const dy = Math.floor(Math.random() * (WANDER_RADIUS * 2 + 1)) - WANDER_RADIUS;
+    const dx = ctx.rng.int(-WANDER_RADIUS, WANDER_RADIUS);
+    const dy = ctx.rng.int(-WANDER_RADIUS, WANDER_RADIUS);
 
     const targetX = Math.max(0, Math.min(FORTRESS_SIZE - 1, dwarf.position_x + dx));
     const targetY = Math.max(0, Math.min(FORTRESS_SIZE - 1, dwarf.position_y + dy));
@@ -40,7 +40,7 @@ export async function idleWandering(ctx: SimContext): Promise<void> {
     const targetTile = getTile(targetX, targetY, dwarf.position_z);
     if (!isWalkable(targetTile)) continue;
 
-    createTask(state, ctx.civilizationId, {
+    createTask(ctx, {
       task_type: 'wander',
       priority: 1, // Lowest priority — any real task should take precedence
       target_x: targetX,

@@ -140,7 +140,7 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
     }
   }
 
-  createTask(state, ctx.civilizationId, {
+  createTask(ctx, {
     task_type: taskType,
     priority,
     target_x: targetX,
