@@ -72,6 +72,11 @@ function makeDwarf(overrides: Partial<LiveDwarf>): LiveDwarf {
     need_beauty: 100,
     health: 100,
     memories: [],
+    trait_openness: 0.5,
+    trait_conscientiousness: 0.5,
+    trait_extraversion: 0.5,
+    trait_agreeableness: 0.5,
+    trait_neuroticism: 0.5,
     ...overrides,
   };
 }
