@@ -17,6 +17,7 @@ import { useEvents } from "./hooks/useEvents";
 import { useWorldState } from "./hooks/useWorldState";
 import { useDesignation, type DesignationMode } from "./hooks/useDesignation";
 import { useStockpileTiles } from "./hooks/useStockpileTiles";
+import { usePublishedRuins } from "./hooks/usePublishedRuins";
 import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
 import TaskPriorities from "./components/TaskPriorities";
 import { DwarfModal } from "./components/DwarfModal";
@@ -213,6 +214,7 @@ export default function App() {
 
   // Live activity log — prefer snapshot, fall back to DB polling
   const polledEvents = useEvents(world.civId);
+  const publishedRuins = usePublishedRuins();
   const events = useMemo(() => {
     if (snapshot && snapshot.events.length > 0) {
       return snapshot.events
@@ -521,6 +523,8 @@ export default function App() {
           collapsed={!rightOpen}
           onToggle={() => setRightOpen((o) => !o)}
           events={events}
+          mode={world.mode}
+          publishedRuins={publishedRuins}
         />
       </div>
 
