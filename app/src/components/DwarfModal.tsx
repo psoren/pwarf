@@ -4,6 +4,7 @@ import { DWARF_CARRY_CAPACITY } from "@pwarf/shared";
 import { supabase } from "../lib/supabase";
 import type { LiveDwarf, DwarfThought } from "../hooks/useDwarves";
 import type { ActiveTask } from "../hooks/useTasks";
+import { skillStars } from "../utils/skillStars";
 
 interface DwarfModalProps {
   dwarf: LiveDwarf;
@@ -147,7 +148,7 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [], tasks }: DwarfM
               {skills.slice(0, 5).map((s) => (
                 <li key={s.id} className="flex justify-between">
                   <span className="text-[var(--text)] capitalize">{s.skill_name.replace(/_/g, ' ')}</span>
-                  <span className="text-[var(--green)]">Lv {s.level}</span>
+                  <span className="text-[var(--amber)] tracking-wider">{skillStars(s.level)}</span>
                 </li>
               ))}
             </ul>

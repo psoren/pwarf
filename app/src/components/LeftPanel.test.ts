@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { stressColor, stressBarColor, sortDwarves } from "./LeftPanel";
+import { stressColor, stressBarColor, sortDwarves, taskIcon } from "./LeftPanel";
 import type { LiveDwarf } from "../hooks/useDwarves";
 
 describe("stressColor", () => {
@@ -97,5 +97,27 @@ describe("sortDwarves", () => {
     const original = [...dwarves];
     sortDwarves(dwarves, "stress");
     expect(dwarves).toEqual(original);
+  });
+});
+
+describe("taskIcon", () => {
+  it("returns tantrum icon when in tantrum", () => {
+    expect(taskIcon("mine", true)).toBe("😤");
+  });
+
+  it("returns mining icon for mine task", () => {
+    expect(taskIcon("mine", false)).toBe("⛏");
+  });
+
+  it("returns sleep icon for sleep task", () => {
+    expect(taskIcon("sleep", false)).toBe("💤");
+  });
+
+  it("returns food icon for eat task", () => {
+    expect(taskIcon("eat", false)).toBe("🍖");
+  });
+
+  it("returns fallback icon for unknown tasks", () => {
+    expect(taskIcon("unknown_task", false)).toBe("⚒");
   });
 });
