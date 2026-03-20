@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { STARVATION_TICKS, DEHYDRATION_TICKS } from "@pwarf/shared";
-import { handleDeprivationDeaths, killDwarf } from "../phases/deprivation.js";
+import { STARVATION_TICKS, DEHYDRATION_TICKS, WITNESS_DEATH_STRESS, WITNESS_DEATH_RADIUS } from "@pwarf/shared";
+import { handleDeprivationDeaths, killDwarf, applyWitnessStress } from "../phases/deprivation.js";
 import { createTask } from "../task-helpers.js";
 import { makeDwarf, makeContext } from "./test-helpers.js";
 
@@ -109,5 +109,92 @@ describe("killDwarf", () => {
 
     const fallen = ctx.state.pendingEvents.filter(e => e.category === "fortress_fallen");
     expect(fallen).toHaveLength(0);
+  });
+});
+
+describe("applyWitnessStress", () => {
+  it("applies stress to alive dwarves within witness radius", () => {
+    const deceased = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
+    const witness = makeDwarf({ stress_level: 10, position_x: 2, position_y: 2, position_z: 0 });
+    const ctx = makeContext({ dwarves: [deceased, witness] });
+
+    applyWitnessStress(deceased, ctx.state);
+
+    // Manhattan distance = 4 <= WITNESS_DEATH_RADIUS (5)
+    expect(witness.stress_level).toBe(10 + WITNESS_DEATH_STRESS);
+    expect(ctx.state.dirtyDwarfIds.has(witness.id)).toBe(true);
+  });
+
+  it("does not apply stress to dwarves beyond witness radius", () => {
+    const deceased = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
+    const farDwarf = makeDwarf({ stress_level: 10, position_x: 10, position_y: 0, position_z: 0 });
+    const ctx = makeContext({ dwarves: [deceased, farDwarf] });
+
+    applyWitnessStress(deceased, ctx.state);
+
+    // Manhattan distance = 10 > WITNESS_DEATH_RADIUS (5)
+    expect(farDwarf.stress_level).toBe(10);
+    expect(ctx.state.dirtyDwarfIds.size).toBe(0);
+  });
+
+  it("does not apply stress across z-levels", () => {
+    const deceased = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
+    const aboveDwarf = makeDwarf({ stress_level: 10, position_x: 0, position_y: 0, position_z: 1 });
+    const ctx = makeContext({ dwarves: [deceased, aboveDwarf] });
+
+    applyWitnessStress(deceased, ctx.state);
+
+    expect(aboveDwarf.stress_level).toBe(10);
+  });
+
+  it("does not apply stress to dead dwarves", () => {
+    const deceased = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
+    const deadNearby = makeDwarf({ status: 'dead', stress_level: 0, position_x: 1, position_y: 0, position_z: 0 });
+    const ctx = makeContext({ dwarves: [deceased, deadNearby] });
+
+    applyWitnessStress(deceased, ctx.state);
+
+    expect(deadNearby.stress_level).toBe(0);
+  });
+
+  it("does not apply stress to the deceased itself", () => {
+    const deceased = makeDwarf({ stress_level: 50, position_x: 0, position_y: 0, position_z: 0 });
+    const ctx = makeContext({ dwarves: [deceased] });
+
+    applyWitnessStress(deceased, ctx.state);
+
+    expect(deceased.stress_level).toBe(50);
+  });
+
+  it("caps witness stress at 100", () => {
+    const deceased = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
+    const witness = makeDwarf({ stress_level: 98, position_x: 1, position_y: 0, position_z: 0 });
+    const ctx = makeContext({ dwarves: [deceased, witness] });
+
+    applyWitnessStress(deceased, ctx.state);
+
+    expect(witness.stress_level).toBe(100);
+  });
+
+  it("applies stress to all witnesses within radius, not just the nearest", () => {
+    const deceased = makeDwarf({ position_x: 5, position_y: 0, position_z: 0 });
+    const witness1 = makeDwarf({ stress_level: 0, position_x: 3, position_y: 0, position_z: 0 });
+    const witness2 = makeDwarf({ stress_level: 0, position_x: 7, position_y: 0, position_z: 0 });
+    const ctx = makeContext({ dwarves: [deceased, witness1, witness2] });
+
+    applyWitnessStress(deceased, ctx.state);
+
+    expect(witness1.stress_level).toBe(WITNESS_DEATH_STRESS);
+    expect(witness2.stress_level).toBe(WITNESS_DEATH_STRESS);
+  });
+
+  it("killDwarf triggers witness stress on nearby dwarves", () => {
+    const victim = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
+    const bystander = makeDwarf({ stress_level: 10, position_x: 1, position_y: 0, position_z: 0 });
+    const ctx = makeContext({ dwarves: [victim, bystander] });
+
+    killDwarf(victim, 'starvation', ctx);
+
+    expect(bystander.stress_level).toBe(10 + WITNESS_DEATH_STRESS);
   });
 });

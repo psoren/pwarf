@@ -206,6 +206,16 @@ export const DISEASE_RECOVERY_CHANCE = 0.5;
 export const DISEASE_SPREAD_RADIUS = 4;
 
 // ============================================================
+// Witness stress (death trauma)
+// ============================================================
+
+/** Stress applied to alive dwarves who witness a nearby death */
+export const WITNESS_DEATH_STRESS = 8;
+
+/** Manhattan-distance radius within which a death is "witnessed" */
+export const WITNESS_DEATH_RADIUS = 5;
+
+// ============================================================
 // Ghosts
 // ============================================================
 
