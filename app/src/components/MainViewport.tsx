@@ -201,7 +201,10 @@ export default function MainViewport({
         if (tile) {
           const glyph = FORTRESS_GLYPHS[tile.tileType] ?? { ch: "?", fg: "#f00" };
           const isStockpile = stockpileTilesRef.current?.has(`${wx},${wy},${zLevelRef.current}`);
-          if (taskType) {
+          // If the tile is already in a built state, skip the designation overlay —
+          // the task list may lag behind the tile update (race condition between polls).
+          const tileIsBuilt = tile.tileType === 'constructed_wall' || tile.tileType === 'constructed_floor';
+          if (taskType && !tileIsBuilt) {
             const buildPct = buildProgressTilesRef.current?.get(key);
             // Interpolate bg from dark brown (#442200) to amber (#886600) as progress increases
             const bg = buildPct !== undefined && buildPct > 0
