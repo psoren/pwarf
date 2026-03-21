@@ -16,6 +16,7 @@ import {
   XP_BREW,
   XP_COOK,
   XP_SMITH,
+  XP_FORAGE,
   PURPOSE_RESTORE_SKILLED,
   PURPOSE_RESTORE_HAUL,
   PURPOSE_RESTORE_DEFAULT,
@@ -172,6 +173,10 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'create_artifact':
       completeArtifact(dwarf, ctx);
       break;
+    case 'forage':
+      completeForage(dwarf, task, ctx);
+      awardXp(dwarf.id, 'foraging', XP_FORAGE, ctx, dwarf);
+      break;
   }
 
   // Purpose restoration: work gives dwarves a sense of meaning
@@ -184,7 +189,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
  * Exported for unit testing.
  */
 export function restorePurposeNeed(dwarf: Dwarf, taskType: string): void {
-  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'smooth', 'engrave', 'engrave_memorial', 'brew', 'cook', 'smith', 'create_artifact']);
+  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'smooth', 'engrave', 'engrave_memorial', 'brew', 'cook', 'smith', 'create_artifact', 'forage']);
   const restore = SKILLED_TASKS.has(taskType)
     ? PURPOSE_RESTORE_SKILLED
     : taskType === 'haul'
@@ -338,6 +343,42 @@ function completeFarmHarvest(task: Task, ctx: SimContext): void {
     value: 2,
     is_artifact: false,
     created_by_dwarf_id: null,
+    created_in_civ_id: ctx.civilizationId,
+    created_year: ctx.year,
+    held_by_dwarf_id: null,
+    located_in_civ_id: ctx.civilizationId,
+    located_in_ruin_id: null,
+    position_x: task.target_x,
+    position_y: task.target_y,
+    position_z: task.target_z,
+    lore: null,
+    properties: {},
+    created_at: new Date().toISOString(),
+  };
+
+  ctx.state.items.push(food);
+  ctx.state.dirtyItemIds.add(food.id);
+}
+
+/**
+ * Exported for unit testing.
+ * Forageable food names — picked randomly based on whatever the tile yields.
+ */
+export const FORAGE_FOOD_NAMES = ['Wild mushroom', 'Berries'] as const;
+
+function completeForage(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  const names = FORAGE_FOOD_NAMES;
+  const name = names[Math.floor(ctx.rng.random() * names.length)]!;
+  const food: Item = {
+    id: ctx.rng.uuid(),
+    name,
+    category: 'food',
+    quality: 'standard',
+    material: 'plant',
+    weight: 1,
+    value: 1,
+    is_artifact: false,
+    created_by_dwarf_id: dwarf.id,
     created_in_civ_id: ctx.civilizationId,
     created_year: ctx.year,
     held_by_dwarf_id: null,

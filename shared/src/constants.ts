@@ -463,6 +463,15 @@ export const WORK_SMITH = 70;
 /** Work required to engrave a memorial slab for a fallen dwarf */
 export const WORK_ENGRAVE_MEMORIAL = 80;
 
+/** Work required to forage food from a grass, tree, or bush tile */
+export const WORK_FORAGE = 15;
+
+/** Minimum food item count before auto-forage creates a new forage task */
+export const MIN_FORAGE_FOOD_STOCK = 5;
+
+/** XP awarded to the foraging skill on completing a forage task */
+export const XP_FORAGE = 8;
+
 /** Max distance a dwarf will wander from current position */
 export const WANDER_RADIUS = 8;
 

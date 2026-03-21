@@ -22,6 +22,7 @@ import {
   haulAssignment,
   beautyRestoration,
   haunting,
+  autoForage,
 } from "./phases/index.js";
 
 /** Input configuration for a scenario run. */
@@ -125,6 +126,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     await thoughtGeneration(ctx);
     await beautyRestoration(ctx);
     await haunting(ctx);
+    await autoForage(ctx);
 
     if (stepCount % STEPS_PER_YEAR === 0) {
       currentYear++;
