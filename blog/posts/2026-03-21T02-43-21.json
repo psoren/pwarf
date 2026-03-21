@@ -1,0 +1,27 @@
+{
+  "id": "2026-03-21T02-43-21",
+  "timestamp": "2026-03-21T02:43:21.685Z",
+  "title": "Digest — Mar 21, 2026, 02:43 AM UTC",
+  "summary": "# pwarf Devlog Digest\n\n## Exciting New Features\n\n- **Foraging System**: Dwarves can now gather wild food from surface tiles when their food stocks are low. This addition will help bridge the gap until farming is fully implemented.\n  \n- **Well Scenario Tests**: We've implemented end-to-end scenario tests that verify the full autonomous drinking process from wells. This helps ensure our systems are functioning smoothly.\n\n## Bug Fixes\n\n- Cleaned up unused code related to foraging and improved the experience points test. Additionally, we've addressed some minor documentation issues to enhance clarity.\n\nThese updates enhance the gameplay experience and improve overall functionality. We're excited to see how these features will be utilized in your colonies!\n\n## Merged PRs\n- #496\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 176\n- **Avg stress:** 67.4\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 67.4,
+    "tasks_completed": 176
+  },
+  "prs": [
+    {
+      "number": 496,
+      "title": "feat: foraging + well scenario tests",
+      "url": "https://github.com/psoren/pwarf/pull/496",
+      "cost": {
+        "amount": "$6.44",
+        "tokens": "16.4M tokens"
+      }
+    }
+  ],
+  "images": []
+}
