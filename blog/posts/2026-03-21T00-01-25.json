@@ -1,0 +1,32 @@
+{
+  "id": "2026-03-21T00-01-25",
+  "timestamp": "2026-03-21T00:01:25.467Z",
+  "title": "Digest — Mar 21, 2026, 12:01 AM UTC",
+  "summary": "# Devlog Digest for Pwarf\n\nExciting updates have been merged into the main branch since our last digest! Here's a summary of the key features and fixes:\n\n## New Features\n\n- **Guest Mode**: Players can now enjoy the game without needing an account!\n  - A new **Play as Guest** button has been added to the authentication screen.\n  - An anonymous user ID is generated for guests, allowing seamless integration with existing database and simulation code.\n  - A reminder is displayed to inform guests that their progress won't be saved.\n\n## Fixes\n\n- **Anonymous Authentication Improvements**: \n  - The player existence check has been improved by using `.maybeSingle()` instead of `.single()`, preventing login issues when no row is found.\n  - Anonymous users will now have their usernames formatted as `anon-<first 8 chars of user ID>`, ensuring a better experience during first logins.\n\nThank you for your continued support as we develop Pwarf!\n\n## Merged PRs\n- #493\n- #491\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 176\n- **Avg stress:** 67.4\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 67.4,
+    "tasks_completed": 176
+  },
+  "prs": [
+    {
+      "number": 493,
+      "title": "fix: anonymous auth stuck on restoring session",
+      "url": "https://github.com/psoren/pwarf/pull/493",
+      "cost": {
+        "amount": "$0.93",
+        "tokens": "1.9M tokens"
+      }
+    },
+    {
+      "number": 491,
+      "title": "feat: guest mode — play without an account",
+      "url": "https://github.com/psoren/pwarf/pull/491"
+    }
+  ],
+  "images": []
+}
