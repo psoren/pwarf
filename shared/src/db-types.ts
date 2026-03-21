@@ -189,7 +189,8 @@ export type TaskType =
   | 'brew'
   | 'cook'
   | 'smith'
-  | 'create_artifact';
+  | 'create_artifact'
+  | 'forage';
 
 export type TaskStatus =
   | 'pending'

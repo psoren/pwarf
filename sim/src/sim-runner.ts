@@ -25,6 +25,7 @@ import {
   haunting,
   autoCookPhase,
   autoBrew,
+  autoForage,
   taskRecovery,
 } from "./phases/index.js";
 
@@ -227,6 +228,7 @@ export class SimRunner {
     taskRecovery(this.ctx);
     await autoCookPhase(this.ctx);
     await autoBrew(this.ctx);
+    await autoForage(this.ctx);
     await jobClaiming(this.ctx);
     await eventFiring(this.ctx);
     await thoughtGeneration(this.ctx);
