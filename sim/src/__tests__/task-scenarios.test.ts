@@ -520,7 +520,8 @@ describe("forage scenario", () => {
     expect(forageTasks).toHaveLength(0);
   });
 
-  it("foraging awards XP to the foraging skill", async () => {
+  it("forage task completes and does not crash when dwarf has no foraging skill record", async () => {
+    // XP is awarded internally — verify no crash and task completes cleanly
     const dwarf = makeDwarf({ position_x: 0, position_y: 0, position_z: 0 });
     const task = makeTask("forage", {
       assigned_dwarf_id: dwarf.id,
@@ -533,13 +534,12 @@ describe("forage scenario", () => {
 
     const result = await runScenario({
       dwarves: [dwarf],
+      dwarfSkills: [], // no pre-existing skills — awardXp should create the record
       tasks: [task],
       ticks: WORK_FORAGE + 5,
     });
 
-    // Check that a foraging skill record was created/updated for the dwarf
-    const forageSkill = result.tasks; // not available directly, check via items as proxy
-    // The real assertion: dwarf is still alive and task completed (XP does not surface in result directly)
     expect(result.tasks[0]!.status).toBe("completed");
+    expect(result.dwarves[0]!.status).toBe("alive");
   });
 });

@@ -463,7 +463,7 @@ export const WORK_SMITH = 70;
 /** Work required to engrave a memorial slab for a fallen dwarf */
 export const WORK_ENGRAVE_MEMORIAL = 80;
 
-/** Work required to forage food from a grass or forest tile */
+/** Work required to forage food from a grass, tree, or bush tile */
 export const WORK_FORAGE = 15;
 
 /** Minimum food item count before auto-forage creates a new forage task */
