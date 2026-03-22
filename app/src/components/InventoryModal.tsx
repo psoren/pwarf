@@ -128,10 +128,10 @@ export function InventoryModal({ items, dwarves, onClose }: InventoryModalProps)
                   <div key={dwarfId} className="mb-2">
                     <div className="text-[var(--green)] font-bold mb-0.5">{name}</div>
                     <ul className="space-y-0.5 pl-2">
-                      {dwarfItems.map(item => (
-                        <li key={item.id} className="flex justify-between">
-                          <span className="text-[var(--text)]">{item.name}</span>
-                          <span className="text-[var(--text)] opacity-60 capitalize">{item.category.replace(/_/g, ' ')}</span>
+                      {countByName(dwarfItems).map(([name, count]) => (
+                        <li key={name} className="flex justify-between">
+                          <span className="text-[var(--text)]">{name}</span>
+                          <span className="text-[var(--text)]">{count}</span>
                         </li>
                       ))}
                     </ul>
