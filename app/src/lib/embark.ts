@@ -136,41 +136,29 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
     if (skillError) throw new Error(`Failed to create dwarf skills: ${skillError.message}`);
   }
 
-  // Create starting items
-  const startingItems = [
-    // Food and drink are provided by infinite sources (meat roast / beer fountain)
-    ...Array.from({ length: 10 }, () => ({
-      name: 'Plump helmet seed',
-      category: 'raw_material',
-      quality: 'standard',
-      material: 'plant',
-      weight: 1,
-      value: 1,
-      is_artifact: false,
-      located_in_civ_id: civ.id,
-      created_in_civ_id: civ.id,
-      created_year: 1,
-      properties: {},
-    })),
-    ...Array.from({ length: 2 }, () => ({
-      name: 'Stone pickaxe',
-      category: 'tool',
-      quality: 'standard',
-      material: 'stone',
-      weight: 5,
-      value: 10,
-      is_artifact: false,
-      located_in_civ_id: civ.id,
-      created_in_civ_id: civ.id,
-      created_year: 1,
-      properties: {},
-    })),
-  ];
+  // Create starting food items — enough to survive while foraging ramps up.
+  // Dwarves drink from the starting well, so no drink items needed.
+  const startingItems = Array.from({ length: 15 }, () => ({
+    name: 'Dried meat',
+    category: 'food',
+    quality: 'standard',
+    material: 'meat',
+    weight: 1,
+    value: 2,
+    is_artifact: false,
+    located_in_civ_id: civ.id,
+    created_in_civ_id: civ.id,
+    created_year: 1,
+    position_x: FORTRESS_CENTER,
+    position_y: FORTRESS_CENTER - 4,
+    position_z: 0,
+    properties: {},
+  }));
 
   const { error: itemError } = await supabase.from('items').insert(startingItems);
   if (itemError) throw new Error(`Failed to create starting items: ${itemError.message}`);
 
-  // Place a well and mushroom garden near fortress center
+  // Place a well and mushroom garden near fortress center (tiles for rendering)
   const fortressTiles = [
     {
       civilization_id: civ.id,
@@ -196,6 +184,36 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
 
   const { error: tileOverrideError } = await supabase.from('fortress_tiles').insert(fortressTiles);
   if (tileOverrideError) throw new Error(`Failed to place starting structures: ${tileOverrideError.message}`);
+
+  // Place structure records for well and mushroom garden so the sim engine can use them.
+  // The sim reads from the `structures` table, not `fortress_tiles`, so both are needed.
+  const startingStructures = [
+    {
+      civilization_id: civ.id,
+      type: 'well',
+      name: null,
+      completion_pct: 100,
+      built_year: 1,
+      quality: 'standard',
+      position_x: FORTRESS_CENTER + 3,
+      position_y: FORTRESS_CENTER,
+      position_z: 0,
+    },
+    {
+      civilization_id: civ.id,
+      type: 'mushroom_garden',
+      name: null,
+      completion_pct: 100,
+      built_year: 1,
+      quality: 'standard',
+      position_x: FORTRESS_CENTER - 3,
+      position_y: FORTRESS_CENTER,
+      position_z: 0,
+    },
+  ];
+
+  const { error: structureError } = await supabase.from('structures').insert(startingStructures);
+  if (structureError) throw new Error(`Failed to create starting structures: ${structureError.message}`);
 
   // Place starting beds near fortress center (one per dwarf)
   const startingBeds = STARTING_OFFSETS.map((offset) => ({
