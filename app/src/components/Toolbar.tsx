@@ -20,9 +20,11 @@ interface ToolbarProps {
   dwarves?: LiveDwarf[];
   onTutorial?: () => void;
   onInventory?: () => void;
+  soundEnabled?: boolean;
+  onToggleSound?: () => void;
 }
 
-export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0, dwarves = [], onTutorial, onInventory }: ToolbarProps) {
+export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0, dwarves = [], onTutorial, onInventory, soundEnabled = true, onToggleSound }: ToolbarProps) {
   const alert = mode === "fortress" ? deriveAlert(dwarves) : null;
 
   return (
@@ -86,6 +88,19 @@ export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isP
               </button>
             ))}
           </div>
+        )}
+        {onToggleSound && (
+          <button
+            onClick={onToggleSound}
+            title={soundEnabled ? "Mute sounds" : "Unmute sounds"}
+            className={`px-2 py-0.5 border cursor-pointer ${
+              soundEnabled
+                ? "border-[var(--border)] text-[var(--text)] hover:text-[var(--amber)] hover:border-[var(--amber)]"
+                : "border-[var(--border)] text-[var(--border)] hover:text-[var(--text)] hover:border-[var(--border)]"
+            }`}
+          >
+            {soundEnabled ? "♪" : "♪̶"}
+          </button>
         )}
         {onRestart && (
           <button

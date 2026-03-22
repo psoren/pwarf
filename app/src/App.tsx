@@ -25,6 +25,8 @@ import { InventoryModal } from "./components/InventoryModal";
 import { EpitaphScreen } from "./components/EpitaphScreen";
 import { TutorialOverlay } from "./components/TutorialOverlay";
 import { useTutorial } from "./hooks/useTutorial";
+import { useSettings } from "./hooks/useSettings";
+import { useSoundEngine } from "./sounds/use-sound-engine";
 import { SURFACE_Z, CAVE_Z } from "@pwarf/shared";
 import type { Item } from "@pwarf/shared";
 import type { LiveDwarf } from "./hooks/useDwarves";
@@ -319,6 +321,8 @@ export default function App() {
   }, [selectedWorldTile, selectedTileData, world, designation]);
 
   const tutorial = useTutorial();
+  const { settings, toggleSound } = useSettings();
+  useSoundEngine(snapshot, !settings.soundEnabled);
 
   // Follow mode — camera tracks a selected dwarf every tick
   const [followedDwarfId, setFollowedDwarfId] = useState<string | null>(null);
@@ -453,6 +457,8 @@ export default function App() {
         dwarves={liveDwarves}
         onTutorial={tutorial.start}
         onInventory={world.civId ? () => setInventoryOpen(true) : undefined}
+        soundEnabled={settings.soundEnabled}
+        onToggleSound={toggleSound}
       />
 
       {tutorial.active && (
