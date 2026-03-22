@@ -1,0 +1,36 @@
+{
+  "id": "2026-03-22T15-34-05",
+  "timestamp": "2026-03-22T15:34:05.606Z",
+  "title": "Digest — Mar 22, 2026, 03:34 PM UTC",
+  "summary": "# Pwarf Devlog Digest\n\n## New Features and Fixes\n\n- **Inventory Improvements**: The inventory modal now groups carried items by name, utilizing `countByName()` to streamline the display. Instead of seeing multiple rows for the same item, you'll now see a consolidated count, such as \"Stone block  5\". This change enhances usability and matches the existing stockpile behavior.\n\n- **Survival Enhancements**: Two major fixes have been implemented to prevent early-game deaths:\n  - The game has removed placeholder embark items, specifically the `Plump helmet seed` and `Stone pickaxe`, which were not providing any actual gameplay value.\n  - A functional well has been introduced, allowing it to serve as a reliable drink source for your dwarves, ensuring they can survive longer after embarking.\n\nThese changes aim to improve the overall gameplay experience and balance during the early stages of colony management.\n\n## Merged PRs\n- #509\n- #497\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 176\n- **Avg stress:** 67.4\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 67.4,
+    "tasks_completed": 176
+  },
+  "prs": [
+    {
+      "number": 509,
+      "title": "fix: group carried items by name in inventory modal",
+      "url": "https://github.com/psoren/pwarf/pull/509",
+      "cost": {
+        "amount": "$0.00",
+        "tokens": "0k tokens"
+      }
+    },
+    {
+      "number": 497,
+      "title": "fix: replace placeholder embark items, add well/mushroom_garden structures",
+      "url": "https://github.com/psoren/pwarf/pull/497",
+      "cost": {
+        "amount": "$5.46",
+        "tokens": "12.4M tokens"
+      }
+    }
+  ],
+  "images": []
+}
