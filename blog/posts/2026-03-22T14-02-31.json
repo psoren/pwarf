@@ -1,0 +1,27 @@
+{
+  "id": "2026-03-22T14-02-31",
+  "timestamp": "2026-03-22T14:02:31.503Z",
+  "title": "Digest — Mar 22, 2026, 02:02 PM UTC",
+  "summary": "## Devlog Digest: Recent Updates in Pwarf\n\nHello Pwarf community! We've got some exciting improvements and fixes to share with you this week.\n\n### Embark Improvements\n- **Placeholder Items Removed**: We have removed the `Plump helmet seed` and `Stone pickaxe` from the embark inventory. These items were remnants from early development and didn’t contribute to your survival strategies.\n- **New Structures Added**: A **well** has been implemented as a functional drinking source for your dwarves, and a **mushroom garden** structure is now available to help sustain your colony with fresh resources.\n\nThese updates not only enhance the early game experience for new players but also add more depth to your colony planning and management!\n\nHappy building!\n\n## Merged PRs\n- PR #497: Fix placeholder embark items, add well/mushroom_garden structures.\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 176\n- **Avg stress:** 67.4\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 67.4,
+    "tasks_completed": 176
+  },
+  "prs": [
+    {
+      "number": 497,
+      "title": "fix: replace placeholder embark items, add well/mushroom_garden structures",
+      "url": "https://github.com/psoren/pwarf/pull/497",
+      "cost": {
+        "amount": "$5.46",
+        "tokens": "12.4M tokens"
+      }
+    }
+  ],
+  "images": []
+}
