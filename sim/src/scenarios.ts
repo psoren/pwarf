@@ -1,4 +1,4 @@
-import type { Dwarf, DwarfSkill, Item, Task } from "@pwarf/shared";
+import type { Dwarf, DwarfSkill, FortressTile, Item, Task } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng, type Rng } from "./rng.js";
@@ -202,6 +202,16 @@ export function buildScenarioState(scenario: ScenarioDefinition): CachedState {
     ...makeFood(rng, civId, scenario.initialFood),
     ...makeDrink(rng, civId, scenario.initialDrink),
   ];
+
+  // Add forageable surface tiles so autoForage can trigger when food runs low
+  const forageableTiles: FortressTile[] = [
+    { id: rng.uuid(), civilization_id: civId, x: 90, y: 100, z: 0, tile_type: 'grass', material: null, is_revealed: true, is_mined: false, created_at: new Date().toISOString() },
+    { id: rng.uuid(), civilization_id: civId, x: 91, y: 100, z: 0, tile_type: 'bush', material: null, is_revealed: true, is_mined: false, created_at: new Date().toISOString() },
+    { id: rng.uuid(), civilization_id: civId, x: 92, y: 100, z: 0, tile_type: 'tree', material: null, is_revealed: true, is_mined: false, created_at: new Date().toISOString() },
+  ];
+  for (const tile of forageableTiles) {
+    state.fortressTileOverrides.set(`${tile.x},${tile.y},${tile.z}`, tile);
+  }
 
   return state;
 }

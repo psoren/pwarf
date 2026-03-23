@@ -89,6 +89,15 @@ describe("killDwarf", () => {
     expect(dwarf.current_task_id).toBeNull();
   });
 
+  it("clears tantrum state on death", () => {
+    const dwarf = makeDwarf({ is_in_tantrum: true });
+    const ctx = makeContext({ dwarves: [dwarf] });
+
+    killDwarf(dwarf, "starvation", ctx);
+
+    expect(dwarf.is_in_tantrum).toBe(false);
+  });
+
   it("fires fortress_fallen event when last dwarf dies", () => {
     const dwarf = makeDwarf();
     const ctx = makeContext({ dwarves: [dwarf] });
