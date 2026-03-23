@@ -58,12 +58,18 @@ export interface ScenarioCommand {
   name: string;
 }
 
+export interface InspectCommand {
+  command: "inspect";
+  z: number;
+}
+
 export type StepCommand =
   | TickCommand
   | StateCommand
   | DesignateCommand
   | CancelCommand
-  | ScenarioCommand;
+  | ScenarioCommand
+  | InspectCommand;
 
 // ---------------------------------------------------------------------------
 // Response types
@@ -79,7 +85,13 @@ export interface ErrorResponse {
   error: string;
 }
 
-export type CommandResponse = OkResponse | ErrorResponse | ReturnType<typeof serializeState>;
+export interface InspectResponse {
+  z: number;
+  tiles: Array<{ x: number; y: number; tile_type: string }>;
+  tasks: Array<{ id: string; type: string; status: string; x: number; y: number }>;
+}
+
+export type CommandResponse = OkResponse | ErrorResponse | InspectResponse | ReturnType<typeof serializeState>;
 
 // ---------------------------------------------------------------------------
 // Session state
@@ -223,6 +235,18 @@ export async function dispatchCommand(
       session.ctx.year = 1;
       session.ctx.day = 1;
       return { ok: true };
+    }
+
+    case "inspect": {
+      const z = cmd.z;
+      const tiles = [...session.ctx.state.fortressTileOverrides.values()]
+        .filter(t => t.z === z)
+        .map(t => ({ x: t.x, y: t.y, tile_type: t.tile_type }));
+      const AUTONOMOUS = new Set(['eat', 'drink', 'sleep']);
+      const tasks = session.ctx.state.tasks
+        .filter(t => t.target_z === z && !AUTONOMOUS.has(t.task_type) && t.status !== 'completed' && t.status !== 'cancelled')
+        .map(t => ({ id: t.id, type: t.task_type, status: t.status, x: t.target_x!, y: t.target_y! }));
+      return { z, tiles, tasks };
     }
 
     default: {

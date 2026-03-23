@@ -1,4 +1,4 @@
-import type { Dwarf, Item, Task } from "@pwarf/shared";
+import type { Dwarf, DwarfSkill, Item, Task } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng, type Rng } from "./rng.js";
@@ -160,6 +160,21 @@ function makeDrink(rng: Rng, civId: string, count: number): Item[] {
   return items;
 }
 
+/** Core skills every dwarf needs to function. */
+const BASIC_SKILLS = ['mining', 'building', 'farming', 'engraving', 'brewing', 'cooking'];
+
+/** Create skill records for a dwarf — all basic skills at level 0. */
+function makeSkills(rng: Rng, dwarfId: string): DwarfSkill[] {
+  return BASIC_SKILLS.map(skill => ({
+    id: rng.uuid(),
+    dwarf_id: dwarfId,
+    skill_name: skill,
+    level: 0,
+    xp: 0,
+    last_used_year: null,
+  }));
+}
+
 /** Build initial CachedState from a scenario definition. */
 export function buildScenarioState(scenario: ScenarioDefinition): CachedState {
   const rng = createRng(scenario.seed);
@@ -173,6 +188,11 @@ export function buildScenarioState(scenario: ScenarioDefinition): CachedState {
   state.dwarves = Array.from({ length: scenario.dwarfCount }, (_, i) =>
     makeDwarf(rng, civId, i, needFood, needDrink)
   );
+
+  // Give every dwarf basic skills so they can claim player-designated tasks
+  for (const dwarf of state.dwarves) {
+    state.dwarfSkills.push(...makeSkills(rng, dwarf.id));
+  }
 
   state.items = [
     ...makeFood(rng, civId, scenario.initialFood),
