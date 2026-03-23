@@ -1,0 +1,54 @@
+{
+  "id": "2026-03-23T21-08-04",
+  "timestamp": "2026-03-23T21:08:04.098Z",
+  "title": "Digest — Mar 23, 2026, 09:08 PM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nWe've made several exciting updates and fixes to enhance gameplay and overall experience in Pwarf. Here’s a summary of the key changes:\n\n## Gameplay Enhancements\n\n- **Forageable Tiles**: Scenarios now include forageable tiles like grass, bushes, and trees near dwarf starting positions. This will allow the `autoForage` feature to trigger appropriately when food supplies are low.\n- **Dwarf Skills and Traits**: Scenario dwarves have been improved to now receive all 7 skill records (mining, farming, building, engraving, brewing, cooking, smithing). Approximately 30% will have a random level boost, enabling them to effectively engage in skilled tasks.\n\n## New Features\n\n- **Inspect Command**: We’ve introduced a new `inspect` command in step mode. This allows players to view tasks and tiles filtered by z-level, providing greater control and awareness of your fortress’ status.\n- **State Serializer Improvements**: The state serializer now outputs a detailed list of `tasks` and `tiles`, helping you keep track of your fortress operations more effectively.\n\n## Bug Fixes and Tests\n\n- **Tantrum Clearance**: The `killDwarf()` function now clears the `is_in_tantrum` status for dead dwarves, preventing unnecessary tantrums in your fortress.\n- **Trade Caravan Testing**: We've added tests for the trade caravan feature to ensure that caravans arrive on the correct schedule and drop appropriate supplies into the fortress inventory.\n\nThese improvements should enhance both the strategic and immersive aspects of your gameplay!\n\n## Merged PRs\n- #554\n- #553\n- #548\n- #537\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 554,
+      "title": "fix: forageable tiles in scenarios + clear tantrum on death",
+      "url": "https://github.com/psoren/pwarf/pull/554",
+      "cost": {
+        "amount": "$35.40",
+        "tokens": "55.4M tokens"
+      }
+    },
+    {
+      "number": 553,
+      "title": "fix: scenario dwarves get skills/traits + missing phases in pipelines",
+      "url": "https://github.com/psoren/pwarf/pull/553",
+      "cost": {
+        "amount": "$29.71",
+        "tokens": "44.6M tokens"
+      }
+    },
+    {
+      "number": 548,
+      "title": "feat: add inspect command, task/tile state output, fix scenario dwarf skills (closes #543)",
+      "url": "https://github.com/psoren/pwarf/pull/548",
+      "cost": {
+        "amount": "$8.93",
+        "tokens": "13.7M tokens"
+      }
+    },
+    {
+      "number": 537,
+      "title": "test: scenario — trade caravan arrives and drops supplies (closes #480)",
+      "url": "https://github.com/psoren/pwarf/pull/537",
+      "cost": {
+        "amount": "$3.80",
+        "tokens": "5.7M tokens"
+      }
+    }
+  ],
+  "images": []
+}
