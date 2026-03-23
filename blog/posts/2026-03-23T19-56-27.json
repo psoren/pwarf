@@ -1,0 +1,144 @@
+{
+  "id": "2026-03-23T19-56-27",
+  "timestamp": "2026-03-23T19:56:27.499Z",
+  "title": "Digest — Mar 23, 2026, 07:56 PM UTC",
+  "summary": "# pwarf Devlog Digest\n\nHello, fellow colonists! We’ve been hard at work enhancing your experience in pwarf and are excited to share the latest changes. This update includes crucial fixes, new features, and additional test scenarios to improve stability and gameplay flow.\n\n## Gameplay Improvements\n- **Task Management**\n  - Reduced task polling delay from 15 seconds to 2 seconds, allowing dwarves to pick up new tasks much faster.\n  - Disabled idle wandering, so dwarves now stay still when not busy, improving focus on tasks.\n\n- **Need and Restore Balancing**\n  - Adjusted decay rates for needs, reducing them by 33-47% to prevent dwarves from reaching critical states too quickly.\n  - Enhanced food and drink restore amounts by 40-50% for longer-term sustainability.\n  - Slowed monster spawn frequency to help balance gameplay.\n\n\n## New Features\n- **Headless Playtesting**\n  - Introduced subagent-driven playtesting capabilities, allowing for batch execution of predefined scenarios with output reports.\n  \n## Testing Enhancements\n- Added numerous scenario tests to enhance game stability:\n  - Scenario tests covering disease outbreaks, immigration waves, ghost haunting mechanics, and tantrum spirals have been integrated.\n  - Comprehensive unit tests for monster spawning and pathfinding, alongside task execution phases, to ensure robust gameplay mechanics.\n\n## Documentation Updates\n- Updated the implementation plan to represent the current state of features, ensuring clarity for future development.\n- Introduced a new brainstorming document about terrain variety to explore potential enhancements in the game’s environment.\n\n## Bug Fixes\n- Fixed instant deconstruction for pending builds and resolved issues with z-level bleeding during construction.\n\nThank you for your continued support and feedback! We’re excited about these updates and can’t wait for you to experience them.\n\n## Merged PRs\n- #530\n- #531\n- #536\n- #535\n- #525\n- #524\n- #523\n- #522\n- #521\n- #520\n- #519\n- #518\n- #517\n- #514\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 530,
+      "title": "fix: reduce task polling delay and disable idle wandering",
+      "url": "https://github.com/psoren/pwarf/pull/530",
+      "cost": {
+        "amount": "$17.54",
+        "tokens": "24.9M tokens"
+      }
+    },
+    {
+      "number": 536,
+      "title": "fix: day counter uses STEPS_PER_DAY instead of incrementing 1:1 with ticks (closes #534)",
+      "url": "https://github.com/psoren/pwarf/pull/536",
+      "cost": {
+        "amount": "$8.80",
+        "tokens": "13.4M tokens"
+      }
+    },
+    {
+      "number": 535,
+      "title": "fix: rebalance need decay, restore amounts, and monster spawn rate (closes #532, closes #533)",
+      "url": "https://github.com/psoren/pwarf/pull/535",
+      "cost": {
+        "amount": "$2.11",
+        "tokens": "3.0M tokens"
+      }
+    },
+    {
+      "number": 531,
+      "title": "feat: subagent-driven headless playtesting with reports (closes #528)",
+      "url": "https://github.com/psoren/pwarf/pull/531",
+      "cost": {
+        "amount": "$0.38",
+        "tokens": "483k tokens"
+      }
+    },
+    {
+      "number": 525,
+      "title": "test: scenario — disease outbreak spreads and kills (closes #471)",
+      "url": "https://github.com/psoren/pwarf/pull/525",
+      "cost": {
+        "amount": "$0.13",
+        "tokens": "151k tokens"
+      }
+    },
+    {
+      "number": 524,
+      "title": "test: scenario — immigration wave over multiple years (closes #470)",
+      "url": "https://github.com/psoren/pwarf/pull/524",
+      "cost": {
+        "amount": "$34.39",
+        "tokens": "57.0M tokens"
+      }
+    },
+    {
+      "number": 523,
+      "title": "test: scenario — ghost haunts until memorial engraved (closes #478)",
+      "url": "https://github.com/psoren/pwarf/pull/523",
+      "cost": {
+        "amount": "$30.92",
+        "tokens": "51.5M tokens"
+      }
+    },
+    {
+      "number": 522,
+      "title": "test: scenario — tantrum spiral leads to fortress fall (closes #477)",
+      "url": "https://github.com/psoren/pwarf/pull/522",
+      "cost": {
+        "amount": "$27.25",
+        "tokens": "45.4M tokens"
+      }
+    },
+    {
+      "number": 521,
+      "title": "chore: update plan.md to reflect current implementation state (closes #486)",
+      "url": "https://github.com/psoren/pwarf/pull/521",
+      "cost": {
+        "amount": "$24.28",
+        "tokens": "40.3M tokens"
+      }
+    },
+    {
+      "number": 520,
+      "title": "test: scenario — skill levels up through repeated work (closes #476)",
+      "url": "https://github.com/psoren/pwarf/pull/520",
+      "cost": {
+        "amount": "$21.76",
+        "tokens": "36.0M tokens"
+      }
+    },
+    {
+      "number": 519,
+      "title": "test: unit tests for monster-spawning and monster-pathfinding (closes #483)",
+      "url": "https://github.com/psoren/pwarf/pull/519",
+      "cost": {
+        "amount": "$12.58",
+        "tokens": "19.4M tokens"
+      }
+    },
+    {
+      "number": 518,
+      "title": "test: unit tests for task-execution phase (closes #484)",
+      "url": "https://github.com/psoren/pwarf/pull/518",
+      "cost": {
+        "amount": "$9.70",
+        "tokens": "14.4M tokens"
+      }
+    },
+    {
+      "number": 517,
+      "title": "docs: terrain variety brainstorm + README update (closes #515, closes #516)",
+      "url": "https://github.com/psoren/pwarf/pull/517",
+      "cost": {
+        "amount": "$7.21",
+        "tokens": "10.3M tokens"
+      }
+    },
+    {
+      "number": 514,
+      "title": "fix: deconstruct pending builds instantly, fix z-level bleed (closes #512, closes #513)",
+      "url": "https://github.com/psoren/pwarf/pull/514",
+      "cost": {
+        "amount": "$4.89",
+        "tokens": "6.6M tokens"
+      }
+    }
+  ],
+  "images": []
+}
