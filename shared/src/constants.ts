@@ -76,8 +76,8 @@ export const PURPOSE_RESTORE_HAUL = 5;
 /** Purpose restored on completing any other work task */
 export const PURPOSE_RESTORE_DEFAULT = 8;
 
-/** Passive purpose restoration per tick for idle dwarves (prevents purpose from bottoming out when there's no work) */
-export const PURPOSE_RESTORE_IDLE = 0.02;
+/** Passive purpose restoration per tick for idle dwarves (matches PURPOSE_DECAY_PER_TICK so idle dwarves maintain stable purpose) */
+export const PURPOSE_RESTORE_IDLE = 0.04;
 
 /** Baseline beauty restoration per tick (passive, always applies — matches BEAUTY_DECAY_PER_TICK for equilibrium) */
 export const BEAUTY_RESTORE_PASSIVE = 0.03;

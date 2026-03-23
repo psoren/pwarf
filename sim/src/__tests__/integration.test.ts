@@ -26,7 +26,8 @@ describe("needs decay", () => {
       expect(dwarf.need_drink).toBeLessThan(80);
       expect(dwarf.need_sleep).toBeLessThan(80);
       expect(dwarf.need_social).toBeLessThan(50);
-      expect(dwarf.need_purpose).toBeLessThan(50);
+      // Idle dwarves have PURPOSE_RESTORE_IDLE = PURPOSE_DECAY_PER_TICK, so net change is 0
+      expect(dwarf.need_purpose).toBeLessThanOrEqual(50);
       expect(dwarf.need_beauty).toBeLessThan(50);
 
       // No values below 0
