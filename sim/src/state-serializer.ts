@@ -39,9 +39,26 @@ export interface Summary {
   events_count: number;
 }
 
+export interface TaskSnapshot {
+  id: string;
+  type: string;
+  status: string;
+  target: { x: number | null; y: number | null; z: number | null };
+  progress: string;
+}
+
+export interface TileSnapshot {
+  x: number;
+  y: number;
+  z: number;
+  tile_type: string;
+}
+
 export interface StateSnapshot {
   summary: Summary;
   dwarves: DwarfSnapshot[];
+  tasks: TaskSnapshot[];
+  tiles: TileSnapshot[];
   recent_events: Array<{ tick: number; text: string }>;
 }
 
@@ -137,6 +154,26 @@ export function serializeState(ctx: SimContext, tasksCompleted = 0): StateSnapsh
     is_in_tantrum: d.is_in_tantrum,
   }));
 
+  const AUTONOMOUS_TASKS = new Set(['eat', 'drink', 'sleep']);
+  const taskSnapshots: TaskSnapshot[] = state.tasks
+    .filter(t => !AUTONOMOUS_TASKS.has(t.task_type) && t.status !== 'completed' && t.status !== 'cancelled')
+    .map(t => ({
+      id: t.id,
+      type: t.task_type,
+      status: t.status,
+      target: { x: t.target_x, y: t.target_y, z: t.target_z },
+      progress: t.work_required > 0
+        ? `${Math.round((t.work_progress / t.work_required) * 100)}%`
+        : "n/a",
+    }));
+
+  const tileSnapshots: TileSnapshot[] = [...state.fortressTileOverrides.values()].map(t => ({
+    x: t.x,
+    y: t.y,
+    z: t.z,
+    tile_type: t.tile_type,
+  }));
+
   return {
     summary: {
       tick: step,
@@ -149,6 +186,8 @@ export function serializeState(ctx: SimContext, tasksCompleted = 0): StateSnapsh
       events_count: state.worldEvents.length,
     },
     dwarves: dwarfSnapshots,
+    tasks: taskSnapshots,
+    tiles: tileSnapshots,
     recent_events: recentEvents,
   };
 }
