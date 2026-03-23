@@ -1,0 +1,36 @@
+{
+  "id": "2026-03-23T17-29-02",
+  "timestamp": "2026-03-23T17:29:02.373Z",
+  "title": "Digest — Mar 23, 2026, 05:29 PM UTC",
+  "summary": "# Pwarf Devlog Digest\n\n## New Features\n- **Sound Engine Foundation**: Integrating Tone.js, we've built a foundational sound engine that includes 19 preset sounds. This system allows for sound playback in response to new `WorldEvent` types while ensuring sounds are deduplicated each tick. Additionally, we've implemented a `useSettings` hook to persist sound settings, accommodating browser requirements for audio playback.\n\n## Enhancements\n- **Job-Claiming Unit Tests**: We introduced 17 unit tests for the `job-claiming.ts` module. These tests cover various scenarios, including idle, busy, and dead dwarf filtering, skill requirements, scoring systems based on distance, and autonomous task handling. This enhancement ensures more robust job management and tracking for our dwarves.\n\nStay tuned for more updates in the next digest!\n\n## Merged PRs\n- #511: test: unit tests for job-claiming phase \n- #510: feat: sound engine foundation\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 176\n- **Avg stress:** 67.4\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 67.4,
+    "tasks_completed": 176
+  },
+  "prs": [
+    {
+      "number": 511,
+      "title": "test: unit tests for job-claiming phase",
+      "url": "https://github.com/psoren/pwarf/pull/511",
+      "cost": {
+        "amount": "$1.04",
+        "tokens": "1.7M tokens"
+      }
+    },
+    {
+      "number": 510,
+      "title": "feat: sound engine foundation",
+      "url": "https://github.com/psoren/pwarf/pull/510",
+      "cost": {
+        "amount": "$0.03",
+        "tokens": "57k tokens"
+      }
+    }
+  ],
+  "images": []
+}
