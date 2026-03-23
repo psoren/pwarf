@@ -1,0 +1,36 @@
+{
+  "id": "2026-03-23T22-17-51",
+  "timestamp": "2026-03-23T22:17:51.332Z",
+  "title": "Digest — Mar 23, 2026, 10:17 PM UTC",
+  "summary": "# Pwarf Devlog Digest\n\n## New Testing Scenarios\n\nWe’ve added comprehensive scenario tests for two major game pipelines:\n\n- **Mining/Building**: \n  - Dwarves now properly pick up pending mining tasks, mine stone tiles, and convert them into raw materials.\n  - The completion of building tasks, such as walls, beds, and wells, now results in the correct creation of structures and tile overrides.\n\n- **Farming**: \n  - This new testing expands our coverage, ensuring that farming mechanics are robust and function as intended.\n\n## Gameplay Improvements\n\nSeveral enhancements have been made to improve overall gameplay experience:\n\n- **Monster Peace Period**: \n  - A new feature prevents monster spawning in the first ~20 in-game days with a set peace period. This gives players a crucial window to establish their fortress without immediate threats.\n  \n- **Idle Purpose Restoration**:\n  - Idle dwarves now gradually regain purpose over time, making them less stagnant and keeping gameplay more dynamic. The passive recovery rate has been set to 0.02 per tick.\n\nThese changes contribute to a more engaging and smooth experience in your colony simulation!\n\n## Merged PRs\n- PR #556: test: mining/building and farming pipeline scenarios\n- PR #555: fix: monster peace period, idle purpose restore, randomized starting needs\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 556,
+      "title": "test: mining/building and farming pipeline scenarios",
+      "url": "https://github.com/psoren/pwarf/pull/556",
+      "cost": {
+        "amount": "$64.98",
+        "tokens": "100.8M tokens"
+      }
+    },
+    {
+      "number": 555,
+      "title": "fix: monster peace period, idle purpose restore, randomized starting needs",
+      "url": "https://github.com/psoren/pwarf/pull/555",
+      "cost": {
+        "amount": "$48.47",
+        "tokens": "78.8M tokens"
+      }
+    }
+  ],
+  "images": []
+}
