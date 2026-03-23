@@ -10,7 +10,7 @@ let deleteResult = { error: null as { message: string } | null };
 
 function makeChain(): Record<string, (...args: unknown[]) => unknown> {
   const chain: Record<string, (...args: unknown[]) => unknown> = {};
-  for (const method of ["delete", "eq", "gte", "lte"]) {
+  for (const method of ["delete", "eq", "gte", "lte", "in", "like"]) {
     chain[method] = (...args: unknown[]) => {
       calls.push({ method, args });
       return { ...chain, then: (resolve: (v: unknown) => void) => resolve(deleteResult) };
@@ -192,6 +192,40 @@ describe("useDesignation", () => {
     });
   });
 
+  describe("deconstruct cancels pending builds (fix #512)", () => {
+    it("cancels a pending build task when deconstructing that tile", async () => {
+      setupDeleteChain();
+      const designatedTiles = new Map([["5,5", "build_bed"]]);
+      const { result } = makeHook({ designatedTiles });
+
+      act(() => { result.current.toggleDeconstruct(); });
+      await act(async () => {
+        await result.current.handleDesignateArea(5, 5, 5, 5);
+      });
+
+      // Should have called delete on tasks table
+      expect(mockFrom).toHaveBeenCalledWith("tasks");
+      expect(calls.some((c) => c.method === "delete")).toBe(true);
+      expect(findCall("eq", "target_x")?.args[1]).toBe(5);
+      expect(findCall("eq", "target_y")?.args[1]).toBe(5);
+      expect(findCall("like", "task_type")?.args[1]).toBe("build_%");
+    });
+
+    it("does not cancel non-build tasks when deconstructing", async () => {
+      setupDeleteChain();
+      const designatedTiles = new Map([["5,5", "mine"]]);
+      const { result } = makeHook({ designatedTiles });
+
+      act(() => { result.current.toggleDeconstruct(); });
+      await act(async () => {
+        await result.current.handleDesignateArea(5, 5, 5, 5);
+      });
+
+      // Should not have called any DB operation (mine task is not build_*)
+      expect(mockFrom).not.toHaveBeenCalled();
+    });
+  });
+
   describe("optimistic tile clearing (fix #348)", () => {
     it("shows optimistic tile immediately after designation", async () => {
       setupInsertChain();
@@ -249,6 +283,57 @@ describe("useDesignation", () => {
       });
 
       expect(result.current.optimisticTiles.has("2,3")).toBe(false);
+    });
+  });
+
+  describe("optimistic tiles z-level filtering (fix #513)", () => {
+    it("does not show surface optimistic tiles when viewing caves", async () => {
+      setupInsertChain();
+      const getFortressTile = () => ({ tileType: "stone" as const, material: null, x: 2, y: 3, z: 0, isRevealed: false, isMined: false });
+      const { result, rerender } = renderHook(
+        (props: Parameters<typeof useDesignation>[0]) => useDesignation(props),
+        { initialProps: { civId: "civ-1", zLevel: 0, getFortressTile, designatedTiles: new Map<string, string>(), addOptimistic: () => {} } },
+      );
+
+      // Designate on surface (z=0)
+      act(() => { result.current.toggleMine(); });
+      await act(async () => {
+        await result.current.handleDesignateArea(2, 3, 2, 3);
+      });
+
+      expect(result.current.optimisticTiles.has("2,3")).toBe(true);
+
+      // Switch to cave view (z=-1) — optimistic tile should NOT appear
+      await act(async () => {
+        rerender({ civId: "civ-1", zLevel: -1, getFortressTile, designatedTiles: new Map<string, string>(), addOptimistic: () => {} });
+      });
+
+      expect(result.current.optimisticTiles.has("2,3")).toBe(false);
+    });
+
+    it("shows optimistic tile again when switching back to original z-level", async () => {
+      setupInsertChain();
+      const getFortressTile = () => ({ tileType: "stone" as const, material: null, x: 2, y: 3, z: 0, isRevealed: false, isMined: false });
+      const { result, rerender } = renderHook(
+        (props: Parameters<typeof useDesignation>[0]) => useDesignation(props),
+        { initialProps: { civId: "civ-1", zLevel: 0, getFortressTile, designatedTiles: new Map<string, string>(), addOptimistic: () => {} } },
+      );
+
+      // Designate on surface (z=0)
+      act(() => { result.current.toggleMine(); });
+      await act(async () => {
+        await result.current.handleDesignateArea(2, 3, 2, 3);
+      });
+
+      // Switch to caves then back to surface
+      await act(async () => {
+        rerender({ civId: "civ-1", zLevel: -1, getFortressTile, designatedTiles: new Map<string, string>(), addOptimistic: () => {} });
+      });
+      await act(async () => {
+        rerender({ civId: "civ-1", zLevel: 0, getFortressTile, designatedTiles: new Map<string, string>(), addOptimistic: () => {} });
+      });
+
+      expect(result.current.optimisticTiles.has("2,3")).toBe(true);
     });
   });
 });
