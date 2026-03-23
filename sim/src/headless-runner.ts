@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { STEPS_PER_YEAR } from "@pwarf/shared";
+import { STEPS_PER_YEAR, STEPS_PER_DAY } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng } from "./rng.js";
@@ -98,11 +98,10 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
   let tasksCompleted = 0;
   let stepCount = 0;
   let currentYear = 1;
-  let currentDay = 1;
 
   for (let i = 0; i < ticks; i++) {
     stepCount++;
-    currentDay++;
+    const currentDay = Math.floor((stepCount % STEPS_PER_YEAR) / STEPS_PER_DAY) + 1;
     ctx.step = stepCount;
     ctx.day = currentDay;
     ctx.year = currentYear;
@@ -129,9 +128,8 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
 
     if (stepCount % STEPS_PER_YEAR === 0) {
       currentYear++;
-      currentDay = 1;
       ctx.year = currentYear;
-      ctx.day = currentDay;
+      ctx.day = 1;
       await yearlyRollup(ctx);
     }
 

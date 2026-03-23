@@ -1,4 +1,4 @@
-import { STEPS_PER_SECOND, STEPS_PER_YEAR, SIM_FLUSH_INTERVAL_MS, createFortressDeriver } from "@pwarf/shared";
+import { STEPS_PER_SECOND, STEPS_PER_YEAR, STEPS_PER_DAY, SIM_FLUSH_INTERVAL_MS, createFortressDeriver } from "@pwarf/shared";
 import type { Dwarf, Item, Task, WorldEvent, FortressTile, Monster } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
@@ -207,7 +207,7 @@ export class SimRunner {
     if (!this.ctx) return;
 
     this.stepCount++;
-    this.currentDay++;
+    this.currentDay = Math.floor((this.stepCount % STEPS_PER_YEAR) / STEPS_PER_DAY) + 1;
     this.ctx.step = this.stepCount;
     this.ctx.day = this.currentDay;
     this.ctx.year = this.currentYear;
