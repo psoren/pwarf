@@ -53,7 +53,7 @@ export function isDwarfIdle(dwarf: Dwarf): boolean {
 }
 
 /** Autonomous task types that are self-only. */
-const AUTONOMOUS_TASKS: ReadonlySet<TaskType> = new Set(['eat', 'drink', 'sleep', 'wander']);
+const AUTONOMOUS_TASKS: ReadonlySet<TaskType> = new Set(['eat', 'drink', 'sleep']);
 
 /** Check if a task type is autonomous (self-only). */
 export function isAutonomousTask(taskType: TaskType): boolean {

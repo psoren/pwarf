@@ -72,7 +72,7 @@ export function useTasks(civId: string | null) {
   }, [civId]);
 
   /** Task types that are autonomous (not player-designated) — don't show as designations. */
-  const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
+  const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep']);
 
   /** Add optimistic designations that show immediately before the next poll. */
   const addOptimistic = useCallback((tiles: OptimisticDesignation[]) => {

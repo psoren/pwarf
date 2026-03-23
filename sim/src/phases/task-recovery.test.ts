@@ -98,15 +98,6 @@ describe("taskRecovery", () => {
     expect(task.status).toBe("cancelled");
   });
 
-  it("cancels a failed wander task", () => {
-    const task = makeTask("wander", { status: "failed", assigned_dwarf_id: null });
-    const ctx = makeContext({ tasks: [task] });
-
-    taskRecovery(ctx);
-
-    expect(task.status).toBe("cancelled");
-  });
-
   it("ignores tasks that are not failed", () => {
     const pending = makeTask("mine", { status: "pending" });
     const inProgress = makeTask("brew", { status: "in_progress" });

@@ -158,16 +158,9 @@ export function getTileHardness(tileType: string | null): number {
 }
 
 function failTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {
-  // Wander tasks should be cancelled outright — resetting them to pending
-  // with no assignee creates orphaned autonomous tasks that can never be reclaimed.
-  if (task.task_type === 'wander') {
-    task.status = 'completed';
-    task.completed_at = new Date().toISOString();
-  } else {
-    task.status = 'pending';
-    task.assigned_dwarf_id = null;
-    task.work_progress = 0;
-  }
+  task.status = 'pending';
+  task.assigned_dwarf_id = null;
+  task.work_progress = 0;
   state.dirtyTaskIds.add(task.id);
 
   dwarf.current_task_id = null;
