@@ -1,0 +1,27 @@
+{
+  "id": "2026-03-23T23-57-24",
+  "timestamp": "2026-03-23T23:57:24.093Z",
+  "title": "Digest — Mar 23, 2026, 11:57 PM UTC",
+  "summary": "# Pwarf Devlog\n\n## Idle Dwarf Mechanics Overhaul\n\nWe’re excited to share an important update regarding the behavior of idle dwarves, which will help maintain their overall happiness and stability:\n\n- **Increased purpose restoration:** The purpose restoration rate for idle dwarves has been increased from **0.02 to 0.04**. This adjustment matches the decay rate of purpose, preventing it from dropping to critical levels too quickly and avoiding potential tantrums.\n- **New deconstruct pickup test:** We've added a new test to ensure that deconstruction pickups operate correctly, further enhancing gameplay consistency.\n\nThese changes are aimed at creating a more engaging experience for players as they manage their dwarven colonies!\n\n## Merged PRs\n- #559\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 559,
+      "title": "fix: idle purpose restore matches decay + deconstruct pickup test",
+      "url": "https://github.com/psoren/pwarf/pull/559",
+      "cost": {
+        "amount": "$88.18",
+        "tokens": "118.2M tokens"
+      }
+    }
+  ],
+  "images": []
+}
