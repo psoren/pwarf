@@ -1,4 +1,4 @@
-import type { Dwarf, DwarfRelationship, DwarfSkill, FortressTile, FortressTileType, RelationshipType, Task, TaskType, Item, Structure } from "@pwarf/shared";
+import type { Dwarf, DwarfRelationship, DwarfSkill, FortressTile, FortressTileType, RelationshipType, Task, TaskType, Item, Structure, Monster } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createTestContext } from "../sim-context.js";
 import { createRng, DEFAULT_TEST_SEED } from "../rng.js";
@@ -163,6 +163,40 @@ export function makeRelationship(
     strength: 1,
     shared_events: [],
     formed_year: 1,
+    ...overrides,
+  };
+}
+
+export function makeMonster(overrides?: Partial<Monster>): Monster {
+  return {
+    id: _factoryRng.uuid(),
+    world_id: "world-1",
+    name: "Grakzel",
+    epithet: null,
+    type: "night_creature",
+    status: "active",
+    behavior: "aggressive",
+    is_named: false,
+    lair_tile_x: 20,
+    lair_tile_y: 20,
+    current_tile_x: 20,
+    current_tile_y: 20,
+    threat_level: 30,
+    health: 50,
+    size_category: "medium",
+    body_parts: [],
+    attacks: [],
+    abilities: [],
+    weaknesses: [],
+    lore: null,
+    origin_myth: null,
+    properties: {},
+    first_seen_year: 1,
+    slain_year: null,
+    slain_by_dwarf_id: null,
+    slain_in_civ_id: null,
+    slain_in_ruin_id: null,
+    created_at: new Date().toISOString(),
     ...overrides,
   };
 }
