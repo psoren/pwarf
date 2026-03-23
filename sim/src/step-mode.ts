@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { STEPS_PER_YEAR } from "@pwarf/shared";
+import { STEPS_PER_YEAR, STEPS_PER_DAY } from "@pwarf/shared";
 import type { TaskType } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
@@ -104,7 +104,7 @@ function makeTaskId(): string {
 async function runOneTick(session: StepSession): Promise<void> {
   const { ctx } = session;
   session.step++;
-  session.day++;
+  session.day = Math.floor((session.step % STEPS_PER_YEAR) / STEPS_PER_DAY) + 1;
   ctx.step = session.step;
   ctx.day = session.day;
   ctx.year = session.year;
@@ -133,7 +133,7 @@ async function runOneTick(session: StepSession): Promise<void> {
     session.year++;
     session.day = 1;
     ctx.year = session.year;
-    ctx.day = session.day;
+    ctx.day = 1;
     await yearlyRollup(ctx);
   }
 

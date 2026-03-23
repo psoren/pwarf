@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { STEPS_PER_YEAR } from "@pwarf/shared";
+import { STEPS_PER_YEAR, STEPS_PER_DAY } from "@pwarf/shared";
 import type { Dwarf, DwarfSkill, FortressTile, Item, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext, CachedState } from "./sim-context.js";
 import { createEmptyCachedState, createRng } from "./sim-context.js";
@@ -108,11 +108,10 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
   const allEvents: WorldEvent[] = [];
   let stepCount = 0;
   let currentYear = 1;
-  let currentDay = 1;
 
   for (let i = 0; i < config.ticks; i++) {
     stepCount++;
-    currentDay++;
+    const currentDay = Math.floor((stepCount % STEPS_PER_YEAR) / STEPS_PER_DAY) + 1;
     ctx.step = stepCount;
     ctx.day = currentDay;
     ctx.year = currentYear;
@@ -137,9 +136,8 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
     if (stepCount % STEPS_PER_YEAR === 0) {
       currentYear++;
-      currentDay = 1;
       ctx.year = currentYear;
-      ctx.day = currentDay;
+      ctx.day = 1;
       await yearlyRollup(ctx);
     }
 
