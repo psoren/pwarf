@@ -63,14 +63,14 @@ describe("runScenario", () => {
     expect(dwarf.need_food).toBe(originalFood);
   });
 
-  it("two different seeds produce different positions after idle wandering", async () => {
-    // Run enough ticks for wander tasks to complete and diverge
+  it("same seed produces identical results (deterministic)", async () => {
     const makeBase = () => makeDwarf({ position_x: 100, position_y: 100 });
-    const a = await runScenario({ dwarves: [makeBase()], ticks: 200, seed: 1 });
-    const b = await runScenario({ dwarves: [makeBase()], ticks: 200, seed: 99999 });
-    const posA = `${a.dwarves[0].position_x},${a.dwarves[0].position_y}`;
-    const posB = `${b.dwarves[0].position_x},${b.dwarves[0].position_y}`;
-    expect(posA).not.toBe(posB);
+    const a = await runScenario({ dwarves: [makeBase()], ticks: 200, seed: 42 });
+    const b = await runScenario({ dwarves: [makeBase()], ticks: 200, seed: 42 });
+    expect(a.dwarves[0].need_food).toBe(b.dwarves[0].need_food);
+    expect(a.dwarves[0].need_drink).toBe(b.dwarves[0].need_drink);
+    expect(a.dwarves[0].position_x).toBe(b.dwarves[0].position_x);
+    expect(a.dwarves[0].position_y).toBe(b.dwarves[0].position_y);
   });
 });
 

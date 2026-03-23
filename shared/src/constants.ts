@@ -561,7 +561,7 @@ export const WRITE_INTERVAL = 1_000;
 export const WRITE_TICKS = 10;
 
 /** How often the sim engine flushes dirty state to Supabase and polls for new tasks */
-export const SIM_FLUSH_INTERVAL_MS = 15_000;
+export const SIM_FLUSH_INTERVAL_MS = 2_000;
 
 /** How often the frontend polls for dwarf updates */
 export const POLL_DWARVES_MS = 2_000;
