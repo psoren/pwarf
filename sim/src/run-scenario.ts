@@ -136,7 +136,11 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
       await yearlyRollup(ctx);
     }
 
-    // Collect events fired this tick (eventFiring clears pendingEvents)
+    // Flush pendingEvents → worldEvents (mirrors what flush-state does for the DB)
+    if (state.pendingEvents.length > 0) {
+      state.worldEvents.push(...state.pendingEvents);
+      state.pendingEvents = [];
+    }
     allEvents.push(...state.worldEvents.slice(allEvents.length));
   }
 
