@@ -83,63 +83,7 @@ describe("needSatisfaction", () => {
       expect(drinkTasks.length).toBe(1);
     });
 
-    it("completes a wander task (not resets to pending) when interrupting for a need", async () => {
-      const wanderTask = makeTask('wander', {
-        status: 'in_progress',
-        assigned_dwarf_id: 'dwarf-1',
-        target_x: 5,
-        target_y: 5,
-        target_z: 0,
-      });
-      const dwarf = makeDwarf({
-        id: 'dwarf-1',
-        need_drink: NEED_INTERRUPT_DRINK - 1,
-        current_task_id: wanderTask.id,
-        position_x: 0,
-        position_y: 0,
-        position_z: 0,
-      });
-      const well = makeStructure({ type: "well", position_x: 3, position_y: 0, position_z: 0 });
-      const ctx = makeContext({ dwarves: [dwarf], tasks: [wanderTask], structures: [well] });
-
-      await needSatisfaction(ctx);
-
-      // Wander task must be completed, not orphaned as pending with no assignee
-      expect(wanderTask.status).toBe('completed');
-      expect(wanderTask.assigned_dwarf_id).toBe('dwarf-1'); // unchanged
-      // A new drink task should have been created
-      const drinkTask = ctx.state.tasks.find(t => t.task_type === 'drink');
-      expect(drinkTask).toBeDefined();
-      expect(drinkTask?.assigned_dwarf_id).toBe(dwarf.id);
-      // Dwarf should no longer be on the wander task
-      expect(dwarf.current_task_id).toBeNull();
-    });
-
-    it("does not leave orphaned wander task stuck in pending with no assignee", async () => {
-      const wanderTask = makeTask('wander', {
-        status: 'in_progress',
-        assigned_dwarf_id: 'dwarf-1',
-        target_x: 5,
-        target_y: 5,
-        target_z: 0,
-      });
-      const dwarf = makeDwarf({
-        id: 'dwarf-1',
-        need_drink: NEED_INTERRUPT_DRINK - 1,
-        current_task_id: wanderTask.id,
-      });
-      const ctx = makeContext({ dwarves: [dwarf], tasks: [wanderTask] });
-
-      await needSatisfaction(ctx);
-
-      // The critical invariant: no pending wander task with null assignee
-      const orphaned = ctx.state.tasks.find(
-        t => t.task_type === 'wander' && t.status === 'pending' && t.assigned_dwarf_id === null,
-      );
-      expect(orphaned).toBeUndefined();
-    });
-
-    it("resets a non-wander task back to pending when interrupting for a need", async () => {
+    it("resets a task back to pending when interrupting for a need", async () => {
       const mineTask = makeTask('mine', {
         status: 'in_progress',
         assigned_dwarf_id: 'dwarf-1',

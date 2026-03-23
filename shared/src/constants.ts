@@ -436,9 +436,6 @@ export const WORK_BUILD_MUSHROOM_GARDEN = 50;
 /** Work required to deconstruct a built structure or tile */
 export const WORK_DECONSTRUCT = 30;
 
-/** Work required to wander (just walking, instant once arrived) */
-export const WORK_WANDER = 1;
-
 /** Work required to smooth a stone tile */
 export const WORK_SMOOTH = 80;
 
@@ -471,9 +468,6 @@ export const MIN_FORAGE_FOOD_STOCK = 5;
 
 /** XP awarded to the foraging skill on completing a forage task */
 export const XP_FORAGE = 8;
-
-/** Max distance a dwarf will wander from current position */
-export const WANDER_RADIUS = 8;
 
 // ============================================================
 // Material hardness multipliers (for mining)

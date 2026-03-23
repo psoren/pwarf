@@ -9,7 +9,6 @@ const NO_RETRY_TYPES: ReadonlySet<string> = new Set([
   'eat',
   'drink',
   'sleep',
-  'wander',
   'haul',
 ]);
 

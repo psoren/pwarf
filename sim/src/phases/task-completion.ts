@@ -53,7 +53,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   state.dirtyDwarfIds.add(dwarf.id);
 
   // Fire completion event for player-created tasks
-  const autonomousTypes: string[] = ['eat', 'drink', 'sleep', 'wander'];
+  const autonomousTypes: string[] = ['eat', 'drink', 'sleep'];
   if (!autonomousTypes.includes(task.task_type)) {
     const dwarfLabel = dwarfName(dwarf);
     const taskLabel = task.task_type.replace(/_/g, ' ');
@@ -185,7 +185,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
 
 /**
  * Restores purpose need on task completion.
- * Skilled tasks restore more than hauling or wander.
+ * Skilled tasks restore more than hauling.
  * Exported for unit testing.
  */
 export function restorePurposeNeed(dwarf: Dwarf, taskType: string): void {
@@ -194,7 +194,7 @@ export function restorePurposeNeed(dwarf: Dwarf, taskType: string): void {
     ? PURPOSE_RESTORE_SKILLED
     : taskType === 'haul'
       ? PURPOSE_RESTORE_HAUL
-      : taskType === 'eat' || taskType === 'drink' || taskType === 'sleep' || taskType === 'wander'
+      : taskType === 'eat' || taskType === 'drink' || taskType === 'sleep'
         ? 0  // autonomous tasks don't restore purpose
         : PURPOSE_RESTORE_DEFAULT;
 

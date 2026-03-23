@@ -74,7 +74,7 @@ describe("SimRunner", () => {
 
       await runner.tick();
 
-      // Position may have changed due to idle wandering, but snapshot should reflect current state
+      // Snapshot should reflect current dwarf state
       expect(lastSnap).not.toBeNull();
       expect(lastSnap!.dwarves[0]!.position_x).toBe(dwarf.position_x);
       expect(lastSnap!.dwarves[0]!.position_y).toBe(dwarf.position_y);

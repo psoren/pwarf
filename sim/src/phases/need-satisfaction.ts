@@ -229,16 +229,9 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
   if (dwarf.current_task_id) {
     const currentTask = state.tasks.find(t => t.id === dwarf.current_task_id);
     if (currentTask && currentTask.status !== 'completed' && currentTask.status !== 'failed' && currentTask.status !== 'cancelled') {
-      if (currentTask.task_type === 'wander') {
-        // Wander tasks must be completed, not reset to pending — resetting with
-        // assigned_dwarf_id=null creates an orphaned autonomous task no one can ever claim.
-        currentTask.status = 'completed';
-        currentTask.completed_at = new Date().toISOString();
-      } else {
-        currentTask.status = 'pending';
-        currentTask.assigned_dwarf_id = null;
-        currentTask.work_progress = 0;
-      }
+      currentTask.status = 'pending';
+      currentTask.assigned_dwarf_id = null;
+      currentTask.work_progress = 0;
       state.dirtyTaskIds.add(currentTask.id);
 
       // Release bed if dropping a sleep task

@@ -91,8 +91,8 @@ describe("restorePurposeNeed", () => {
     expect(dwarf.need_purpose).toBe(50 + PURPOSE_RESTORE_HAUL);
   });
 
-  it("restores no purpose on autonomous tasks (eat/drink/sleep/wander)", () => {
-    for (const taskType of ["eat", "drink", "sleep", "wander"]) {
+  it("restores no purpose on autonomous tasks (eat/drink/sleep)", () => {
+    for (const taskType of ["eat", "drink", "sleep"]) {
       const dwarf = makeDwarf({ need_purpose: 50 });
       restorePurposeNeed(dwarf, taskType);
       expect(dwarf.need_purpose).toBe(50);
