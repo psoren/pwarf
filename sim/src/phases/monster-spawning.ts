@@ -1,5 +1,6 @@
 import {
   MONSTER_SPAWN_INTERVAL,
+  MONSTER_PEACE_PERIOD_TICKS,
   MONSTER_MAX_ACTIVE,
   MONSTER_NIGHT_CREATURE_HEALTH,
   MONSTER_NIGHT_CREATURE_THREAT,
@@ -20,6 +21,7 @@ const SPAWN_RADIUS = 20;
  * average dwarf position, approaching from a random direction.
  */
 export async function monsterSpawning(ctx: SimContext): Promise<void> {
+  if (ctx.step < MONSTER_PEACE_PERIOD_TICKS) return;
   if (ctx.step % MONSTER_SPAWN_INTERVAL !== 0) return;
 
   const { state, rng } = ctx;

@@ -6,6 +6,7 @@ import {
   SOCIAL_DECAY_PER_TICK,
   PURPOSE_DECAY_PER_TICK,
   BEAUTY_DECAY_PER_TICK,
+  PURPOSE_RESTORE_IDLE,
 } from "@pwarf/shared";
 import { needsDecay } from "../phases/needs-decay.js";
 import { makeDwarf, makeContext } from "./test-helpers.js";
@@ -46,7 +47,8 @@ describe("needs decay", () => {
     expect(d.need_drink).toBeCloseTo(80 - 100 * DRINK_DECAY_PER_TICK, 5);
     expect(d.need_sleep).toBeCloseTo(80 - 100 * SLEEP_DECAY_PER_TICK, 5);
     expect(d.need_social).toBeCloseTo(50 - 100 * SOCIAL_DECAY_PER_TICK, 5);
-    expect(d.need_purpose).toBeCloseTo(50 - 100 * PURPOSE_DECAY_PER_TICK, 5);
+    // Idle dwarves get PURPOSE_RESTORE_IDLE per tick, so net decay is reduced
+    expect(d.need_purpose).toBeCloseTo(50 - 100 * (PURPOSE_DECAY_PER_TICK - PURPOSE_RESTORE_IDLE), 5);
     expect(d.need_beauty).toBeCloseTo(50 - 100 * BEAUTY_DECAY_PER_TICK, 5);
   });
 
@@ -83,6 +85,7 @@ describe("needs decay", () => {
       need_social: 1,
       need_purpose: 1,
       need_beauty: 1,
+      current_task_id: "some-task", // busy dwarf — no idle purpose restore
     });
 
     const ctx = makeContext({ dwarves: [dwarf] });

@@ -1,10 +1,14 @@
 import { describe, it, expect } from "vitest";
 import {
   MONSTER_SPAWN_INTERVAL,
+  MONSTER_PEACE_PERIOD_TICKS,
   MONSTER_MAX_ACTIVE,
   MONSTER_NIGHT_CREATURE_HEALTH,
   MONSTER_NIGHT_CREATURE_THREAT,
 } from "@pwarf/shared";
+
+/** A step value that is past the peace period AND on a spawn interval. */
+const SPAWN_TICK = Math.ceil(MONSTER_PEACE_PERIOD_TICKS / MONSTER_SPAWN_INTERVAL) * MONSTER_SPAWN_INTERVAL;
 import { makeDwarf, makeMonster, makeContext } from "../__tests__/test-helpers.js";
 import { monsterSpawning, generateMonsterName } from "./monster-spawning.js";
 
@@ -34,10 +38,20 @@ describe("monsterSpawning", () => {
     expect(ctx.state.monsters.length).toBe(0);
   });
 
+  it("does not spawn during the peace period", async () => {
+    const dwarf = makeDwarf();
+    const ctx = makeContext({ dwarves: [dwarf] });
+    ctx.step = MONSTER_SPAWN_INTERVAL; // On interval but within peace period
+
+    await monsterSpawning(ctx);
+
+    expect(ctx.state.monsters.length).toBe(0);
+  });
+
   it("spawns a monster on interval ticks when dwarves are alive", async () => {
     const dwarf = makeDwarf({ position_x: 50, position_y: 50 });
     const ctx = makeContext({ dwarves: [dwarf] });
-    ctx.step = MONSTER_SPAWN_INTERVAL;
+    ctx.step = SPAWN_TICK;
 
     await monsterSpawning(ctx);
 
@@ -52,7 +66,7 @@ describe("monsterSpawning", () => {
   it("does not spawn when no dwarves are alive", async () => {
     const dwarf = makeDwarf({ status: "dead" });
     const ctx = makeContext({ dwarves: [dwarf] });
-    ctx.step = MONSTER_SPAWN_INTERVAL;
+    ctx.step = SPAWN_TICK;
 
     await monsterSpawning(ctx);
 
@@ -62,7 +76,7 @@ describe("monsterSpawning", () => {
   it("does not spawn when at max active monster count", async () => {
     const dwarf = makeDwarf();
     const ctx = makeContext({ dwarves: [dwarf] });
-    ctx.step = MONSTER_SPAWN_INTERVAL;
+    ctx.step = SPAWN_TICK;
 
     // Fill up to max
     for (let i = 0; i < MONSTER_MAX_ACTIVE; i++) {
@@ -79,7 +93,7 @@ describe("monsterSpawning", () => {
     const d1 = makeDwarf({ position_x: 40, position_y: 40 });
     const d2 = makeDwarf({ position_x: 60, position_y: 60 });
     const ctx = makeContext({ dwarves: [d1, d2] });
-    ctx.step = MONSTER_SPAWN_INTERVAL;
+    ctx.step = SPAWN_TICK;
 
     await monsterSpawning(ctx);
 
@@ -95,7 +109,7 @@ describe("monsterSpawning", () => {
   it("emits a monster_sighting event on spawn", async () => {
     const dwarf = makeDwarf();
     const ctx = makeContext({ dwarves: [dwarf] });
-    ctx.step = MONSTER_SPAWN_INTERVAL;
+    ctx.step = SPAWN_TICK;
 
     await monsterSpawning(ctx);
 
@@ -107,7 +121,7 @@ describe("monsterSpawning", () => {
   it("ignores dead monsters when counting active monsters", async () => {
     const dwarf = makeDwarf();
     const ctx = makeContext({ dwarves: [dwarf] });
-    ctx.step = MONSTER_SPAWN_INTERVAL;
+    ctx.step = SPAWN_TICK;
 
     // Add a dead monster — should not count toward the cap
     ctx.state.monsters.push(makeMonster({ status: "slain" }));

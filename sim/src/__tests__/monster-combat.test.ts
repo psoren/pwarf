@@ -7,8 +7,11 @@ import { monsterPathfinding } from "../phases/monster-pathfinding.js";
 import { combatResolution } from "../phases/combat-resolution.js";
 import { makeDwarf } from "./test-helpers.js";
 import { createTestContext } from "../sim-context.js";
-import { MONSTER_SPAWN_INTERVAL, MONSTER_MAX_ACTIVE } from "@pwarf/shared";
+import { MONSTER_SPAWN_INTERVAL, MONSTER_PEACE_PERIOD_TICKS, MONSTER_MAX_ACTIVE } from "@pwarf/shared";
 import type { Monster } from "@pwarf/shared";
+
+/** A step value past the peace period AND on a spawn interval. */
+const SPAWN_TICK = Math.ceil(MONSTER_PEACE_PERIOD_TICKS / MONSTER_SPAWN_INTERVAL) * MONSTER_SPAWN_INTERVAL;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -181,7 +184,7 @@ describe("monsterSpawning", () => {
   it("spawns a monster on the interval tick when dwarves are present", async () => {
     const ctx = createTestContext();
     ctx.state.dwarves = [makeDwarf({ position_x: 100, position_y: 100 })];
-    ctx.step = MONSTER_SPAWN_INTERVAL;
+    ctx.step = SPAWN_TICK;
     await monsterSpawning(ctx);
     expect(ctx.state.monsters).toHaveLength(1);
     expect(ctx.state.monsters[0]?.status).toBe("active");
@@ -191,7 +194,7 @@ describe("monsterSpawning", () => {
   it("fires a monster_sighting event on spawn", async () => {
     const ctx = createTestContext();
     ctx.state.dwarves = [makeDwarf({ position_x: 100, position_y: 100 })];
-    ctx.step = MONSTER_SPAWN_INTERVAL;
+    ctx.step = SPAWN_TICK;
     await monsterSpawning(ctx);
     const evt = ctx.state.pendingEvents.find(e => e.category === "monster_sighting");
     expect(evt).toBeDefined();
@@ -199,7 +202,7 @@ describe("monsterSpawning", () => {
 
   it("does not spawn when no dwarves are alive", async () => {
     const ctx = createTestContext();
-    ctx.step = MONSTER_SPAWN_INTERVAL;
+    ctx.step = SPAWN_TICK;
     await monsterSpawning(ctx);
     expect(ctx.state.monsters).toHaveLength(0);
   });
@@ -211,7 +214,7 @@ describe("monsterSpawning", () => {
     for (let i = 0; i < MONSTER_MAX_ACTIVE; i++) {
       ctx.state.monsters.push(makeMonster({ id: `existing-${i}` }));
     }
-    ctx.step = MONSTER_SPAWN_INTERVAL;
+    ctx.step = SPAWN_TICK;
     await monsterSpawning(ctx);
     expect(ctx.state.monsters).toHaveLength(MONSTER_MAX_ACTIVE);
   });
