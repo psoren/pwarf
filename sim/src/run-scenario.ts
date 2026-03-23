@@ -22,7 +22,11 @@ import {
   haulAssignment,
   beautyRestoration,
   haunting,
+  autoCookPhase,
+  autoBrew,
   autoForage,
+  taskRecovery,
+  monsterSpawning,
 } from "./phases/index.js";
 
 /** Input configuration for a scenario run. */
@@ -122,17 +126,21 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     await stressUpdate(ctx);
     await tantrumCheck(ctx);
     await tantrumActions(ctx);
+    await monsterSpawning(ctx);
     await monsterPathfinding(ctx);
     await combatResolution(ctx);
     await constructionProgress(ctx);
     await idleWandering(ctx);
     await haulAssignment(ctx);
+    taskRecovery(ctx);
+    await autoCookPhase(ctx);
+    await autoBrew(ctx);
+    await autoForage(ctx);
     await jobClaiming(ctx);
     await eventFiring(ctx);
     await thoughtGeneration(ctx);
     await beautyRestoration(ctx);
     await haunting(ctx);
-    await autoForage(ctx);
 
     if (stepCount % STEPS_PER_YEAR === 0) {
       currentYear++;

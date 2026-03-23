@@ -3,6 +3,9 @@ import type { CachedState } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng, type Rng } from "./rng.js";
 
+/** All skill names that dwarves can have. */
+const ALL_SKILLS = ['mining', 'farming', 'building', 'engraving', 'brewing', 'cooking', 'smithing'] as const;
+
 export interface ScenarioDefinition {
   name: string;
   description: string;
@@ -84,11 +87,11 @@ function makeDwarf(rng: Rng, civId: string, index: number, needFood: number, nee
     health: 100,
     injuries: [],
     memories: [],
-    trait_openness: null,
-    trait_conscientiousness: null,
-    trait_extraversion: null,
-    trait_agreeableness: null,
-    trait_neuroticism: null,
+    trait_openness: 0.1 + rng.random() * 0.8,
+    trait_conscientiousness: 0.1 + rng.random() * 0.8,
+    trait_extraversion: 0.1 + rng.random() * 0.8,
+    trait_agreeableness: 0.1 + rng.random() * 0.8,
+    trait_neuroticism: 0.1 + rng.random() * 0.8,
     religious_devotion: 0,
     faction_id: null,
     born_year: null,
@@ -160,16 +163,17 @@ function makeDrink(rng: Rng, civId: string, count: number): Item[] {
   return items;
 }
 
-/** Core skills every dwarf needs to function. */
-const BASIC_SKILLS = ['mining', 'building', 'farming', 'engraving', 'brewing', 'cooking'];
-
-/** Create skill records for a dwarf — all basic skills at level 0. */
+/**
+ * Generate skill records for a dwarf. Each dwarf gets all skills at level 0
+ * so they can claim any task. A few random skills get a small level boost
+ * to create specialization and differentiate dwarves.
+ */
 function makeSkills(rng: Rng, dwarfId: string): DwarfSkill[] {
-  return BASIC_SKILLS.map(skill => ({
+  return ALL_SKILLS.map(skillName => ({
     id: rng.uuid(),
     dwarf_id: dwarfId,
-    skill_name: skill,
-    level: 0,
+    skill_name: skillName,
+    level: rng.random() < 0.3 ? rng.int(1, 3) : 0,
     xp: 0,
     last_used_year: null,
   }));
@@ -189,7 +193,7 @@ export function buildScenarioState(scenario: ScenarioDefinition): CachedState {
     makeDwarf(rng, civId, i, needFood, needDrink)
   );
 
-  // Give every dwarf basic skills so they can claim player-designated tasks
+  // Give every dwarf all skills so they can claim any task type
   for (const dwarf of state.dwarves) {
     state.dwarfSkills.push(...makeSkills(rng, dwarf.id));
   }
