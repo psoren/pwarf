@@ -36,6 +36,8 @@ export interface ScenarioConfig {
   tasks?: Task[];
   /** Pre-placed fortress tiles — bypasses the fortress deriver for controlled map fixtures. */
   fortressTileOverrides?: FortressTile[];
+  /** Pre-infected dwarf IDs — seeds the disease system without relying on the outbreak roll. */
+  infectedDwarfIds?: string[];
   ticks: number;
   seed?: number;
 }
@@ -79,6 +81,11 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
   if (config.fortressTileOverrides) {
     for (const tile of config.fortressTileOverrides) {
       state.fortressTileOverrides.set(`${tile.x},${tile.y},${tile.z}`, { ...tile });
+    }
+  }
+  if (config.infectedDwarfIds) {
+    for (const id of config.infectedDwarfIds) {
+      state.infectedDwarfIds.add(id);
     }
   }
 
