@@ -37,13 +37,13 @@ export const STRESS_TANTRUM_THRESHOLD = 80;
 // Physical needs decay faster than psychological needs.
 
 /** How much food need decreases each tick */
-export const FOOD_DECAY_PER_TICK = 0.15;
+export const FOOD_DECAY_PER_TICK = 0.08;
 
 /** How much drink need decreases each tick (thirst is more urgent) */
-export const DRINK_DECAY_PER_TICK = 0.2;
+export const DRINK_DECAY_PER_TICK = 0.12;
 
 /** How much sleep need decreases each tick */
-export const SLEEP_DECAY_PER_TICK = 0.12;
+export const SLEEP_DECAY_PER_TICK = 0.08;
 
 /** How much social need decreases each tick */
 export const SOCIAL_DECAY_PER_TICK = 0.05;
@@ -76,8 +76,8 @@ export const PURPOSE_RESTORE_HAUL = 5;
 /** Purpose restored on completing any other work task */
 export const PURPOSE_RESTORE_DEFAULT = 8;
 
-/** Baseline beauty restoration per tick (passive, always applies) */
-export const BEAUTY_RESTORE_PASSIVE = 0.02;
+/** Baseline beauty restoration per tick (passive, always applies — matches BEAUTY_DECAY_PER_TICK for equilibrium) */
+export const BEAUTY_RESTORE_PASSIVE = 0.03;
 
 /** Bonus beauty restoration per tick when near a well or mushroom garden */
 export const BEAUTY_RESTORE_NEAR_STRUCTURE = 0.15;
@@ -364,10 +364,10 @@ export const STARVATION_TICKS = 490;
 export const DEHYDRATION_TICKS = 245;
 
 /** Amount need_food is restored when eating basic food */
-export const FOOD_RESTORE_AMOUNT = 40;
+export const FOOD_RESTORE_AMOUNT = 60;
 
 /** Amount need_drink is restored when drinking basic drink */
-export const DRINK_RESTORE_AMOUNT = 50;
+export const DRINK_RESTORE_AMOUNT = 70;
 
 /** Total amount need_sleep is restored over the course of one sleep task */
 export const SLEEP_RESTORE_AMOUNT = 60;
@@ -526,8 +526,8 @@ export const SCORE_BEST_SKILL_BONUS = 5;
 // Monsters & Combat
 // ============================================================
 
-/** Ticks between monster spawn checks. */
-export const MONSTER_SPAWN_INTERVAL = 200;
+/** Ticks between monster spawn checks (500 ticks ≈ 10 in-game days). */
+export const MONSTER_SPAWN_INTERVAL = 500;
 
 /** Maximum number of active monsters at a time (MVP cap). */
 export const MONSTER_MAX_ACTIVE = 1;
