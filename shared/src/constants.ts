@@ -76,6 +76,9 @@ export const PURPOSE_RESTORE_HAUL = 5;
 /** Purpose restored on completing any other work task */
 export const PURPOSE_RESTORE_DEFAULT = 8;
 
+/** Passive purpose restoration per tick for idle dwarves (prevents purpose from bottoming out when there's no work) */
+export const PURPOSE_RESTORE_IDLE = 0.02;
+
 /** Baseline beauty restoration per tick (passive, always applies — matches BEAUTY_DECAY_PER_TICK for equilibrium) */
 export const BEAUTY_RESTORE_PASSIVE = 0.03;
 
@@ -522,6 +525,9 @@ export const SCORE_BEST_SKILL_BONUS = 5;
 
 /** Ticks between monster spawn checks (500 ticks ≈ 10 in-game days). */
 export const MONSTER_SPAWN_INTERVAL = 500;
+
+/** No monsters spawn before this tick — gives the fortress time to establish. */
+export const MONSTER_PEACE_PERIOD_TICKS = 1000;
 
 /** Maximum number of active monsters at a time (MVP cap). */
 export const MONSTER_MAX_ACTIVE = 1;
