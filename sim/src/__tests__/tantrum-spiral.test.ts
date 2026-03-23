@@ -37,13 +37,6 @@ describe("tantrum spiral scenario (issue #477)", () => {
       ticks: 1000, // Plenty of time for cascade
     });
 
-    // At least one dwarf should have entered tantrum during the run
-    const tantrumEvents = result.events.filter(
-      e => e.category === "tantrum" || (e.event_data as Record<string, unknown>)?.tantrum === true,
-    );
-    // Check via dwarves stress — all should have crossed tantrum threshold at some point
-    // Even if they recovered, stress should have been >= 80 at some point
-
     // All dwarves should be dead (starvation/dehydration with no food/drink)
     const deadDwarves = result.dwarves.filter(d => d.status === "dead");
     expect(deadDwarves.length).toBe(3);
