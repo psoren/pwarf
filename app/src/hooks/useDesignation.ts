@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import type { TaskType } from "@pwarf/shared";
 import {
   WORK_MINE_BASE,
@@ -66,24 +66,39 @@ export function useDesignation(opts: {
   const [prioritiesOpen, setPrioritiesOpen] = useState(false);
   const [taskPriorities, setTaskPriorities] = useState<Record<string, number>>({});
 
-  // Optimistic designations — shown immediately before poll picks them up
-  const [optimisticTiles, setOptimisticTiles] = useState<Map<string, string>>(new Map());
+  // Optimistic designations — keyed by "x,y,z" to avoid cross-z-level bleed (#513)
+  const [optimisticTilesRaw, setOptimisticTilesRaw] = useState<Map<string, string>>(new Map());
+
+  // Expose only entries matching the current zLevel, keyed by "x,y" for rendering
+  const optimisticTiles = useMemo(() => {
+    const filtered = new Map<string, string>();
+    const suffix = `,${zLevel}`;
+    for (const [key, val] of optimisticTilesRaw) {
+      if (key.endsWith(suffix)) {
+        // Strip the z component: "x,y,z" → "x,y"
+        filtered.set(key.slice(0, key.lastIndexOf(',')), val);
+      }
+    }
+    return filtered;
+  }, [optimisticTilesRaw, zLevel]);
 
   // Clear optimistic tiles one-by-one as each key appears in the real designatedTiles.
   // Content-based so a new array reference on every sim tick doesn't wipe all optimistic
   // state before the sim has picked up the newly inserted task.
   useEffect(() => {
-    if (optimisticTiles.size === 0) return;
+    if (optimisticTilesRaw.size === 0) return;
     let changed = false;
-    const next = new Map(optimisticTiles);
-    for (const key of optimisticTiles.keys()) {
-      if (designatedTiles.has(key)) {
+    const next = new Map(optimisticTilesRaw);
+    for (const key of optimisticTilesRaw.keys()) {
+      if (!key.endsWith(`,${zLevel}`)) continue;
+      const xyKey = key.slice(0, key.lastIndexOf(','));
+      if (designatedTiles.has(xyKey)) {
         next.delete(key);
         changed = true;
       }
     }
-    if (changed) setOptimisticTiles(next);
-  }, [designatedTiles, optimisticTiles]);
+    if (changed) setOptimisticTilesRaw(next);
+  }, [designatedTiles, optimisticTilesRaw, zLevel]);
 
   const handleDesignateArea = useCallback(async (x1: number, y1: number, x2: number, y2: number) => {
     if (designationMode === 'none' || !civId) return;
@@ -129,9 +144,21 @@ export function useDesignation(opts: {
       work_required: number;
     }> = [];
 
+    // Deconstruct mode: collect pending build tasks to cancel immediately (#512)
+    const cancelBuildCoords: Array<{ x: number; y: number }> = [];
+
     for (let y = y1; y <= y2; y++) {
       for (let x = x1; x <= x2; x++) {
-        if (designatedTiles.has(`${x},${y}`)) continue;
+        if (designatedTiles.has(`${x},${y}`)) {
+          // In deconstruct mode, cancel any existing pending build task at this tile
+          if (isDeconstruct) {
+            const existing = designatedTiles.get(`${x},${y}`)!;
+            if (existing.startsWith('build_')) {
+              cancelBuildCoords.push({ x, y });
+            }
+          }
+          continue;
+        }
 
         const tile = getFortressTile(x, y);
         if (!tile) continue;
@@ -175,7 +202,26 @@ export function useDesignation(opts: {
       }
     }
 
-    if (tasks.length === 0) return;
+    // Cancel pending build tasks that were targeted for deconstruction (#512)
+    if (cancelBuildCoords.length > 0) {
+      for (const coord of cancelBuildCoords) {
+        const { error } = await supabase
+          .from('tasks')
+          .delete()
+          .eq('civilization_id', civId)
+          .eq('target_x', coord.x)
+          .eq('target_y', coord.y)
+          .eq('target_z', zLevel)
+          .in('status', ['pending', 'claimed', 'in_progress'])
+          .like('task_type', 'build_%');
+        if (error) {
+          console.error('[designate] Failed to cancel build task:', error.message);
+        }
+      }
+    }
+
+    if (tasks.length === 0 && cancelBuildCoords.length === 0) return;
+    if (tasks.length === 0) return; // Only cancellations, already handled above
 
     // Show blueprints immediately — the next poll will reconcile with real data
     addOptimistic(tasks.map((t) => ({ x: t.target_x, y: t.target_y, taskType: t.task_type })));
@@ -184,11 +230,11 @@ export function useDesignation(opts: {
     if (error) {
       console.error('[designate] Failed to create tasks:', error.message);
     } else {
-      // Optimistically show the new designations immediately
-      setOptimisticTiles((prev) => {
+      // Optimistically show the new designations immediately (keyed with z)
+      setOptimisticTilesRaw((prev) => {
         const next = new Map(prev);
         for (const t of tasks) {
-          next.set(`${t.target_x},${t.target_y}`, t.task_type);
+          next.set(`${t.target_x},${t.target_y},${t.target_z}`, t.task_type);
         }
         return next;
       });
