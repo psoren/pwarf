@@ -1,238 +1,131 @@
-# Design Doc: API Endpoints for Automated Playtesting
+# Design Doc: Automated Playtesting System
 
-**Issue:** #284
-**Status:** Proposal
-**Author:** Claude (AI-assisted)
+**Issue:** #284 (original API), #528 (subagent integration)
+**Status:** Implemented (Phase 1 + Phase 2 + subagent loop)
+**Last updated:** 2026-03-23
 
-## Motivation
+## Overview
 
-The sim engine already runs headless with zero UI dependencies. An AI agent (e.g., Claude Haiku) could playtest the game automatically — discovering starvation bugs, stuck dwarves, imbalanced need decay rates, and other emergent issues — if it had a programmatic way to run scenarios, inspect state, and (optionally) issue commands.
+The sim engine runs headlessly with zero UI dependencies. A Claude Code subagent plays the game automatically — running scenarios, inspecting state, making decisions, and writing playtest reports that identify balance issues, bugs, and fun problems.
 
-This doc evaluates three approaches and recommends one.
+## Architecture
 
----
+```
+┌──────────────────────────────────────────────────┐
+│  Claude Code (main session)                      │
+│                                                  │
+│  /headless-playtest  ──launches──▶  Subagent     │
+│                                      │           │
+│                            ┌─────────┴────────┐  │
+│                            │ Phase 1: Batch   │  │
+│                            │ playtest-all.mjs │  │
+│                            │ (all scenarios)  │  │
+│                            ├──────────────────┤  │
+│                            │ Phase 2: Step    │  │
+│                            │ playtest-        │  │
+│                            │ interactive.mjs  │  │
+│                            │ (investigate)    │  │
+│                            ├──────────────────┤  │
+│                            │ Phase 3: Report  │  │
+│                            │ playtest-reports/│  │
+│                            └──────────────────┘  │
+└──────────────────────────────────────────────────┘
+                      │
+          ┌───────────┴───────────┐
+          │  sim/dist/cli.js      │
+          │  --scenario / --step  │
+          │  (in-memory, no DB)   │
+          └───────────────────────┘
+```
 
-## Option A: Batch Mode (Simplest)
+## Components
 
-### How it works
+### 1. Batch Mode (Phase 1 — `sim/src/headless-runner.ts`)
 
-A CLI command runs a scenario to completion and dumps the final (or periodic) state as JSON. The AI agent reads the output, evaluates it, and writes a report.
+Runs a scenario to completion and dumps final state as JSON.
 
 ```bash
 npx pwarf-sim --scenario starvation --ticks 500 --output json
 ```
 
-### What we'd build
+**Key files:**
+- `sim/src/headless-runner.ts` — in-memory sim runner (no Supabase)
+- `sim/src/scenarios.ts` — predefined scenario definitions
+- `sim/src/state-serializer.ts` — LLM-friendly JSON output
+- `sim/src/cli.ts` — CLI flags (`--scenario`, `--ticks`, `--output`, `--snapshot-every`, `--seed`)
 
-1. **CLI flags** on the existing `sim/src/cli.ts`:
-   - `--ticks <n>` — run exactly N ticks, then exit
-   - `--output json` — print a JSON summary to stdout on exit
-   - `--scenario <name>` — load a predefined scenario (initial dwarf count, map seed, pre-placed tasks, etc.)
-   - `--snapshot-every <n>` — optionally dump state every N ticks (for time-series analysis)
+**Predefined scenarios:**
 
-2. **Scenario definitions** — JSON or TS files describing initial conditions:
-   ```json
-   {
-     "name": "starvation",
-     "seed": 42,
-     "dwarves": 7,
-     "initialFood": 3,
-     "initialDrink": 10,
-     "ticks": 500
-   }
-   ```
+| Name | Dwarves | Food | Drink | Default ticks | Tests |
+|------|---------|------|-------|---------------|-------|
+| `starvation` | 7 | 3 | 20 | 500 | Resource scarcity |
+| `idle-fortress` | 7 | 30 | 30 | 300 | Plenty of supplies, no tasks |
+| `long-run-stability` | 7 | 20 | 20 | 5000 | Regression/crash detection |
+| `overcrowding` | 20 | 10 | 10 | 500 | Stress from too many dwarves |
 
-3. **JSON output schema** — a structured snapshot the agent can parse:
-   ```json
-   {
-     "tick": 500,
-     "year": 1,
-     "day": 10,
-     "dwarves": [
-       {
-         "name": "Urist McTestdwarf",
-         "status": "alive",
-         "need_food": 12,
-         "need_drink": 45,
-         "stress_level": 60,
-         "current_task": "mine"
-       }
-     ],
-     "summary": {
-       "alive": 5,
-       "dead": 2,
-       "deaths": [
-         { "name": "Zon Hammerfall", "cause": "starvation", "tick": 312 }
-       ],
-       "tasks_completed": 47,
-       "events_count": 83
-     }
-   }
-   ```
+### 2. Step Mode (Phase 2 — `sim/src/step-mode.ts`)
 
-### Trade-offs
-
-| Pro | Con |
-|-----|-----|
-| Minimal code — just CLI flags + JSON serializer | No mid-run decisions — can't test player strategy |
-| No server to deploy or maintain | Agent can only observe, not interact |
-| Easy to run in CI | Scenario design is manual |
-| Deterministic with seeded RNG | Limited to pre-defined scenarios |
-
-### Effort estimate
-
-Small. Most of the sim machinery exists. The main work is:
-- CLI argument parsing (~50 LOC)
-- JSON snapshot serializer (~80 LOC)
-- Scenario loader (~60 LOC)
-- Bypass Supabase — run entirely in-memory with mock state (~100 LOC)
-
----
-
-## Option B: Step Mode (Interactive)
-
-### How it works
-
-The sim exposes a step-at-a-time interface. The AI agent advances one tick (or a batch of ticks), inspects state, issues commands (designate mining, assign jobs), then advances again. This enables testing of player decision-making.
+Interactive JSON protocol on stdin/stdout. The agent advances ticks, inspects state, and issues commands.
 
 ```bash
-# Start a session
-pwarf-sim --step-mode --seed 42 --dwarves 7
-
-# In the agent's loop:
-# 1. POST command to stdin or API
-# 2. Read state from stdout or API
-# 3. Decide next action
-# 4. Repeat
+npx pwarf-sim --step-mode --scenario idle-fortress --seed 42
 ```
 
-### What we'd build
+**Commands:**
 
-Everything from Option A, plus:
+| Command | Description |
+|---------|-------------|
+| `{"command":"tick","count":N}` | Advance N ticks, return state |
+| `{"command":"state"}` | Return current state |
+| `{"command":"designate","type":"mine","x":N,"y":N,"z":N}` | Create a task |
+| `{"command":"cancel","taskId":"..."}` | Cancel a task |
+| `{"command":"scenario","name":"..."}` | Load scenario mid-session |
 
-1. **Step-mode CLI** — reads JSON commands from stdin, writes state to stdout:
-   ```
-   → {"command": "tick", "count": 10}
-   ← {"tick": 10, "dwarves": [...], "events": [...]}
+**Available task types:** `mine`, `build_wall`, `build_bed`, `build_table`, `build_chair`, `build_door`, `build_well`, `farm`, `eat`, `drink`
 
-   → {"command": "designate", "type": "mine", "x": 100, "y": 100, "z": 0}
-   ← {"ok": true, "task_id": "abc-123"}
+### 3. Orchestration Scripts
 
-   → {"command": "tick", "count": 50}
-   ← {"tick": 60, "dwarves": [...], "events": [...]}
+**`scripts/playtest-all.mjs`** — runs all scenarios in batch, outputs combined JSON:
+```bash
+node scripts/playtest-all.mjs --pretty              # all scenarios
+node scripts/playtest-all.mjs --scenario starvation  # single scenario
+node scripts/playtest-all.mjs --ticks 1000           # override tick count
+```
 
-   → {"command": "state"}
-   ← {"tick": 60, "dwarves": [...], "tasks": [...], "items": [...]}
-   ```
+**`scripts/playtest-interactive.mjs`** — drives step mode with a plan:
+```bash
+# Observe at checkpoints
+node scripts/playtest-interactive.mjs --scenario starvation --observe 50,200,500,1000
 
-2. **Command schema**:
-   - `tick` — advance N ticks
-   - `state` — return full current state
-   - `designate` — create a task (mine, build, farm, etc.)
-   - `cancel` — cancel a pending/claimed task
-   - `scenario` — load a scenario mid-session
+# Custom plan via stdin
+echo '[{"command":"designate","type":"farm","x":100,"y":100,"z":0},{"command":"tick","count":200},{"command":"state"}]' | \
+  node scripts/playtest-interactive.mjs --scenario idle-fortress
+```
 
-3. **In-memory task injection** — instead of polling Supabase for new tasks, commands insert directly into `state.tasks`.
+### 4. Subagent Playtest Skill (`/headless-playtest`)
 
-### Trade-offs
+The `/headless-playtest` skill launches a Claude Code subagent that:
 
-| Pro | Con |
-|-----|-----|
-| Agent can test player strategies | More complex protocol |
-| Can discover "what should I do when X happens" bugs | Agent needs decision-making logic |
-| Still no server — just stdin/stdout | Slower than batch (round-trip per decision) |
-| Deterministic | Agent quality determines test quality |
+1. **Batch observation** — runs `playtest-all.mjs` to get baseline data across all scenarios
+2. **Interactive investigation** — uses `playtest-interactive.mjs` to dig into concerning scenarios (designate tasks, try strategies, observe outcomes)
+3. **Report writing** — writes a structured report to `playtest-reports/YYYY-MM-DD-<name>.md`
+4. **Issue filing** (optional) — files GitHub issues for bugs or balance problems found
 
-### Effort estimate
+**Reports are committed to the repo** in `playtest-reports/` so they're available for review and historical comparison.
 
-Medium. Builds on Option A's foundation:
-- stdin/stdout JSON protocol (~100 LOC)
-- Command parser + dispatcher (~80 LOC)
-- In-memory task injection (reuse existing `state.tasks.push()` pattern)
-- State serializer (shared with Option A)
+### 5. State Serializer (`sim/src/state-serializer.ts`)
 
----
+Converts raw sim state into LLM-friendly JSON with human-readable labels:
 
-## Option C: REST API
-
-### How it works
-
-An Express or Fastify server wraps the sim engine. Multiple worlds can run concurrently. The agent (or any HTTP client) creates worlds, advances ticks, reads state, and issues commands via REST endpoints.
-
-### Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/world` | Create a new world (accepts scenario config) |
-| `GET` | `/world/:id` | Get world metadata (tick count, year, day) |
-| `GET` | `/world/:id/state` | Full state dump (dwarves, tasks, items) |
-| `POST` | `/world/:id/tick` | Advance N ticks (body: `{ "count": 10 }`) |
-| `POST` | `/world/:id/designate` | Create a task (body: `{ "type": "mine", "x": 100, ... }`) |
-| `DELETE` | `/world/:id/task/:taskId` | Cancel a task |
-| `GET` | `/world/:id/events` | Get events (with optional tick range filter) |
-| `DELETE` | `/world/:id` | Tear down a world |
-
-### What we'd build
-
-Everything from Options A and B, plus:
-- HTTP server with routing (~150 LOC)
-- World lifecycle manager — create, store, destroy multiple sim instances (~100 LOC)
-- Request validation (~50 LOC)
-- New workspace or add to `sim/` package
-
-### Trade-offs
-
-| Pro | Con |
-|-----|-----|
-| Most flexible — any HTTP client works | Most code to write and maintain |
-| Multiple concurrent worlds | Server deployment & lifecycle management |
-| Could serve a future web-based test dashboard | Overkill for a single AI agent |
-| Language-agnostic | Network latency on every call |
-
-### Effort estimate
-
-Large. The server infrastructure is new surface area that needs testing, error handling, and potentially auth.
-
----
-
-## Analysis
-
-### What level of interaction does automated playtesting actually need?
-
-For the highest-value playtesting scenarios, **observation is enough**:
-- "Do dwarves starve when food is scarce?" → batch mode
-- "Does the sim crash after 10,000 ticks?" → batch mode
-- "Are need decay rates balanced?" → batch mode with snapshots
-
-Interactive testing adds value for:
-- "What's the optimal mining strategy for a new embark?" → step mode
-- "Can a player recover from a tantrum spiral?" → step mode
-- "Does the job claiming algorithm make reasonable assignments?" → step mode
-
-A REST API is only justified if we need concurrent worlds or external tool integration, neither of which is on the roadmap.
-
-### Can Haiku make meaningful decisions with just a JSON state dump?
-
-Yes, if we design the output well. Key principles:
-- **Summarize, don't dump raw DB rows.** Include computed fields like "is starving," "is idle," "time until death."
-- **Include events.** Events tell the story — deaths, tantrums, task completions. Raw need numbers alone are hard to interpret.
-- **Keep it compact.** Haiku's context window is limited. A 7-dwarf fortress with summary stats fits easily in ~2K tokens.
-
-### How do we represent game state for an LLM?
-
-A good state representation for an LLM should:
-1. Lead with a **summary** (alive/dead counts, critical alerts)
-2. Include **per-dwarf status** with human-readable labels (not just numbers)
-3. List **recent events** (last N ticks) for narrative context
-4. Flag **anomalies** (stuck dwarves, impossible states, need values at extremes)
-
-Example:
 ```json
 {
   "summary": {
     "tick": 500, "year": 1, "day": 10,
     "population": { "alive": 5, "dead": 2 },
-    "alerts": ["2 dwarves critically hungry", "1 dwarf idle for 100+ ticks"]
+    "alerts": ["2 dwarfs critically hungry", "1 dwarf in tantrum"],
+    "deaths": [{ "name": "Zon Hammerfall", "cause": "starvation", "year": 1 }],
+    "tasks_completed": 47,
+    "events_count": 83
   },
   "dwarves": [
     {
@@ -240,58 +133,54 @@ Example:
       "status": "alive",
       "needs": { "food": "critical (8)", "drink": "ok (65)", "sleep": "low (22)" },
       "activity": "mining at (100, 95, 0)",
-      "stress": "moderate (45)"
+      "stress": "moderate (45)",
+      "is_in_tantrum": false
     }
   ],
   "recent_events": [
-    { "tick": 480, "text": "Zon Hammerfall died of starvation" },
-    { "tick": 495, "text": "Urist McTestdwarf entered a tantrum" }
+    { "tick": 480, "text": "Zon Hammerfall died of starvation" }
   ]
 }
 ```
 
-### What's the minimum viable surface?
+### 6. Prompt Template (`sim/src/playtest-prompt.ts`)
 
-**Option A (batch mode)** is the minimum viable surface. It delivers immediate value with minimal code and no ongoing maintenance burden.
+Builds a structured prompt for LLM analysis of batch output. Asks for population health, balance issues, emergent behavior, bugs, and a pass/warn/fail verdict.
 
----
+## Playtest Report Format
 
-## Recommendation
+Reports live in `playtest-reports/` and follow this structure:
 
-**Start with Option A (batch mode), design it so Option B (step mode) is a natural extension.**
+```markdown
+# Playtest Report — YYYY-MM-DD
 
-### Phase 1: Batch mode
+## Scenarios Tested
+(table of scenario outcomes)
 
-1. Add CLI flags to `sim/src/cli.ts`: `--ticks`, `--output`, `--scenario`, `--snapshot-every`, `--seed`
-2. Build an in-memory sim runner that bypasses Supabase entirely (useful for tests too)
-3. Define 3-5 starter scenarios (starvation, overcrowding, idle fortress, monster attack, long-run stability)
-4. Build a JSON state serializer with the LLM-friendly format described above
-5. Write a prompt template that feeds the JSON to Haiku and asks for a playtest report
+## Balance Issues
+(specific problems with data)
 
-### Phase 2: Step mode (if batch mode proves too limiting)
+## Fun Assessment
+(player agency, difficulty, events, pacing — rated 1-5)
 
-1. Add `--step-mode` flag that reads JSON commands from stdin
-2. Reuse the state serializer and in-memory runner from Phase 1
-3. Build a thin command dispatcher (tick, designate, cancel, state)
-4. Write an agent loop that alternates between reading state and issuing commands
+## Bugs or Unexpected Behavior
 
-### Skip Option C unless we need concurrent worlds or external integrations.
+## Suggestions
+(actionable changes, referencing constants.ts)
 
-### Implementation plan (Phase 1)
+## Raw Data
+(collapsible JSON output)
+```
 
-| Step | File(s) | Description |
-|------|---------|-------------|
-| 1 | `sim/src/headless-runner.ts` | New in-memory sim runner (no Supabase, no flush, no poll) |
-| 2 | `sim/src/scenarios.ts` | Scenario definitions + loader |
-| 3 | `sim/src/state-serializer.ts` | JSON snapshot with LLM-friendly formatting |
-| 4 | `sim/src/cli.ts` | Add CLI flags, wire up headless runner |
-| 5 | `sim/src/__tests__/headless-runner.test.ts` | Tests for headless runner |
-| 6 | `sim/src/__tests__/state-serializer.test.ts` | Tests for serializer output format |
-| 7 | Prompt template (TBD) | Haiku prompt for analyzing batch output |
+## Design Decisions
 
-### Key design decisions
+- **In-memory runner reuses all existing phases.** Phase functions take `SimContext` and don't care where state came from.
+- **Scenario files are TypeScript** (not JSON) so they use shared constants and types.
+- **The serializer is a separate module** reused by both batch and step mode.
+- **No new dependencies.** CLI arg parsing uses `process.argv` directly.
+- **No Claude API calls.** Playtest analysis runs as a local Claude Code subagent, avoiding API cost and complexity.
+- **Reports are committed** for historical comparison and accountability.
 
-- **In-memory runner reuses all existing phases.** The phase functions take a `SimContext` and don't care where state came from. We just need to build a `SimContext` without Supabase.
-- **Scenario files are TypeScript**, not JSON, so they can use shared constants and types.
-- **The serializer is a separate module** so it can be reused by step mode later.
-- **No new dependencies.** CLI arg parsing can use `process.argv` or a lightweight lib like `minimist` if we want flags.
+## What We Skipped
+
+**Option C (REST API)** was evaluated and rejected. A REST server adds deployment overhead with no benefit — stdin/stdout is sufficient for a single AI agent. Revisit only if concurrent worlds or external tool integration becomes necessary.
