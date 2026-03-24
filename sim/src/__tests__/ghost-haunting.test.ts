@@ -22,6 +22,7 @@ describe("ghost haunting scenario (issue #478)", () => {
 
     const result = await runScenario({
       dwarves: [deadDwarf, livingDwarf],
+      ghostDwarfIds: [deadDwarf.id], // pre-register ghost
       ticks: 20,
     });
 
@@ -62,7 +63,8 @@ describe("ghost haunting scenario (issue #478)", () => {
       dwarves: [deadDwarf, engraver],
       dwarfSkills: [engravingSkill],
       tasks: [memorialTask],
-      ticks: WORK_ENGRAVE_MEMORIAL + 100, // Enough for claiming + movement + completion
+      ghostDwarfIds: [deadDwarf.id], // pre-register ghost
+      ticks: WORK_ENGRAVE_MEMORIAL + 100,
     });
 
     // Task should be completed
@@ -97,6 +99,7 @@ describe("ghost haunting scenario (issue #478)", () => {
 
     const result = await runScenario({
       dwarves: [deadDwarf, livingDwarf],
+      ghostDwarfIds: [deadDwarf.id],
       ticks: 20,
     });
 
@@ -123,6 +126,7 @@ describe("ghost haunting scenario (issue #478)", () => {
 
     const result = await runScenario({
       dwarves: [deadDwarf, livingDwarf],
+      ghostDwarfIds: [deadDwarf.id],
       ticks: 20,
     });
 

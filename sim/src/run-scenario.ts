@@ -42,6 +42,8 @@ export interface ScenarioConfig {
   fortressTileOverrides?: FortressTile[];
   /** Pre-infected dwarf IDs — seeds the disease system without relying on the outbreak roll. */
   infectedDwarfIds?: string[];
+  /** Pre-registered ghost dwarf IDs — these dead dwarves haunt living dwarves from tick 0. */
+  ghostDwarfIds?: string[];
   ticks: number;
   seed?: number;
 }
@@ -90,6 +92,11 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
   if (config.infectedDwarfIds) {
     for (const id of config.infectedDwarfIds) {
       state.infectedDwarfIds.add(id);
+    }
+  }
+  if (config.ghostDwarfIds) {
+    for (const id of config.ghostDwarfIds) {
+      state.ghostDwarfIds.add(id);
     }
   }
 
