@@ -1,0 +1,23 @@
+{
+  "id": "2026-03-24T04-30-40",
+  "timestamp": "2026-03-24T04:30:40.702Z",
+  "title": "Digest — Mar 24, 2026, 04:30 AM UTC",
+  "summary": "# pwarf Devlog\n\n## Major System Simplifications\n\nWe’ve made a significant update to the simulation engine, focusing on streamlining gameplay and improving overall user experience. Here are the key changes:\n\n- **Simplified Needs Management**: We’ve merged the previous needs of haunting, disease, and moods into a single morale system. This change aims to create a more cohesive experience and reduces complexity in managing your dwarves.\n- **Removed Haunting**: The ghost stress system has been taken out, which previously led to rapid tantrum spirals. By removing this feature, we hope to enhance game stability and improve player enjoyment.\n- **Removed Disease Mechanics**: The yearly outbreak system has been eliminated due to its low impact on gameplay and unpredictability.\n\nWhile these systems have been removed from active gameplay, we’re keeping the files on disk for potential re-evaluation in the future.\n\nStay tuned for more updates as we continue to refine and enhance pwarf!\n\n## Merged PRs\n- PR #573: refactor: simplify sim — remove haunting/disease/moods, merge needs into morale\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 573,
+      "title": "refactor: simplify sim — remove haunting/disease/moods, merge needs into morale",
+      "url": "https://github.com/psoren/pwarf/pull/573"
+    }
+  ],
+  "images": []
+}
