@@ -4,9 +4,13 @@ import type {
   Dwarf,
   DwarfRelationship,
   DwarfSkill,
+  Expedition,
   FortressDeriver,
   FortressTile,
   Item,
+  ItemCategory,
+  ItemQuality,
+  Ruin,
   StockpileTile,
   Structure,
   Monster,
@@ -111,6 +115,20 @@ export interface CachedState {
    * In-memory only; not persisted across sim restarts.
    */
   activeCombatPairs: Set<string>;
+
+  /** Active expeditions (not complete or lost). */
+  expeditions: Expedition[];
+  dirtyExpeditionIds: Set<string>;
+
+  /** Ruins in the world. */
+  ruins: Ruin[];
+  dirtyRuinIds: Set<string>;
+
+  /**
+   * In-memory loot pending return from expedition. Keyed by expedition ID.
+   * Not persisted — if the sim restarts mid-expedition, loot is lost.
+   */
+  _pendingExpeditionLoot: Map<string, Array<{ category: ItemCategory; material: string; quality: ItemQuality }>>;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */
@@ -151,6 +169,11 @@ export function createEmptyCachedState(): CachedState {
     civFallenCause: 'unknown',
     civPeakPopulation: 0,
     activeCombatPairs: new Set(),
+    expeditions: [],
+    dirtyExpeditionIds: new Set(),
+    ruins: [],
+    dirtyRuinIds: new Set(),
+    _pendingExpeditionLoot: new Map(),
   };
 }
 

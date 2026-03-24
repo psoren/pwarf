@@ -198,6 +198,34 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
     );
   }
 
+  if (state.dirtyExpeditionIds.size > 0) {
+    const dirtyExpeditions = state.expeditions.filter(e => state.dirtyExpeditionIds.has(e.id));
+    if (dirtyExpeditions.length > 0) {
+      promises.push(
+        supabase
+          .from("expeditions")
+          .upsert(dirtyExpeditions)
+          .then(({ error }) => {
+            if (error) console.warn(`[flush] expeditions upsert failed: ${error.message}`);
+          }),
+      );
+    }
+  }
+
+  if (state.dirtyRuinIds.size > 0) {
+    const dirtyRuins = state.ruins.filter(r => state.dirtyRuinIds.has(r.id));
+    if (dirtyRuins.length > 0) {
+      promises.push(
+        supabase
+          .from("ruins")
+          .upsert(dirtyRuins)
+          .then(({ error }) => {
+            if (error) console.warn(`[flush] ruins upsert failed: ${error.message}`);
+          }),
+      );
+    }
+  }
+
   if (events.length > 0) {
     // Stamp world_id on events (phases leave it empty)
     const worldId = ctx.worldId;
@@ -223,6 +251,8 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   state.dirtyDwarfSkillIds.clear();
   state.dirtyFortressTileKeys.clear();
   state.dirtyDwarfRelationshipIds.clear();
+  state.dirtyExpeditionIds.clear();
+  state.dirtyRuinIds.clear();
   state.newTasks = [];
   state.newDwarfRelationships = [];
   state.pendingEvents = [];

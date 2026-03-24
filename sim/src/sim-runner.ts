@@ -25,6 +25,7 @@ import {
   autoBrew,
   autoForage,
   taskRecovery,
+  expeditionTick,
 } from "./phases/index.js";
 
 /** Snapshot of sim state emitted after every tick for live UI rendering. */
@@ -220,6 +221,7 @@ export class SimRunner {
     await monsterSpawning(this.ctx);
     await monsterPathfinding(this.ctx);
     await combatResolution(this.ctx);
+    expeditionTick(this.ctx);
     await constructionProgress(this.ctx);
     await idleWandering(this.ctx);
     await haulAssignment(this.ctx);

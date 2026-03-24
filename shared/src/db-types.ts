@@ -267,9 +267,42 @@ export interface Ruin {
   remaining_wealth: number;
   peak_population: number;
   danger_level: number;
+  is_contaminated: boolean;
+  contamination_type: string | null;
   ghost_count: number;
+  is_trapped: boolean;
+  resident_monster_id: string | null;
+  snapshot: Record<string, unknown> | null;
+  snapshot_url: string | null;
   is_published: boolean;
   created_at: string;
+}
+
+export type ExpeditionStatus =
+  | 'traveling'
+  | 'active'
+  | 'looting'
+  | 'retreating'
+  | 'complete'
+  | 'failed';
+
+export interface Expedition {
+  id: string;
+  player_id: string;
+  ruin_id: string;
+  status: ExpeditionStatus;
+  dwarf_ids: string[];
+  started_at: string;
+  completed_at: string | null;
+  items_looted: string[];
+  dwarves_lost: number;
+  expedition_log: string | null;
+  civilization_id: string;
+  travel_ticks_remaining: number;
+  return_ticks_remaining: number;
+  destination_tile_x: number;
+  destination_tile_y: number;
+  party_strength: number;
 }
 
 export interface Dwarf {

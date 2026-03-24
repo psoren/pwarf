@@ -1,4 +1,4 @@
-import type { Dwarf, DwarfRelationship, DwarfSkill, FortressTile, FortressTileType, RelationshipType, Task, TaskType, Item, Structure, Monster } from "@pwarf/shared";
+import type { Dwarf, DwarfRelationship, DwarfSkill, Expedition, ExpeditionStatus, FortressTile, FortressTileType, RelationshipType, Ruin, Task, TaskType, Item, Structure, Monster } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createTestContext } from "../sim-context.js";
 import { createRng, DEFAULT_TEST_SEED } from "../rng.js";
@@ -188,6 +188,55 @@ export function makeMonster(overrides?: Partial<Monster>): Monster {
     slain_by_dwarf_id: null,
     slain_in_civ_id: null,
     slain_in_ruin_id: null,
+    created_at: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+export function makeExpedition(overrides?: Partial<Expedition>): Expedition {
+  return {
+    id: _factoryRng.uuid(),
+    player_id: "player-1",
+    ruin_id: "ruin-1",
+    status: "traveling" as ExpeditionStatus,
+    dwarf_ids: [],
+    started_at: new Date().toISOString(),
+    completed_at: null,
+    items_looted: [],
+    dwarves_lost: 0,
+    expedition_log: null,
+    civilization_id: "civ-1",
+    travel_ticks_remaining: 100,
+    return_ticks_remaining: 0,
+    destination_tile_x: 10,
+    destination_tile_y: 10,
+    party_strength: 3,
+    ...overrides,
+  };
+}
+
+export function makeRuin(overrides?: Partial<Ruin>): Ruin {
+  return {
+    id: _factoryRng.uuid(),
+    civilization_id: "ancient-civ-1",
+    world_id: "world-1",
+    name: "The Fallen Hall",
+    tile_x: 10,
+    tile_y: 10,
+    fallen_year: -100,
+    cause_of_death: "unknown",
+    original_wealth: 5000,
+    remaining_wealth: 5000,
+    peak_population: 20,
+    danger_level: 30,
+    is_contaminated: false,
+    contamination_type: null,
+    ghost_count: 0,
+    is_trapped: false,
+    resident_monster_id: null,
+    snapshot: null,
+    snapshot_url: null,
+    is_published: false,
     created_at: new Date().toISOString(),
     ...overrides,
   };

@@ -25,6 +25,7 @@ import {
   autoBrew,
   autoForage,
   taskRecovery,
+  expeditionTick,
 } from "./phases/index.js";
 import { SCENARIOS, buildScenarioState, buildEatDrinkTasks } from "./scenarios.js";
 import { serializeState } from "./state-serializer.js";
@@ -134,6 +135,7 @@ async function runOneTick(session: StepSession): Promise<void> {
   await monsterSpawning(ctx);
   await monsterPathfinding(ctx);
   await combatResolution(ctx);
+  expeditionTick(ctx);
   await constructionProgress(ctx);
   await idleWandering(ctx);
   await haulAssignment(ctx);
