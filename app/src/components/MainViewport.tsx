@@ -197,7 +197,8 @@ export default function MainViewport({
 
       // Check for ground items at this position
       if (groundItemsRef.current?.has(key) && (groundItemsRef.current.get(key) ?? 0) > 0) {
-        return { ch: GROUND_ITEM_GLYPH.ch, fg: GROUND_ITEM_GLYPH.fg };
+        const onStockpile = stockpileTilesRef.current?.has(`${wx},${wy},${zLevelRef.current}`);
+        return { ch: GROUND_ITEM_GLYPH.ch, fg: GROUND_ITEM_GLYPH.fg, ...(onStockpile ? { bg: STOCKPILE_GLYPH.bg } : {}) };
       }
 
       // Check for designation overlay
@@ -228,7 +229,7 @@ export default function MainViewport({
             return { ...glyph, bg };
           }
           if (isStockpile) {
-            return { ...glyph, bg: STOCKPILE_GLYPH.bg };
+            return { ch: STOCKPILE_GLYPH.ch, fg: STOCKPILE_GLYPH.fg, bg: STOCKPILE_GLYPH.bg };
           }
           return glyph;
         }
