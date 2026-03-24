@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
-import { makeDwarf, makeTask } from "./test-helpers.js";
+import { makeDwarf, makeTask, makeItem } from "./test-helpers.js";
 import { WORK_BUILD_FLOOR } from "@pwarf/shared";
+
+function stoneBlock() {
+  return makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "test-civ", held_by_dwarf_id: null });
+}
 
 describe("conscientiousness affects work speed", () => {
   it("diligent dwarf (1.0) completes a build task faster than lazy dwarf (0.0)", async () => {
@@ -35,8 +39,8 @@ describe("conscientiousness affects work speed", () => {
     const TICKS = 25;
 
     const [diligentResult, lazyResult] = await Promise.all([
-      runScenario({ dwarves: [diligentDwarf], tasks: [diligentTask], ticks: TICKS }),
-      runScenario({ dwarves: [lazyDwarf], tasks: [lazyTask], ticks: TICKS }),
+      runScenario({ dwarves: [diligentDwarf], tasks: [diligentTask], items: [stoneBlock()], ticks: TICKS }),
+      runScenario({ dwarves: [lazyDwarf], tasks: [lazyTask], items: [stoneBlock()], ticks: TICKS }),
     ]);
 
     const diligentFinal = diligentResult.tasks.find(t => t.id === diligentTask.id);
@@ -63,6 +67,7 @@ describe("conscientiousness affects work speed", () => {
     const result = await runScenario({
       dwarves: [dwarf],
       tasks: [task],
+      items: [stoneBlock()],
       ticks: WORK_BUILD_FLOOR + 5,
     });
 

@@ -9,6 +9,13 @@ import {
 } from "@pwarf/shared";
 import type { FortressTile } from "@pwarf/shared";
 
+function stoneBlock() {
+  return makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "test-civ", held_by_dwarf_id: null });
+}
+function woodLog() {
+  return makeItem({ name: "Wood log", category: "raw_material", material: "wood", located_in_civ_id: "test-civ", held_by_dwarf_id: null });
+}
+
 /**
  * Mining/building scenario tests (issue #549)
  *
@@ -105,6 +112,7 @@ describe("building scenario", () => {
       dwarves: [dwarf],
       dwarfSkills: [buildSkill],
       tasks: [buildTask],
+      items: [stoneBlock()],
       ticks: WORK_BUILD_WALL + 20,
     });
 
@@ -133,6 +141,7 @@ describe("building scenario", () => {
       dwarves: [dwarf],
       dwarfSkills: [buildSkill],
       tasks: [buildTask],
+      items: [woodLog()],
       ticks: WORK_BUILD_BED + 20,
     });
 
@@ -160,6 +169,7 @@ describe("building scenario", () => {
       dwarves: [dwarf],
       dwarfSkills: [buildSkill],
       tasks: [buildTask],
+      items: [stoneBlock(), stoneBlock()],
       ticks: WORK_BUILD_WELL + 20,
     });
 
