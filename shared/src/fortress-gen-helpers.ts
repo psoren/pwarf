@@ -40,6 +40,7 @@ export interface FortressDeriver {
   entrances: readonly CaveEntrance[];
   getZForEntrance(x: number, y: number): number | null;
   getEntranceForZ(z: number): CaveEntrance | null;
+  getCaveName(z: number): string | null;
 }
 
 // ============================================================
@@ -480,6 +481,12 @@ export function createFortressDeriver(
 
     getEntranceForZ(z: number): CaveEntrance | null {
       return entranceByZ.get(z) ?? null;
+    },
+
+    getCaveName(z: number): string | null {
+      const entrance = entranceByZ.get(z);
+      if (!entrance) return null;
+      return generateCaveName(caveSeed(seed, entrance.x, entrance.y));
     },
 
     deriveTile(x: number, y: number, z: number): DerivedFortressTile {

@@ -6,9 +6,10 @@ interface BottomBarProps {
   zLevel?: number;
   fortressTileLabel?: string | null;
   designationMode?: string;
+  caveName?: string;
 }
 
-export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, fortressTileLabel, designationMode }: BottomBarProps) {
+export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, fortressTileLabel, designationMode, caveName }: BottomBarProps) {
   const terrainLabel = terrain ?? fortressTileLabel ?? (mode === "fortress" ? "Floor (stone)" : "Plains");
 
   return (
@@ -19,7 +20,7 @@ export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, for
         </span>
         {zLevel != null && (
           <span className="text-[var(--amber)]">
-            Z: {zLevel}
+            {caveName ? caveName : `Z: ${zLevel}`}
           </span>
         )}
         <span className="text-[var(--text)]">
@@ -39,7 +40,7 @@ export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, for
         {mode === "fortress" && (
           <>
             <span>
-              <kbd className="text-[var(--amber)]">&lt; &gt;</kbd> z-level
+              <kbd className="text-[var(--amber)]">&lt;</kbd> surface
             </span>
             <span>
               <kbd className="text-[var(--amber)]">m</kbd> mine
