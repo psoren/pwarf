@@ -9,21 +9,33 @@ import { manhattanDistance } from "../pathfinding.js";
 /**
  * Haul Assignment Phase
  *
- * For each idle dwarf carrying items, find the best stockpile tile (nearest
- * among highest-priority tiles that accept the item's category) and create
- * a haul task. If no stockpile exists, drop items on the ground so the
+ * Phase 1: For each idle dwarf carrying items, find the best stockpile tile
+ * (nearest among highest-priority tiles that accept the item's category) and
+ * create a haul task. If no stockpile exists, drop items on the ground so the
  * dwarf isn't stuck with a full inventory.
+ *
+ * Phase 2: Scan for ground items not on stockpile tiles and create haul tasks
+ * so idle dwarves will pick them up and deliver them.
  */
 export async function haulAssignment(ctx: SimContext): Promise<void> {
   const { state } = ctx;
 
+  // Track which items already have a pending/active haul task
+  const itemsWithHaulTask = new Set<string>();
+  for (const task of state.tasks) {
+    if (task.task_type === 'haul' && task.target_item_id
+      && task.status !== 'completed' && task.status !== 'cancelled' && task.status !== 'failed') {
+      itemsWithHaulTask.add(task.target_item_id);
+    }
+  }
+
+  // Phase 1: dwarves already carrying items
   for (const dwarf of state.dwarves) {
     if (!isDwarfIdle(dwarf)) continue;
 
     const carried = getCarriedItems(dwarf.id, state.items);
     if (carried.length === 0) continue;
 
-    // If no stockpile exists, drop items on the ground to unblock the dwarf
     if (state.stockpileTiles.size === 0) {
       for (const item of carried) {
         dropItem(dwarf, item, state);
@@ -31,11 +43,11 @@ export async function haulAssignment(ctx: SimContext): Promise<void> {
       continue;
     }
 
-    // Create a haul task for the first carried item
     const item = carried[0];
+    if (itemsWithHaulTask.has(item.id)) continue;
+
     const target = findBestStockpile(ctx, dwarf.position_x, dwarf.position_y, dwarf.position_z, item.category);
     if (!target) {
-      // No suitable stockpile tile (all full or wrong category) — drop items
       for (const c of carried) {
         dropItem(dwarf, c, state);
       }
@@ -51,6 +63,34 @@ export async function haulAssignment(ctx: SimContext): Promise<void> {
       target_item_id: item.id,
       work_required: WORK_HAUL,
     });
+    itemsWithHaulTask.add(item.id);
+  }
+
+  // Phase 2: ground items not on stockpiles
+  if (state.stockpileTiles.size === 0) return;
+
+  for (const item of state.items) {
+    if (item.held_by_dwarf_id !== null) continue;
+    if (item.position_x === null || item.position_y === null || item.position_z === null) continue;
+    if (item.located_in_civ_id !== ctx.civilizationId) continue;
+    if (itemsWithHaulTask.has(item.id)) continue;
+
+    const itemKey = `${item.position_x},${item.position_y},${item.position_z}`;
+    if (state.stockpileTiles.has(itemKey)) continue;
+
+    const target = findBestStockpile(ctx, item.position_x, item.position_y, item.position_z, item.category);
+    if (!target) continue;
+
+    createTask(ctx, {
+      task_type: 'haul',
+      priority: 4,
+      target_x: target.x,
+      target_y: target.y,
+      target_z: target.z,
+      target_item_id: item.id,
+      work_required: WORK_HAUL,
+    });
+    itemsWithHaulTask.add(item.id);
   }
 }
 
