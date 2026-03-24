@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { STEPS_PER_YEAR, STEPS_PER_DAY } from "@pwarf/shared";
-import type { Dwarf, DwarfSkill, FortressTile, Item, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
+import type { Dwarf, DwarfSkill, FortressTile, Item, Structure, Monster, Task, WorldEvent, StockpileTile } from "@pwarf/shared";
 import type { SimContext, CachedState } from "./sim-context.js";
 import { createEmptyCachedState, createRng } from "./sim-context.js";
 import { DEFAULT_TEST_SEED } from "./rng.js";
@@ -44,6 +44,8 @@ export interface ScenarioConfig {
   infectedDwarfIds?: string[];
   /** Pre-registered ghost dwarf IDs — these dead dwarves haunt living dwarves from tick 0. */
   ghostDwarfIds?: string[];
+  /** Pre-placed stockpile tiles for haul testing. */
+  stockpileTiles?: StockpileTile[];
   ticks: number;
   seed?: number;
 }
@@ -97,6 +99,11 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
   if (config.ghostDwarfIds) {
     for (const id of config.ghostDwarfIds) {
       state.ghostDwarfIds.add(id);
+    }
+  }
+  if (config.stockpileTiles) {
+    for (const tile of config.stockpileTiles) {
+      state.stockpileTiles.set(`${tile.x},${tile.y},${tile.z}`, { ...tile });
     }
   }
 

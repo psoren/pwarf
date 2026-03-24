@@ -16,6 +16,7 @@ import { bfsNextStep } from "../pathfinding.js";
 import { buildTileLookup } from "../tile-lookup.js";
 import { handleDeprivationDeaths } from "./deprivation.js";
 import { completeTask } from "./task-completion.js";
+import { canPickUp, pickUpItem } from "../inventory.js";
 
 /** Task types where the dwarf stands adjacent to (not on) the target tile. */
 const ADJACENT_TASK_TYPES: ReadonlySet<string> = new Set(['mine', 'build_wall', 'deconstruct']);
@@ -50,6 +51,49 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
     if (task.status === 'claimed') {
       task.status = 'in_progress';
       state.dirtyTaskIds.add(task.id);
+    }
+
+    // Haul tasks: if the dwarf doesn't hold the target item yet, walk to it and pick it up
+    if (task.task_type === 'haul' && task.target_item_id) {
+      const item = state.items.find(i => i.id === task.target_item_id);
+      if (item && item.held_by_dwarf_id !== dwarf.id) {
+        // Item is on the ground — walk to it first
+        if (item.position_x !== null && item.position_y !== null && item.position_z !== null) {
+          const atItem = dwarf.position_x === item.position_x
+            && dwarf.position_y === item.position_y
+            && dwarf.position_z === item.position_z;
+          if (atItem) {
+            if (canPickUp(dwarf.id, item, state.items)) {
+              pickUpItem(dwarf, item, state);
+            } else {
+              failTask(dwarf, task, state);
+            }
+          } else {
+            // Move toward the item's position
+            const getTile = buildTileLookup(ctx);
+            const nextStep = bfsNextStep(
+              { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z },
+              { x: item.position_x, y: item.position_y, z: item.position_z },
+              getTile,
+              false,
+            );
+            if (nextStep) {
+              dwarf.position_x = nextStep.x;
+              dwarf.position_y = nextStep.y;
+              dwarf.position_z = nextStep.z;
+              state.dirtyDwarfIds.add(dwarf.id);
+            } else {
+              failTask(dwarf, task, state);
+            }
+          }
+          continue;
+        }
+        // Item has no position and isn't held by this dwarf — something went wrong
+        if (item.held_by_dwarf_id !== null) {
+          failTask(dwarf, task, state);
+          continue;
+        }
+      }
     }
 
     // Check if dwarf needs to move to the task site
