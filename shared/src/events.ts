@@ -1,7 +1,5 @@
 import type {
   CauseOfDeath,
-  DwarfStatus,
-  EncounterOutcome,
   EventCategory,
   MonsterBehavior,
   MonsterType,
@@ -94,15 +92,6 @@ export interface CombatEvent extends SimEventBase {
   defender_kind: 'dwarf' | 'monster';
   damage: number;
   description: string;
-}
-
-export interface CombatResultEvent extends SimEventBase {
-  type: 'combat_result';
-  encounter_id: string;
-  monster_id: string;
-  outcome: EncounterOutcome;
-  dwarves_killed: number;
-  monster_health_after: number;
 }
 
 // ============================================================
@@ -240,7 +229,6 @@ export type SimEvent =
   | DwarfTantrumEvent
   | DwarfMoodEvent
   | CombatEvent
-  | CombatResultEvent
   | DeathEvent
   | MigrationEvent
   | MonsterSpawnEvent

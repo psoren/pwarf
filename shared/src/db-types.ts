@@ -77,23 +77,6 @@ export type RelationshipType =
   | 'nemesis'
   | 'acquaintance';
 
-export type FactionType =
-  | 'guild'
-  | 'noble_house'
-  | 'religious_sect'
-  | 'military_order'
-  | 'criminal'
-  | 'merchant_consortium'
-  | 'outsider_civ';
-
-export type ExpeditionStatus =
-  | 'traveling'
-  | 'active'
-  | 'looting'
-  | 'retreating'
-  | 'complete'
-  | 'lost';
-
 export type EventCategory =
   | 'battle'
   | 'death'
@@ -156,16 +139,6 @@ export type MonsterBehavior =
   | 'fleeing'
   | 'hibernating'
   | 'hunting';
-
-export type EncounterOutcome =
-  | 'repelled'
-  | 'overrun'
-  | 'fled'
-  | 'captured'
-  | 'negotiated'
-  | 'pyrrhic_victory'
-  | 'catastrophic_loss'
-  | 'unknown';
 
 export type TaskType =
   | 'mine'
@@ -240,7 +213,6 @@ export interface World {
   age_years: number;
   created_at: string;
   is_public: boolean;
-  history_summary: Record<string, unknown>;
 }
 
 export interface WorldTile {
@@ -262,9 +234,6 @@ export interface Player {
   display_name: string | null;
   world_id: string | null;
   created_at: string;
-  last_active_at: string | null;
-  total_years_survived: number;
-  legendary_deeds: unknown[];
 }
 
 export interface Civilization {
@@ -272,7 +241,6 @@ export interface Civilization {
   player_id: string;
   world_id: string;
   name: string;
-  epithet: string | null;
   status: CivilizationStatus;
   founded_year: number;
   fallen_year: number | null;
@@ -281,8 +249,6 @@ export interface Civilization {
   tile_y: number;
   population: number;
   wealth: number;
-  snapshot: Record<string, unknown> | null;
-  snapshot_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -300,28 +266,9 @@ export interface Ruin {
   remaining_wealth: number;
   peak_population: number;
   danger_level: number;
-  is_contaminated: boolean;
-  contamination_type: string | null;
   ghost_count: number;
-  is_trapped: boolean;
-  resident_monster_id: string | null;
-  snapshot: Record<string, unknown> | null;
-  snapshot_url: string | null;
   is_published: boolean;
   created_at: string;
-}
-
-export interface Expedition {
-  id: string;
-  player_id: string;
-  ruin_id: string;
-  status: ExpeditionStatus;
-  dwarf_ids: string[];
-  started_at: string;
-  completed_at: string | null;
-  items_looted: string[];
-  dwarves_lost: number;
-  expedition_log: string | null;
 }
 
 export interface Dwarf {
@@ -341,15 +288,12 @@ export interface Dwarf {
   stress_level: number;
   is_in_tantrum: boolean;
   health: number;
-  injuries: unknown[];
   memories: unknown[];
   trait_openness: number | null;
   trait_conscientiousness: number | null;
   trait_extraversion: number | null;
   trait_agreeableness: number | null;
   trait_neuroticism: number | null;
-  religious_devotion: number;
-  faction_id: string | null;
   born_year: number | null;
   died_year: number | null;
   cause_of_death: string | null;
@@ -377,28 +321,6 @@ export interface DwarfRelationship {
   strength: number;
   shared_events: unknown[];
   formed_year: number | null;
-}
-
-export interface Faction {
-  id: string;
-  world_id: string;
-  name: string;
-  type: FactionType;
-  power_level: number;
-  disposition: number;
-  lore: string | null;
-  founded_year: number | null;
-  is_active: boolean;
-  beliefs: Record<string, unknown>;
-}
-
-export interface CivFactionRelation {
-  id: string;
-  civilization_id: string;
-  faction_id: string;
-  standing: number;
-  is_at_war: boolean;
-  trade_active: boolean;
 }
 
 export interface Item {
@@ -454,12 +376,7 @@ export interface Monster {
   threat_level: number;
   health: number;
   size_category: string;
-  body_parts: unknown[];
-  attacks: unknown[];
-  abilities: unknown[];
-  weaknesses: unknown[];
   lore: string | null;
-  origin_myth: string | null;
   properties: Record<string, unknown>;
   first_seen_year: number | null;
   slain_year: number | null;
@@ -467,38 +384,6 @@ export interface Monster {
   slain_in_civ_id: string | null;
   slain_in_ruin_id: string | null;
   created_at: string;
-}
-
-export interface MonsterEncounter {
-  id: string;
-  monster_id: string;
-  world_id: string;
-  civilization_id: string | null;
-  ruin_id: string | null;
-  year: number;
-  outcome: EncounterOutcome;
-  dwarves_killed: number;
-  monster_health_after: number | null;
-  items_destroyed: string[];
-  items_stolen: string[];
-  structures_damaged: string[];
-  description: string | null;
-  encounter_log: string | null;
-  event_data: Record<string, unknown>;
-}
-
-export interface MonsterBounty {
-  id: string;
-  monster_id: string;
-  world_id: string;
-  posted_by_civ_id: string | null;
-  reward_value: number;
-  reward_item_id: string | null;
-  posted_year: number;
-  expires_year: number | null;
-  is_claimed: boolean;
-  claimed_by_player_id: string | null;
-  claimed_year: number | null;
 }
 
 export interface WorldEvent {
@@ -515,32 +400,6 @@ export interface WorldEvent {
   description: string;
   event_data: Record<string, unknown>;
   created_at: string;
-}
-
-export interface TradeCaravan {
-  id: string;
-  world_id: string;
-  faction_id: string | null;
-  origin_civ_id: string | null;
-  destination_civ_id: string | null;
-  arrived_year: number | null;
-  departed_year: number | null;
-  manifest: Record<string, unknown>;
-  outcome: string | null;
-  reputation_delta: number | null;
-}
-
-export interface Disease {
-  id: string;
-  world_id: string;
-  name: string;
-  lethality: number;
-  contagion_rate: number;
-  incubation_days: number;
-  active_in_civs: string[];
-  active_in_ruins: string[];
-  first_seen_year: number | null;
-  is_eradicated: boolean;
 }
 
 export interface Structure {

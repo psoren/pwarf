@@ -10,7 +10,7 @@ export function usePublishedRuins() {
     const fetch = async () => {
       const { data } = await supabase
         .from("ruins")
-        .select("id, name, cause_of_death, fallen_year, peak_population, danger_level, is_published, created_at, civilization_id, world_id, tile_x, tile_y, original_wealth, remaining_wealth, is_contaminated, contamination_type, ghost_count, is_trapped, resident_monster_id, snapshot, snapshot_url")
+        .select("id, name, cause_of_death, fallen_year, peak_population, danger_level, is_published, created_at, civilization_id, world_id, tile_x, tile_y, original_wealth, remaining_wealth, ghost_count")
         .eq("is_published", true)
         .order("fallen_year", { ascending: false })
         .limit(50);
