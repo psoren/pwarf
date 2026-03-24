@@ -1,0 +1,61 @@
+{
+  "id": "2026-03-24T08-32-43",
+  "timestamp": "2026-03-24T08:32:43.985Z",
+  "title": "Digest — Mar 24, 2026, 08:32 AM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nHello, fellow settlers! We’ve made significant strides recently with a variety of enhancements, bug fixes, and new features to enrich your colony sim experience. Here’s a roundup of what’s been merged into the main branch since our last update.\n\n## Expedition Enhancements\n- **Exploration System**: Dwarves can now embark on expeditions to explore ancient ruins scattered across the overworld, with loot, survival rolls, and encounters awaiting them.\n- **Auto-Task Management**: We improved how dwarves handle tasks when returning from or dying during an expedition, ensuring smoother transitions and preventing task-related errors. Orphaned tasks are now automatically reclaimed.\n\n## Bug Fixes\n- **Brewing Improvements**: The automatic brewing feature now correctly filters out stone blocks, so ensure you're using the right materials!\n- **Pathfinding Optimization**: Dwarves will no longer wait indefinitely if their path is blocked; they'll actively find alternative routes around occupied tiles.\n- **Task Completion Clarity**: We resolved an issue where the mine designation overlay would persist after a task's completion.\n\n## UI Improvements\n- **Build Menu Upgrade**: You’ll now see material costs and stock counts next to build options, helping you plan your construction better. Build options that lack sufficient materials will clearly show this in red.\n- **Visibility Enhancements**: Blocked-build tiles have a more visible background, making it clearer when an area can't be used.\n\n## Code Quality\n- **Refactoring**: Shared functions have been extracted and simplified, making our codebase cleaner and more maintainable.\n\nThank you for your ongoing support and feedback as we continue to build a vibrant world for our dwarves!\n\n## Merged PRs\n- #621\n- #618\n- #619\n- #615\n- #614\n- #609\n- #610\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 621,
+      "title": "fix: clear current_task_id on expedition return/death (#620)",
+      "url": "https://github.com/psoren/pwarf/pull/621"
+    },
+    {
+      "number": 618,
+      "title": "fix: auto-brew no longer consumes stone blocks (closes #617)",
+      "url": "https://github.com/psoren/pwarf/pull/618"
+    },
+    {
+      "number": 619,
+      "title": "refactor: extract shared tick loop and deduplicate constants",
+      "url": "https://github.com/psoren/pwarf/pull/619"
+    },
+    {
+      "number": 615,
+      "title": "fix: dwarves route around occupied tiles instead of waiting forever (closes #611)",
+      "url": "https://github.com/psoren/pwarf/pull/615"
+    },
+    {
+      "number": 614,
+      "title": "fix: clear mine designation overlay when task completes",
+      "url": "https://github.com/psoren/pwarf/pull/614"
+    },
+    {
+      "number": 609,
+      "title": "feat: show material costs in build menu, improve blocked-build visibility",
+      "url": "https://github.com/psoren/pwarf/pull/609",
+      "cost": {
+        "amount": "$0.63",
+        "tokens": "593k tokens"
+      }
+    },
+    {
+      "number": 610,
+      "title": "feat: expedition system — send dwarves to explore overworld ruins",
+      "url": "https://github.com/psoren/pwarf/pull/610",
+      "cost": {
+        "amount": "$4.53",
+        "tokens": "5.9M tokens"
+      }
+    }
+  ],
+  "images": []
+}
