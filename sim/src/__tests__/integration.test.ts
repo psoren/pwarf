@@ -91,7 +91,7 @@ describe("needs decay", () => {
 
     const ctx = makeContext({ dwarves: [dwarf] });
 
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 1500; i++) {
       await needsDecay(ctx);
     }
 

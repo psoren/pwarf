@@ -225,9 +225,9 @@ describe("yearlyRollup", () => {
       }
     });
 
-    it("does not fire on non-caravan years (1, 2, 3, 4)", async () => {
+    it("does not fire on non-caravan years (1, 3, 5)", async () => {
       const dwarf = makeDwarf({ age: 30 });
-      for (const year of [1, 2, 3, 4]) {
+      for (const year of [1, 3, 5]) {
         const ctx = makeContext({ dwarves: [dwarf] });
         ctx.year = year;
 

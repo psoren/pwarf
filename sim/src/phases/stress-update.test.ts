@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { calcStressDelta } from "./stress-update.js";
-import { MEMORY_STRESS_PER_TICK } from "@pwarf/shared";
+import { MEMORY_STRESS_PER_TICK, AGREEABLENESS_RECOVERY_BONUS } from "@pwarf/shared";
 import type { DwarfMemory } from "@pwarf/shared";
 
 // All needs comfortable — no stress gains, just recovery
@@ -22,13 +22,13 @@ describe("calcStressDelta", () => {
     });
 
     it("returns positive delta when a need is critically low", () => {
-      // food=10 → gain=(20-10)*0.02=0.2; food<50 so all-needs-comfortable fails → no recovery
+      // food=10 -> gain=(20-10)*0.02=0.2; food<50 so all-needs-comfortable fails -> no recovery
       const delta = calcStressDelta(noTraits, ONE_NEED_CRITICAL);
       expect(delta).toBeCloseTo(0.2);
     });
 
     it("adds deprivation penalty when a need is at zero", () => {
-      // need=0: (20-0)*0.02 = 0.4 + 0.5 penalty = 0.9 per need × 6
+      // need=0: (20-0)*0.02 = 0.4 + 0.5 penalty = 0.9 per need x 6
       const delta = calcStressDelta(noTraits, ALL_NEEDS_ZERO);
       expect(delta).toBeCloseTo(6 * (0.4 + 0.5));
     });
@@ -67,12 +67,12 @@ describe("calcStressDelta", () => {
       expect(deltaNeutral).toBeCloseTo(deltaNoTrait);
     });
 
-    it("neurotic dwarf gains 1.5× stress at trait=1.0", () => {
+    it("neurotic dwarf gains 1.5x stress at trait=1.0", () => {
       const neurotic = { trait_neuroticism: 1.0, trait_agreeableness: null };
       const noTrait = { trait_neuroticism: null, trait_agreeableness: null };
 
       // Use needs that have no recovery (some need below 50 but none critical)
-      // Food=10 → gain=0.2, social=40 → no gain, no recovery since not all>50
+      // Food=10 -> gain=0.2, social=40 -> no gain, no recovery since not all>50
       const needs = [10, 80, 80, 40, 80, 80];
 
       const deltaNeurotic = calcStressDelta(neurotic, needs);
@@ -82,7 +82,7 @@ describe("calcStressDelta", () => {
       expect(deltaNeurotic).toBeCloseTo(deltaNoTrait * 1.5);
     });
 
-    it("stable dwarf gains 0.5× stress at trait=0.0", () => {
+    it("stable dwarf gains 0.5x stress at trait=0.0", () => {
       const stable = { trait_neuroticism: 0.0, trait_agreeableness: null };
       const noTrait = { trait_neuroticism: null, trait_agreeableness: null };
 
@@ -123,8 +123,8 @@ describe("calcStressDelta", () => {
     it("agreeable dwarf at trait=1.0 recovers base+bonus per tick", () => {
       const agreeable = { trait_neuroticism: null, trait_agreeableness: 1.0 };
       const delta = calcStressDelta(agreeable, COMFORTABLE_NEEDS);
-      // base -0.1 + agreeableness bonus -0.1 = -0.2
-      expect(delta).toBeCloseTo(-0.2);
+      // base -0.1 + agreeableness bonus -AGREEABLENESS_RECOVERY_BONUS
+      expect(delta).toBeCloseTo(-0.1 - AGREEABLENESS_RECOVERY_BONUS);
     });
 
     it("agreeableness has no effect when needs are not all comfortable", () => {

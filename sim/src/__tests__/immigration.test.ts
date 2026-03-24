@@ -80,6 +80,6 @@ describe('yearly immigration', () => {
   });
 
   it(`immigration probability is ${IMMIGRATION_CHANCE_PER_YEAR}`, () => {
-    expect(IMMIGRATION_CHANCE_PER_YEAR).toBe(0.6);
+    expect(IMMIGRATION_CHANCE_PER_YEAR).toBe(0.8);
   });
 });
