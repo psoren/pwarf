@@ -22,13 +22,8 @@ import { dwarfName } from "../dwarf-utils.js";
 export function haunting(ctx: SimContext): void {
   const { state } = ctx;
 
-  // Register newly dead dwarves as ghosts
-  for (const dwarf of state.dwarves) {
-    if (dwarf.status === 'dead' && !state.ghostDwarfIds.has(dwarf.id)) {
-      state.ghostDwarfIds.add(dwarf.id);
-    }
-  }
-
+  // Ghost registration happens in killDwarf() — not here.
+  // Dead dwarves from previous sessions are NOT ghosts.
   if (state.ghostDwarfIds.size === 0) return;
 
   const aliveDwarves = state.dwarves.filter(d => d.status === 'alive');

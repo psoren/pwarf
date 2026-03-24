@@ -10,10 +10,10 @@ describe("haunting - ghost registration", () => {
     expect(ctx.state.ghostDwarfIds.has('d1')).toBe(false);
   });
 
-  it("adds newly dead dwarves to ghostDwarfIds", () => {
+  it("does NOT auto-register dead dwarves as ghosts (registration happens in killDwarf)", () => {
     const ctx = makeContext({ dwarves: [makeDwarf({ id: 'd1', status: 'dead' })] });
     haunting(ctx);
-    expect(ctx.state.ghostDwarfIds.has('d1')).toBe(true);
+    expect(ctx.state.ghostDwarfIds.has('d1')).toBe(false);
   });
 
   it("does not double-register an already-tracked ghost", () => {
