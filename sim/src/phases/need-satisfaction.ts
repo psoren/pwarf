@@ -10,9 +10,7 @@ import {
   SOCIAL_PROXIMITY_RADIUS,
   SOCIAL_PROXIMITY_MAX_DWARVES,
   MORALE_RESTORE_NEAR_STRUCTURE,
-  MORALE_RESTORE_NEAR_ENGRAVING,
   BEAUTY_STRUCTURE_RADIUS,
-  BEAUTY_ENGRAVING_RADIUS,
   OPENNESS_BEAUTY_MULTIPLIER,
 } from "@pwarf/shared";
 import type { Dwarf, Item, TaskType, Structure } from "@pwarf/shared";
@@ -51,7 +49,7 @@ export async function needSatisfaction(ctx: SimContext): Promise<void> {
     }
 
     // Morale: restore need_social based on proximity to dwarves, structures, engravings
-    restoreMorale(dwarf, state.dwarves, state.structures, state.fortressTileOverrides);
+    restoreMorale(dwarf, state.dwarves, state.structures);
   }
 }
 
@@ -284,17 +282,15 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
 }
 
 /**
- * Restores morale (need_social) from three sources:
+ * Restores morale (need_social) from two sources:
  * 1. Nearby dwarf proximity (extraversion modifier)
  * 2. Nearby beauty structures — well, mushroom_garden (openness modifier)
- * 3. Nearby engraved stone tiles (openness modifier)
  * Exported for unit testing.
  */
 export function restoreMorale(
   dwarf: Dwarf,
   allDwarves: Dwarf[],
   structures: Structure[],
-  fortressTileOverrides: Map<string, { tile_type: string; x: number; y: number; z: number }>,
 ): void {
   let totalRestore = 0;
 
@@ -319,7 +315,7 @@ export function restoreMorale(
     totalRestore += dwarfRestore;
   }
 
-  // Openness modifier for structure and engraving bonuses
+  // Openness modifier for structure bonuses
   const opennessModifier = dwarf.trait_openness !== null
     ? Math.max(0.1, 1 + (dwarf.trait_openness - 0.5) * OPENNESS_BEAUTY_MULTIPLIER)
     : 1;
@@ -335,21 +331,6 @@ export function restoreMorale(
       totalRestore += MORALE_RESTORE_NEAR_STRUCTURE * opennessModifier;
       break; // count only one structure bonus per tick
     }
-  }
-
-  // 3. Nearby engraved tiles
-  let foundEngraving = false;
-  for (const [, tile] of fortressTileOverrides) {
-    if (tile.tile_type !== 'engraved_stone') continue;
-    if (tile.z !== dwarf.position_z) continue;
-    const dist = Math.abs(tile.x - dwarf.position_x) + Math.abs(tile.y - dwarf.position_y);
-    if (dist <= BEAUTY_ENGRAVING_RADIUS) {
-      foundEngraving = true;
-      break;
-    }
-  }
-  if (foundEngraving) {
-    totalRestore += MORALE_RESTORE_NEAR_ENGRAVING * opennessModifier;
   }
 
   if (totalRestore > 0) {

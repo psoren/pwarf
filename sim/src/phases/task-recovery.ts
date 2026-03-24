@@ -53,7 +53,7 @@ export function taskRecovery(ctx: SimContext): void {
       }
     }
 
-    // All other design tasks (build, brew, cook, farm, engrave, smith, etc.)
+    // All other design tasks (build, brew, cook, farm, smith, etc.)
     // are reset to pending — another dwarf will pick them up
     task.status = 'pending';
     state.dirtyTaskIds.add(task.id);

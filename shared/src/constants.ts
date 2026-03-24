@@ -101,20 +101,11 @@ export const MORALE_RESTORE_HAUL_TASK = 3;
 /** Morale restored per tick when near a beauty structure (well, mushroom garden) */
 export const MORALE_RESTORE_NEAR_STRUCTURE = 0.1;
 
-/** Morale restored per tick when near an engraved stone tile */
-export const MORALE_RESTORE_NEAR_ENGRAVING = 0.06;
-
 /** Bonus beauty restoration per tick when near a well or mushroom garden */
 export const BEAUTY_RESTORE_NEAR_STRUCTURE = 0.0041;
 
 /** Manhattan-distance radius for beauty structure proximity */
 export const BEAUTY_STRUCTURE_RADIUS = 6;
-
-/** Bonus beauty restoration per tick when near an engraved stone tile */
-export const BEAUTY_RESTORE_NEAR_ENGRAVING = 0.0022;
-
-/** Manhattan-distance radius within which an engraved tile provides beauty */
-export const BEAUTY_ENGRAVING_RADIUS = 4;
 
 /** Number of recent world events to load at startup for engrave scene generation */
 export const WORLD_EVENTS_RECENT_LIMIT = 20;
@@ -481,12 +472,6 @@ export const WORK_BUILD_DOOR = 35;
 /** Work required to deconstruct a built structure or tile */
 export const WORK_DECONSTRUCT = 30;
 
-/** Work required to smooth a stone tile */
-export const WORK_SMOOTH = 80;
-
-/** Work required to engrave a smoothed tile */
-export const WORK_ENGRAVE = 60;
-
 /** Work required to brew a batch of ale */
 export const WORK_BREW = 50;
 
@@ -534,8 +519,6 @@ export const XP_FARM_PLANT = 10;
 export const XP_FARM_HARVEST = 10;
 export const XP_BUILD = 12;
 export const XP_HAUL = 5;
-export const XP_SMOOTH = 8;
-export const XP_ENGRAVE = 10;
 export const XP_BREW = 12;
 export const XP_COOK = 12;
 export const XP_SMITH = 15;

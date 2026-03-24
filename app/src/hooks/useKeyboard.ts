@@ -13,8 +13,6 @@ export type KeyAction =
   | { type: "cancel_designation" }
   | { type: "designate_stockpile" }
   | { type: "designate_deconstruct" }
-  | { type: "designate_smooth" }
-  | { type: "designate_engrave" }
   | { type: "designate_farm" }
   | { type: "toggle_pause" }
   | { type: "set_speed"; multiplier: 1 | 2 | 5 };
@@ -81,12 +79,6 @@ export function useKeyboard(onAction: (action: KeyAction) => void) {
           break;
         case "D":
           onAction({ type: "designate_deconstruct" });
-          break;
-        case "O":
-          onAction({ type: "designate_smooth" });
-          break;
-        case "E":
-          onAction({ type: "designate_engrave" });
           break;
         case "f":
           onAction({ type: "designate_farm" });

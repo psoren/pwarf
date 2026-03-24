@@ -50,8 +50,6 @@ export type DwarfActionType =
   | 'brew'
   | 'cook'
   | 'smith'
-  | 'engrave'
-  | 'smooth'
   | 'woodcut'
   | 'hunt';
 

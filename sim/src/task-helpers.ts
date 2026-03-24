@@ -19,8 +19,6 @@ const TASK_SKILL_MAP: Record<TaskType, string | null> = {
   build_door: 'building',
   deconstruct: 'building',
   wander: null,
-  smooth: 'building',
-  engrave: 'engraving',
   engrave_memorial: 'engraving',
   brew: 'brewing',
   cook: 'cooking',
