@@ -123,7 +123,7 @@ export function useDesignation(opts: {
     }
 
     const mineable: string[] = ['stone', 'ore', 'gem', 'soil', 'cavern_wall', 'tree', 'rock', 'bush'];
-    const buildable: string[] = ['open_air', 'grass', 'constructed_floor', 'cavern_floor'];
+    const buildable: string[] = ['open_air', 'grass', 'mud', 'sand', 'constructed_floor', 'cavern_floor'];
     const isMine = designationMode === 'mine';
     const isDeconstruct = designationMode === 'deconstruct';
     const isSmooth = designationMode === 'smooth';
