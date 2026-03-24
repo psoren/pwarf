@@ -35,6 +35,14 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
 
   handleDeprivationDeaths(ctx);
 
+  // Build a set of occupied tiles so dwarves don't stack on each other
+  const occupiedTiles = new Set<string>();
+  for (const d of state.dwarves) {
+    if (d.status === 'alive') {
+      occupiedTiles.add(`${d.position_x},${d.position_y},${d.position_z}`);
+    }
+  }
+
   for (const dwarf of state.dwarves) {
     if (dwarf.status !== 'alive') continue;
     if (dwarf.current_task_id === null) continue;
@@ -60,7 +68,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
         : (dwarf.position_x === task.target_x && dwarf.position_y === task.target_y && dwarf.position_z === task.target_z);
 
       if (!atSite) {
-        const moved = moveTowardTarget(dwarf, task, ctx);
+        const moved = moveTowardTarget(dwarf, task, ctx, occupiedTiles);
         if (!moved) {
           failTask(dwarf, task, state);
         }
@@ -111,7 +119,7 @@ function isAdjacentToTarget(dwarf: Dwarf, task: Task): boolean {
   return (dx + dy) === 1;
 }
 
-function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext): boolean {
+function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTiles: Set<string>): boolean {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return true;
 
   // Already at the task site — no movement needed
@@ -133,6 +141,17 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext): boolean {
   if (nextStep === null) {
     return false; // No path found
   }
+
+  // Don't move onto a tile occupied by another dwarf — wait instead
+  const nextKey = `${nextStep.x},${nextStep.y},${nextStep.z}`;
+  if (occupiedTiles.has(nextKey)) {
+    return true; // Path exists but tile is blocked — wait, don't fail the task
+  }
+
+  // Update occupancy tracking
+  const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
+  occupiedTiles.delete(prevKey);
+  occupiedTiles.add(nextKey);
 
   dwarf.position_x = nextStep.x;
   dwarf.position_y = nextStep.y;
