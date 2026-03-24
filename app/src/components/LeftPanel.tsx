@@ -51,6 +51,7 @@ const TASK_ICONS: Record<string, string> = {
   build_bed: "🔨",
   build_well: "🔨",
   build_mushroom_garden: "🔨",
+  build_door: "🔨",
   smooth: "🪨",
   engrave: "🪨",
   deconstruct: "💥",
