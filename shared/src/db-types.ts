@@ -190,7 +190,8 @@ export type TaskType =
   | 'cook'
   | 'smith'
   | 'create_artifact'
-  | 'forage';
+  | 'forage'
+  | 'scout_cave';
 
 export type TaskStatus =
   | 'pending'
