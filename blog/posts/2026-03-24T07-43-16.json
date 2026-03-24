@@ -1,0 +1,48 @@
+{
+  "id": "2026-03-24T07-43-16",
+  "timestamp": "2026-03-24T07:43:16.755Z",
+  "title": "Digest — Mar 24, 2026, 07:43 AM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nHey Pwarf fans! We’ve had some exciting updates since our last digest. Here’s a quick rundown of what’s new in the game:\n\n## Database Cleanup\n- **Schema Updates**: We streamlined our database by dropping 7 unused tables, including `expeditions` and `factions`. We also removed some dead columns from the `dwarves`, `worlds`, and `players` tables, making our data more efficient.\n\n## Cave System Enhancements\n- **Scouting & Planning**: We reworked the cave system to feature per-entrance lazy generation, meaning that each entrance leads to its own unique cave grid.\n- **User Experience**: You can now scout caves by clicking on entrances, which sends a `scout_cave` task to discover the cave upon completion.\n\n## Combat & Interaction Improvements\n- **Entity Stacking**: There’s no longer any stacking of entities; dwarves and monsters cannot occupy the same tile. Combat triggers now occur from adjacent tiles, enhancing tactical gameplay.\n- **Clickable Monsters**: Monsters are now interactable on the map! Clicking on them opens a detailed view with stats and lore.\n\n## General Cleanup\n- **Removed Features**: The idle-wandering phase and the smooth/engrave designations have been removed. This decluttering helps us focus on more impactful gameplay aspects.\n\nWe’re excited to continue refining and improving Pwarf, so stay tuned for more updates!\n\n## Merged PRs\n- #606 \n- #603 \n- #601 \n- #598 \n- #604 \n- #602\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 606,
+      "title": "Drop 7 unused tables and dead columns from schema",
+      "url": "https://github.com/psoren/pwarf/pull/606"
+    },
+    {
+      "number": 603,
+      "title": "feat: scout-then-plan cave system rework",
+      "url": "https://github.com/psoren/pwarf/pull/603"
+    },
+    {
+      "number": 601,
+      "title": "feat: no entity stacking — combat triggers from adjacency (closes #600)",
+      "url": "https://github.com/psoren/pwarf/pull/601"
+    },
+    {
+      "number": 598,
+      "title": "feat: clickable monsters — inspect any entity on the map (closes #597)",
+      "url": "https://github.com/psoren/pwarf/pull/598"
+    },
+    {
+      "number": 604,
+      "title": "cleanup: remove dead idle-wandering phase",
+      "url": "https://github.com/psoren/pwarf/pull/604"
+    },
+    {
+      "number": 602,
+      "title": "remove: delete smooth and engrave features",
+      "url": "https://github.com/psoren/pwarf/pull/602"
+    }
+  ],
+  "images": []
+}
