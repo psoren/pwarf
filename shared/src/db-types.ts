@@ -37,7 +37,8 @@ export type CauseOfDeath =
   | 'unknown'
   | 'titan';
 
-export type DwarfStatus = 'alive' | 'dead' | 'missing' | 'ghost' | 'feral';
+export const DWARF_STATUSES = ['alive', 'dead', 'missing', 'ghost', 'feral'] as const;
+export type DwarfStatus = (typeof DWARF_STATUSES)[number];
 
 export type ItemQuality =
   | 'garbage'
@@ -140,38 +141,20 @@ export type MonsterBehavior =
   | 'hibernating'
   | 'hunting';
 
-export type TaskType =
-  | 'mine'
-  | 'haul'
-  | 'farm_till'
-  | 'farm_plant'
-  | 'farm_harvest'
-  | 'eat'
-  | 'drink'
-  | 'sleep'
-  | 'build_wall'
-  | 'build_floor'
-  | 'build_bed'
-  | 'build_well'
-  | 'build_mushroom_garden'
-  | 'build_door'
-  | 'deconstruct'
-  | 'wander'
-  | 'engrave_memorial'
-  | 'brew'
-  | 'cook'
-  | 'smith'
-  | 'create_artifact'
-  | 'forage'
-  | 'scout_cave';
+export const TASK_TYPES = [
+  'mine', 'haul', 'farm_till', 'farm_plant', 'farm_harvest',
+  'eat', 'drink', 'sleep',
+  'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'build_door',
+  'deconstruct', 'wander', 'engrave_memorial',
+  'brew', 'cook', 'smith', 'create_artifact', 'forage', 'scout_cave',
+] as const;
+export type TaskType = (typeof TASK_TYPES)[number];
 
-export type TaskStatus =
-  | 'pending'
-  | 'claimed'
-  | 'in_progress'
-  | 'completed'
-  | 'failed'
-  | 'cancelled';
+export const TASK_STATUSES = ['pending', 'claimed', 'in_progress', 'completed', 'failed', 'cancelled'] as const;
+export type TaskStatus = (typeof TASK_STATUSES)[number];
+
+export const SKILL_NAMES = ['mining', 'hauling', 'farming', 'building', 'engraving', 'brewing', 'cooking', 'smithing', 'foraging'] as const;
+export type SkillName = (typeof SKILL_NAMES)[number];
 
 export type FortressTileType =
   | 'open_air'

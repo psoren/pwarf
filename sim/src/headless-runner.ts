@@ -1,31 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { STEPS_PER_YEAR, STEPS_PER_DAY } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng } from "./rng.js";
-import {
-  needsDecay,
-  taskExecution,
-  needSatisfaction,
-  stressUpdate,
-  tantrumCheck,
-  tantrumActions,
-  monsterSpawning,
-  monsterPathfinding,
-  combatResolution,
-  constructionProgress,
-  jobClaiming,
-  eventFiring,
-  yearlyRollup,
-  idleWandering,
-  thoughtGeneration,
-  haulAssignment,
-  autoCookPhase,
-  autoBrew,
-  autoForage,
-  taskRecovery,
-  expeditionTick,
-} from "./phases/index.js";
+import { runTick, advanceTime, maybeYearRollup } from "./tick.js";
 import { SCENARIOS, buildScenarioState, buildEatDrinkTasks } from "./scenarios.js";
 import { serializeState } from "./state-serializer.js";
 import type { StateSnapshot } from "./state-serializer.js";
@@ -104,43 +81,14 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
 
   for (let i = 0; i < ticks; i++) {
     stepCount++;
-    const currentDay = Math.floor((stepCount % STEPS_PER_YEAR) / STEPS_PER_DAY) + 1;
-    ctx.step = stepCount;
-    ctx.day = currentDay;
-    ctx.year = currentYear;
+    advanceTime(ctx, stepCount, currentYear);
 
     const tasksBefore = state.tasks.filter(t => t.status === "completed").length;
-
-    await needsDecay(ctx);
-    await taskExecution(ctx);
-    await needSatisfaction(ctx);
-    await stressUpdate(ctx);
-    await tantrumCheck(ctx);
-    await tantrumActions(ctx);
-    await monsterSpawning(ctx);
-    await monsterPathfinding(ctx);
-    await combatResolution(ctx);
-    expeditionTick(ctx);
-    await constructionProgress(ctx);
-    await idleWandering(ctx);
-    await haulAssignment(ctx);
-    taskRecovery(ctx);
-    await autoCookPhase(ctx);
-    await autoBrew(ctx);
-    await autoForage(ctx);
-    await jobClaiming(ctx);
-    await eventFiring(ctx);
-    await thoughtGeneration(ctx);
-
-    if (stepCount % STEPS_PER_YEAR === 0) {
-      currentYear++;
-      ctx.year = currentYear;
-      ctx.day = 1;
-      await yearlyRollup(ctx);
-    }
-
+    await runTick(ctx);
     const tasksAfter = state.tasks.filter(t => t.status === "completed").length;
     tasksCompleted += tasksAfter - tasksBefore;
+
+    currentYear = await maybeYearRollup(ctx, stepCount, currentYear);
 
     if (snapshotEvery > 0 && stepCount % snapshotEvery === 0) {
       snapshots.push(serializeState(ctx, tasksCompleted));

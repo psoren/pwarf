@@ -1,8 +1,9 @@
-import type { Dwarf, DwarfSkill, Task, TaskType, Item } from "@pwarf/shared";
+import { AUTONOMOUS_TASK_TYPES } from "@pwarf/shared";
+import type { Dwarf, DwarfSkill, Task, TaskType, SkillName, Item } from "@pwarf/shared";
 import type { CachedState, SimContext } from "./sim-context.js";
 
 /** Map task types to the skill name required. null means any dwarf can do it. */
-const TASK_SKILL_MAP: Record<TaskType, string | null> = {
+const TASK_SKILL_MAP: Record<TaskType, SkillName | null> = {
   mine: 'mining',
   haul: null,
   farm_till: 'farming',
@@ -29,7 +30,7 @@ const TASK_SKILL_MAP: Record<TaskType, string | null> = {
 };
 
 /** Get the skill name required for a task type, or null if no skill needed. */
-export function getRequiredSkill(taskType: TaskType): string | null {
+export function getRequiredSkill(taskType: TaskType): SkillName | null {
   return TASK_SKILL_MAP[taskType];
 }
 
@@ -49,12 +50,9 @@ export function isDwarfIdle(dwarf: Dwarf): boolean {
   return dwarf.status === 'alive' && dwarf.current_task_id === null && !dwarf.is_in_tantrum;
 }
 
-/** Autonomous task types that are self-only. */
-const AUTONOMOUS_TASKS: ReadonlySet<TaskType> = new Set(['eat', 'drink', 'sleep']);
-
 /** Check if a task type is autonomous (self-only). */
 export function isAutonomousTask(taskType: TaskType): boolean {
-  return AUTONOMOUS_TASKS.has(taskType);
+  return AUTONOMOUS_TASK_TYPES.has(taskType);
 }
 
 /** Get the skill name a dwarf is best at (highest level). Returns null if dwarf has no skills. */

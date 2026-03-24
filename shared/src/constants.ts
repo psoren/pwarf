@@ -1,3 +1,12 @@
+import type { TaskType } from "./db-types.js";
+
+// ============================================================
+// Domain sets
+// ============================================================
+
+/** Task types that dwarves perform autonomously (not player-designated). */
+export const AUTONOMOUS_TASK_TYPES: ReadonlySet<TaskType> = new Set(['eat', 'drink', 'sleep']);
+
 // ============================================================
 // Simulation timing
 // ============================================================
