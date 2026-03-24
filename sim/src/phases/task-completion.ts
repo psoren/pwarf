@@ -133,6 +133,10 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       break;
     case 'farm_till':
       awardXp(dwarf.id, 'farming', XP_FARM_TILL, ctx, dwarf);
+      // Convert grass → soil
+      if (task.target_x !== null && task.target_y !== null && task.target_z !== null) {
+        upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'soil', null, false);
+      }
       // Chain: till → plant
       if (task.target_x !== null && task.target_y !== null && task.target_z !== null) {
         createTask(ctx, {

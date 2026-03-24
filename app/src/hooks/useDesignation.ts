@@ -35,8 +35,9 @@ const DECONSTRUCTIBLE: ReadonlySet<string> = new Set([
   'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden', 'door',
 ]);
 
-/** Tile types that can be designated as farm plots (soil only). */
+/** Tile types that can be designated as farm plots. */
 const FARMABLE: ReadonlySet<string> = new Set([
+  'grass',
   'soil',
 ]);
 
