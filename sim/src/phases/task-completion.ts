@@ -293,8 +293,10 @@ function completeMine(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     ctx.state.dirtyItemIds.add(minedItem.id);
   }
 
-  // Surface features (z=0) become grass; underground becomes open_air
-  const resultTile: FortressTileType = task.target_z === 0 ? 'grass' : 'open_air';
+  // Surface features (z=0) become the biome base tile (grass, mud, sand, etc.);
+  // underground becomes open_air
+  const baseTile = ctx.fortressDeriver?.baseTileType ?? 'grass';
+  const resultTile: FortressTileType = task.target_z === 0 ? baseTile : 'open_air';
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, resultTile, null, true);
 }
 
