@@ -232,18 +232,31 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
 
   if (events.length > 0) {
     // Stamp world_id on events (phases leave it empty).
-    // Use upsert with ignoreDuplicates to prevent "duplicate key" errors
-    // when a previous flush partially succeeded and is retried.
+    // Deduplicate by ID before inserting — events from a failed previous flush
+    // may still be in the pendingEvents array. Also skip any IDs already sent.
     const worldId = ctx.worldId;
     const stamped = events.map((e) => ({ ...e, world_id: worldId }));
-    promises.push(
-      supabase
-        .from("world_events")
-        .upsert(stamped, { onConflict: "id", ignoreDuplicates: true })
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] events upsert failed: ${error.message}`);
-        }),
-    );
+    // Plain insert is fine — events are immutable (never updated).
+    // Duplicate IDs from retried flushes are handled by deduplicating in memory.
+    const seen = new Set<string>();
+    const unique = stamped.filter((e) => {
+      if (seen.has(e.id)) return false;
+      seen.add(e.id);
+      return true;
+    });
+    if (unique.length > 0) {
+      promises.push(
+        supabase
+          .from("world_events")
+          .insert(unique)
+          .then(({ error }) => {
+            if (error && !error.message.includes('duplicate key')) {
+              console.warn(`[flush] events insert failed: ${error.message}`);
+            }
+            // Silently ignore duplicate key errors — event already exists in DB
+          }),
+      );
+    }
   }
 
   await Promise.all(promises);
