@@ -469,6 +469,9 @@ export const WORK_BUILD_MUSHROOM_GARDEN = 50;
 /** Work required to build a door */
 export const WORK_BUILD_DOOR = 35;
 
+/** Work required to scout a cave entrance */
+export const WORK_SCOUT_CAVE = 50;
+
 /** Work required to deconstruct a built structure or tile */
 export const WORK_DECONSTRUCT = 30;
 
@@ -666,3 +669,28 @@ export const CARAVAN_DRINK_COUNT = 15;
 
 /** Number of food items a caravan brings */
 export const CARAVAN_FOOD_COUNT = 10;
+
+// ============================================================
+// Cave system
+// ============================================================
+
+/** Size of each per-entrance cave grid (128×128 tiles) */
+export const CAVE_SIZE = 128;
+
+/** Offset within the 512×512 fortress space where the cave grid starts */
+export const CAVE_OFFSET = 192; // (512 - 128) / 2
+
+/** Word lists for procedural cave name generation */
+export const CAVE_NAME_ADJECTIVES = [
+  'Deep', 'Dark', 'Echoing', 'Hidden', 'Ancient', 'Frozen', 'Burning',
+  'Silent', 'Winding', 'Shimmering', 'Sunken', 'Hollow', 'Jagged',
+];
+
+export const CAVE_NAME_NOUNS = [
+  'Caverns', 'Depths', 'Tunnels', 'Hollows', 'Grotto', 'Underhall',
+  'Passages', 'Warrens', 'Crypt', 'Labyrinth', 'Chasm', 'Rift',
+];
+
+export const CAVE_NAME_MATERIALS = [
+  'Iron', 'Gold', 'Silver', 'Emerald',
+];

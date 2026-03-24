@@ -50,6 +50,7 @@ When changing a public API that both `sim/` and `app/` use (e.g. `SimRunner` con
 - **`main` has force-push protection enabled.** Never `git push --force` to main. Force-pushing feature branches after a rebase is fine.
 - **Always `git pull` on main before starting new work.** Create worktrees off the latest main to avoid missing recently merged changes.
 - **Every code change must be made in a worktree, never in the main checkout.** Multiple Claude Code sessions sharing the same working directory will silently overwrite each other's changes. Always use `isolation: "worktree"` for agents or `git worktree add` manually. The main checkout should only be used for read-only operations (browsing, `git log`, etc.).
+- **Always run `npm install` after creating a worktree.** Worktrees don't share `node_modules` (it's gitignored). Without `npm install`, npm workspace symlinks won't exist and cross-package imports (e.g., `@pwarf/shared` from `sim/`) will fail to resolve the worktree's versions of the source files.
 - **Every change must have a GitHub issue filed first.** Include a description and apply appropriate labels (`bug`, `documentation`, `enhancement`, `phase-0` through `phase-5`, etc.).
 - Reference the issue number in commits and PRs (e.g., `closes #123`).
 - Close the issue when the PR is merged.

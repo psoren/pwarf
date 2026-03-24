@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { supabase } from "./lib/supabase";
 import Toolbar from "./components/Toolbar";
 import LeftPanel from "./components/LeftPanel";
 import RightPanel from "./components/RightPanel";
@@ -26,7 +27,7 @@ import { EpitaphScreen } from "./components/EpitaphScreen";
 import { TutorialOverlay } from "./components/TutorialOverlay";
 import { useTutorial } from "./hooks/useTutorial";
 import { useSoundtrack } from "./hooks/useSoundtrack";
-import { SURFACE_Z, CAVE_Z, BUILDING_COSTS } from "@pwarf/shared";
+import { SURFACE_Z, CAVE_OFFSET, CAVE_SIZE, BUILDING_COSTS, WORK_SCOUT_CAVE } from "@pwarf/shared";
 import type { Item } from "@pwarf/shared";
 import type { LiveDwarf } from "./hooks/useDwarves";
 
@@ -64,7 +65,7 @@ export default function App() {
   // Sim runner — provides live in-memory state
   const { snapshot, isPaused, togglePause, speed, setSpeed } = useSimRunner(world.civId, world.worldId);
 
-  const { getTile: getFortressTile } = useFortressTiles({
+  const getFortressTileResult = useFortressTiles({
     civId: world.civId,
     worldSeed: world.worldSeed,
     terrain: world.embarkTerrain,
@@ -75,6 +76,7 @@ export default function App() {
     viewportRows: vpRows,
     snapshotTileOverrides: snapshot?.fortressTileOverrides,
   });
+  const getFortressTile = getFortressTileResult.getTile;
 
   const cursorTile = world.worldId ? getTile(viewport.cursorX, viewport.cursorY) : null;
   const selectedTileData = world.worldId && selectedWorldTile
@@ -307,10 +309,21 @@ export default function App() {
           setRightOpen((o) => !o);
           break;
         case "z_up":
-          setZLevel((z) => Math.min(SURFACE_Z, z + 1));
+          // Return to surface from a cave
+          if (zLevel < 0) {
+            const deriver = getFortressTileResult.deriver;
+            const entrance = deriver?.getEntranceForZ(zLevel);
+            setZLevel(SURFACE_Z);
+            if (entrance) {
+              viewport.setOffset(
+                entrance.x - Math.floor(vpCols / 2),
+                entrance.y - Math.floor(vpRows / 2),
+              );
+            }
+          }
           break;
         case "z_down":
-          setZLevel((z) => Math.max(CAVE_Z, z - 1));
+          // Disabled — use cave entrances instead
           break;
         case "designate_mine":
           if (world.mode === "fortress") designation.toggleMine();
@@ -388,6 +401,58 @@ export default function App() {
   const handleGoToDwarf = useCallback((dwarf: LiveDwarf) => {
     setFollowedDwarfId(dwarf.id);
   }, []);
+
+  // Handle clicking a cave entrance tile — scout or enter
+  const handleFortressTileClick = useCallback((x: number, y: number) => {
+    setSelectedFortressTile({ x, y });
+    setFollowedDwarfId(null);
+
+    // Only check cave entrances on the surface
+    if (zLevel !== SURFACE_Z) return;
+
+    const tile = getFortressTile(x, y);
+    if (tile?.tileType !== 'cave_entrance') return;
+
+    const deriver = getFortressTileResult.deriver;
+    if (!deriver) return;
+
+    const caveZ = deriver.getZForEntrance(x, y);
+    if (caveZ === null) return;
+
+    // Check if the cave is discovered — any fortress tile override at that z-level
+    const snapshotOverrides = snapshot?.fortressTileOverrides ?? [];
+    const discovered = snapshotOverrides.some(t => t.z === caveZ);
+
+    if (discovered) {
+      // Enter the cave — switch z-level and center viewport on the cave
+      setZLevel(caveZ);
+      const center = CAVE_OFFSET + Math.floor(CAVE_SIZE / 2);
+      viewport.setOffset(
+        center - Math.floor(vpCols / 2),
+        center - Math.floor(vpRows / 2),
+      );
+    } else {
+      // Check if there's already a scout task for this entrance
+      const alreadyScouting = liveTasks.some(
+        t => t.task_type === 'scout_cave'
+          && t.target_x === x
+          && t.target_y === y
+          && ['pending', 'claimed', 'in_progress'].includes(t.status),
+      );
+      if (!alreadyScouting && world.civId) {
+        void supabase.from('tasks').insert({
+          civilization_id: world.civId,
+          task_type: 'scout_cave',
+          status: 'pending',
+          priority: 5,
+          target_x: x,
+          target_y: y,
+          target_z: 0,
+          work_required: WORK_SCOUT_CAVE,
+        });
+      }
+    }
+  }, [zLevel, getFortressTile, getFortressTileResult.deriver, snapshot?.fortressTileOverrides, liveTasks, world.civId, viewport, vpCols, vpRows]);
 
   // Dwarf info modal
   const [modalDwarfId, setModalDwarfId] = useState<string | null>(null);
@@ -573,7 +638,7 @@ export default function App() {
           onTileClick={world.mode === "world"
             ? (x: number, y: number) => setSelectedWorldTile({ x, y })
             : world.mode === "fortress"
-              ? (x: number, y: number) => { setSelectedFortressTile({ x, y }); setFollowedDwarfId(null); }
+              ? handleFortressTileClick
               : undefined}
           onDwarfClick={world.mode === "fortress" ? handleDwarfClick : undefined}
           selectedTile={world.mode === "world" ? selectedWorldTile : undefined}
@@ -637,6 +702,7 @@ export default function App() {
         zLevel={world.mode === "fortress" ? zLevel : undefined}
         fortressTileLabel={fortressTileLabel}
         designationMode={world.mode === "fortress" ? designation.designationMode : undefined}
+        caveName={zLevel < 0 ? getFortressTileResult.deriver?.getCaveName(zLevel) ?? undefined : undefined}
       />
     </div>
   );

@@ -1,17 +1,22 @@
 import { createNoise2D, type NoiseFunction2D } from "simplex-noise";
 import { createAleaRng, fbm } from "./world-gen-helpers.js";
 import type { FortressTileType, TerrainType } from "./db-types.js";
+import {
+  CAVE_SIZE,
+  CAVE_OFFSET,
+  CAVE_NAME_ADJECTIVES,
+  CAVE_NAME_NOUNS,
+  CAVE_NAME_MATERIALS,
+} from "./constants.js";
 
 // ============================================================
 // Constants
 // ============================================================
 
 export const FORTRESS_SIZE = 512;
-
-/** Surface level — the only level generated at embark. */
 export const SURFACE_Z = 0;
 
-/** First cave level — generated when a cave entrance exists. */
+/** @deprecated Use per-entrance z-levels instead. Kept for backwards compat. */
 export const CAVE_Z = -1;
 
 // ============================================================
@@ -23,10 +28,19 @@ export interface DerivedFortressTile {
   material: string | null;
 }
 
+export interface CaveEntrance {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface FortressDeriver {
   deriveTile(x: number, y: number, z: number): DerivedFortressTile;
-  /** The base surface tile type for this biome (grass, mud, sand, etc.) */
   baseTileType: FortressTileType;
+  entrances: readonly CaveEntrance[];
+  getZForEntrance(x: number, y: number): number | null;
+  getEntranceForZ(z: number): CaveEntrance | null;
+  getCaveName(z: number): string | null;
 }
 
 // ============================================================
@@ -42,18 +56,16 @@ function buildCaveGrid(
   noise: NoiseFunction2D,
   z: number,
   frequency: number,
+  size: number = FORTRESS_SIZE,
 ): boolean[] {
-  const size = FORTRESS_SIZE;
-  // Initialize from noise
   let grid = new Array<boolean>(size * size);
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       const val = (noise(x * frequency + z * 100, y * frequency + z * 100) + 1) / 2;
-      grid[y * size + x] = val < CA_INITIAL_OPEN; // true = open
+      grid[y * size + x] = val < CA_INITIAL_OPEN;
     }
   }
 
-  // Smoothing iterations
   for (let iter = 0; iter < CA_SMOOTHING_ITERATIONS; iter++) {
     const next = new Array<boolean>(size * size);
     for (let y = 0; y < size; y++) {
@@ -65,7 +77,7 @@ function buildCaveGrid(
             const nx = x + dx;
             const ny = y + dy;
             if (nx < 0 || nx >= size || ny < 0 || ny >= size) {
-              solidCount++; // edges count as solid
+              solidCount++;
             } else if (!grid[ny * size + nx]) {
               solidCount++;
             }
@@ -77,7 +89,7 @@ function buildCaveGrid(
     grid = next;
   }
 
-  // Flood-fill to find connected regions, discard small ones
+  const minRegion = size < FORTRESS_SIZE ? 20 : MIN_REGION_SIZE;
   const labels = new Int32Array(size * size);
   let regionId = 0;
   const regionSizes = new Map<number, number>();
@@ -103,14 +115,12 @@ function buildCaveGrid(
     regionSizes.set(regionId, count);
   }
 
-  // Remove small regions
   for (let i = 0; i < grid.length; i++) {
-    if (grid[i] && (regionSizes.get(labels[i]) ?? 0) < MIN_REGION_SIZE) {
+    if (grid[i] && (regionSizes.get(labels[i]) ?? 0) < minRegion) {
       grid[i] = false;
     }
   }
 
-  // Connect disjoint regions with corridors
   const surviving = new Set<number>();
   for (let i = 0; i < grid.length; i++) {
     if (grid[i] && labels[i] !== 0) surviving.add(labels[i]);
@@ -149,6 +159,40 @@ function buildCaveGrid(
 }
 
 // ============================================================
+// Per-entrance cave generation
+// ============================================================
+
+function caveSeed(baseSeed: bigint, entranceX: number, entranceY: number): bigint {
+  return baseSeed ^ BigInt(entranceX * 7919 + entranceY * 6271);
+}
+
+function buildCaveForEntrance(
+  baseSeed: bigint,
+  entranceX: number,
+  entranceY: number,
+): { grid: boolean[]; materialNoises: NoiseFunction2D[] } {
+  const seed = caveSeed(baseSeed, entranceX, entranceY);
+  const rng = createAleaRng(seed);
+  const noise = createNoise2D(rng);
+  const grid = buildCaveGrid(noise, -1, 0.03, CAVE_SIZE);
+
+  // Ensure the entrance tile (center of cave) is always open
+  const center = Math.floor(CAVE_SIZE / 2);
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const nx = center + dx;
+      const ny = center + dy;
+      if (nx >= 0 && nx < CAVE_SIZE && ny >= 0 && ny < CAVE_SIZE) {
+        grid[ny * CAVE_SIZE + nx] = true;
+      }
+    }
+  }
+
+  const materialNoises: NoiseFunction2D[] = CAVE_MATERIALS.map(() => createNoise2D(rng));
+  return { grid, materialNoises };
+}
+
+// ============================================================
 // Seed combination
 // ============================================================
 
@@ -164,24 +208,14 @@ function combineSeed(worldSeed: bigint, civId: string): bigint {
 // Cave entrance placement
 // ============================================================
 
-/**
- * Pick cave entrance positions on the surface. Uses noise to place
- * entrances at natural-looking locations, biased toward rocky/hilly areas.
- * Returns positions where cave_entrance tiles should appear at z=0,
- * each connecting to an open cavern_floor tile at z=-1.
- */
 function pickCaveEntrances(
   entranceNoise: NoiseFunction2D,
-  caveGrid: boolean[],
 ): Array<{ x: number; y: number }> {
   const candidates: Array<{ x: number; y: number; val: number }> = [];
-  const step = 32; // Sample grid at regular intervals
+  const step = 32;
 
   for (let sy = step; sy < FORTRESS_SIZE - step; sy += step) {
     for (let sx = step; sx < FORTRESS_SIZE - step; sx += step) {
-      // Only place an entrance if the cave below is open
-      if (!caveGrid[sy * FORTRESS_SIZE + sx]) continue;
-
       const val = (entranceNoise(sx * 0.01, sy * 0.01) + 1) / 2;
       if (val > 0.7) {
         candidates.push({ x: sx, y: sy, val });
@@ -191,7 +225,6 @@ function pickCaveEntrances(
 
   candidates.sort((a, b) => b.val - a.val);
 
-  // Pick up to 5 entrances, spaced apart
   const positions: Array<{ x: number; y: number }> = [];
   const minDist = 80;
 
@@ -204,7 +237,24 @@ function pickCaveEntrances(
     positions.push({ x: c.x, y: c.y });
   }
 
+  positions.sort((a, b) => a.y !== b.y ? a.y - b.y : a.x - b.x);
   return positions;
+}
+
+// ============================================================
+// Cave name generation
+// ============================================================
+
+export function generateCaveName(seed: bigint): string {
+  const n = Number(seed & 0xFFFFFFFFn);
+  const adj = CAVE_NAME_ADJECTIVES[n % CAVE_NAME_ADJECTIVES.length];
+  const noun = CAVE_NAME_NOUNS[Math.floor(n / 13) % CAVE_NAME_NOUNS.length];
+  const mat = CAVE_NAME_MATERIALS[Math.floor(n / 157) % CAVE_NAME_MATERIALS.length];
+  return `The ${adj} ${noun} of ${mat}`;
+}
+
+export function getCaveSeed(worldSeed: bigint, civId: string, entranceX: number, entranceY: number): bigint {
+  return caveSeed(combineSeed(worldSeed, civId), entranceX, entranceY);
 }
 
 // ============================================================
@@ -215,10 +265,9 @@ interface MaterialDef {
   name: string;
   kind: "ore" | "gem";
   threshold: number;
-  priority: number; // higher = rarer = wins ties
+  priority: number;
 }
 
-/** Materials found in cave walls at z=-1. */
 const CAVE_MATERIALS: MaterialDef[] = [
   { name: "iron",   kind: "ore", threshold: 0.94, priority: 1 },
   { name: "copper", kind: "ore", threshold: 0.94, priority: 2 },
@@ -261,24 +310,17 @@ function checkCaveMaterial(
 // Surface feature generation (z=0)
 // ============================================================
 
-/** Per-biome thresholds controlling surface tile distribution. */
 interface SurfaceProfile {
-  /** Base tile when nothing else matches */
   base: FortressTileType;
   baseMaterial: string | null;
-  /** Tree region threshold (lower = more trees). Set > 1 to disable. */
   treeRegion: number;
   treeDetail: number;
-  /** Bush region range + detail threshold */
   bushRegionMin: number;
   bushRegionMax: number;
   bushDetail: number;
-  /** Rock threshold (lower = more rocks) */
   rockThreshold: number;
-  /** Pond region + detail thresholds. Set > 1 to disable. */
   pondRegion: number;
   pondDetail: number;
-  /** Optional water tile type override (e.g. ice for tundra) */
   pondTile: FortressTileType;
 }
 
@@ -350,8 +392,7 @@ function getProfile(terrain: TerrainType): SurfaceProfile {
 }
 
 export function deriveSurfaceTile(
-  x: number,
-  y: number,
+  x: number, y: number,
   treeNoise: NoiseFunction2D,
   rockNoise: NoiseFunction2D,
   pondNoise: NoiseFunction2D,
@@ -359,32 +400,27 @@ export function deriveSurfaceTile(
 ): DerivedFortressTile {
   const p = getProfile(terrain);
 
-  // Ponds / water features
   const pondVal = (pondNoise(x * 0.04, y * 0.04) + 1) / 2;
   const pondRegion = (pondNoise(x * 0.008 + 300, y * 0.008 + 300) + 1) / 2;
   if (pondRegion > p.pondRegion && pondVal > p.pondDetail) {
     return { tileType: p.pondTile, material: null };
   }
 
-  // Trees
   const treeRegion = (treeNoise(x * 0.006, y * 0.006) + 1) / 2;
   const treeDetail = (treeNoise(x * 0.08 + 500, y * 0.08 + 500) + 1) / 2;
   if (treeRegion > p.treeRegion && treeDetail > p.treeDetail) {
     return { tileType: "tree", material: "wood" };
   }
 
-  // Bushes
   if (treeRegion > p.bushRegionMin && treeRegion < p.bushRegionMax && treeDetail > p.bushDetail) {
     return { tileType: "bush", material: null };
   }
 
-  // Rocks
   const rockVal = (rockNoise(x * 0.05, y * 0.05) + 1) / 2;
   if (rockVal > p.rockThreshold) {
     return { tileType: "rock", material: "stone" };
   }
 
-  // Base tile (grass, sand, mud, stone, lava_stone depending on biome)
   return { tileType: p.base, material: p.baseMaterial };
 }
 
@@ -400,44 +436,65 @@ export function createFortressDeriver(
   const seed = combineSeed(worldSeed, civId);
   const rng = createAleaRng(seed);
 
-  // Noise fields
-  const caveNoise = createNoise2D(rng);
+  // Consume noise in same order as before to keep RNG sequence stable
+  const _caveNoise = createNoise2D(rng);
   const entranceNoise = createNoise2D(rng);
   const surfaceTreeNoise = createNoise2D(rng);
   const surfaceRockNoise = createNoise2D(rng);
   const surfacePondNoise = createNoise2D(rng);
+  CAVE_MATERIALS.forEach(() => createNoise2D(rng));
 
-  // Per-material noise for cave walls
-  const materialNoises: NoiseFunction2D[] = CAVE_MATERIALS.map(() => createNoise2D(rng));
+  const entrancePositions = pickCaveEntrances(entranceNoise);
 
-  // Pre-compute cave grid for z=-1
-  const caveGrid = buildCaveGrid(caveNoise, CAVE_Z, 0.03);
-
-  // Pre-compute cave entrance positions
-  const entrancePositions = pickCaveEntrances(entranceNoise, caveGrid);
-  const entranceSet = new Set<string>(
-    entrancePositions.map(p => `${p.x},${p.y}`),
+  const entrances: CaveEntrance[] = entrancePositions.map((p, i) => ({
+    x: p.x, y: p.y, z: -(i + 1),
+  }));
+  const entranceByPos = new Map<string, CaveEntrance>(
+    entrances.map(e => [`${e.x},${e.y}`, e]),
   );
+  const entranceByZ = new Map<number, CaveEntrance>(
+    entrances.map(e => [e.z, e]),
+  );
+
+  const caveCache = new Map<number, { grid: boolean[]; materialNoises: NoiseFunction2D[] }>();
+
+  function getCaveData(z: number) {
+    const entrance = entranceByZ.get(z);
+    if (!entrance) return null;
+    let data = caveCache.get(z);
+    if (!data) {
+      data = buildCaveForEntrance(seed, entrance.x, entrance.y);
+      caveCache.set(z, data);
+    }
+    return data;
+  }
 
   const profile = getProfile(terrain);
 
   return {
     baseTileType: profile.base,
-    deriveTile(x: number, y: number, z: number): DerivedFortressTile {
-      // Only z=0 (surface) and z=-1 (caves) are valid
-      if (z !== SURFACE_Z && z !== CAVE_Z) {
-        return { tileType: "empty", material: null };
-      }
+    entrances,
 
-      // z=0: Surface with cave entrances
+    getZForEntrance(x: number, y: number): number | null {
+      return entranceByPos.get(`${x},${y}`)?.z ?? null;
+    },
+
+    getEntranceForZ(z: number): CaveEntrance | null {
+      return entranceByZ.get(z) ?? null;
+    },
+
+    getCaveName(z: number): string | null {
+      const entrance = entranceByZ.get(z);
+      if (!entrance) return null;
+      return generateCaveName(caveSeed(seed, entrance.x, entrance.y));
+    },
+
+    deriveTile(x: number, y: number, z: number): DerivedFortressTile {
       if (z === SURFACE_Z) {
-        // Check for cave entrance
-        if (entranceSet.has(`${x},${y}`)) {
+        if (entranceByPos.has(`${x},${y}`)) {
           return { tileType: "cave_entrance", material: null };
         }
 
-        // Clear surface features near fortress center so dwarves aren't
-        // trapped by trees on spawn
         const center = Math.floor(FORTRESS_SIZE / 2);
         const nearCenter = Math.abs(x - center) <= 3 && Math.abs(y - center) <= 3;
         if (nearCenter) {
@@ -447,19 +504,27 @@ export function createFortressDeriver(
         return deriveSurfaceTile(x, y, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise, terrain);
       }
 
-      // z=-1: Cave level
-      const inBounds = x >= 0 && x < FORTRESS_SIZE && y >= 0 && y < FORTRESS_SIZE;
-      const isOpen = inBounds && caveGrid[y * FORTRESS_SIZE + x];
+      if (z < 0) {
+        const cave = getCaveData(z);
+        if (!cave) return { tileType: "empty", material: null };
 
-      if (isOpen) {
-        return { tileType: "cavern_floor", material: null };
+        const cx = x - CAVE_OFFSET;
+        const cy = y - CAVE_OFFSET;
+        if (cx < 0 || cx >= CAVE_SIZE || cy < 0 || cy >= CAVE_SIZE) {
+          return { tileType: "cavern_wall", material: null };
+        }
+
+        if (cave.grid[cy * CAVE_SIZE + cx]) {
+          return { tileType: "cavern_floor", material: null };
+        }
+
+        const mat = checkCaveMaterial(cx, cy, cave.materialNoises);
+        if (mat) return mat;
+
+        return { tileType: "cavern_wall", material: null };
       }
 
-      // Cave wall — check for ore/gem veins
-      const mat = checkCaveMaterial(x, y, materialNoises);
-      if (mat) return mat;
-
-      return { tileType: "cavern_wall", material: null };
+      return { tileType: "empty", material: null };
     },
   };
 }

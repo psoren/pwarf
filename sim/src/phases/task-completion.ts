@@ -18,6 +18,8 @@ import {
   MORALE_RESTORE_SKILLED_TASK,
   MORALE_RESTORE_HAUL_TASK,
   SKILL_TIER_NAMES,
+  generateCaveName,
+  getCaveSeed,
 } from "@pwarf/shared";
 import type { Dwarf, FortressTile, FortressTileType, Task, Item, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -198,6 +200,9 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'forage':
       completeForage(dwarf, task, ctx);
       awardXp(dwarf.id, 'foraging', XP_FORAGE, ctx, dwarf);
+      break;
+    case 'scout_cave':
+      completeScoutCave(dwarf, task, ctx);
       break;
   }
 
@@ -715,6 +720,45 @@ export function completeSmith(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   };
   ctx.state.items.push(tool);
   ctx.state.dirtyItemIds.add(tool.id);
+}
+
+/**
+ * Scout cave: on completion, mark the cave as discovered by writing a marker
+ * tile at the cave's z-level, generate a cave name, and fire a discovery event.
+ * Exported for unit testing.
+ */
+export function completeScoutCave(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  if (task.target_x === null || task.target_y === null) return;
+
+  const deriver = ctx.fortressDeriver;
+  if (!deriver) return;
+
+  const caveZ = deriver.getZForEntrance(task.target_x, task.target_y);
+  if (caveZ === null) return;
+
+  const caveName = deriver.getCaveName(caveZ) ?? 'an unknown cave';
+
+  // Write a marker tile at the entrance position in the cave z-level
+  // This signals to the UI that the cave has been discovered
+  upsertFortressTile(ctx, task.target_x, task.target_y, caveZ, 'cavern_floor', null, false);
+
+  // Fire discovery event
+  const dwarfLabel = dwarfName(dwarf);
+  ctx.state.pendingEvents.push({
+    id: ctx.rng.uuid(),
+    world_id: '',
+    year: ctx.year,
+    category: 'discovery',
+    civilization_id: ctx.civilizationId,
+    ruin_id: null,
+    dwarf_id: dwarf.id,
+    item_id: null,
+    faction_id: null,
+    monster_id: null,
+    description: `${dwarfLabel} discovered ${caveName}!`,
+    event_data: { action: 'scout_cave', cave_name: caveName, cave_z: caveZ },
+    created_at: new Date().toISOString(),
+  });
 }
 
 /** Find the first item at a given tile position with the given category. */

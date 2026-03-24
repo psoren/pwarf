@@ -311,6 +311,10 @@ describe("task execution", () => {
     // Deriver that returns open_air everywhere at z=0
     ctx.fortressDeriver = {
       baseTileType: "grass" as FortressTileType,
+      entrances: [],
+      getZForEntrance() { return null; },
+      getEntranceForZ() { return null; },
+      getCaveName() { return null; },
       deriveTile() {
         return { tileType: "open_air" as FortressTileType, material: null };
       },
@@ -349,6 +353,10 @@ describe("task execution", () => {
 
     ctx.fortressDeriver = {
       baseTileType: "grass" as FortressTileType,
+      entrances: [],
+      getZForEntrance() { return null; },
+      getEntranceForZ() { return null; },
+      getCaveName() { return null; },
       deriveTile(_x: number, _y: number, z: number) {
         if (z === 0) return { tileType: "open_air" as FortressTileType, material: null };
         return { tileType: "stone" as FortressTileType, material: "granite" };

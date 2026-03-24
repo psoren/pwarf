@@ -25,6 +25,7 @@ const TASK_SKILL_MAP: Record<TaskType, string | null> = {
   smith: 'smithing',
   create_artifact: null,
   forage: null,
+  scout_cave: null,
 };
 
 /** Get the skill name required for a task type, or null if no skill needed. */

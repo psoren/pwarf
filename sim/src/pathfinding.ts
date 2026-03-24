@@ -9,6 +9,12 @@ export interface Position {
 /** Tile lookup function — returns the tile type at a given position, or null if no tile exists. */
 export type TileLookup = (x: number, y: number, z: number) => FortressTileType | null;
 
+/** Resolves entrance positions to their cave z-level and back. */
+export interface ZResolver {
+  getZForEntrance(x: number, y: number): number | null;
+  getEntranceForZ(z: number): { x: number; y: number } | null;
+}
+
 const WALKABLE_TILES: ReadonlySet<FortressTileType> = new Set([
   'constructed_floor',
   'cavern_floor',
@@ -37,8 +43,12 @@ export function isWalkable(tileType: FortressTileType | null): boolean {
 /**
  * Get walkable neighbors of a position.
  * Returns adjacent tiles on the same z-level plus cave entrance transitions.
+ *
+ * When a ZResolver is provided, cave_entrance tiles transition to the specific
+ * z-level for that entrance (not always z-1). Without a resolver, falls back
+ * to the legacy z-1 behavior.
  */
-export function getNeighbors(pos: Position, getTile: TileLookup): Position[] {
+export function getNeighbors(pos: Position, getTile: TileLookup, zResolver?: ZResolver): Position[] {
   const neighbors: Position[] = [];
   const { x, y, z } = pos;
 
@@ -59,19 +69,31 @@ export function getNeighbors(pos: Position, getTile: TileLookup): Position[] {
     }
   }
 
-  // Cave entrance connections: surface cave_entrance ↔ cavern_floor below
+  // Cave entrance connections: surface cave_entrance ↔ cave below
   const currentTile = getTile(x, y, z);
-  if (currentTile === 'cave_entrance') {
-    const below = getTile(x, y, z - 1);
-    if (isWalkable(below)) {
-      neighbors.push({ x, y, z: z - 1 });
+  if (currentTile === 'cave_entrance' && z === 0) {
+    const caveZ = zResolver ? zResolver.getZForEntrance(x, y) : -1;
+    if (caveZ !== null) {
+      const below = getTile(x, y, caveZ);
+      if (isWalkable(below)) {
+        neighbors.push({ x, y, z: caveZ });
+      }
     }
   }
-  // From underground, can go up through a cave entrance above
+  // From underground, can go up through the entrance that leads to this z-level
   if (z < 0) {
-    const above = getTile(x, y, z + 1);
-    if (above === 'cave_entrance') {
-      neighbors.push({ x, y, z: z + 1 });
+    const entrance = zResolver?.getEntranceForZ(z);
+    if (entrance) {
+      const above = getTile(entrance.x, entrance.y, 0);
+      if (above === 'cave_entrance') {
+        neighbors.push({ x: entrance.x, y: entrance.y, z: 0 });
+      }
+    } else {
+      // Legacy fallback: try going straight up
+      const above = getTile(x, y, z + 1);
+      if (above === 'cave_entrance') {
+        neighbors.push({ x, y, z: z + 1 });
+      }
     }
   }
 
@@ -103,6 +125,7 @@ export function bfsNextStep(
   goal: Position,
   getTile: TileLookup,
   adjacentToGoal = false,
+  zResolver?: ZResolver,
 ): Position | null {
   // Already at goal
   if (start.x === goal.x && start.y === goal.y && start.z === goal.z) {
@@ -126,7 +149,7 @@ export function bfsNextStep(
     }
 
     const current = queue.shift()!;
-    const neighbors = getNeighbors(current, getTile);
+    const neighbors = getNeighbors(current, getTile, zResolver);
 
     for (const neighbor of neighbors) {
       const key = posKey(neighbor);

@@ -12,7 +12,7 @@ import {
 import type { Dwarf, Task } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { getDwarfSkillLevel, getRequiredSkill } from "../task-helpers.js";
-import { bfsNextStep } from "../pathfinding.js";
+import { bfsNextStep, type ZResolver } from "../pathfinding.js";
 import { buildTileLookup } from "../tile-lookup.js";
 import { canPickUp, pickUpItem } from "../inventory.js";
 import { handleDeprivationDeaths } from "./deprivation.js";
@@ -35,6 +35,14 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
   const { state } = ctx;
 
   handleDeprivationDeaths(ctx);
+
+  // Build z-resolver from fortress deriver for multi-level pathfinding
+  const zResolver: ZResolver | undefined = ctx.fortressDeriver
+    ? {
+        getZForEntrance: (x, y) => ctx.fortressDeriver!.getZForEntrance(x, y),
+        getEntranceForZ: (z) => ctx.fortressDeriver!.getEntranceForZ(z),
+      }
+    : undefined;
 
   // Build a set of occupied tiles so dwarves don't stack on each other
   const occupiedTiles = new Set<string>();
@@ -82,6 +90,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
               { x: haulItem.position_x, y: haulItem.position_y, z: haulItem.position_z },
               getTile,
               false,
+              zResolver,
             );
             if (nextStep) {
               const nextKey = `${nextStep.x},${nextStep.y},${nextStep.z}`;
@@ -115,7 +124,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
         : (dwarf.position_x === task.target_x && dwarf.position_y === task.target_y && dwarf.position_z === task.target_z);
 
       if (!atSite) {
-        const moved = moveTowardTarget(dwarf, task, ctx, occupiedTiles);
+        const moved = moveTowardTarget(dwarf, task, ctx, occupiedTiles, zResolver);
         if (!moved) {
           failTask(dwarf, task, state);
         }
@@ -166,7 +175,7 @@ function isAdjacentToTarget(dwarf: Dwarf, task: Task): boolean {
   return (dx + dy) === 1;
 }
 
-function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTiles: Set<string>): boolean {
+function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTiles: Set<string>, zResolver?: ZResolver): boolean {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return true;
 
   // Already at the task site — no movement needed
@@ -183,6 +192,7 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
     { x: task.target_x, y: task.target_y, z: task.target_z },
     getTile,
     needsAdjacent,
+    zResolver,
   );
 
   if (nextStep === null) {
