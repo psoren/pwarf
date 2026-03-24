@@ -12,6 +12,7 @@ const BUILD_OPTIONS: BuildOption[] = [
   { label: "Bed", key: "e", taskType: "build_bed" },
   { label: "Well", key: "l", taskType: "build_well" },
   { label: "Mushroom Garden", key: "m", taskType: "build_mushroom_garden" },
+  { label: "Door", key: "d", taskType: "build_door" },
 ];
 
 interface BuildMenuProps {

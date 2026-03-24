@@ -181,10 +181,9 @@ export type TaskType =
   | 'build_bed'
   | 'build_well'
   | 'build_mushroom_garden'
+  | 'build_door'
   | 'deconstruct'
   | 'wander'
-  | 'smooth'
-  | 'engrave'
   | 'engrave_memorial'
   | 'brew'
   | 'cook'
@@ -222,13 +221,11 @@ export type FortressTileType =
   | 'bed'
   | 'well'
   | 'mushroom_garden'
+  | 'door'
   | 'sand'
   | 'ice'
   | 'mud'
   | 'cave_entrance'
-  | 'smooth_stone'
-  | 'engraved_stone'
-  | 'engraved_floor'
   | 'empty';
 
 // ============================================================

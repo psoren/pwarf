@@ -17,19 +17,18 @@ import {
 
 describe("restoreMorale", () => {
   const emptyStructures: any[] = [];
-  const emptyTiles = new Map();
 
   it("does nothing when no other dwarves are nearby", () => {
     const dwarf = makeDwarf({ need_social: 50, position_x: 0, position_y: 0, position_z: 0 });
     const far = makeDwarf({ position_x: 100, position_y: 100, position_z: 0 });
-    restoreMorale(dwarf, [dwarf, far], emptyStructures, emptyTiles);
+    restoreMorale(dwarf, [dwarf, far], emptyStructures);
     expect(dwarf.need_social).toBe(50);
   });
 
   it("restores morale when a dwarf is nearby", () => {
     const dwarf = makeDwarf({ need_social: 50, position_x: 0, position_y: 0, position_z: 0, trait_extraversion: null });
     const neighbor = makeDwarf({ position_x: 3, position_y: 3, position_z: 0 });
-    restoreMorale(dwarf, [dwarf, neighbor], emptyStructures, emptyTiles);
+    restoreMorale(dwarf, [dwarf, neighbor], emptyStructures);
     expect(dwarf.need_social).toBeCloseTo(50 + MORALE_RESTORE_PER_NEARBY_DWARF);
   });
 
@@ -38,7 +37,7 @@ describe("restoreMorale", () => {
     const neighbors = Array.from({ length: SOCIAL_PROXIMITY_MAX_DWARVES + 2 }, (_, i) =>
       makeDwarf({ position_x: i, position_y: 0, position_z: 0 }),
     );
-    restoreMorale(dwarf, [dwarf, ...neighbors], emptyStructures, emptyTiles);
+    restoreMorale(dwarf, [dwarf, ...neighbors], emptyStructures);
     const expected = 30 + SOCIAL_PROXIMITY_MAX_DWARVES * MORALE_RESTORE_PER_NEARBY_DWARF;
     expect(dwarf.need_social).toBeCloseTo(expected);
   });
@@ -46,21 +45,21 @@ describe("restoreMorale", () => {
   it("ignores dwarves on different z-levels", () => {
     const dwarf = makeDwarf({ need_social: 50, position_x: 0, position_y: 0, position_z: 0 });
     const other = makeDwarf({ position_x: 1, position_y: 1, position_z: -1 });
-    restoreMorale(dwarf, [dwarf, other], emptyStructures, emptyTiles);
+    restoreMorale(dwarf, [dwarf, other], emptyStructures);
     expect(dwarf.need_social).toBe(50);
   });
 
   it("ignores dead dwarves", () => {
     const dwarf = makeDwarf({ need_social: 50, position_x: 0, position_y: 0, position_z: 0 });
     const dead = makeDwarf({ status: "dead", position_x: 1, position_y: 1, position_z: 0 });
-    restoreMorale(dwarf, [dwarf, dead], emptyStructures, emptyTiles);
+    restoreMorale(dwarf, [dwarf, dead], emptyStructures);
     expect(dwarf.need_social).toBe(50);
   });
 
   it("ignores dwarves beyond SOCIAL_PROXIMITY_RADIUS", () => {
     const dwarf = makeDwarf({ need_social: 50, position_x: 0, position_y: 0, position_z: 0 });
     const far = makeDwarf({ position_x: SOCIAL_PROXIMITY_RADIUS + 1, position_y: 0, position_z: 0 });
-    restoreMorale(dwarf, [dwarf, far], emptyStructures, emptyTiles);
+    restoreMorale(dwarf, [dwarf, far], emptyStructures);
     expect(dwarf.need_social).toBe(50);
   });
 
@@ -69,7 +68,7 @@ describe("restoreMorale", () => {
     const neighbors = Array.from({ length: 3 }, () =>
       makeDwarf({ position_x: 1, position_y: 1, position_z: 0 }),
     );
-    restoreMorale(dwarf, [dwarf, ...neighbors], emptyStructures, emptyTiles);
+    restoreMorale(dwarf, [dwarf, ...neighbors], emptyStructures);
     expect(dwarf.need_social).toBe(MAX_NEED);
   });
 });

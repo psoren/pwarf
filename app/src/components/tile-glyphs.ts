@@ -38,13 +38,11 @@ export const FORTRESS_GLYPHS: Record<FortressTileType, { ch: string; fg: string 
   bed:                { ch: "\u2261", fg: "#8B6914" },
   well:               { ch: "O",  fg: "#5599dd" },
   mushroom_garden:    { ch: "\u2261", fg: "#aa66cc" },
+  door:               { ch: "+", fg: "#8B7355" },
   sand:               { ch: "≡",  fg: "#cc9944" },
   ice:                { ch: "≈",  fg: "#aaddff" },
   mud:                { ch: "≈",  fg: "#665533" },
   cave_entrance:      { ch: "\u25BC", fg: "#ff9944" },
-  smooth_stone:       { ch: "\u2591", fg: "#aaa" },
-  engraved_stone:     { ch: "\u2593", fg: "#ddbbaa" },
-  engraved_floor:     { ch: "+",  fg: "#ddbbaa" },
   empty:              { ch: " ",  fg: "#000" },
 };
 
@@ -54,6 +52,7 @@ export const DESIGNATION_PREVIEW: Record<string, { ch: string; fg: string }> = {
   build_wall:        { ch: "#", fg: "#cc8844" },
   build_floor:       { ch: "+", fg: "#cc8844" },
   build_bed:         { ch: "\u2261", fg: "#cc8844" },
+  build_door:        { ch: "+", fg: "#cc8844" },
   deconstruct:       { ch: "X", fg: "#cc4444" },
   stockpile:         { ch: "\u25A1", fg: "#8B6914" },
 };

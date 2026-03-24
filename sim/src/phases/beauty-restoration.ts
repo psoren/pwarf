@@ -3,8 +3,6 @@ import {
   BEAUTY_RESTORE_PASSIVE,
   BEAUTY_RESTORE_NEAR_STRUCTURE,
   BEAUTY_STRUCTURE_RADIUS,
-  BEAUTY_RESTORE_NEAR_ENGRAVING,
-  BEAUTY_ENGRAVING_RADIUS,
   OPENNESS_BEAUTY_MULTIPLIER,
 } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -49,25 +47,6 @@ export async function beautyRestoration(ctx: SimContext): Promise<void> {
         restore += BEAUTY_RESTORE_NEAR_STRUCTURE * opennessModifier;
         break; // only one bonus per tick regardless of how many structures
       }
-    }
-
-    // Check for nearby engraved tiles (fortress tile overrides)
-    let nearEngraving = false;
-    for (const tile of state.fortressTileOverrides.values()) {
-      if (tile.tile_type !== 'engraved_stone') continue;
-      if (tile.z !== dwarf.position_z) continue;
-      const dist = Math.abs(tile.x - dwarf.position_x) + Math.abs(tile.y - dwarf.position_y);
-      if (dist <= BEAUTY_ENGRAVING_RADIUS) {
-        nearEngraving = true;
-        break;
-      }
-    }
-
-    if (nearEngraving) {
-      const opennessModifier = dwarf.trait_openness !== null
-        ? 1 + (dwarf.trait_openness - 0.5) * OPENNESS_BEAUTY_MULTIPLIER
-        : 1;
-      restore += BEAUTY_RESTORE_NEAR_ENGRAVING * opennessModifier;
     }
 
     dwarf.need_beauty = Math.min(MAX_NEED, dwarf.need_beauty + restore);

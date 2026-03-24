@@ -1,0 +1,75 @@
+{
+  "id": "2026-03-24T05-44-57",
+  "timestamp": "2026-03-24T05:44:57.414Z",
+  "title": "Digest — Mar 24, 2026, 05:44 AM UTC",
+  "summary": "# Pwarf Devlog Digest: New Features and Fixes\n\nExciting updates have been made to Pwarf since the last digest! Check out the latest features and fixes that enhance gameplay and improve the overall experience.\n\n## Major Features\n\n- **Hauling Improvements**: Dwarves now automatically pick up ground items and haul them to stockpiles, streamlining resource management.\n- **New Doors**: Introduced a buildable door structure that blocks monster pathing, providing a strategic defensive tool. Dwarves can walk through these doors freely, but monsters cannot.\n- **Ambient Soundtrack**: Added a procedural ambient soundtrack using Tone.js for a more immersive experience. A mute/unmute toggle is available in the toolbar, with music pausing in sync with game events.\n- **Building Resource Requirements**: Buildings now consume raw materials upon completion, requiring players to manage their resources carefully.\n\n## Gameplay Enhancements\n\n- **Tile Buildability**: Buildings can now be constructed on mud and sand tiles, making swamp and desert biomes playable.\n- **Visual Updates for Stockpiles**: Stockpile tiles now have a visible glyph and background, improving visibility and aesthetics.\n- **Item Management**: Dwarves now drop items when no suitable stockpile exists, preventing them from getting stuck with full inventories.\n\n## Bug Fixes\n\n- **Occupancy Restrictions**: Dwarves can no longer occupy the same tile, which helps with pathfinding and avoids congestion.\n- **Game Pacing**: In-game days have been adjusted to last three real minutes, providing a closer pacing to similar games and reducing stress from fast-paced mechanics.\n\nThese updates not only fix various bugs but also introduce new features that enhance both strategy and user experience. \n\n## Merged PRs\n- PR #596\n- PR #595\n- PR #594\n- PR #588\n- PR #572\n- PR #579\n- PR #582\n- PR #577\n- PR #575\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 596,
+      "title": "fix: dwarves now pick up ground items and haul them to stockpiles",
+      "url": "https://github.com/psoren/pwarf/pull/596",
+      "cost": {
+        "amount": "$0.22",
+        "tokens": "59k tokens"
+      }
+    },
+    {
+      "number": 595,
+      "title": "feat: add doors — blocks monster pathing (closes #590)",
+      "url": "https://github.com/psoren/pwarf/pull/595"
+    },
+    {
+      "number": 594,
+      "title": "feat: ambient background soundtrack using Tone.js",
+      "url": "https://github.com/psoren/pwarf/pull/594",
+      "cost": {
+        "amount": "$8.58",
+        "tokens": "12.3M tokens"
+      }
+    },
+    {
+      "number": 588,
+      "title": "fix: allow building on mud and sand tiles (closes #583)",
+      "url": "https://github.com/psoren/pwarf/pull/588"
+    },
+    {
+      "number": 572,
+      "title": "feat: buildings require resources to construct",
+      "url": "https://github.com/psoren/pwarf/pull/572"
+    },
+    {
+      "number": 579,
+      "title": "fix: add visible glyph and background for stockpile tiles",
+      "url": "https://github.com/psoren/pwarf/pull/579",
+      "cost": {
+        "amount": "$0.94",
+        "tokens": "882k tokens"
+      }
+    },
+    {
+      "number": 582,
+      "title": "fix: dwarves drop items when no stockpile exists",
+      "url": "https://github.com/psoren/pwarf/pull/582"
+    },
+    {
+      "number": 577,
+      "title": "fix: dwarves cannot occupy the same tile as each other",
+      "url": "https://github.com/psoren/pwarf/pull/577"
+    },
+    {
+      "number": 575,
+      "title": "fix: slow game pacing to 3 min/day (closes #574)",
+      "url": "https://github.com/psoren/pwarf/pull/575"
+    }
+  ],
+  "images": []
+}

@@ -340,12 +340,6 @@ export default function App() {
         case "designate_deconstruct":
           if (world.mode === "fortress") designation.toggleDeconstruct();
           break;
-        case "designate_smooth":
-          if (world.mode === "fortress") designation.toggleSmooth();
-          break;
-        case "designate_engrave":
-          if (world.mode === "fortress") designation.toggleEngrave();
-          break;
         case "designate_farm":
           if (world.mode === "fortress") designation.toggleFarm();
           break;

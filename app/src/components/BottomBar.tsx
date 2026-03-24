@@ -55,12 +55,6 @@ export default function BottomBar({ mode, cursorX, cursorY, terrain, zLevel, for
               <kbd className="text-[var(--amber)]">D</kbd> deconstruct
             </span>
             <span>
-              <kbd className="text-[var(--amber)]">O</kbd> smooth
-            </span>
-            <span>
-              <kbd className="text-[var(--amber)]">E</kbd> engrave
-            </span>
-            <span>
               <kbd className="text-[var(--amber)]">f</kbd> farm
             </span>
             <span>
