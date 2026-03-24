@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
-import { makeDwarf, makeTask, makeSkill } from "./test-helpers.js";
+import { makeDwarf, makeTask, makeSkill, makeMapTile } from "./test-helpers.js";
 import {
   WORK_FARM_TILL_BASE,
   WORK_FARM_PLANT_BASE,
@@ -50,6 +50,34 @@ describe("farming pipeline", () => {
     expect(completedHarvest).toBeDefined();
   });
 
+  it("farm_till converts grass tile to soil", async () => {
+    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const farmSkill = makeSkill(dwarf.id, "farming", 1);
+    const grassTile = makeMapTile(11, 10, 0, "grass");
+
+    const tillTask = makeTask("farm_till", {
+      status: "pending",
+      target_x: 11,
+      target_y: 10,
+      target_z: 0,
+      work_required: WORK_FARM_TILL_BASE,
+    });
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      dwarfSkills: [farmSkill],
+      tasks: [tillTask],
+      fortressTileOverrides: [grassTile],
+      ticks: WORK_FARM_TILL_BASE + 50,
+    });
+
+    const till = result.tasks.find(t => t.id === tillTask.id);
+    expect(till?.status).toBe("completed");
+
+    const tile = result.fortressTileOverrides.find(t => t.x === 11 && t.y === 10 && t.z === 0);
+    expect(tile?.tile_type).toBe("soil");
+  });
+
   it("farm_harvest produces a food item", async () => {
     const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
     const farmSkill = makeSkill(dwarf.id, "farming", 1);
@@ -70,10 +98,9 @@ describe("farming pipeline", () => {
       ticks: totalWork + 50,
     });
 
-    // Should have produced at least 1 food item
+    // Should have produced food (plump helmet from harvest, possibly cooked into prepared meal)
     const food = result.items.filter(i => i.category === "food");
     expect(food.length).toBeGreaterThanOrEqual(1);
-    expect(food[0]!.name).toBe("Plump helmet");
   });
 
   it("multiple farm cycles produce multiple food items", async () => {
