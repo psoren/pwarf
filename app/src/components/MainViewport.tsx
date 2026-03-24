@@ -218,7 +218,7 @@ export default function MainViewport({
             const buildPct = buildProgressTilesRef.current?.get(key);
             // Blocked tasks get a red background; normal tasks interpolate brown → amber
             const bg = isBlocked
-              ? "#661111"
+              ? "#993333"
               : buildPct !== undefined && buildPct > 0
                 ? `rgb(${Math.round(0x44 + (0x88 - 0x44) * buildPct / 100)},${Math.round(0x22 + (0x66 - 0x22) * buildPct / 100)},0)`
                 : "#442200";
