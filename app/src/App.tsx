@@ -25,6 +25,7 @@ import { InventoryModal } from "./components/InventoryModal";
 import { EpitaphScreen } from "./components/EpitaphScreen";
 import { TutorialOverlay } from "./components/TutorialOverlay";
 import { useTutorial } from "./hooks/useTutorial";
+import { useSoundtrack } from "./hooks/useSoundtrack";
 import { SURFACE_Z, CAVE_Z, BUILDING_COSTS } from "@pwarf/shared";
 import type { Item } from "@pwarf/shared";
 import type { LiveDwarf } from "./hooks/useDwarves";
@@ -368,6 +369,10 @@ export default function App() {
 
   const tutorial = useTutorial();
 
+  // Ambient soundtrack — starts when fortress is active, pauses with game
+  const gameActive = world.mode === "fortress" && !!world.civId;
+  const { muted: soundMuted, toggleMute } = useSoundtrack(gameActive, isPaused);
+
   // Follow mode — camera tracks a selected dwarf every tick
   const [followedDwarfId, setFollowedDwarfId] = useState<string | null>(null);
 
@@ -501,6 +506,8 @@ export default function App() {
         dwarves={liveDwarves}
         onTutorial={tutorial.start}
         onInventory={world.civId ? () => setInventoryOpen(true) : undefined}
+        soundMuted={soundMuted}
+        onToggleMute={toggleMute}
       />
 
       {tutorial.active && (
