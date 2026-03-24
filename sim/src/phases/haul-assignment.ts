@@ -1,7 +1,7 @@
 import { WORK_HAUL, STOCKPILE_TILE_CAPACITY } from "@pwarf/shared";
 import type { ItemCategory } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
-import { getCarriedItems } from "../inventory.js";
+import { getCarriedItems, dropItem } from "../inventory.js";
 import { isDwarfIdle } from "../task-helpers.js";
 import { createTask } from "../task-helpers.js";
 import { manhattanDistance } from "../pathfinding.js";
@@ -11,12 +11,11 @@ import { manhattanDistance } from "../pathfinding.js";
  *
  * For each idle dwarf carrying items, find the best stockpile tile (nearest
  * among highest-priority tiles that accept the item's category) and create
- * a haul task.
+ * a haul task. If no stockpile exists, drop items on the ground so the
+ * dwarf isn't stuck with a full inventory.
  */
 export async function haulAssignment(ctx: SimContext): Promise<void> {
   const { state } = ctx;
-
-  if (state.stockpileTiles.size === 0) return;
 
   for (const dwarf of state.dwarves) {
     if (!isDwarfIdle(dwarf)) continue;
@@ -24,10 +23,24 @@ export async function haulAssignment(ctx: SimContext): Promise<void> {
     const carried = getCarriedItems(dwarf.id, state.items);
     if (carried.length === 0) continue;
 
+    // If no stockpile exists, drop items on the ground to unblock the dwarf
+    if (state.stockpileTiles.size === 0) {
+      for (const item of carried) {
+        dropItem(dwarf, item, state);
+      }
+      continue;
+    }
+
     // Create a haul task for the first carried item
     const item = carried[0];
     const target = findBestStockpile(ctx, dwarf.position_x, dwarf.position_y, dwarf.position_z, item.category);
-    if (!target) continue;
+    if (!target) {
+      // No suitable stockpile tile (all full or wrong category) — drop items
+      for (const c of carried) {
+        dropItem(dwarf, c, state);
+      }
+      continue;
+    }
 
     createTask(ctx, {
       task_type: 'haul',

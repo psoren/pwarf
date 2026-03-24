@@ -39,14 +39,20 @@ describe("haulAssignment", () => {
     expect(haulTasks[0].target_item_id).toBe(item.id);
   });
 
-  it("does nothing when no stockpile tiles exist", async () => {
-    const dwarf = makeDwarf();
+  it("drops items on the ground when no stockpile tiles exist", async () => {
+    const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
     const item = makeItem({ held_by_dwarf_id: dwarf.id, weight: 10 });
     const ctx = makeContext({ dwarves: [dwarf], items: [item] });
 
     await haulAssignment(ctx);
 
+    // No haul task created
     expect(ctx.state.tasks).toHaveLength(0);
+    // Item should be dropped at dwarf's position
+    expect(item.held_by_dwarf_id).toBeNull();
+    expect(item.position_x).toBe(5);
+    expect(item.position_y).toBe(5);
+    expect(item.position_z).toBe(0);
   });
 
   it("does nothing when dwarf carries no items", async () => {
