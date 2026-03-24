@@ -1,0 +1,23 @@
+{
+  "id": "2026-03-24T06-45-24",
+  "timestamp": "2026-03-24T06:45:24.210Z",
+  "title": "Digest — Mar 24, 2026, 06:45 AM UTC",
+  "summary": "# Pwarf Devlog Update\n\nHello Pwarf community! We're excited to share some new features that enhance gameplay and strategy in your colony sim experience.\n\n## New Buildable Structure: Doors\n- Introducing **doors** as a new buildable structure that enhances your fortress' defenses.\n- **Material Requirements**: Each door requires 1 wood and takes 35 work to build.\n- **Functionality**: Dwarves can easily walk through doors, but they block monsters’ pathing, adding a layer of protection to your colony.\n- **Deconstruction**: Just like other structures, doors can be deconstructed safely.\n- **Visual Glyph**: Each door is represented by a brown `+` on your maps.\n\nWith these new doors, you can better manage your defenses and control monster access to important areas in your colony!\n\n## Merged PRs\n- PR #599: feat: add doors — buildable structure that blocks monster pathing.\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 599,
+      "title": "feat: add doors — buildable structure that blocks monster pathing",
+      "url": "https://github.com/psoren/pwarf/pull/599"
+    }
+  ],
+  "images": []
+}
