@@ -257,7 +257,7 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
     : taskType === 'drink' ? WORK_DRINK
     : WORK_SLEEP;
 
-  createTask(ctx, {
+  const task = createTask(ctx, {
     task_type: taskType,
     priority,
     target_x: targetX,
@@ -267,6 +267,15 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
     work_required: workRequired,
     assigned_dwarf_id: dwarf.id,
   });
+
+  // Immediately claim and assign so the dwarf can execute next tick.
+  // This is critical for tantruming dwarves: jobClaiming skips them
+  // (isDwarfIdle returns false), so without this the task stays pending
+  // forever — creating a death spiral where the dwarf can never eat/sleep.
+  task.status = 'claimed';
+  dwarf.current_task_id = task.id;
+  state.dirtyDwarfIds.add(dwarf.id);
+  state.dirtyTaskIds.add(task.id);
 }
 
 /**

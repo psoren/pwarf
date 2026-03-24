@@ -424,11 +424,12 @@ describe("need satisfaction", () => {
     // Haul task should be returned to pending
     expect(haulTask.status).toBe("pending");
     expect(haulTask.assigned_dwarf_id).toBeNull();
-    expect(dwarf.current_task_id).toBeNull();
 
-    // Eat task should be created
+    // Eat task should be created and immediately claimed
     const eatTasks = ctx.state.tasks.filter(t => t.task_type === "eat");
     expect(eatTasks).toHaveLength(1);
+    expect(eatTasks[0].status).toBe("claimed");
+    expect(dwarf.current_task_id).toBe(eatTasks[0].id);
   });
 
   it("does not interrupt an existing autonomous task", async () => {

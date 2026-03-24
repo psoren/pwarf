@@ -15,7 +15,8 @@ describe("needSatisfaction", () => {
       const drinkTask = ctx.state.tasks.find(t => t.task_type === 'drink');
       expect(drinkTask).toBeDefined();
       expect(drinkTask?.assigned_dwarf_id).toBe(dwarf.id);
-      expect(drinkTask?.status).toBe('pending');
+      expect(drinkTask?.status).toBe('claimed');
+      expect(dwarf.current_task_id).toBe(drinkTask?.id);
     });
 
     it("creates an eat task when need_food is below threshold and food is available", async () => {
@@ -81,6 +82,28 @@ describe("needSatisfaction", () => {
 
       const drinkTasks = ctx.state.tasks.filter(t => t.task_type === 'drink');
       expect(drinkTasks.length).toBe(1);
+    });
+
+    it("tantruming dwarf gets eat task immediately claimed (no death spiral)", async () => {
+      const dwarf = makeDwarf({
+        id: 'dwarf-1',
+        need_food: NEED_INTERRUPT_FOOD - 1,
+        is_in_tantrum: true,
+        stress_level: 85,
+        position_x: 0,
+        position_y: 0,
+        position_z: 0,
+      });
+      const food = makeItem({ category: "food", position_x: 2, position_y: 0, position_z: 0 });
+      const ctx = makeContext({ dwarves: [dwarf], items: [food] });
+
+      await needSatisfaction(ctx);
+
+      const eatTask = ctx.state.tasks.find(t => t.task_type === 'eat');
+      expect(eatTask).toBeDefined();
+      expect(eatTask?.status).toBe('claimed');
+      expect(eatTask?.assigned_dwarf_id).toBe(dwarf.id);
+      expect(dwarf.current_task_id).toBe(eatTask?.id);
     });
 
     it("resets a task back to pending when interrupting for a need", async () => {
