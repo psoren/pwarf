@@ -147,7 +147,8 @@ describe("completeTask", () => {
   it("build_wall creates constructed_wall tile", () => {
     const dwarf = makeDwarf();
     const skill = makeSkill(dwarf.id, "building", 0, 0);
-    const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
+    const stone = makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "civ-1", held_by_dwarf_id: null });
+    const ctx = makeContext({ dwarves: [dwarf], skills: [skill], items: [stone] });
     const task = createTask(ctx, {
       task_type: "build_wall",
       target_x: 5,
@@ -224,7 +225,8 @@ describe("bed sleep completion", () => {
   it("build_bed creates bed structure and bed tile", () => {
     const dwarf = makeDwarf();
     const skill = makeSkill(dwarf.id, "building", 0);
-    const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
+    const wood = makeItem({ name: "Wood log", category: "raw_material", material: "wood", located_in_civ_id: "civ-1", held_by_dwarf_id: null });
+    const ctx = makeContext({ dwarves: [dwarf], skills: [skill], items: [wood] });
     const task = createTask(ctx, {
       task_type: "build_bed",
       target_x: 5,

@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
 import { makeDwarf, makeTask, makeItem, makeStructure, makeSkill, makeMapTile } from "./test-helpers.js";
+
+function stoneBlock() {
+  return makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "test-civ", held_by_dwarf_id: null });
+}
+function woodLog() {
+  return makeItem({ name: "Wood log", category: "raw_material", material: "wood", located_in_civ_id: "test-civ", held_by_dwarf_id: null });
+}
 import {
   WORK_MINE_BASE,
   WORK_BUILD_WALL,
@@ -116,6 +123,7 @@ describe("build_wall task scenario", () => {
     const result = await runScenario({
       dwarves: [dwarf],
       tasks: [task],
+      items: [stoneBlock()],
       ticks: WORK_BUILD_WALL + 5,
     });
 
@@ -148,6 +156,7 @@ describe("build_floor task scenario", () => {
     const result = await runScenario({
       dwarves: [dwarf],
       tasks: [task],
+      items: [stoneBlock()],
       ticks: WORK_BUILD_FLOOR + 5,
     });
 
@@ -180,6 +189,7 @@ describe("build_bed task scenario", () => {
     const result = await runScenario({
       dwarves: [dwarf],
       tasks: [task],
+      items: [woodLog()],
       ticks: WORK_BUILD_BED + 5,
     });
 
@@ -207,6 +217,7 @@ describe("build_bed task scenario", () => {
     const result = await runScenario({
       dwarves: [dwarf],
       tasks: [task],
+      items: [woodLog()],
       ticks: WORK_BUILD_BED + 5,
     });
 
@@ -306,7 +317,8 @@ describe("drink scenario", () => {
   });
 
   it("dwarf starves when food is not available", async () => {
-    const dwarf = makeDwarf({ need_food: 0, need_drink: 80 });
+    // High health so monster attacks don't kill the dwarf before starvation
+    const dwarf = makeDwarf({ need_food: 0, need_drink: 80, health: 99999 });
 
     const result = await runScenario({
       dwarves: [dwarf],
@@ -352,9 +364,11 @@ describe("well autonomous drink scenario", () => {
   });
 
   it("thirsty dwarf does not die of thirst when a well is present", async () => {
+    // High health so monster attacks don't kill the dwarf during this long scenario
     const dwarf = makeDwarf({
       need_drink: NEED_INTERRUPT_DRINK - 1,
       need_food: 80,
+      health: 99999,
       position_x: 0,
       position_y: 0,
       position_z: 0,
@@ -400,6 +414,7 @@ describe("well autonomous drink scenario", () => {
       dwarves: [dwarf],
       dwarfSkills: [buildSkill],
       tasks: [buildTask],
+      items: [stoneBlock(), stoneBlock()],
       ticks: WORK_BUILD_WELL + 200,
     });
 

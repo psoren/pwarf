@@ -1,6 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "./run-scenario.js";
-import { makeDwarf, makeSkill, makeTask, makeMapTile } from "./__tests__/test-helpers.js";
+import { makeDwarf, makeSkill, makeTask, makeMapTile, makeItem } from "./__tests__/test-helpers.js";
+
+function stoneBlock() {
+  return makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "test-civ", held_by_dwarf_id: null });
+}
+function woodLog() {
+  return makeItem({ name: "Wood log", category: "raw_material", material: "wood", located_in_civ_id: "test-civ", held_by_dwarf_id: null });
+}
 import {
   FOOD_DECAY_PER_TICK,
   NEED_INTERRUPT_FOOD,
@@ -98,6 +105,7 @@ describe("building tasks", () => {
       dwarves: [dwarf],
       dwarfSkills: [skill],
       tasks: [task],
+      items: [stoneBlock()],
       ticks: WORK_BUILD_WALL + 20,
       seed: 1,
     });
@@ -130,6 +138,7 @@ describe("building tasks", () => {
       dwarves: [dwarf],
       dwarfSkills: [skill],
       tasks: [task],
+      items: [stoneBlock()],
       ticks: WORK_BUILD_FLOOR + 20,
       seed: 1,
     });
@@ -158,6 +167,7 @@ describe("building tasks", () => {
       dwarves: [dwarf],
       dwarfSkills: [skill],
       tasks: [task],
+      items: [woodLog()],
       ticks: WORK_BUILD_BED + 20,
       seed: 1,
     });
@@ -191,6 +201,7 @@ describe("building tasks", () => {
       dwarves: [dwarf],
       dwarfSkills: [skill],
       tasks: [task],
+      items: [stoneBlock(), stoneBlock()],
       ticks: WORK_BUILD_WELL + 20,
       seed: 1,
     });
@@ -218,6 +229,7 @@ describe("building tasks", () => {
       dwarves: [dwarf],
       dwarfSkills: [skill],
       tasks: [task],
+      items: [woodLog()],
       ticks: WORK_BUILD_MUSHROOM_GARDEN + 20,
       seed: 1,
     });
@@ -279,6 +291,7 @@ describe("building tasks", () => {
       dwarves: [dwarf],
       dwarfSkills: [], // no skills — still works
       tasks: [task],
+      items: [stoneBlock()],
       ticks: WORK_BUILD_WALL + 10,
       seed: 1,
     });

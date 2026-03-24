@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { SKILL_TIER_NAMES } from "@pwarf/shared";
 import { completeTask } from "./task-completion.js";
-import { makeDwarf, makeSkill, makeTask, makeContext } from "../__tests__/test-helpers.js";
+import { makeDwarf, makeSkill, makeTask, makeContext, makeItem } from "../__tests__/test-helpers.js";
 
 describe("SKILL_TIER_NAMES", () => {
   it("has 21 entries covering levels 0–20", () => {
@@ -121,8 +121,9 @@ describe("skill level-up event", () => {
       target_y: 0,
       target_z: 0,
     });
+    const stone = makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "civ-1", held_by_dwarf_id: null });
 
-    const ctx = makeContext({ dwarves: [dwarf], skills: [skill], tasks: [task] });
+    const ctx = makeContext({ dwarves: [dwarf], skills: [skill], tasks: [task], items: [stone] });
 
     completeTask(dwarf, task, ctx);
 

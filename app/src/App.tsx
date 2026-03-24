@@ -25,7 +25,7 @@ import { InventoryModal } from "./components/InventoryModal";
 import { EpitaphScreen } from "./components/EpitaphScreen";
 import { TutorialOverlay } from "./components/TutorialOverlay";
 import { useTutorial } from "./hooks/useTutorial";
-import { SURFACE_Z, CAVE_Z } from "@pwarf/shared";
+import { SURFACE_Z, CAVE_Z, BUILDING_COSTS } from "@pwarf/shared";
 import type { Item } from "@pwarf/shared";
 import type { LiveDwarf } from "./hooks/useDwarves";
 
@@ -112,6 +112,54 @@ export default function App() {
     }
     return map;
   }, [liveTasks, zLevel]);
+
+  // Compute which build tasks are blocked due to missing resources
+  const blockedBuildTiles = useMemo(() => {
+    const set = new Set<string>();
+    if (!world.civId) return set;
+
+    // Count available resources by material
+    const availableCounts = new Map<string, number>();
+    for (const item of (snapshot?.items ?? [])) {
+      if (item.category === 'raw_material' && item.material && item.located_in_civ_id === world.civId && item.held_by_dwarf_id === null) {
+        availableCounts.set(item.material, (availableCounts.get(item.material) ?? 0) + 1);
+      }
+    }
+
+    // Count how many resources are already reserved by earlier (non-blocked) build tasks
+    const reservedCounts = new Map<string, number>();
+
+    for (const t of liveTasks) {
+      const tx = 'target_x' in t ? t.target_x : null;
+      const ty = 'target_y' in t ? t.target_y : null;
+      const tz = 'target_z' in t ? t.target_z : null;
+      if (tx === null || ty === null || tz !== zLevel) continue;
+      if (!['pending', 'claimed', 'in_progress'].includes(t.status)) continue;
+
+      const costs = BUILDING_COSTS[t.task_type];
+      if (!costs) continue;
+
+      let blocked = false;
+      for (const cost of costs) {
+        const available = (availableCounts.get(cost.material) ?? 0) - (reservedCounts.get(cost.material) ?? 0);
+        if (available < cost.count) {
+          blocked = true;
+          break;
+        }
+      }
+
+      if (blocked) {
+        set.add(`${tx},${ty}`);
+      } else {
+        // Reserve resources for this task
+        for (const cost of costs) {
+          reservedCounts.set(cost.material, (reservedCounts.get(cost.material) ?? 0) + cost.count);
+        }
+      }
+    }
+
+    return set;
+  }, [liveTasks, snapshot?.items, world.civId, zLevel]);
 
   const designation = useDesignation({
     civId: world.civId,
@@ -533,6 +581,7 @@ export default function App() {
           zLevel={zLevel}
           buildProgressTiles={world.mode === "fortress" ? buildProgressTiles : undefined}
           monsterPositions={world.mode === "fortress" ? monsterPositions : undefined}
+          blockedBuildTiles={world.mode === "fortress" ? blockedBuildTiles : undefined}
         />
 
         {modalDwarf && (

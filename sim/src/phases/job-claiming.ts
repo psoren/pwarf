@@ -17,6 +17,7 @@ import {
 } from "../task-helpers.js";
 import { manhattanDistance } from "../pathfinding.js";
 import { getCarriedWeight } from "../inventory.js";
+import { hasResources } from "../resource-check.js";
 
 /**
  * Job Claiming Phase
@@ -51,6 +52,11 @@ export async function jobClaiming(ctx: SimContext): Promise<void> {
 
       // Dwarves with full inventory skip mine tasks — haul first
       if (inventoryFull && task.task_type === 'mine') {
+        continue;
+      }
+
+      // Skip build tasks when resources are unavailable
+      if (!hasResources(task.task_type, state.items, ctx.civilizationId)) {
         continue;
       }
 
