@@ -28,9 +28,10 @@ export async function autoBrew(ctx: SimContext): Promise<void> {
   );
   if (brewPending) return;
 
-  // Find a plant (raw_material) item not held by any dwarf
+  // Find a plant raw_material item not held by any dwarf
   const plant = state.items.find(
-    i => i.category === 'raw_material' && i.held_by_dwarf_id === null &&
+    i => i.category === 'raw_material' && i.material === 'plant' &&
+      i.held_by_dwarf_id === null &&
       i.position_x !== null && i.position_y !== null && i.position_z !== null,
   );
   if (!plant) return;
