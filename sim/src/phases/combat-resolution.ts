@@ -12,7 +12,8 @@ import { killDwarf } from "./deprivation.js";
 /**
  * Combat Resolution Phase
  *
- * When a monster and a dwarf occupy the same tile, both attack each other.
+ * When a monster and a dwarf are on adjacent tiles (Manhattan distance 1),
+ * both attack each other.
  * Each combatant deals (base ± spread) damage per tick, scaled by threat level
  * for monsters and XP-level for dwarves.
  *
@@ -32,10 +33,12 @@ export async function combatResolution(ctx: SimContext): Promise<void> {
   for (const monster of activeMonsters) {
     if (monster.current_tile_x === null || monster.current_tile_y === null) continue;
 
-    // Find all dwarves sharing this tile
-    const combatants = aliveDwarves.filter(
-      d => d.position_x === monster.current_tile_x && d.position_y === monster.current_tile_y,
-    );
+    // Find all dwarves adjacent to this monster (Manhattan distance === 1)
+    const combatants = aliveDwarves.filter(d => {
+      const dx = Math.abs(d.position_x - monster.current_tile_x!);
+      const dy = Math.abs(d.position_y - monster.current_tile_y!);
+      return (dx + dy) === 1;
+    });
     if (combatants.length === 0) continue;
 
     // Pick one dwarf at random to be the primary target this tick

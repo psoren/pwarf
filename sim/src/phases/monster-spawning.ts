@@ -40,8 +40,26 @@ export async function monsterSpawning(ctx: SimContext): Promise<void> {
 
   // Spawn at a random edge of the radius
   const angle = rng.random() * Math.PI * 2;
-  const spawnX = centerX + Math.round(Math.cos(angle) * SPAWN_RADIUS);
-  const spawnY = centerY + Math.round(Math.sin(angle) * SPAWN_RADIUS);
+  let spawnX = centerX + Math.round(Math.cos(angle) * SPAWN_RADIUS);
+  let spawnY = centerY + Math.round(Math.sin(angle) * SPAWN_RADIUS);
+
+  // Don't spawn on a tile occupied by a dwarf — try adjacent tiles, then skip
+  const occupiedByDwarf = aliveDwarves.some(d => d.position_x === spawnX && d.position_y === spawnY);
+  if (occupiedByDwarf) {
+    const offsets = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    let found = false;
+    for (const [ox, oy] of offsets) {
+      const tryX = spawnX + ox;
+      const tryY = spawnY + oy;
+      if (!aliveDwarves.some(d => d.position_x === tryX && d.position_y === tryY)) {
+        spawnX = tryX;
+        spawnY = tryY;
+        found = true;
+        break;
+      }
+    }
+    if (!found) return; // All adjacent tiles occupied — skip this spawn cycle
+  }
 
   const monster: Monster = {
     id: rng.uuid(),

@@ -270,18 +270,18 @@ describe("combatResolution", () => {
     expect(ctx.state.dwarves[0]?.health).toBe(100);
   });
 
-  it("deals damage to dwarf when sharing a tile", async () => {
+  it("deals damage to dwarf when adjacent (Manhattan distance 1)", async () => {
     const ctx = createTestContext();
-    const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
+    const dwarf = makeDwarf({ position_x: 5, position_y: 6, health: 100 });
     ctx.state.dwarves = [dwarf];
     ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 })];
     await combatResolution(ctx);
     expect(dwarf.health).toBeLessThan(100);
   });
 
-  it("deals damage to monster when sharing a tile", async () => {
+  it("deals damage to monster when adjacent", async () => {
     const ctx = createTestContext();
-    const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
+    const dwarf = makeDwarf({ position_x: 6, position_y: 5, health: 100 });
     ctx.state.dwarves = [dwarf];
     const monster = makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 });
     ctx.state.monsters = [monster];
@@ -291,7 +291,7 @@ describe("combatResolution", () => {
 
   it("kills dwarf when health reaches 0", async () => {
     const ctx = createTestContext();
-    const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 1 });
+    const dwarf = makeDwarf({ position_x: 5, position_y: 6, health: 1 });
     ctx.state.dwarves = [dwarf];
     ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 })];
     await combatResolution(ctx);
@@ -301,7 +301,7 @@ describe("combatResolution", () => {
 
   it("slays monster when health reaches 0 and fires event", async () => {
     const ctx = createTestContext();
-    const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
+    const dwarf = makeDwarf({ position_x: 5, position_y: 6, health: 100 });
     ctx.state.dwarves = [dwarf];
     const monster = makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 1 });
     ctx.state.monsters = [monster];
@@ -314,7 +314,7 @@ describe("combatResolution", () => {
 
   it("awards fighting XP when monster is slain", async () => {
     const ctx = createTestContext();
-    const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
+    const dwarf = makeDwarf({ position_x: 5, position_y: 6, health: 100 });
     ctx.state.dwarves = [dwarf];
     ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 1 })];
     await combatResolution(ctx);
@@ -323,7 +323,7 @@ describe("combatResolution", () => {
     expect(skill?.xp).toBeGreaterThan(0);
   });
 
-  it("does not attack when monster is on a different tile", async () => {
+  it("does not attack when monster is on a non-adjacent tile", async () => {
     const ctx = createTestContext();
     const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
     ctx.state.dwarves = [dwarf];
@@ -332,9 +332,27 @@ describe("combatResolution", () => {
     expect(dwarf.health).toBe(100);
   });
 
-  it("fires a battle event on first contact", async () => {
+  it("does not attack when monster is on the same tile", async () => {
     const ctx = createTestContext();
     const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
+    ctx.state.dwarves = [dwarf];
+    ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 })];
+    await combatResolution(ctx);
+    expect(dwarf.health).toBe(100);
+  });
+
+  it("does not attack when diagonally adjacent (Manhattan distance 2)", async () => {
+    const ctx = createTestContext();
+    const dwarf = makeDwarf({ position_x: 6, position_y: 6, health: 100 });
+    ctx.state.dwarves = [dwarf];
+    ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 })];
+    await combatResolution(ctx);
+    expect(dwarf.health).toBe(100);
+  });
+
+  it("fires a battle event on first contact", async () => {
+    const ctx = createTestContext();
+    const dwarf = makeDwarf({ position_x: 5, position_y: 6, health: 100 });
     ctx.state.dwarves = [dwarf];
     ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 })];
     await combatResolution(ctx);
@@ -346,7 +364,7 @@ describe("combatResolution", () => {
 
   it("fires battle event only once per pair across multiple ticks", async () => {
     const ctx = createTestContext();
-    const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
+    const dwarf = makeDwarf({ position_x: 5, position_y: 6, health: 100 });
     ctx.state.dwarves = [dwarf];
     ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 })];
     await combatResolution(ctx);
@@ -358,7 +376,7 @@ describe("combatResolution", () => {
 
   it("fires monster_siege on first contact with any dwarf", async () => {
     const ctx = createTestContext();
-    const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
+    const dwarf = makeDwarf({ position_x: 5, position_y: 6, health: 100 });
     ctx.state.dwarves = [dwarf];
     ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 })];
     await combatResolution(ctx);
@@ -369,8 +387,8 @@ describe("combatResolution", () => {
 
   it("fires monster_siege only once even across multiple dwarves", async () => {
     const ctx = createTestContext();
-    const dwarf1 = makeDwarf({ id: "d1", position_x: 5, position_y: 5, health: 100 });
-    const dwarf2 = makeDwarf({ id: "d2", position_x: 5, position_y: 5, health: 100 });
+    const dwarf1 = makeDwarf({ id: "d1", position_x: 5, position_y: 6, health: 100 });
+    const dwarf2 = makeDwarf({ id: "d2", position_x: 6, position_y: 5, health: 100 });
     ctx.state.dwarves = [dwarf1, dwarf2];
     ctx.state.monsters = [makeMonster({ current_tile_x: 5, current_tile_y: 5, health: 100 })];
     // Pre-seed one combat pair so the monster is already in combat
@@ -382,7 +400,7 @@ describe("combatResolution", () => {
 
   it("clears combat pair when monster is slain", async () => {
     const ctx = createTestContext();
-    const dwarf = makeDwarf({ position_x: 5, position_y: 5, health: 100 });
+    const dwarf = makeDwarf({ position_x: 5, position_y: 6, health: 100 });
     ctx.state.dwarves = [dwarf];
     const monster = makeMonster({ id: "m1", current_tile_x: 5, current_tile_y: 5, health: 1 });
     ctx.state.monsters = [monster];
@@ -393,7 +411,7 @@ describe("combatResolution", () => {
 
   it("clears combat pair when dwarf dies", async () => {
     const ctx = createTestContext();
-    const dwarf = makeDwarf({ id: "d1", position_x: 5, position_y: 5, health: 1 });
+    const dwarf = makeDwarf({ id: "d1", position_x: 5, position_y: 6, health: 1 });
     ctx.state.dwarves = [dwarf];
     const monster = makeMonster({ id: "m1", current_tile_x: 5, current_tile_y: 5, health: 100 });
     ctx.state.monsters = [monster];

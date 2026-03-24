@@ -22,6 +22,17 @@ export async function monsterPathfinding(ctx: SimContext): Promise<void> {
 
   const getTile = buildTileLookup(ctx);
 
+  // Build set of occupied tiles (dwarves + other monsters) to prevent stacking
+  const occupied = new Set<string>();
+  for (const d of aliveDwarves) {
+    occupied.add(`${d.position_x},${d.position_y}`);
+  }
+  for (const m of state.monsters) {
+    if (m.status === 'active' && m.current_tile_x !== null && m.current_tile_y !== null) {
+      occupied.add(`${m.current_tile_x},${m.current_tile_y}`);
+    }
+  }
+
   for (const monster of state.monsters) {
     if (monster.status !== 'active') continue;
     if (monster.current_tile_x === null || monster.current_tile_y === null) continue;
@@ -41,6 +52,13 @@ export async function monsterPathfinding(ctx: SimContext): Promise<void> {
 
     const destTile = getTile(newX, newY, 0);
     if (destTile && MONSTER_BLOCKING_TILES.has(destTile)) continue;
+
+    // Don't move onto a tile occupied by a dwarf or another monster
+    if (occupied.has(`${newX},${newY}`)) continue;
+
+    // Update occupancy tracking
+    occupied.delete(`${monster.current_tile_x},${monster.current_tile_y}`);
+    occupied.add(`${newX},${newY}`);
 
     monster.current_tile_x = newX;
     monster.current_tile_y = newY;
