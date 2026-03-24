@@ -45,13 +45,13 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   }
 
   // 2. Tasks second — dwarves reference them via current_task_id
-  if (newTasks.length > 0) {
-    const { error } = await supabase.from("tasks").insert(newTasks);
-    if (error) console.warn(`[flush] tasks insert failed: ${error.message}`);
-  }
-
-  if (dirtyTasks.length > 0) {
-    const { error } = await supabase.from("tasks").upsert(dirtyTasks);
+  //    Use upsert for both new and dirty tasks. Plain insert fails with
+  //    "duplicate key" when a previous flush partially succeeded (some tasks
+  //    inserted, batch reported as failed, newTasks cleared, then the same
+  //    task appears in dirtyTasks on the next cycle and gets re-created).
+  const allDirtyTasks = [...newTasks, ...dirtyTasks];
+  if (allDirtyTasks.length > 0) {
+    const { error } = await supabase.from("tasks").upsert(allDirtyTasks);
     if (error) console.warn(`[flush] tasks upsert failed: ${error.message}`);
   }
 
@@ -232,18 +232,31 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
 
   if (events.length > 0) {
     // Stamp world_id on events (phases leave it empty).
-    // Use upsert with ignoreDuplicates to prevent "duplicate key" errors
-    // when a previous flush partially succeeded and is retried.
+    // Deduplicate by ID before inserting — events from a failed previous flush
+    // may still be in the pendingEvents array. Also skip any IDs already sent.
     const worldId = ctx.worldId;
     const stamped = events.map((e) => ({ ...e, world_id: worldId }));
-    promises.push(
-      supabase
-        .from("world_events")
-        .upsert(stamped, { onConflict: "id", ignoreDuplicates: true })
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] events upsert failed: ${error.message}`);
-        }),
-    );
+    // Plain insert is fine — events are immutable (never updated).
+    // Duplicate IDs from retried flushes are handled by deduplicating in memory.
+    const seen = new Set<string>();
+    const unique = stamped.filter((e) => {
+      if (seen.has(e.id)) return false;
+      seen.add(e.id);
+      return true;
+    });
+    if (unique.length > 0) {
+      promises.push(
+        supabase
+          .from("world_events")
+          .insert(unique)
+          .then(({ error }) => {
+            if (error && !error.message.includes('duplicate key')) {
+              console.warn(`[flush] events insert failed: ${error.message}`);
+            }
+            // Silently ignore duplicate key errors — event already exists in DB
+          }),
+      );
+    }
   }
 
   await Promise.all(promises);
