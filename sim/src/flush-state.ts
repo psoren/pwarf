@@ -45,13 +45,13 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   }
 
   // 2. Tasks second — dwarves reference them via current_task_id
-  if (newTasks.length > 0) {
-    const { error } = await supabase.from("tasks").insert(newTasks);
-    if (error) console.warn(`[flush] tasks insert failed: ${error.message}`);
-  }
-
-  if (dirtyTasks.length > 0) {
-    const { error } = await supabase.from("tasks").upsert(dirtyTasks);
+  //    Use upsert for both new and dirty tasks. Plain insert fails with
+  //    "duplicate key" when a previous flush partially succeeded (some tasks
+  //    inserted, batch reported as failed, newTasks cleared, then the same
+  //    task appears in dirtyTasks on the next cycle and gets re-created).
+  const allDirtyTasks = [...newTasks, ...dirtyTasks];
+  if (allDirtyTasks.length > 0) {
+    const { error } = await supabase.from("tasks").upsert(allDirtyTasks);
     if (error) console.warn(`[flush] tasks upsert failed: ${error.message}`);
   }
 
