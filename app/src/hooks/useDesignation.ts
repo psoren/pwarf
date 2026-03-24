@@ -10,6 +10,7 @@ import {
   WORK_BUILD_BED,
   WORK_BUILD_WELL,
   WORK_BUILD_MUSHROOM_GARDEN,
+  WORK_BUILD_DOOR,
   WORK_DECONSTRUCT,
   WORK_SMOOTH,
   WORK_ENGRAVE,
@@ -19,7 +20,7 @@ import { supabase } from "../lib/supabase";
 import type { FortressViewTile } from "./useFortressTiles";
 import type { OptimisticDesignation } from "./useTasks";
 
-export type DesignationMode = "none" | "mine" | "farm_till" | "build_wall" | "build_floor" | "build_bed" | "build_well" | "build_mushroom_garden" | "smooth" | "engrave" | "stockpile" | "deconstruct";
+export type DesignationMode = "none" | "mine" | "farm_till" | "build_wall" | "build_floor" | "build_bed" | "build_well" | "build_mushroom_garden" | "build_door" | "smooth" | "engrave" | "stockpile" | "deconstruct";
 
 const BUILD_WORK: Record<string, number> = {
   build_wall: WORK_BUILD_WALL,
@@ -27,6 +28,7 @@ const BUILD_WORK: Record<string, number> = {
   build_bed: WORK_BUILD_BED,
   build_well: WORK_BUILD_WELL,
   build_mushroom_garden: WORK_BUILD_MUSHROOM_GARDEN,
+  build_door: WORK_BUILD_DOOR,
   smooth: WORK_SMOOTH,
   engrave: WORK_ENGRAVE,
   farm_till: WORK_FARM_TILL_BASE,
@@ -34,7 +36,7 @@ const BUILD_WORK: Record<string, number> = {
 
 /** Tile types that can be deconstructed. */
 const DECONSTRUCTIBLE: ReadonlySet<string> = new Set([
-  'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden',
+  'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden', 'door',
 ]);
 
 /** Tile types that can be smoothed. */

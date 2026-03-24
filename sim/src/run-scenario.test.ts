@@ -17,6 +17,7 @@ import {
   WORK_BUILD_BED,
   WORK_BUILD_WELL,
   WORK_BUILD_MUSHROOM_GARDEN,
+  WORK_BUILD_DOOR,
   WORK_MINE_BASE,
 } from "@pwarf/shared";
 
@@ -238,6 +239,39 @@ describe("building tasks", () => {
       s => s.type === 'mushroom_garden' && s.position_x === DX + 2 && s.position_y === DY,
     );
     expect(garden).toBeDefined();
+  });
+
+  it("build_door completes and creates a door structure and tile", async () => {
+    const dwarf = makeDwarf({ position_x: DX, position_y: DY, position_z: DZ });
+    const skill = makeSkill(dwarf.id, 'building');
+    const task = makeTask('build_door', {
+      status: 'pending',
+      assigned_dwarf_id: null,
+      target_x: DX + 2,
+      target_y: DY,
+      target_z: DZ,
+      work_required: WORK_BUILD_DOOR,
+      work_progress: 0,
+    });
+
+    const result = await runScenario({
+      dwarves: [dwarf],
+      dwarfSkills: [skill],
+      tasks: [task],
+      items: [woodLog()],
+      ticks: WORK_BUILD_DOOR + 20,
+      seed: 1,
+    });
+
+    const door = result.structures.find(
+      s => s.type === 'door' && s.position_x === DX + 2 && s.position_y === DY,
+    );
+    expect(door).toBeDefined();
+
+    const doorTile = result.fortressTileOverrides.find(
+      t => t.x === DX + 2 && t.y === DY && t.tile_type === 'door',
+    );
+    expect(doorTile).toBeDefined();
   });
 
   it("mine task completes and changes tile to open_air, creates stone item", async () => {

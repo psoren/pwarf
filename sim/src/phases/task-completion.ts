@@ -59,6 +59,9 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'build_mushroom_garden':
       buildSuccess = completeBuildStructure(task, ctx, 'mushroom_garden', 'mushroom_garden');
       break;
+    case 'build_door':
+      buildSuccess = completeBuildStructure(task, ctx, 'door', 'door');
+      break;
   }
 
   if (!buildSuccess) {
@@ -175,6 +178,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'build_bed':
     case 'build_well':
     case 'build_mushroom_garden':
+    case 'build_door':
       // Already handled above — just award XP
       awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
       break;
@@ -219,7 +223,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
  * Exported for unit testing.
  */
 export function restoreMoraleOnTaskComplete(dwarf: Dwarf, taskType: string): void {
-  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'smooth', 'engrave', 'brew', 'cook', 'smith', 'forage']);
+  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'build_door', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'smooth', 'engrave', 'brew', 'cook', 'smith', 'forage']);
   let restore = SKILLED_TASKS.has(taskType)
     ? MORALE_RESTORE_SKILLED_TASK
     : taskType === 'haul'
@@ -544,7 +548,7 @@ function completeBuildStructure(
 
 /** Deconstructible tile types — only these can be targeted for removal. */
 const DECONSTRUCTIBLE_TILES = new Set([
-  'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden',
+  'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden', 'door',
 ]);
 
 function completeDeconstruct(task: Task, ctx: SimContext): void {
@@ -580,8 +584,8 @@ function completeDeconstruct(task: Task, ctx: SimContext): void {
     }
   }
 
-  // Remove other structures (well, mushroom_garden) at this tile
-  if (tileType === 'well' || tileType === 'mushroom_garden') {
+  // Remove other structures (well, mushroom_garden, door) at this tile
+  if (tileType === 'well' || tileType === 'mushroom_garden' || tileType === 'door') {
     const structIdx = ctx.state.structures.findIndex(
       s => s.position_x === task.target_x
         && s.position_y === task.target_y

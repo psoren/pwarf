@@ -67,6 +67,10 @@ describe("isWalkable", () => {
     expect(isWalkable("cave_entrance")).toBe(true);
   });
 
+  it("door is walkable (dwarves can pass through)", () => {
+    expect(isWalkable("door")).toBe(true);
+  });
+
   it("tree is walkable (surface feature)", () => {
     expect(isWalkable("tree")).toBe(true);
   });

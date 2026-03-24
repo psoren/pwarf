@@ -208,4 +208,34 @@ describe("monsterPathfinding", () => {
 
     expect(monster.current_tile_x).toBeNull();
   });
+
+  it("monster cannot move through a door tile", async () => {
+    const dwarf = makeDwarf({ position_x: 10, position_y: 10 });
+    const monster = makeMonster({
+      current_tile_x: 15,
+      current_tile_y: 10,
+      behavior: "aggressive",
+    });
+
+    const ctx = makeContext({ dwarves: [dwarf] });
+    ctx.state.monsters.push(monster);
+
+    // Place a door tile at the monster's next step (14, 10)
+    ctx.state.fortressTileOverrides.set("14,10,0", {
+      id: "door-tile",
+      civilization_id: "civ-1",
+      x: 14, y: 10, z: 0,
+      tile_type: "door",
+      material: "wood",
+      is_revealed: true,
+      is_mined: false,
+      created_at: new Date().toISOString(),
+    });
+
+    await monsterPathfinding(ctx);
+
+    // Monster should NOT have moved (door blocks it)
+    expect(monster.current_tile_x).toBe(15);
+    expect(monster.current_tile_y).toBe(10);
+  });
 });
