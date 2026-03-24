@@ -202,14 +202,6 @@ export interface TradeCaravanArrivalEvent extends SimEventBase {
   civilization_id: string;
 }
 
-export interface DiseaseOutbreakEvent extends SimEventBase {
-  type: 'disease_outbreak';
-  disease_id: string;
-  civilization_id: string;
-  name: string;
-  lethality: number;
-}
-
 export interface YearRollupEvent extends SimEventBase {
   type: 'year_rollup';
   civilization_id: string;
@@ -240,5 +232,4 @@ export type SimEvent =
   | DiscoveryEvent
   | ArtifactCreatedEvent
   | TradeCaravanArrivalEvent
-  | DiseaseOutbreakEvent
   | YearRollupEvent;
