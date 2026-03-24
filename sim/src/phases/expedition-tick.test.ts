@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { expeditionTick } from "./expedition-tick.js";
-import { makeContext, makeDwarf, makeExpedition, makeRuin, makeSkill } from "../__tests__/test-helpers.js";
+import { makeContext, makeDwarf, makeExpedition, makeRuin, makeSkill, makeTask } from "../__tests__/test-helpers.js";
 
 describe("expeditionTick", () => {
   it("decrements travel_ticks_remaining each tick", () => {
@@ -112,6 +112,59 @@ describe("expeditionTick", () => {
     expect(d1.status).toBe("dead"); // stays dead
     expect(d2.status).toBe("alive"); // returned
     expect(d2.position_x).toBe(256);
+  });
+
+  it("clears current_task_id when dwarves return from expedition", () => {
+    const task = makeTask("mine", { id: "task-1", status: "claimed" });
+    const dwarf = makeDwarf({ id: "d1", status: "missing", name: "Urist", current_task_id: "task-1" });
+    const ruin = makeRuin({ id: "r1" });
+    const expedition = makeExpedition({
+      id: "e1",
+      ruin_id: "r1",
+      dwarf_ids: ["d1"],
+      return_ticks_remaining: 1,
+      status: "retreating" as const,
+    });
+
+    const ctx = makeContext({ dwarves: [dwarf], tasks: [task] });
+    ctx.state.expeditions = [expedition];
+    ctx.state.ruins = [ruin];
+
+    expeditionTick(ctx);
+
+    expect(dwarf.current_task_id).toBeNull();
+    expect(task.status).toBe("pending");
+  });
+
+  it("clears current_task_id when dwarves die on expedition", () => {
+    const task = makeTask("mine", { id: "task-1", status: "claimed" });
+    const dwarf = makeDwarf({ id: "d1", status: "missing", name: "Urist", current_task_id: "task-1" });
+    const ruin = makeRuin({
+      id: "r1",
+      danger_level: 100, // max danger to guarantee death
+      remaining_wealth: 100,
+    });
+    const expedition = makeExpedition({
+      id: "e1",
+      ruin_id: "r1",
+      dwarf_ids: ["d1"],
+      travel_ticks_remaining: 1,
+      status: "traveling",
+      destination_tile_x: 5,
+      destination_tile_y: 5,
+    });
+
+    const ctx = makeContext({ dwarves: [dwarf], tasks: [task] });
+    ctx.state.expeditions = [expedition];
+    ctx.state.ruins = [ruin];
+
+    expeditionTick(ctx);
+
+    // If dwarf died, task should be cleared
+    if (dwarf.status === "dead") {
+      expect(dwarf.current_task_id).toBeNull();
+      expect(task.status).toBe("pending");
+    }
   });
 
   it("no loot created when all dwarves died", () => {

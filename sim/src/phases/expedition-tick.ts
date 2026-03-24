@@ -45,6 +45,11 @@ export function expeditionTick(ctx: SimContext): void {
             dwarf.status = 'dead';
             dwarf.died_year = ctx.year;
             dwarf.cause_of_death = 'expedition';
+            if (dwarf.current_task_id) {
+              const task = state.tasks.find(t => t.id === dwarf.current_task_id);
+              if (task) task.status = 'pending';
+              dwarf.current_task_id = null;
+            }
             state.dirtyDwarfIds.add(dwarf.id);
           }
         }
@@ -88,6 +93,11 @@ export function expeditionTick(ctx: SimContext): void {
             dwarf.position_x = 256;
             dwarf.position_y = 256;
             dwarf.position_z = 0;
+            if (dwarf.current_task_id) {
+              const task = state.tasks.find(t => t.id === dwarf.current_task_id);
+              if (task) task.status = 'pending';
+              dwarf.current_task_id = null;
+            }
             state.dirtyDwarfIds.add(dwarf.id);
           }
         }
