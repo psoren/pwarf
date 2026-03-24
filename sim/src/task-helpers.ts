@@ -39,12 +39,9 @@ export function getDwarfSkillLevel(dwarfId: string, skillName: string, skills: D
   return skill?.level ?? 0;
 }
 
-/** Check if a dwarf has the required skill for a task type (any level counts). */
-export function dwarfHasSkill(dwarfId: string, taskType: TaskType, skills: DwarfSkill[]): boolean {
-  const required = TASK_SKILL_MAP[taskType];
-  if (required === null) return true;
-  // For skill-based tasks, we require the skill record to exist (even at level 0)
-  return skills.some(s => s.dwarf_id === dwarfId && s.skill_name === required);
+/** Any dwarf can attempt any task — skills only affect work speed, not eligibility. */
+export function dwarfHasSkill(_dwarfId: string, _taskType: TaskType, _skills: DwarfSkill[]): boolean {
+  return true;
 }
 
 /** Check if a dwarf is idle (alive, no current task, not in tantrum). */
