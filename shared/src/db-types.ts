@@ -267,10 +267,24 @@ export interface Ruin {
   remaining_wealth: number;
   peak_population: number;
   danger_level: number;
+  is_contaminated: boolean;
+  contamination_type: string | null;
   ghost_count: number;
+  is_trapped: boolean;
+  resident_monster_id: string | null;
+  snapshot: Record<string, unknown> | null;
+  snapshot_url: string | null;
   is_published: boolean;
   created_at: string;
 }
+
+export type ExpeditionStatus =
+  | 'traveling'
+  | 'active'
+  | 'looting'
+  | 'retreating'
+  | 'complete'
+  | 'failed';
 
 export interface Expedition {
   id: string;
