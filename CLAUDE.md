@@ -21,10 +21,15 @@ Write unit tests for every pure function in the sim engine. Tests verify isolate
 
 The sim must be runnable with zero UI, zero browser, zero human input. All randomness must be seeded for deterministic, reproducible results.
 
+### Scenario tests
+
+Every new sim feature must include a `runScenario()` integration test in `sim/src/__tests__/`. Scenario tests exercise the full tick loop end-to-end — dwarves claim tasks, walk to targets, complete work, and produce results — unlike unit tests which test a single function in isolation. If your feature adds new `ScenarioConfig` fields (e.g. `expeditions`, `ruins`, `fortressDeriver`), wire them into `run-scenario.ts` so scenarios can use them.
+
 ### New feature testing checklist
 
 Before merging any new sim system:
 - Unit tests for all pure functions
+- A `runScenario()` integration test covering the full feature lifecycle
 - Headless mode still works (no new browser dependencies)
 
 ### Sim/app integration contract
@@ -56,6 +61,7 @@ When changing a public API that both `sim/` and `app/` use (e.g. `SimRunner` con
 - Close the issue when the PR is merged.
 - **One conversation per ticket.** Start a new Claude Code conversation for each ticket/PR. This keeps cost tracking accurate — the session cost reported in the PR description reflects exactly that ticket's work.
 - **Use the `in-progress` label to signal active work.** When starting a ticket, add the `in-progress` label (`gh issue edit <N> --add-label "in-progress"`). Before picking up any ticket, check whether it already has this label — if it does, someone else is working on it; skip it and pick the next one.
+- **Always return to `main` after finishing work.** After merging a PR or finishing on a feature branch, check out `main` — never leave the working directory on a feature branch.
 
 ## Cost Tracking
 
