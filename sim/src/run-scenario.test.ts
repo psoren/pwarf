@@ -262,8 +262,8 @@ describe("building tasks", () => {
     expect(stoneItem).toBeDefined();
   });
 
-  it("dwarf without skill cannot claim build task", async () => {
-    // No building skill — task should stay pending
+  it("dwarf without skill can still claim and complete build task", async () => {
+    // No building skill — but any dwarf can do any task
     const dwarf = makeDwarf({ position_x: DX, position_y: DY, position_z: DZ });
     const task = makeTask('build_wall', {
       status: 'pending',
@@ -277,13 +277,13 @@ describe("building tasks", () => {
 
     const result = await runScenario({
       dwarves: [dwarf],
-      dwarfSkills: [], // no skills
+      dwarfSkills: [], // no skills — still works
       tasks: [task],
-      ticks: 50,
+      ticks: WORK_BUILD_WALL + 10,
       seed: 1,
     });
 
-    const pendingTask = result.tasks.find(t => t.id === task.id);
-    expect(pendingTask?.status).toBe('pending');
+    const completedTask = result.tasks.find(t => t.id === task.id);
+    expect(completedTask?.status).toBe('completed');
   });
 });

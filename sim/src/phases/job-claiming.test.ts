@@ -56,15 +56,16 @@ describe("jobClaiming", () => {
     expect(task.status).toBe("pending");
   });
 
-  it("requires matching skill for skill-based tasks", async () => {
+  it("assigns skill-based tasks even without matching skill (any dwarf can do any task)", async () => {
     const dwarf = makeDwarf();
-    // Mine requires 'mining' skill — dwarf has no skills
+    // Dwarf has no skills but should still claim the mine task
     const task = makeTask("mine", { status: "pending", target_x: 5, target_y: 5, target_z: 0 });
     const ctx = makeContext({ dwarves: [dwarf], tasks: [task] });
 
     await jobClaiming(ctx);
 
-    expect(task.status).toBe("pending");
+    expect(task.status).toBe("claimed");
+    expect(task.assigned_dwarf_id).toBe(dwarf.id);
   });
 
   it("assigns skill-based tasks when dwarf has the required skill", async () => {

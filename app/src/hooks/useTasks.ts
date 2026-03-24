@@ -81,9 +81,12 @@ export function useTasks(civId: string | null) {
 
   /** Map of "x,y" → task_type for tiles with active designations */
   const designatedTiles = useMemo(() => {
+    const ACTIVE_STATUSES: ReadonlySet<string> = new Set(['pending', 'claimed', 'in_progress']);
     const map = new Map<string, string>();
     for (const task of tasks) {
-      if (task.target_x !== null && task.target_y !== null && !AUTONOMOUS_TASK_TYPES.has(task.task_type)) {
+      if (task.target_x !== null && task.target_y !== null
+        && !AUTONOMOUS_TASK_TYPES.has(task.task_type)
+        && ACTIVE_STATUSES.has(task.status)) {
         map.set(`${task.target_x},${task.target_y}`, task.task_type);
       }
     }

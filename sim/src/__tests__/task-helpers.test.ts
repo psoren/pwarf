@@ -61,8 +61,8 @@ describe("dwarfHasSkill", () => {
     expect(dwarfHasSkill("d1", "mine", skills)).toBe(true);
   });
 
-  it("returns false when dwarf lacks the required skill", () => {
-    expect(dwarfHasSkill("d1", "mine", [])).toBe(false);
+  it("returns true even when dwarf lacks the required skill (any dwarf can do any task)", () => {
+    expect(dwarfHasSkill("d1", "mine", [])).toBe(true);
   });
 });
 
