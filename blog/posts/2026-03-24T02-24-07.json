@@ -1,0 +1,42 @@
+{
+  "id": "2026-03-24T02-24-07",
+  "timestamp": "2026-03-24T02:24:07.900Z",
+  "title": "Digest — Mar 24, 2026, 02:24 AM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nHello, Pwarf community! 🎉 We have some exciting updates from the latest merges that enhance gameplay, improve readability, and fix critical bugs. Here’s a quick overview of what’s been added:\n\n## Improved Dwarf Information Display\n- **Position Format Change**: The format for displaying a dwarf's position has been updated for better readability, changing from `(247, 248, z0)` to `(247, 248) Level 0` in the dwarf modal.\n\n## Critical Bug Fixes\n- **Tantrum Prevention**: We addressed a bug where tantruming dwarves could not eat or sleep, leading to a potential death spiral. Now, these tasks are immediately claimed, preventing this situation.\n- **Ghost Registration Fix**: Previously, all dead dwarves, including those from earlier sessions, auto-registered as ghosts, causing stress among living dwarves. This has been resolved, improving overall stability.\n\n## Gameplay Adjustments\n- **Task Eligibility**: The restriction that limited task claiming to only dwarves with matching skills has been removed. Now, any dwarf can attempt any task while their skills only affect the speed of task completion. This change should reduce idle time and enhance productivity!\n\nThank you for your continued support and feedback! Keep building those fortresses!\n\n## Merged PRs\n- #569\n- #566\n- #563\n- #561\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (10 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 10,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 569,
+      "title": "Fix dwarf position display format",
+      "url": "https://github.com/psoren/pwarf/pull/569"
+    },
+    {
+      "number": 566,
+      "title": "fix: tantruming dwarves can't eat/sleep — death spiral (closes #565)",
+      "url": "https://github.com/psoren/pwarf/pull/566",
+      "cost": {
+        "amount": "$3.31",
+        "tokens": "4.6M tokens"
+      }
+    },
+    {
+      "number": 563,
+      "title": "fix: dead dwarves from previous sessions no longer auto-register as ghosts",
+      "url": "https://github.com/psoren/pwarf/pull/563"
+    },
+    {
+      "number": 561,
+      "title": "fix: any dwarf can do any task, skills only affect speed",
+      "url": "https://github.com/psoren/pwarf/pull/561"
+    }
+  ],
+  "images": []
+}
