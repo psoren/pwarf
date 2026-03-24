@@ -1,32 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { STEPS_PER_YEAR, STEPS_PER_DAY } from "@pwarf/shared";
 import type { Dwarf, DwarfSkill, FortressTile, Item, StockpileTile, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext, CachedState } from "./sim-context.js";
 import { createEmptyCachedState, createRng } from "./sim-context.js";
 import { DEFAULT_TEST_SEED } from "./rng.js";
-import {
-  needsDecay,
-  taskExecution,
-  needSatisfaction,
-  stressUpdate,
-  tantrumCheck,
-  tantrumActions,
-  monsterPathfinding,
-  combatResolution,
-  constructionProgress,
-  jobClaiming,
-  eventFiring,
-  yearlyRollup,
-  idleWandering,
-  thoughtGeneration,
-  haulAssignment,
-  autoCookPhase,
-  autoBrew,
-  autoForage,
-  taskRecovery,
-  monsterSpawning,
-  expeditionTick,
-} from "./phases/index.js";
+import { runTick, advanceTime, maybeYearRollup } from "./tick.js";
 
 /** Input configuration for a scenario run. */
 export interface ScenarioConfig {
@@ -113,38 +90,10 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
   for (let i = 0; i < config.ticks; i++) {
     stepCount++;
-    const currentDay = Math.floor((stepCount % STEPS_PER_YEAR) / STEPS_PER_DAY) + 1;
-    ctx.step = stepCount;
-    ctx.day = currentDay;
-    ctx.year = currentYear;
+    advanceTime(ctx, stepCount, currentYear);
 
-    await needsDecay(ctx);
-    await taskExecution(ctx);
-    await needSatisfaction(ctx);
-    await stressUpdate(ctx);
-    await tantrumCheck(ctx);
-    await tantrumActions(ctx);
-    await monsterSpawning(ctx);
-    await monsterPathfinding(ctx);
-    await combatResolution(ctx);
-    expeditionTick(ctx);
-    await constructionProgress(ctx);
-    await idleWandering(ctx);
-    await haulAssignment(ctx);
-    taskRecovery(ctx);
-    await autoCookPhase(ctx);
-    await autoBrew(ctx);
-    await autoForage(ctx);
-    await jobClaiming(ctx);
-    await eventFiring(ctx);
-    await thoughtGeneration(ctx);
-
-    if (stepCount % STEPS_PER_YEAR === 0) {
-      currentYear++;
-      ctx.year = currentYear;
-      ctx.day = 1;
-      await yearlyRollup(ctx);
-    }
+    await runTick(ctx);
+    currentYear = await maybeYearRollup(ctx, stepCount, currentYear);
 
     // Flush pendingEvents → worldEvents (mirrors what flush-state does for the DB)
     if (state.pendingEvents.length > 0) {

@@ -18,6 +18,7 @@ import {
   MORALE_RESTORE_SKILLED_TASK,
   MORALE_RESTORE_HAUL_TASK,
   SKILL_TIER_NAMES,
+  AUTONOMOUS_TASK_TYPES,
   generateCaveName,
   getCaveSeed,
 } from "@pwarf/shared";
@@ -100,8 +101,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   state.dirtyDwarfIds.add(dwarf.id);
 
   // Fire completion event for player-created tasks
-  const autonomousTypes: string[] = ['eat', 'drink', 'sleep'];
-  if (!autonomousTypes.includes(task.task_type)) {
+  if (!AUTONOMOUS_TASK_TYPES.has(task.task_type)) {
     const dwarfLabel = dwarfName(dwarf);
     const taskLabel = task.task_type.replace(/_/g, ' ');
     state.pendingEvents.push({
@@ -604,9 +604,9 @@ function completeDeconstruct(task: Task, ctx: SimContext): void {
 export function completeBrew(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
-  // Consume a plant (raw_material) item at the target tile (or anywhere in inventory)
-  const plant = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'raw_material') ??
-    findItemHeldBy(ctx, dwarf.id, 'raw_material');
+  // Consume a plant raw_material at the target tile (or anywhere in inventory)
+  const plant = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'raw_material', 'plant') ??
+    findItemHeldBy(ctx, dwarf.id, 'raw_material', 'plant');
   if (plant) {
     const idx = ctx.state.items.findIndex(i => i.id === plant.id);
     if (idx !== -1) ctx.state.items.splice(idx, 1);
@@ -761,10 +761,11 @@ export function completeScoutCave(dwarf: Dwarf, task: Task, ctx: SimContext): vo
   });
 }
 
-/** Find the first item at a given tile position with the given category. */
-function findItemAt(ctx: SimContext, x: number, y: number, z: number, category: string): Item | undefined {
+/** Find the first item at a given tile position with the given category (and optionally material). */
+function findItemAt(ctx: SimContext, x: number, y: number, z: number, category: string, material?: string): Item | undefined {
   return ctx.state.items.find(
     i => i.category === category
+      && (material === undefined || i.material === material)
       && i.position_x === x
       && i.position_y === y
       && i.position_z === z
@@ -772,9 +773,9 @@ function findItemAt(ctx: SimContext, x: number, y: number, z: number, category: 
   );
 }
 
-/** Find the first item held by a dwarf with the given category. */
-function findItemHeldBy(ctx: SimContext, dwarfId: string, category: string): Item | undefined {
-  return ctx.state.items.find(i => i.category === category && i.held_by_dwarf_id === dwarfId);
+/** Find the first item held by a dwarf with the given category (and optionally material). */
+function findItemHeldBy(ctx: SimContext, dwarfId: string, category: string, material?: string): Item | undefined {
+  return ctx.state.items.find(i => i.category === category && (material === undefined || i.material === material) && i.held_by_dwarf_id === dwarfId);
 }
 
 function awardXp(dwarfId: string, skillName: string, xpAmount: number, ctx: SimContext, dwarf: Dwarf): void {

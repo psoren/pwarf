@@ -1,32 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { STEPS_PER_YEAR, STEPS_PER_DAY } from "@pwarf/shared";
+import { AUTONOMOUS_TASK_TYPES } from "@pwarf/shared";
 import type { TaskType } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng } from "./rng.js";
-import {
-  needsDecay,
-  taskExecution,
-  needSatisfaction,
-  stressUpdate,
-  tantrumCheck,
-  tantrumActions,
-  monsterSpawning,
-  monsterPathfinding,
-  combatResolution,
-  constructionProgress,
-  jobClaiming,
-  eventFiring,
-  yearlyRollup,
-  idleWandering,
-  thoughtGeneration,
-  haulAssignment,
-  autoCookPhase,
-  autoBrew,
-  autoForage,
-  taskRecovery,
-  expeditionTick,
-} from "./phases/index.js";
+import { runTick, advanceTime, maybeYearRollup } from "./tick.js";
 import { SCENARIOS, buildScenarioState, buildEatDrinkTasks } from "./scenarios.js";
 import { serializeState } from "./state-serializer.js";
 
@@ -119,44 +97,15 @@ function makeTaskId(): string {
 async function runOneTick(session: StepSession): Promise<void> {
   const { ctx } = session;
   session.step++;
-  session.day = Math.floor((session.step % STEPS_PER_YEAR) / STEPS_PER_DAY) + 1;
-  ctx.step = session.step;
-  ctx.day = session.day;
-  ctx.year = session.year;
+  advanceTime(ctx, session.step, session.year);
 
   const before = ctx.state.tasks.filter(t => t.status === "completed").length;
-
-  await needsDecay(ctx);
-  await taskExecution(ctx);
-  await needSatisfaction(ctx);
-  await stressUpdate(ctx);
-  await tantrumCheck(ctx);
-  await tantrumActions(ctx);
-  await monsterSpawning(ctx);
-  await monsterPathfinding(ctx);
-  await combatResolution(ctx);
-  expeditionTick(ctx);
-  await constructionProgress(ctx);
-  await idleWandering(ctx);
-  await haulAssignment(ctx);
-  taskRecovery(ctx);
-  await autoCookPhase(ctx);
-  await autoBrew(ctx);
-  await autoForage(ctx);
-  await jobClaiming(ctx);
-  await eventFiring(ctx);
-  await thoughtGeneration(ctx);
-
-  if (session.step % STEPS_PER_YEAR === 0) {
-    session.year++;
-    session.day = 1;
-    ctx.year = session.year;
-    ctx.day = 1;
-    await yearlyRollup(ctx);
-  }
-
+  await runTick(ctx);
   const after = ctx.state.tasks.filter(t => t.status === "completed").length;
   session.tasksCompleted += after - before;
+
+  session.year = await maybeYearRollup(ctx, session.step, session.year);
+  session.day = ctx.day;
 }
 
 // ---------------------------------------------------------------------------
@@ -248,9 +197,8 @@ export async function dispatchCommand(
       const tiles = [...session.ctx.state.fortressTileOverrides.values()]
         .filter(t => t.z === z)
         .map(t => ({ x: t.x, y: t.y, tile_type: t.tile_type }));
-      const AUTONOMOUS = new Set(['eat', 'drink', 'sleep']);
       const tasks = session.ctx.state.tasks
-        .filter(t => t.target_z === z && !AUTONOMOUS.has(t.task_type) && t.status !== 'completed' && t.status !== 'cancelled')
+        .filter(t => t.target_z === z && !AUTONOMOUS_TASK_TYPES.has(t.task_type) && t.status !== 'completed' && t.status !== 'cancelled')
         .map(t => ({ id: t.id, type: t.task_type, status: t.status, x: t.target_x!, y: t.target_y! }));
       return { z, tiles, tasks };
     }

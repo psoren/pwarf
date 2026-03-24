@@ -100,6 +100,16 @@ Follow these when writing or modifying code to keep the codebase clean:
 - **Shared test helpers.** Test factory functions (`makeDwarf`, `makeContext`, etc.) live in `sim/src/__tests__/test-helpers.ts`. Don't duplicate them across test files.
 - **Name test files after what they test.** `dwarf-names.test.ts` tests `dwarf-names.ts`, not `embark.test.ts`.
 
+### Sim tick loop
+
+All sim phase ordering lives in `sim/src/tick.ts` (`runTick`, `advanceTime`, `maybeYearRollup`). Runners (`sim-runner.ts`, `headless-runner.ts`, `run-scenario.ts`, `step-mode.ts`) import from `tick.ts` — never duplicate the phase call list. When adding a new phase, add it once in `tick.ts`.
+
+### Types and constants
+
+- **Derive union types from `as const` arrays.** `TaskType`, `TaskStatus`, `DwarfStatus`, `SkillName` are all defined as `as const` arrays in `shared/src/db-types.ts` with the type derived via `(typeof ARRAY)[number]`. This gives both a runtime value and a compile-time type from a single source of truth. Follow this pattern for new enum-like types.
+- **Domain sets belong in `shared/src/constants.ts`.** Sets like `AUTONOMOUS_TASK_TYPES` that both `sim/` and `app/` need should be defined once in shared and imported everywhere. Never duplicate a set of values across files.
+- **Skill-to-task mappings stay in `sim/src/task-helpers.ts`.** `TASK_SKILL_MAP` is sim-internal logic — it doesn't need to be in shared.
+
 ## PR Self-Review
 
 - **Run `npm test` and `npm run build` before creating a PR.** Confirm both pass before pushing.

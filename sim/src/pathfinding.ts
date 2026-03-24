@@ -126,6 +126,8 @@ export function bfsNextStep(
   getTile: TileLookup,
   adjacentToGoal = false,
   zResolver?: ZResolver,
+  /** Tiles to treat as unwalkable (e.g. tiles occupied by other dwarves). */
+  blockedTiles?: ReadonlySet<string>,
 ): Position | null {
   // Already at goal
   if (start.x === goal.x && start.y === goal.y && start.z === goal.z) {
@@ -154,6 +156,7 @@ export function bfsNextStep(
     for (const neighbor of neighbors) {
       const key = posKey(neighbor);
       if (visited.has(key)) continue;
+      if (blockedTiles?.has(key)) continue;
       visited.add(key);
       parent.set(key, current);
 
