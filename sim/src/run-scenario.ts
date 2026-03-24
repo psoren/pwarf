@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { STEPS_PER_YEAR, STEPS_PER_DAY } from "@pwarf/shared";
-import type { Dwarf, DwarfSkill, FortressTile, Item, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
+import type { Dwarf, DwarfSkill, FortressTile, Item, StockpileTile, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext, CachedState } from "./sim-context.js";
 import { createEmptyCachedState, createRng } from "./sim-context.js";
 import { DEFAULT_TEST_SEED } from "./rng.js";
@@ -38,6 +38,8 @@ export interface ScenarioConfig {
   tasks?: Task[];
   /** Pre-placed fortress tiles — bypasses the fortress deriver for controlled map fixtures. */
   fortressTileOverrides?: FortressTile[];
+  /** Pre-placed stockpile tiles for haul testing. */
+  stockpileTiles?: StockpileTile[];
   ticks: number;
   seed?: number;
 }
@@ -81,6 +83,11 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
   if (config.fortressTileOverrides) {
     for (const tile of config.fortressTileOverrides) {
       state.fortressTileOverrides.set(`${tile.x},${tile.y},${tile.z}`, { ...tile });
+    }
+  }
+  if (config.stockpileTiles) {
+    for (const tile of config.stockpileTiles) {
+      state.stockpileTiles.set(`${tile.x},${tile.y},${tile.z}`, { ...tile });
     }
   }
   const ctx: SimContext = {

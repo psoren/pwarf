@@ -100,6 +100,85 @@ describe("haulAssignment", () => {
     expect(ctx.state.tasks.filter(t => t.task_type === "haul")).toHaveLength(0);
   });
 
+  it("creates haul task for ground item not on a stockpile", async () => {
+    const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
+    const groundItem = makeItem({
+      position_x: 7, position_y: 7, position_z: 0,
+      held_by_dwarf_id: null,
+      category: "raw_material",
+      located_in_civ_id: "civ-1",
+    });
+    const ctx = makeContext({ dwarves: [dwarf], items: [groundItem] });
+
+    const st = makeStockpileTile(10, 10, 0);
+    ctx.state.stockpileTiles.set("10,10,0", st);
+
+    await haulAssignment(ctx);
+
+    const haulTasks = ctx.state.tasks.filter(t => t.task_type === "haul");
+    expect(haulTasks).toHaveLength(1);
+    expect(haulTasks[0].target_item_id).toBe(groundItem.id);
+    expect(haulTasks[0].target_x).toBe(10);
+  });
+
+  it("skips ground items already on a stockpile tile", async () => {
+    const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
+    const itemOnPile = makeItem({
+      position_x: 10, position_y: 10, position_z: 0,
+      held_by_dwarf_id: null,
+      category: "raw_material",
+      located_in_civ_id: "civ-1",
+    });
+    const ctx = makeContext({ dwarves: [dwarf], items: [itemOnPile] });
+
+    const st = makeStockpileTile(10, 10, 0);
+    ctx.state.stockpileTiles.set("10,10,0", st);
+
+    await haulAssignment(ctx);
+
+    const haulTasks = ctx.state.tasks.filter(t => t.task_type === "haul");
+    expect(haulTasks).toHaveLength(0);
+  });
+
+  it("does not create duplicate haul tasks for the same ground item", async () => {
+    const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
+    const groundItem = makeItem({
+      position_x: 7, position_y: 7, position_z: 0,
+      held_by_dwarf_id: null,
+      category: "raw_material",
+      located_in_civ_id: "civ-1",
+    });
+    const ctx = makeContext({ dwarves: [dwarf], items: [groundItem] });
+
+    const st = makeStockpileTile(10, 10, 0);
+    ctx.state.stockpileTiles.set("10,10,0", st);
+
+    await haulAssignment(ctx);
+    await haulAssignment(ctx);
+
+    const haulTasks = ctx.state.tasks.filter(t => t.task_type === "haul");
+    expect(haulTasks).toHaveLength(1);
+  });
+
+  it("skips ground items from other civilizations", async () => {
+    const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
+    const foreignItem = makeItem({
+      position_x: 7, position_y: 7, position_z: 0,
+      held_by_dwarf_id: null,
+      category: "raw_material",
+      located_in_civ_id: "other-civ",
+    });
+    const ctx = makeContext({ dwarves: [dwarf], items: [foreignItem] });
+
+    const st = makeStockpileTile(10, 10, 0);
+    ctx.state.stockpileTiles.set("10,10,0", st);
+
+    await haulAssignment(ctx);
+
+    const haulTasks = ctx.state.tasks.filter(t => t.task_type === "haul");
+    expect(haulTasks).toHaveLength(0);
+  });
+
   it("picks the nearest stockpile tile", async () => {
     const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
     const item = makeItem({ held_by_dwarf_id: dwarf.id, weight: 10 });

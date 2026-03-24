@@ -14,6 +14,7 @@ import type { SimContext } from "../sim-context.js";
 import { getDwarfSkillLevel, getRequiredSkill } from "../task-helpers.js";
 import { bfsNextStep } from "../pathfinding.js";
 import { buildTileLookup } from "../tile-lookup.js";
+import { canPickUp, pickUpItem } from "../inventory.js";
 import { handleDeprivationDeaths } from "./deprivation.js";
 import { completeTask } from "./task-completion.js";
 
@@ -58,6 +59,52 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
     if (task.status === 'claimed') {
       task.status = 'in_progress';
       state.dirtyTaskIds.add(task.id);
+    }
+
+    // Haul tasks: if the dwarf doesn't hold the target item yet, walk to it and pick it up
+    if (task.task_type === 'haul' && task.target_item_id) {
+      const haulItem = state.items.find(i => i.id === task.target_item_id);
+      if (haulItem && haulItem.held_by_dwarf_id !== dwarf.id) {
+        if (haulItem.position_x !== null && haulItem.position_y !== null && haulItem.position_z !== null) {
+          const atItem = dwarf.position_x === haulItem.position_x
+            && dwarf.position_y === haulItem.position_y
+            && dwarf.position_z === haulItem.position_z;
+          if (atItem) {
+            if (canPickUp(dwarf.id, haulItem, state.items)) {
+              pickUpItem(dwarf, haulItem, state);
+            } else {
+              failTask(dwarf, task, state);
+            }
+          } else {
+            const getTile = buildTileLookup(ctx);
+            const nextStep = bfsNextStep(
+              { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z },
+              { x: haulItem.position_x, y: haulItem.position_y, z: haulItem.position_z },
+              getTile,
+              false,
+            );
+            if (nextStep) {
+              const nextKey = `${nextStep.x},${nextStep.y},${nextStep.z}`;
+              if (!occupiedTiles.has(nextKey)) {
+                const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
+                occupiedTiles.delete(prevKey);
+                occupiedTiles.add(nextKey);
+                dwarf.position_x = nextStep.x;
+                dwarf.position_y = nextStep.y;
+                dwarf.position_z = nextStep.z;
+                state.dirtyDwarfIds.add(dwarf.id);
+              }
+            } else {
+              failTask(dwarf, task, state);
+            }
+          }
+          continue;
+        }
+        if (haulItem.held_by_dwarf_id !== null) {
+          failTask(dwarf, task, state);
+          continue;
+        }
+      }
     }
 
     // Check if dwarf needs to move to the task site
