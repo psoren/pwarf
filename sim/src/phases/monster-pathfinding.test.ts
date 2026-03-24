@@ -209,6 +209,46 @@ describe("monsterPathfinding", () => {
     expect(monster.current_tile_x).toBeNull();
   });
 
+  it("monster does not move onto a dwarf-occupied tile", async () => {
+    const dwarf = makeDwarf({ position_x: 14, position_y: 10 });
+    const monster = makeMonster({
+      current_tile_x: 15,
+      current_tile_y: 10,
+      behavior: "aggressive",
+    });
+
+    const ctx = makeContext({ dwarves: [dwarf] });
+    ctx.state.monsters.push(monster);
+
+    await monsterPathfinding(ctx);
+
+    // Monster should stay at 15,10 (dwarf at 14,10 blocks it, but they're adjacent so combat triggers)
+    expect(monster.current_tile_x).toBe(15);
+    expect(monster.current_tile_y).toBe(10);
+  });
+
+  it("monster does not move onto another monster's tile", async () => {
+    const dwarf = makeDwarf({ position_x: 10, position_y: 10 });
+    const monster1 = makeMonster({
+      current_tile_x: 15,
+      current_tile_y: 10,
+      behavior: "aggressive",
+    });
+    const monster2 = makeMonster({
+      current_tile_x: 14,
+      current_tile_y: 10,
+      behavior: "aggressive",
+    });
+
+    const ctx = makeContext({ dwarves: [dwarf] });
+    ctx.state.monsters.push(monster1, monster2);
+
+    await monsterPathfinding(ctx);
+
+    // monster2 is at 14,10 blocking monster1's path; monster1 should stay at 15,10
+    expect(monster1.current_tile_x).toBe(15);
+  });
+
   it("monster cannot move through a door tile", async () => {
     const dwarf = makeDwarf({ position_x: 10, position_y: 10 });
     const monster = makeMonster({

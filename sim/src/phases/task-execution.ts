@@ -35,11 +35,16 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
 
   handleDeprivationDeaths(ctx);
 
-  // Build a set of occupied tiles so dwarves don't stack on each other
+  // Build a set of occupied tiles so dwarves don't stack on each other or on monsters
   const occupiedTiles = new Set<string>();
   for (const d of state.dwarves) {
     if (d.status === 'alive') {
       occupiedTiles.add(`${d.position_x},${d.position_y},${d.position_z}`);
+    }
+  }
+  for (const m of state.monsters) {
+    if (m.status === 'active' && m.current_tile_x !== null && m.current_tile_y !== null) {
+      occupiedTiles.add(`${m.current_tile_x},${m.current_tile_y},0`);
     }
   }
 

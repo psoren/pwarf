@@ -85,9 +85,23 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
     const count = rng.int(1, IMMIGRATION_MAX_ARRIVALS);
     migrantsThisYear = count;
     const center = Math.floor(FORTRESS_SIZE / 2);
-    const immigrants = Array.from({ length: count }, (_, i) =>
-      createImmigrantDwarf(rng, civilizationId, year, center + i, center)
+
+    // Build occupied set so immigrants don't spawn on existing dwarves
+    const occupied = new Set(
+      state.dwarves.filter(d => d.status === 'alive').map(d => `${d.position_x},${d.position_y}`),
     );
+
+    const immigrants = [];
+    for (let i = 0; i < count; i++) {
+      let spawnX = center + i;
+      const spawnY = center;
+      // Find a free tile near the target position
+      while (occupied.has(`${spawnX},${spawnY}`)) {
+        spawnX += 1;
+      }
+      occupied.add(`${spawnX},${spawnY}`);
+      immigrants.push(createImmigrantDwarf(rng, civilizationId, year, spawnX, spawnY));
+    }
 
     for (const immigrant of immigrants) {
       state.dwarves.push(immigrant);
