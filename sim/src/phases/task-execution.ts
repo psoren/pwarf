@@ -85,22 +85,23 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
             }
           } else {
             const getTile = buildTileLookup(ctx);
-            const nextStep = bfsNextStep(
-              { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z },
-              { x: haulItem.position_x, y: haulItem.position_y, z: haulItem.position_z },
-              getTile,
-              false,
-              zResolver,
-            );
-            if (nextStep) {
-              const nextKey = `${nextStep.x},${nextStep.y},${nextStep.z}`;
-              if (!occupiedTiles.has(nextKey)) {
+            const haulStart = { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z };
+            const haulGoal = { x: haulItem.position_x, y: haulItem.position_y, z: haulItem.position_z };
+            let haulNext = bfsNextStep(haulStart, haulGoal, getTile, false, zResolver);
+            if (haulNext) {
+              const nextKey = `${haulNext.x},${haulNext.y},${haulNext.z}`;
+              if (occupiedTiles.has(nextKey)) {
+                // Retry routing around occupied tiles
+                haulNext = bfsNextStep(haulStart, haulGoal, getTile, false, zResolver, occupiedTiles) ?? haulNext;
+              }
+              const finalKey = `${haulNext.x},${haulNext.y},${haulNext.z}`;
+              if (!occupiedTiles.has(finalKey)) {
                 const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
                 occupiedTiles.delete(prevKey);
-                occupiedTiles.add(nextKey);
-                dwarf.position_x = nextStep.x;
-                dwarf.position_y = nextStep.y;
-                dwarf.position_z = nextStep.z;
+                occupiedTiles.add(finalKey);
+                dwarf.position_x = haulNext.x;
+                dwarf.position_y = haulNext.y;
+                dwarf.position_z = haulNext.z;
                 state.dirtyDwarfIds.add(dwarf.id);
               }
             } else {
@@ -187,28 +188,32 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
 
   const getTile = buildTileLookup(ctx);
 
-  const nextStep = bfsNextStep(
-    { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z },
-    { x: task.target_x, y: task.target_y, z: task.target_z },
-    getTile,
-    needsAdjacent,
-    zResolver,
-  );
+  const start = { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z };
+  const goal = { x: task.target_x, y: task.target_y, z: task.target_z };
+
+  let nextStep = bfsNextStep(start, goal, getTile, needsAdjacent, zResolver);
 
   if (nextStep === null) {
     return false; // No path found
   }
 
-  // Don't move onto a tile occupied by another dwarf — wait instead
+  // If the next step is occupied, retry BFS routing around occupied tiles.
+  // This prevents dwarves from waiting forever when an alternative path exists.
   const nextKey = `${nextStep.x},${nextStep.y},${nextStep.z}`;
   if (occupiedTiles.has(nextKey)) {
-    return true; // Path exists but tile is blocked — wait, don't fail the task
+    const altStep = bfsNextStep(start, goal, getTile, needsAdjacent, zResolver, occupiedTiles);
+    if (altStep) {
+      nextStep = altStep;
+    } else {
+      return true; // All paths blocked — wait, don't fail the task
+    }
   }
 
   // Update occupancy tracking
   const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
+  const finalKey = `${nextStep.x},${nextStep.y},${nextStep.z}`;
   occupiedTiles.delete(prevKey);
-  occupiedTiles.add(nextKey);
+  occupiedTiles.add(finalKey);
 
   dwarf.position_x = nextStep.x;
   dwarf.position_y = nextStep.y;
