@@ -25,6 +25,8 @@ export interface DerivedFortressTile {
 
 export interface FortressDeriver {
   deriveTile(x: number, y: number, z: number): DerivedFortressTile;
+  /** The base surface tile type for this biome (grass, mud, sand, etc.) */
+  baseTileType: FortressTileType;
 }
 
 // ============================================================
