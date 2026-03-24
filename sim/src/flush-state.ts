@@ -51,8 +51,8 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
       need_drink: Math.round(d.need_drink),
       need_sleep: Math.round(d.need_sleep),
       need_social: Math.round(d.need_social),
-      need_purpose: Math.round(d.need_purpose),
-      need_beauty: Math.round(d.need_beauty),
+      need_purpose: 0,
+      need_beauty: 0,
       stress_level: Math.round(d.stress_level),
       health: Math.round(d.health),
     }));

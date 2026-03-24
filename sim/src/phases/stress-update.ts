@@ -30,8 +30,6 @@ export async function stressUpdate(ctx: SimContext): Promise<void> {
       dwarf.need_drink,
       dwarf.need_sleep,
       dwarf.need_social,
-      dwarf.need_purpose,
-      dwarf.need_beauty,
     ];
 
     const memories = activeMemories(dwarf, ctx.year);
@@ -49,7 +47,7 @@ export async function stressUpdate(ctx: SimContext): Promise<void> {
  * and personality traits. Exported for unit testing.
  *
  * @param dwarf - only trait_neuroticism and trait_agreeableness are used
- * @param needValues - [food, drink, sleep, social, purpose, beauty]
+ * @param needValues - [food, drink, sleep, morale]
  * @returns stress delta (positive = more stress, negative = recovery)
  */
 export function calcStressDelta(
@@ -78,7 +76,7 @@ export function calcStressDelta(
 
   let recoveryDelta = 0;
 
-  // Slow recovery when all needs are comfortable (expanded from 3 to all 6 needs)
+  // Slow recovery when all needs are comfortable (food, drink, sleep, morale)
   if (needValues.every(n => n > 50)) {
     recoveryDelta -= 0.1;
 

@@ -21,8 +21,6 @@ import {
   idleWandering,
   thoughtGeneration,
   haulAssignment,
-  beautyRestoration,
-  haunting,
   autoCookPhase,
   autoBrew,
   autoForage,
@@ -232,8 +230,6 @@ export class SimRunner {
     await jobClaiming(this.ctx);
     await eventFiring(this.ctx);
     await thoughtGeneration(this.ctx);
-    await beautyRestoration(this.ctx);
-    haunting(this.ctx);
 
     if (this.stepCount % STEPS_PER_YEAR === 0) {
       this.currentYear++;

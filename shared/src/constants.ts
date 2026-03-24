@@ -82,6 +82,28 @@ export const PURPOSE_RESTORE_IDLE = 0.04;
 /** Baseline beauty restoration per tick (passive, always applies — matches BEAUTY_DECAY_PER_TICK for equilibrium) */
 export const BEAUTY_RESTORE_PASSIVE = 0.03;
 
+// ============================================================
+// Morale need (replaces social + purpose + beauty)
+// ============================================================
+
+/** How much morale (need_social) decays per tick */
+export const MORALE_DECAY_PER_TICK = 0.03;
+
+/** Morale restored per tick per nearby dwarf (proximity-based) */
+export const MORALE_RESTORE_PER_NEARBY_DWARF = 0.2;
+
+/** Morale restored on completing a skilled task */
+export const MORALE_RESTORE_SKILLED_TASK = 10;
+
+/** Morale restored on completing a haul task */
+export const MORALE_RESTORE_HAUL_TASK = 3;
+
+/** Morale restored per tick when near a beauty structure (well, mushroom garden) */
+export const MORALE_RESTORE_NEAR_STRUCTURE = 0.1;
+
+/** Morale restored per tick when near an engraved stone tile */
+export const MORALE_RESTORE_NEAR_ENGRAVING = 0.06;
+
 /** Bonus beauty restoration per tick when near a well or mushroom garden */
 export const BEAUTY_RESTORE_NEAR_STRUCTURE = 0.15;
 

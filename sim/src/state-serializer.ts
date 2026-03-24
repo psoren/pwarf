@@ -13,9 +13,7 @@ export interface DwarfSnapshot {
     food: string;
     drink: string;
     sleep: string;
-    social: string;
-    purpose: string;
-    beauty: string;
+    morale: string;
   };
   stress: string;
   activity: string;
@@ -145,9 +143,7 @@ export function serializeState(ctx: SimContext, tasksCompleted = 0): StateSnapsh
       food: needLabel(d.need_food, "food"),
       drink: needLabel(d.need_drink, "drink"),
       sleep: needLabel(d.need_sleep, "sleep"),
-      social: needLabel(d.need_social, "social"),
-      purpose: needLabel(d.need_purpose, "purpose"),
-      beauty: needLabel(d.need_beauty, "beauty"),
+      morale: needLabel(d.need_social, "morale"),
     },
     stress: stressLabel(d.stress_level),
     activity: d.status === "dead" ? "dead" : dwarfActivity(d, ctx),

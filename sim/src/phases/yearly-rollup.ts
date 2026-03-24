@@ -12,7 +12,6 @@ import type { Item } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { dwarfName } from "../dwarf-utils.js";
 import { createImmigrantDwarf } from "../dwarf-factory.js";
-import { diseasePhase } from "./disease.js";
 import { applyWitnessStress } from "./deprivation.js";
 import { createGriefFriendMemories, createGriefSpouseMemories, createWitnessDeathMemories, decayMemories } from "../dwarf-memory.js";
 import { relationshipFormationPhase } from "./relationship-formation.js";
@@ -47,7 +46,6 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
         dwarf.died_year = year;
         dwarf.cause_of_death = 'unknown';
         deathsThisYear += 1;
-        state.ghostDwarfIds.add(dwarf.id);
         applyWitnessStress(dwarf, state);
         createWitnessDeathMemories(dwarf, state, year);
         createGriefFriendMemories(dwarf, state, year);
@@ -114,9 +112,6 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
       created_at: new Date().toISOString(),
     });
   }
-
-  // Disease: outbreak, spread, damage, and recovery
-  diseasePhase(ctx);
 
   // Relationship formation: dwarves form acquaintances and friendships
   relationshipFormationPhase(ctx);

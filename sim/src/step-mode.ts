@@ -21,8 +21,6 @@ import {
   idleWandering,
   thoughtGeneration,
   haulAssignment,
-  beautyRestoration,
-  haunting,
   autoCookPhase,
   autoBrew,
   autoForage,
@@ -146,8 +144,6 @@ async function runOneTick(session: StepSession): Promise<void> {
   await jobClaiming(ctx);
   await eventFiring(ctx);
   await thoughtGeneration(ctx);
-  await beautyRestoration(ctx);
-  await haunting(ctx);
 
   if (session.step % STEPS_PER_YEAR === 0) {
     session.year++;

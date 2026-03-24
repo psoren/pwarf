@@ -154,8 +154,6 @@ describe("thoughtGeneration", () => {
       need_drink: 20,
       need_sleep: 15,
       need_social: 20,
-      need_purpose: 15,
-      need_beauty: 10,
       stress_level: 70,
       health: 40,
     });
@@ -185,7 +183,7 @@ describe("thoughtGeneration", () => {
   it("generates idle/bored thought for idle conscientious dwarf", async () => {
     const dwarf = makeDwarf({
       current_task_id: null,
-      need_purpose: 30,
+      need_social: 30,
       trait_conscientiousness: 2,
     });
     const ctx = makeContext({ dwarves: [dwarf] });
@@ -200,7 +198,7 @@ describe("thoughtGeneration", () => {
   it("generates productive thought for working dwarf", async () => {
     const dwarf = makeDwarf({
       current_task_id: "task-1",
-      need_purpose: 70,
+      need_social: 70,
     });
     const ctx = makeContext({ dwarves: [dwarf] });
     ctx.step = 10;
@@ -222,24 +220,25 @@ describe("thoughtGeneration", () => {
     expect(thoughts.some(t => t.text.includes("wounded"))).toBe(true);
   });
 
-  it("extraversion amplifies social need thoughts", async () => {
-    const introvert = makeDwarf({ need_social: 25, trait_extraversion: -2 });
-    const extrovert = makeDwarf({ need_social: 25, trait_extraversion: 2 });
-    const ctx1 = makeContext({ dwarves: [introvert] });
-    const ctx2 = makeContext({ dwarves: [extrovert] });
-    ctx1.step = 10;
-    ctx2.step = 10;
+  it("generates dispirited thought when morale is low", async () => {
+    const dwarf = makeDwarf({ need_social: 20 });
+    const ctx = makeContext({ dwarves: [dwarf] });
+    ctx.step = 10;
 
-    await thoughtGeneration(ctx1);
-    await thoughtGeneration(ctx2);
+    await thoughtGeneration(ctx);
 
-    // Extrovert with adjusted threshold (30 + 2*5 = 40) should get thought at 25
-    // Introvert with adjusted threshold (30 - 2*5 = 20) should NOT get thought at 25
-    const extrovertThoughts = getThoughts(extrovert);
-    const introvertThoughts = getThoughts(introvert);
+    const thoughts = getThoughts(dwarf);
+    expect(thoughts.some(t => t.text.includes("dispirited"))).toBe(true);
+  });
 
-    expect(extrovertThoughts.some(t => t.text.includes("craves company") || t.text.includes("lonely"))).toBe(true);
-    // Introvert at 25 is above threshold of 20, no social thought
-    expect(introvertThoughts.some(t => t.text.includes("lonely") || t.text.includes("company"))).toBe(false);
+  it("generates content thought when morale is high", async () => {
+    const dwarf = makeDwarf({ need_social: 80 });
+    const ctx = makeContext({ dwarves: [dwarf] });
+    ctx.step = 10;
+
+    await thoughtGeneration(ctx);
+
+    const thoughts = getThoughts(dwarf);
+    expect(thoughts.some(t => t.text.includes("content"))).toBe(true);
   });
 });

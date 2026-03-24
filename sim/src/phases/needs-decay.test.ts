@@ -1,18 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { needsDecay } from "./needs-decay.js";
 import { makeDwarf, makeContext } from "../__tests__/test-helpers.js";
-import { SOCIAL_DECAY_PER_TICK } from "@pwarf/shared";
+import { MORALE_DECAY_PER_TICK } from "@pwarf/shared";
 
 describe("needsDecay", () => {
   describe("baseline (no traits)", () => {
-    it("decays all needs each tick", async () => {
+    it("decays food, drink, sleep, and morale each tick", async () => {
       const dwarf = makeDwarf({
         need_food: 80,
         need_drink: 80,
         need_sleep: 80,
         need_social: 80,
-        need_purpose: 80,
-        need_beauty: 80,
       });
       const ctx = makeContext({ dwarves: [dwarf] });
 
@@ -22,9 +20,6 @@ describe("needsDecay", () => {
       expect(dwarf.need_drink).toBeLessThan(80);
       expect(dwarf.need_sleep).toBeLessThan(80);
       expect(dwarf.need_social).toBeLessThan(80);
-      // Idle dwarves have PURPOSE_RESTORE_IDLE = PURPOSE_DECAY_PER_TICK, so net change is 0
-      expect(dwarf.need_purpose).toBeLessThanOrEqual(80);
-      expect(dwarf.need_beauty).toBeLessThan(80);
     });
 
     it("clamps needs at MIN_NEED (0)", async () => {
@@ -48,7 +43,7 @@ describe("needsDecay", () => {
   });
 
   describe("extraversion trait", () => {
-    it("extravert's social need decays faster than no-trait baseline", async () => {
+    it("extravert's morale decays faster than no-trait baseline", async () => {
       const extravert = makeDwarf({ need_social: 80, trait_extraversion: 1.0 });
       const baseline = makeDwarf({ need_social: 80, trait_extraversion: null });
 
@@ -61,7 +56,7 @@ describe("needsDecay", () => {
       expect(extravert.need_social).toBeLessThan(baseline.need_social);
     });
 
-    it("introvert's social need decays slower than no-trait baseline", async () => {
+    it("introvert's morale decays slower than no-trait baseline", async () => {
       const introvert = makeDwarf({ need_social: 80, trait_extraversion: 0.0 });
       const baseline = makeDwarf({ need_social: 80, trait_extraversion: null });
 
@@ -87,27 +82,25 @@ describe("needsDecay", () => {
       expect(average.need_social).toBeCloseTo(noTrait.need_social);
     });
 
-    it("extraversion (1.0) applies 1.5× decay multiplier to social", async () => {
+    it("extraversion (1.0) applies 1.5x decay multiplier to morale", async () => {
       const extravert = makeDwarf({ need_social: 80, trait_extraversion: 1.0 });
       const ctx = makeContext({ dwarves: [extravert] });
 
       await needsDecay(ctx);
 
-      // Expected: 80 - SOCIAL_DECAY_PER_TICK * 1.5
-      expect(extravert.need_social).toBeCloseTo(80 - SOCIAL_DECAY_PER_TICK * 1.5);
+      expect(extravert.need_social).toBeCloseTo(80 - MORALE_DECAY_PER_TICK * 1.5);
     });
 
-    it("introversion (0.0) applies 0.5× decay multiplier to social", async () => {
+    it("introversion (0.0) applies 0.5x decay multiplier to morale", async () => {
       const introvert = makeDwarf({ need_social: 80, trait_extraversion: 0.0 });
       const ctx = makeContext({ dwarves: [introvert] });
 
       await needsDecay(ctx);
 
-      // Expected: 80 - SOCIAL_DECAY_PER_TICK * 0.5
-      expect(introvert.need_social).toBeCloseTo(80 - SOCIAL_DECAY_PER_TICK * 0.5);
+      expect(introvert.need_social).toBeCloseTo(80 - MORALE_DECAY_PER_TICK * 0.5);
     });
 
-    it("extraversion does not affect non-social needs", async () => {
+    it("extraversion does not affect non-morale needs", async () => {
       const extravert = makeDwarf({ need_food: 80, need_drink: 80, trait_extraversion: 1.0 });
       const noTrait = makeDwarf({ need_food: 80, need_drink: 80, trait_extraversion: null });
 

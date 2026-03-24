@@ -20,8 +20,6 @@ import {
   idleWandering,
   thoughtGeneration,
   haulAssignment,
-  beautyRestoration,
-  haunting,
   autoCookPhase,
   autoBrew,
   autoForage,
@@ -131,8 +129,6 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
     await jobClaiming(ctx);
     await eventFiring(ctx);
     await thoughtGeneration(ctx);
-    await beautyRestoration(ctx);
-    await haunting(ctx);
 
     if (stepCount % STEPS_PER_YEAR === 0) {
       currentYear++;

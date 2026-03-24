@@ -101,36 +101,18 @@ function generateNeedThoughts(dwarf: Dwarf, ctx: SimContext): void {
     }
   }
 
-  // Social thoughts — extraversion amplifies loneliness
-  const socialThreshold = adjustedThreshold(30, trait(dwarf, "trait_extraversion"));
-  if (dwarf.need_social < socialThreshold && dwarf.need_social > 0) {
-    const text = trait(dwarf, "trait_extraversion") > 1
-      ? `${name} craves company.`
-      : `${name} is feeling lonely.`;
+  // Morale thoughts (need_social is morale) — extraversion amplifies low morale awareness
+  if (dwarf.need_social < 30 && dwarf.need_social > 0) {
+    const text = `${name} is feeling dispirited.`;
     if (!hasRecentThought(dwarf, text, ctx.step)) {
       addThought(dwarf, text, "negative", ctx);
     }
   }
 
-  // Purpose thoughts — conscientiousness amplifies need for purpose
-  const purposeThreshold = adjustedThreshold(25, trait(dwarf, "trait_conscientiousness"));
-  if (dwarf.need_purpose < purposeThreshold && dwarf.need_purpose > 0) {
-    const text = trait(dwarf, "trait_conscientiousness") > 1
-      ? `${name} needs something meaningful to do.`
-      : `${name} feels aimless.`;
+  if (dwarf.need_social > 70) {
+    const text = `${name} is feeling content.`;
     if (!hasRecentThought(dwarf, text, ctx.step)) {
-      addThought(dwarf, text, "negative", ctx);
-    }
-  }
-
-  // Beauty thoughts — openness amplifies need for beauty
-  const beautyThreshold = adjustedThreshold(20, trait(dwarf, "trait_openness"));
-  if (dwarf.need_beauty < beautyThreshold && dwarf.need_beauty > 0) {
-    const text = trait(dwarf, "trait_openness") > 1
-      ? `${name} longs for something beautiful.`
-      : `${name} finds the surroundings dreary.`;
-    if (!hasRecentThought(dwarf, text, ctx.step)) {
-      addThought(dwarf, text, "negative", ctx);
+      addThought(dwarf, text, "positive", ctx);
     }
   }
 
@@ -156,7 +138,7 @@ function generateWorkThoughts(dwarf: Dwarf, ctx: SimContext): void {
   // Idle thoughts — conscientiousness makes idle dwarves more distressed
   if (!dwarf.current_task_id) {
     const threshold = adjustedThreshold(40, trait(dwarf, "trait_conscientiousness"));
-    if (dwarf.need_purpose < threshold) {
+    if (dwarf.need_social < threshold) {
       const text = trait(dwarf, "trait_conscientiousness") > 1
         ? `${name} hates having nothing to do.`
         : `${name} is bored.`;
@@ -166,7 +148,7 @@ function generateWorkThoughts(dwarf: Dwarf, ctx: SimContext): void {
     }
   } else {
     // Working — generate occasional satisfaction
-    if (dwarf.need_purpose > 60) {
+    if (dwarf.need_social > 60) {
       const text = `${name} feels productive.`;
       if (!hasRecentThought(dwarf, text, ctx.step)) {
         addThought(dwarf, text, "positive", ctx);
