@@ -457,6 +457,7 @@ export const BUILDING_COSTS: Partial<Record<string, BuildingCost[]>> = {
   build_bed:             [{ category: 'raw_material', material: 'wood', count: 1 }],
   build_well:            [{ category: 'raw_material', material: 'stone', count: 2 }],
   build_mushroom_garden: [{ category: 'raw_material', material: 'wood', count: 1 }],
+  build_door: [{ category: 'raw_material', material: 'wood', count: 1 }],
 };
 
 /** Work required to build a wall */
@@ -473,6 +474,9 @@ export const WORK_BUILD_WELL = 60;
 
 /** Work required to build a mushroom garden */
 export const WORK_BUILD_MUSHROOM_GARDEN = 50;
+
+/** Work required to build a door */
+export const WORK_BUILD_DOOR = 35;
 
 /** Work required to deconstruct a built structure or tile */
 export const WORK_DECONSTRUCT = 30;

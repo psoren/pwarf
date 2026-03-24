@@ -1,5 +1,6 @@
 import type { Monster, Dwarf } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
+import { buildTileLookup } from "../tile-lookup.js";
 
 /**
  * Monster Pathfinding Phase
@@ -11,11 +12,15 @@ import type { SimContext } from "../sim-context.js";
  * Monsters with `neutral` or `hibernating` behavior don't move.
  * Monsters that are `fleeing` move away from dwarves.
  */
+const MONSTER_BLOCKING_TILES: ReadonlySet<string> = new Set(['door']);
+
 export async function monsterPathfinding(ctx: SimContext): Promise<void> {
   const { state } = ctx;
 
   const aliveDwarves = state.dwarves.filter(d => d.status === 'alive');
   if (aliveDwarves.length === 0) return;
+
+  const getTile = buildTileLookup(ctx);
 
   for (const monster of state.monsters) {
     if (monster.status !== 'active') continue;
@@ -33,6 +38,9 @@ export async function monsterPathfinding(ctx: SimContext): Promise<void> {
       target.position_y,
       monster.behavior === 'fleeing',
     );
+
+    const destTile = getTile(newX, newY, 0);
+    if (destTile && MONSTER_BLOCKING_TILES.has(destTile)) continue;
 
     monster.current_tile_x = newX;
     monster.current_tile_y = newY;
