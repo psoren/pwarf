@@ -17,7 +17,6 @@ import {
   jobClaiming,
   eventFiring,
   yearlyRollup,
-  idleWandering,
   thoughtGeneration,
   haulAssignment,
   autoCookPhase,
@@ -120,7 +119,6 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
     await monsterPathfinding(ctx);
     await combatResolution(ctx);
     await constructionProgress(ctx);
-    await idleWandering(ctx);
     await haulAssignment(ctx);
     taskRecovery(ctx);
     await autoCookPhase(ctx);

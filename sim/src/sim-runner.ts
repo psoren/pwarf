@@ -18,7 +18,6 @@ import {
   jobClaiming,
   eventFiring,
   yearlyRollup,
-  idleWandering,
   thoughtGeneration,
   haulAssignment,
   autoCookPhase,
@@ -221,7 +220,6 @@ export class SimRunner {
     await monsterPathfinding(this.ctx);
     await combatResolution(this.ctx);
     await constructionProgress(this.ctx);
-    await idleWandering(this.ctx);
     await haulAssignment(this.ctx);
     taskRecovery(this.ctx);
     await autoCookPhase(this.ctx);
