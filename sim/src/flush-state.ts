@@ -10,6 +10,12 @@ import type { SimContext } from "./sim-context.js";
 export async function flushToSupabase(ctx: SimContext): Promise<void> {
   const { state, supabase } = ctx;
 
+  // ── Pre-flush cleanup: fix dangling foreign keys ──────────────────────
+  // Items can be consumed (spliced from state.items) between flush cycles.
+  // Tasks and dwarves that reference those items via target_item_id or
+  // current_task_id will violate FK constraints if flushed as-is.
+  sanitizeDanglingRefs(state);
+
   const dirtyDwarves = state.dwarves.filter((d) =>
     state.dirtyDwarfIds.has(d.id),
   );
@@ -227,15 +233,17 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   }
 
   if (events.length > 0) {
-    // Stamp world_id on events (phases leave it empty)
+    // Stamp world_id on events (phases leave it empty).
+    // Use upsert with ignoreDuplicates to prevent "duplicate key" errors
+    // when a previous flush partially succeeded and is retried.
     const worldId = ctx.worldId;
     const stamped = events.map((e) => ({ ...e, world_id: worldId }));
     promises.push(
       supabase
         .from("world_events")
-        .insert(stamped)
+        .upsert(stamped, { onConflict: "id", ignoreDuplicates: true })
         .then(({ error }) => {
-          if (error) console.warn(`[flush] events insert failed: ${error.message}`);
+          if (error) console.warn(`[flush] events upsert failed: ${error.message}`);
         }),
     );
   }
@@ -257,4 +265,53 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
   state.newDwarfRelationships = [];
   state.pendingEvents = [];
   state.civDirty = false;
+}
+
+/**
+ * Fix dangling foreign key references before flushing to the database.
+ *
+ * Items can be created and consumed within a single flush window. Tasks
+ * referencing those items via target_item_id will violate the FK constraint
+ * when inserted. This function:
+ *
+ * 1. Builds a set of all live item + structure IDs (items in memory)
+ * 2. Nulls out target_item_id on any task pointing to a deleted entity
+ * 3. Removes new tasks that were created AND completed in the same window
+ *    with a dangling item ref (no point inserting a completed eat task
+ *    whose food is already gone)
+ *
+ * Exported for unit testing.
+ */
+export function sanitizeDanglingRefs(state: SimContext['state']): void {
+  // Build lookup of all live item IDs and structure IDs
+  const liveItemIds = new Set<string>();
+  for (const item of state.items) {
+    liveItemIds.add(item.id);
+  }
+  for (const structure of state.structures) {
+    liveItemIds.add(structure.id);
+  }
+
+  // Fix dangling target_item_id on all tasks (dirty + new)
+  for (const task of state.tasks) {
+    if (task.target_item_id && !liveItemIds.has(task.target_item_id)) {
+      task.target_item_id = null;
+      state.dirtyTaskIds.add(task.id);
+    }
+  }
+
+  // Drop new tasks that were created and already completed/failed with a
+  // null target_item_id — they carry no useful information for the DB.
+  // (e.g., an eat task where the food was consumed in the same flush window)
+  state.newTasks = state.newTasks.filter((task) => {
+    if (task.status === 'completed' || task.status === 'failed') {
+      // If this task had a dangling ref that we just nulled, skip inserting it
+      if (task.target_item_id === null) {
+        // Check if there's a corresponding dirty entry — remove that too
+        state.dirtyTaskIds.delete(task.id);
+        return false;
+      }
+    }
+    return true;
+  });
 }
