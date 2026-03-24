@@ -184,8 +184,6 @@ export type TaskType =
   | 'build_door'
   | 'deconstruct'
   | 'wander'
-  | 'smooth'
-  | 'engrave'
   | 'engrave_memorial'
   | 'brew'
   | 'cook'
@@ -227,9 +225,6 @@ export type FortressTileType =
   | 'ice'
   | 'mud'
   | 'cave_entrance'
-  | 'smooth_stone'
-  | 'engraved_stone'
-  | 'engraved_floor'
   | 'empty';
 
 // ============================================================

@@ -12,15 +12,13 @@ import {
   WORK_BUILD_MUSHROOM_GARDEN,
   WORK_BUILD_DOOR,
   WORK_DECONSTRUCT,
-  WORK_SMOOTH,
-  WORK_ENGRAVE,
   WORK_FARM_TILL_BASE,
 } from "@pwarf/shared";
 import { supabase } from "../lib/supabase";
 import type { FortressViewTile } from "./useFortressTiles";
 import type { OptimisticDesignation } from "./useTasks";
 
-export type DesignationMode = "none" | "mine" | "farm_till" | "build_wall" | "build_floor" | "build_bed" | "build_well" | "build_mushroom_garden" | "build_door" | "smooth" | "engrave" | "stockpile" | "deconstruct";
+export type DesignationMode = "none" | "mine" | "farm_till" | "build_wall" | "build_floor" | "build_bed" | "build_well" | "build_mushroom_garden" | "build_door" | "stockpile" | "deconstruct";
 
 const BUILD_WORK: Record<string, number> = {
   build_wall: WORK_BUILD_WALL,
@@ -29,24 +27,12 @@ const BUILD_WORK: Record<string, number> = {
   build_well: WORK_BUILD_WELL,
   build_mushroom_garden: WORK_BUILD_MUSHROOM_GARDEN,
   build_door: WORK_BUILD_DOOR,
-  smooth: WORK_SMOOTH,
-  engrave: WORK_ENGRAVE,
   farm_till: WORK_FARM_TILL_BASE,
 };
 
 /** Tile types that can be deconstructed. */
 const DECONSTRUCTIBLE: ReadonlySet<string> = new Set([
   'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden', 'door',
-]);
-
-/** Tile types that can be smoothed. */
-const SMOOTHABLE: ReadonlySet<string> = new Set([
-  'stone', 'cavern_wall', 'rock',
-]);
-
-/** Tile types that can be engraved (only already-smoothed stone). */
-const ENGRAVABLE: ReadonlySet<string> = new Set([
-  'smooth_stone',
 ]);
 
 /** Tile types that can be designated as farm plots (soil only). */
@@ -128,8 +114,6 @@ export function useDesignation(opts: {
     const buildable: string[] = ['open_air', 'grass', 'constructed_floor', 'cavern_floor'];
     const isMine = designationMode === 'mine';
     const isDeconstruct = designationMode === 'deconstruct';
-    const isSmooth = designationMode === 'smooth';
-    const isEngrave = designationMode === 'engrave';
     const isFarm = designationMode === 'farm_till';
     const taskType = designationMode as TaskType;
     const baseBuildWork = BUILD_WORK[designationMode] ?? WORK_BUILD_WALL;
@@ -169,10 +153,6 @@ export function useDesignation(opts: {
           if (!mineable.includes(tile.tileType)) continue;
         } else if (isDeconstruct) {
           if (!DECONSTRUCTIBLE.has(tile.tileType)) continue;
-        } else if (isSmooth) {
-          if (!SMOOTHABLE.has(tile.tileType)) continue;
-        } else if (isEngrave) {
-          if (!ENGRAVABLE.has(tile.tileType)) continue;
         } else if (isFarm) {
           if (!FARMABLE.has(tile.tileType)) continue;
         } else {
@@ -294,18 +274,6 @@ export function useDesignation(opts: {
     setDesignationMode((m) => (m === "farm_till" ? "none" : "farm_till"));
   }, []);
 
-  const toggleSmooth = useCallback(() => {
-    setBuildMenuOpen(false);
-    setPrioritiesOpen(false);
-    setDesignationMode((m) => (m === "smooth" ? "none" : "smooth"));
-  }, []);
-
-  const toggleEngrave = useCallback(() => {
-    setBuildMenuOpen(false);
-    setPrioritiesOpen(false);
-    setDesignationMode((m) => (m === "engrave" ? "none" : "engrave"));
-  }, []);
-
   const toggleBuildMenu = useCallback(() => {
     setDesignationMode("none");
     setPrioritiesOpen(false);
@@ -340,8 +308,6 @@ export function useDesignation(opts: {
     toggleStockpile,
     toggleDeconstruct,
     toggleFarm,
-    toggleSmooth,
-    toggleEngrave,
     toggleBuildMenu,
     togglePriorities,
     cancelDesignation,

@@ -6,7 +6,6 @@ import {
   completeCook,
   completeSmith,
   restoreMoraleOnTaskComplete,
-  SMOOTHABLE_TILES,
 } from "../phases/task-completion.js";
 
 // ---------------------------------------------------------------------------
@@ -157,7 +156,7 @@ describe("completeSmith", () => {
 // ---------------------------------------------------------------------------
 
 describe("restoreMoraleOnTaskComplete for crafting tasks", () => {
-  it.each(["smooth", "engrave", "brew", "cook", "smith"] as const)(
+  it.each(["brew", "cook", "smith"] as const)(
     "%s restores morale like a skilled task",
     (taskType) => {
       const dwarf = makeDwarf({ need_social: 50, trait_conscientiousness: null });
@@ -167,17 +166,3 @@ describe("restoreMoraleOnTaskComplete for crafting tasks", () => {
   );
 });
 
-// ---------------------------------------------------------------------------
-// SMOOTHABLE_TILES constant
-// ---------------------------------------------------------------------------
-
-describe("SMOOTHABLE_TILES", () => {
-  it("contains rock and stone", () => {
-    expect(SMOOTHABLE_TILES.has("rock")).toBe(true);
-    expect(SMOOTHABLE_TILES.has("stone")).toBe(true);
-  });
-
-  it("does not contain open_air", () => {
-    expect(SMOOTHABLE_TILES.has("open_air")).toBe(false);
-  });
-});
