@@ -114,18 +114,22 @@ export default function App() {
     return map;
   }, [liveTasks, zLevel]);
 
+  // Count available raw materials in the civilization's stockpiles
+  const materialCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    if (!world.civId) return counts;
+    for (const item of (snapshot?.items ?? [])) {
+      if (item.category === 'raw_material' && item.material && item.located_in_civ_id === world.civId && item.held_by_dwarf_id === null) {
+        counts.set(item.material, (counts.get(item.material) ?? 0) + 1);
+      }
+    }
+    return counts;
+  }, [snapshot?.items, world.civId]);
+
   // Compute which build tasks are blocked due to missing resources
   const blockedBuildTiles = useMemo(() => {
     const set = new Set<string>();
     if (!world.civId) return set;
-
-    // Count available resources by material
-    const availableCounts = new Map<string, number>();
-    for (const item of (snapshot?.items ?? [])) {
-      if (item.category === 'raw_material' && item.material && item.located_in_civ_id === world.civId && item.held_by_dwarf_id === null) {
-        availableCounts.set(item.material, (availableCounts.get(item.material) ?? 0) + 1);
-      }
-    }
 
     // Count how many resources are already reserved by earlier (non-blocked) build tasks
     const reservedCounts = new Map<string, number>();
@@ -142,7 +146,7 @@ export default function App() {
 
       let blocked = false;
       for (const cost of costs) {
-        const available = (availableCounts.get(cost.material) ?? 0) - (reservedCounts.get(cost.material) ?? 0);
+        const available = (materialCounts.get(cost.material) ?? 0) - (reservedCounts.get(cost.material) ?? 0);
         if (available < cost.count) {
           blocked = true;
           break;
@@ -160,7 +164,7 @@ export default function App() {
     }
 
     return set;
-  }, [liveTasks, snapshot?.items, world.civId, zLevel]);
+  }, [liveTasks, materialCounts, world.civId, zLevel]);
 
   const designation = useDesignation({
     civId: world.civId,
@@ -528,6 +532,7 @@ export default function App() {
           <BuildMenu
             onSelect={designation.handleBuildSelect}
             onClose={() => designation.setBuildMenuOpen(false)}
+            inventory={materialCounts}
           />
         )}
         {designation.prioritiesOpen && (
