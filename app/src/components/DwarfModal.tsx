@@ -111,7 +111,7 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [], tasks }: DwarfM
 
         <div className="text-[var(--text)] flex items-center justify-between mb-2">
           <span>
-            Pos: <span className="text-[var(--green)]">({dwarf.position_x}, {dwarf.position_y}, z{dwarf.position_z})</span>
+            Pos: <span className="text-[var(--green)]">({dwarf.position_x}, {dwarf.position_y}) Level {dwarf.position_z}</span>
           </span>
           <button
             onClick={() => onGoTo(dwarf)}
