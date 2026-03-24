@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { POLL_TASKS_MS } from '@pwarf/shared';
+import { POLL_TASKS_MS, AUTONOMOUS_TASK_TYPES } from '@pwarf/shared';
+import type { TaskType } from '@pwarf/shared';
 
 export interface ActiveTask {
   id: string;
@@ -71,8 +72,6 @@ export function useTasks(civId: string | null) {
     };
   }, [civId]);
 
-  /** Task types that are autonomous (not player-designated) — don't show as designations. */
-  const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep']);
 
   /** Add optimistic designations that show immediately before the next poll. */
   const addOptimistic = useCallback((tiles: OptimisticDesignation[]) => {
@@ -85,7 +84,7 @@ export function useTasks(civId: string | null) {
     const map = new Map<string, string>();
     for (const task of tasks) {
       if (task.target_x !== null && task.target_y !== null
-        && !AUTONOMOUS_TASK_TYPES.has(task.task_type)
+        && !AUTONOMOUS_TASK_TYPES.has(task.task_type as TaskType)
         && ACTIVE_STATUSES.has(task.status)) {
         map.set(`${task.target_x},${task.target_y}`, task.task_type);
       }

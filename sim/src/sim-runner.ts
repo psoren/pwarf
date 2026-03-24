@@ -4,29 +4,8 @@ import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng } from "./rng.js";
 import type { StateAdapter } from "./state-adapter.js";
-import {
-  needsDecay,
-  taskExecution,
-  needSatisfaction,
-  stressUpdate,
-  tantrumCheck,
-  tantrumActions,
-  monsterSpawning,
-  monsterPathfinding,
-  combatResolution,
-  constructionProgress,
-  jobClaiming,
-  eventFiring,
-  yearlyRollup,
-  idleWandering,
-  thoughtGeneration,
-  haulAssignment,
-  autoCookPhase,
-  autoBrew,
-  autoForage,
-  taskRecovery,
-  expeditionTick,
-} from "./phases/index.js";
+import { runTick } from "./tick.js";
+import { yearlyRollup } from "./phases/index.js";
 
 /** Snapshot of sim state emitted after every tick for live UI rendering. */
 export interface SimSnapshot {
@@ -211,27 +190,7 @@ export class SimRunner {
     this.ctx.day = this.currentDay;
     this.ctx.year = this.currentYear;
 
-    // --- ordered phases ---
-    await needsDecay(this.ctx);
-    await taskExecution(this.ctx);
-    await needSatisfaction(this.ctx);
-    await stressUpdate(this.ctx);
-    await tantrumCheck(this.ctx);
-    await tantrumActions(this.ctx);
-    await monsterSpawning(this.ctx);
-    await monsterPathfinding(this.ctx);
-    await combatResolution(this.ctx);
-    expeditionTick(this.ctx);
-    await constructionProgress(this.ctx);
-    await idleWandering(this.ctx);
-    await haulAssignment(this.ctx);
-    taskRecovery(this.ctx);
-    await autoCookPhase(this.ctx);
-    await autoBrew(this.ctx);
-    await autoForage(this.ctx);
-    await jobClaiming(this.ctx);
-    await eventFiring(this.ctx);
-    await thoughtGeneration(this.ctx);
+    await runTick(this.ctx);
 
     if (this.stepCount % STEPS_PER_YEAR === 0) {
       this.currentYear++;

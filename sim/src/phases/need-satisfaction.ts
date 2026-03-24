@@ -12,6 +12,7 @@ import {
   MORALE_RESTORE_NEAR_STRUCTURE,
   BEAUTY_STRUCTURE_RADIUS,
   OPENNESS_BEAUTY_MULTIPLIER,
+  AUTONOMOUS_TASK_TYPES,
 } from "@pwarf/shared";
 import type { Dwarf, Item, TaskType, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -53,7 +54,6 @@ export async function needSatisfaction(ctx: SimContext): Promise<void> {
   }
 }
 
-const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep']);
 
 /**
  * Finds the nearest accessible food item for a dwarf.

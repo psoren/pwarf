@@ -1,10 +1,8 @@
+import { SKILL_NAMES } from "@pwarf/shared";
 import type { Dwarf, DwarfSkill, FortressTile, Item, Task } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng, type Rng } from "./rng.js";
-
-/** All skill names that dwarves can have. */
-const ALL_SKILLS = ['mining', 'farming', 'building', 'engraving', 'brewing', 'cooking', 'smithing'] as const;
 
 export interface ScenarioDefinition {
   name: string;
@@ -166,7 +164,7 @@ function makeDrink(rng: Rng, civId: string, count: number): Item[] {
  * to create specialization and differentiate dwarves.
  */
 function makeSkills(rng: Rng, dwarfId: string): DwarfSkill[] {
-  return ALL_SKILLS.map(skillName => ({
+  return SKILL_NAMES.map(skillName => ({
     id: rng.uuid(),
     dwarf_id: dwarfId,
     skill_name: skillName,

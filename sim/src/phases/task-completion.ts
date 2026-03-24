@@ -18,6 +18,7 @@ import {
   MORALE_RESTORE_SKILLED_TASK,
   MORALE_RESTORE_HAUL_TASK,
   SKILL_TIER_NAMES,
+  AUTONOMOUS_TASK_TYPES,
   generateCaveName,
   getCaveSeed,
 } from "@pwarf/shared";
@@ -100,8 +101,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   state.dirtyDwarfIds.add(dwarf.id);
 
   // Fire completion event for player-created tasks
-  const autonomousTypes: string[] = ['eat', 'drink', 'sleep'];
-  if (!autonomousTypes.includes(task.task_type)) {
+  if (!AUTONOMOUS_TASK_TYPES.has(task.task_type)) {
     const dwarfLabel = dwarfName(dwarf);
     const taskLabel = task.task_type.replace(/_/g, ' ');
     state.pendingEvents.push({

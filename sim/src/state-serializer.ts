@@ -1,3 +1,4 @@
+import { AUTONOMOUS_TASK_TYPES } from "@pwarf/shared";
 import type { Dwarf, WorldEvent } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 
@@ -150,9 +151,8 @@ export function serializeState(ctx: SimContext, tasksCompleted = 0): StateSnapsh
     is_in_tantrum: d.is_in_tantrum,
   }));
 
-  const AUTONOMOUS_TASKS = new Set(['eat', 'drink', 'sleep']);
   const taskSnapshots: TaskSnapshot[] = state.tasks
-    .filter(t => !AUTONOMOUS_TASKS.has(t.task_type) && t.status !== 'completed' && t.status !== 'cancelled')
+    .filter(t => !AUTONOMOUS_TASK_TYPES.has(t.task_type) && t.status !== 'completed' && t.status !== 'cancelled')
     .map(t => ({
       id: t.id,
       type: t.task_type,
