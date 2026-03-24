@@ -34,8 +34,17 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
     state.dirtyDwarfRelationshipIds.has(r.id),
   );
 
-  // Flush tasks BEFORE dwarves — dwarves.current_task_id has a FK to tasks,
-  // so the referenced task row must exist first.
+  // ── Flush in FK-safe order: items → tasks → dwarves → everything else ──
+  // FK chain: tasks.target_item_id → items.id, dwarves.current_task_id → tasks.id
+  // Each level must exist in the DB before the next level references it.
+
+  // 1. Items first — tasks reference them via target_item_id
+  if (dirtyItems.length > 0) {
+    const { error } = await supabase.from("items").upsert(dirtyItems);
+    if (error) console.warn(`[flush] items upsert failed: ${error.message}`);
+  }
+
+  // 2. Tasks second — dwarves reference them via current_task_id
   if (newTasks.length > 0) {
     const { error } = await supabase.from("tasks").insert(newTasks);
     if (error) console.warn(`[flush] tasks insert failed: ${error.message}`);
@@ -46,7 +55,7 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
     if (error) console.warn(`[flush] tasks upsert failed: ${error.message}`);
   }
 
-  // Now flush everything else in parallel
+  // 3. Everything else in parallel (dwarves can now safely reference tasks)
   const promises: PromiseLike<void>[] = [];
 
   if (dirtyDwarves.length > 0) {
@@ -68,17 +77,6 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
         .upsert(rounded)
         .then(({ error }) => {
           if (error) console.warn(`[flush] dwarves upsert failed: ${error.message}`);
-        }),
-    );
-  }
-
-  if (dirtyItems.length > 0) {
-    promises.push(
-      supabase
-        .from("items")
-        .upsert(dirtyItems)
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] items upsert failed: ${error.message}`);
         }),
     );
   }
