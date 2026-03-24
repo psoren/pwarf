@@ -59,7 +59,7 @@ export const DESIGNATION_PREVIEW: Record<string, { ch: string; fg: string }> = {
 };
 
 /** Glyph for stockpile tiles. */
-export const STOCKPILE_GLYPH = { bg: "#1a2a1a" };
+export const STOCKPILE_GLYPH = { ch: "░", fg: "#5a7a3a", bg: "#1e3518" };
 
 /** Glyph for items on the ground. */
 export const GROUND_ITEM_GLYPH = { ch: "*", fg: "#cc9933" };

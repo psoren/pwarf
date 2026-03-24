@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { calcStressDelta } from "./stress-update.js";
-import { MEMORY_STRESS_PER_TICK } from "@pwarf/shared";
+import { MEMORY_STRESS_PER_TICK, AGREEABLENESS_RECOVERY_BONUS } from "@pwarf/shared";
 import type { DwarfMemory } from "@pwarf/shared";
 
 // All needs comfortable — no stress gains, just recovery (4 needs: food, drink, sleep, morale)
@@ -111,8 +111,8 @@ describe("calcStressDelta", () => {
     it("agreeable dwarf at trait=1.0 recovers base+bonus per tick", () => {
       const agreeable = { trait_neuroticism: null, trait_agreeableness: 1.0 };
       const delta = calcStressDelta(agreeable, COMFORTABLE_NEEDS);
-      // base -0.1 + agreeableness bonus -0.1 = -0.2
-      expect(delta).toBeCloseTo(-0.2);
+      // base -0.1 + agreeableness bonus -AGREEABLENESS_RECOVERY_BONUS
+      expect(delta).toBeCloseTo(-0.1 - AGREEABLENESS_RECOVERY_BONUS);
     });
 
     it("agreeableness has no effect when needs are not all comfortable", () => {

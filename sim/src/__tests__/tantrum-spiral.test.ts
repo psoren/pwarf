@@ -7,8 +7,7 @@ describe("tantrum spiral scenario (issue #477)", () => {
   it("high stress and no food/drink leads to tantrums and fortress fall", async () => {
     // 3 dwarves with near-zero needs, high stress, no food/drink available.
     // Stress will cross the tantrum threshold quickly. With no food/drink,
-    // dwarves eventually die of dehydration. Witness stress from deaths
-    // compounds the cascade. All dwarves die → fortress falls.
+    // dwarves eventually die. All dwarves die -> fortress falls.
     const dwarves = [
       makeDwarf({
         position_x: 5, position_y: 5, position_z: 0,
@@ -30,29 +29,33 @@ describe("tantrum spiral scenario (issue #477)", () => {
       }),
     ];
 
-    // No food, no drink, no items — dwarves will starve/dehydrate
+    // No food, no drink, no items -- dwarves will starve/dehydrate or be killed
+    // by monsters. DEHYDRATION_TICKS=9000, need_drink=3 decays at 0.0033/tick
+    // -> 0 at ~tick 909, then 9000 more ticks to die = ~10000 total.
+    // Monsters may also kill dwarves after MONSTER_PEACE_PERIOD_TICKS (5400).
     const result = await runScenario({
       dwarves,
       items: [],
-      ticks: 1000, // Plenty of time for cascade
+      ticks: 12_000,
     });
 
-    // All dwarves should be dead (starvation/dehydration with no food/drink)
+    // All dwarves should be dead (starvation/dehydration/monster attack)
     const deadDwarves = result.dwarves.filter(d => d.status === "dead");
     expect(deadDwarves.length).toBe(3);
 
-    // At least one death should be from dehydration (fastest killer)
-    const dehydrationDeaths = deadDwarves.filter(d => d.cause_of_death === "dehydration");
-    expect(dehydrationDeaths.length).toBeGreaterThanOrEqual(1);
+    // All deaths should have a cause
+    for (const d of deadDwarves) {
+      expect(d.cause_of_death).not.toBeNull();
+    }
 
-    // Fortress should have fallen (all dwarves dead → fortress_fallen event)
+    // Fortress should have fallen (all dwarves dead -> fortress_fallen event)
     const fortressFallenEvent = result.events.find(e => e.category === "fortress_fallen");
     expect(fortressFallenEvent).toBeDefined();
   });
 
   it("stress compounds from witnessing deaths", async () => {
     // Place 3 dwarves close together so they witness each other's deaths.
-    // Start with moderate stress — the first death should push survivors
+    // Start with moderate stress -- the first death should push survivors
     // over the tantrum threshold via WITNESS_DEATH_STRESS.
     const dwarves = [
       makeDwarf({
@@ -75,10 +78,13 @@ describe("tantrum spiral scenario (issue #477)", () => {
       }),
     ];
 
+    // First dwarf: need_drink=1, decays at ~0.0033/tick -> 0 at ~tick 303
+    // Then DEHYDRATION_TICKS=9000 to die -> ~9300 ticks total.
+    // Monsters may kill the first dwarf sooner (after tick 5400).
     const result = await runScenario({
       dwarves,
       items: [],
-      ticks: 800,
+      ticks: 12_000,
     });
 
     // First dwarf (low food/drink) should die first
@@ -94,7 +100,7 @@ describe("tantrum spiral scenario (issue #477)", () => {
   });
 
   it("dwarves in tantrum cannot work (current_task_id cleared)", async () => {
-    // Single dwarf at tantrum threshold — should immediately enter tantrum
+    // Single dwarf at tantrum threshold -- should immediately enter tantrum
     // and have their task cancelled
     const dwarf = makeDwarf({
       position_x: 5, position_y: 5, position_z: 0,
@@ -109,7 +115,7 @@ describe("tantrum spiral scenario (issue #477)", () => {
       ticks: 10,
     });
 
-    // Dwarf should be in tantrum (or was — stress might have been above threshold)
+    // Dwarf should be in tantrum (or was -- stress might have been above threshold)
     const finalDwarf = result.dwarves[0];
     // With stress > 80 and all needs dropping, tantrum should have triggered.
     // Tantrum clears current_task_id.

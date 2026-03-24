@@ -27,6 +27,7 @@ import { canPickUp } from "../inventory.js";
 import { dwarfName } from "../dwarf-utils.js";
 import { generateEngravingScene } from "../engrave-scene.js";
 import { createTask } from "../task-helpers.js";
+import { consumeResources } from "../resource-check.js";
 
 /** Build task type → resulting fortress tile type. */
 const BUILD_TILE_MAP: Record<string, FortressTileType> = {
@@ -40,6 +41,54 @@ const BUILD_TILE_MAP: Record<string, FortressTileType> = {
  */
 export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   const { state } = ctx;
+
+  // For build tasks, try to consume resources before completing.
+  // If resources are unavailable, revert the task to pending so it can be retried later.
+  let buildSuccess = true;
+  switch (task.task_type) {
+    case 'build_wall':
+    case 'build_floor':
+      buildSuccess = completeBuild(task, ctx);
+      break;
+    case 'build_bed':
+      buildSuccess = completeBuildBed(task, ctx);
+      break;
+    case 'build_well':
+      buildSuccess = completeBuildStructure(task, ctx, 'well', 'well');
+      break;
+    case 'build_mushroom_garden':
+      buildSuccess = completeBuildStructure(task, ctx, 'mushroom_garden', 'mushroom_garden');
+      break;
+  }
+
+  if (!buildSuccess) {
+    // Not enough resources — revert task to pending and free the dwarf
+    task.status = 'pending';
+    task.assigned_dwarf_id = null;
+    task.work_progress = 0;
+    state.dirtyTaskIds.add(task.id);
+    dwarf.current_task_id = null;
+    state.dirtyDwarfIds.add(dwarf.id);
+
+    const dwarfLabel = dwarfName(dwarf);
+    const taskLabel = task.task_type.replace(/_/g, ' ');
+    state.pendingEvents.push({
+      id: ctx.rng.uuid(),
+      world_id: '',
+      year: ctx.year,
+      category: 'discovery',
+      civilization_id: ctx.civilizationId,
+      ruin_id: null,
+      dwarf_id: dwarf.id,
+      item_id: null,
+      faction_id: null,
+      monster_id: null,
+      description: `${dwarfLabel} cannot ${taskLabel}: not enough resources.`,
+      event_data: { task_type: task.task_type, task_id: task.id },
+      created_at: new Date().toISOString(),
+    });
+    return;
+  }
 
   task.status = 'completed';
   task.completed_at = new Date().toISOString();
@@ -70,7 +119,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     });
   }
 
-  // Apply completion effects based on task type
+  // Apply completion effects based on task type (non-build tasks)
   switch (task.task_type) {
     case 'mine':
       completeMine(dwarf, task, ctx);
@@ -123,19 +172,10 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       break;
     case 'build_wall':
     case 'build_floor':
-      completeBuild(task, ctx);
-      awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
-      break;
     case 'build_bed':
-      completeBuildBed(task, ctx);
-      awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
-      break;
     case 'build_well':
-      completeBuildStructure(task, ctx, 'well', 'well');
-      awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
-      break;
     case 'build_mushroom_garden':
-      completeBuildStructure(task, ctx, 'mushroom_garden', 'mushroom_garden');
+      // Already handled above — just award XP
       awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
       break;
     case 'deconstruct':
@@ -247,8 +287,10 @@ function completeMine(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     ctx.state.dirtyItemIds.add(minedItem.id);
   }
 
-  // Surface features (z=0) become grass; underground becomes open_air
-  const resultTile: FortressTileType = task.target_z === 0 ? 'grass' : 'open_air';
+  // Surface features (z=0) become the biome base tile (grass, mud, sand, etc.);
+  // underground becomes open_air
+  const baseTile = ctx.fortressDeriver?.baseTileType ?? 'grass';
+  const resultTile: FortressTileType = task.target_z === 0 ? baseTile : 'open_air';
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, resultTile, null, true);
 }
 
@@ -271,13 +313,16 @@ export function getMineProduct(tileType: string | null): {
   }
 }
 
-function completeBuild(task: Task, ctx: SimContext): void {
-  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+function completeBuild(task: Task, ctx: SimContext): boolean {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return false;
 
   const tileType = BUILD_TILE_MAP[task.task_type];
-  if (!tileType) return;
+  if (!tileType) return false;
+
+  if (!consumeResources(task.task_type, ctx)) return false;
 
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, tileType, 'stone', false);
+  return true;
 }
 
 function upsertFortressTile(
@@ -433,8 +478,10 @@ function completeSleep(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   ctx.state.dirtyDwarfIds.add(dwarf.id);
 }
 
-function completeBuildBed(task: Task, ctx: SimContext): void {
-  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+function completeBuildBed(task: Task, ctx: SimContext): boolean {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return false;
+
+  if (!consumeResources(task.task_type, ctx)) return false;
 
   const bed: Structure = {
     id: ctx.rng.uuid(),
@@ -457,6 +504,7 @@ function completeBuildBed(task: Task, ctx: SimContext): void {
 
   // Place bed tile for rendering
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'bed', 'wood', false);
+  return true;
 }
 
 /**
@@ -468,8 +516,10 @@ function completeBuildStructure(
   ctx: SimContext,
   structureType: string,
   tileType: FortressTileType,
-): void {
-  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
+): boolean {
+  if (task.target_x === null || task.target_y === null || task.target_z === null) return false;
+
+  if (!consumeResources(task.task_type, ctx)) return false;
 
   const structure: Structure = {
     id: ctx.rng.uuid(),
@@ -491,6 +541,7 @@ function completeBuildStructure(
   ctx.state.dirtyStructureIds.add(structure.id);
 
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, tileType, 'stone', false);
+  return true;
 }
 
 /** Deconstructible tile types — only these can be targeted for removal. */

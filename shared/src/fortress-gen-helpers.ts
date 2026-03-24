@@ -25,6 +25,8 @@ export interface DerivedFortressTile {
 
 export interface FortressDeriver {
   deriveTile(x: number, y: number, z: number): DerivedFortressTile;
+  /** The base surface tile type for this biome (grass, mud, sand, etc.) */
+  baseTileType: FortressTileType;
 }
 
 // ============================================================
@@ -417,7 +419,10 @@ export function createFortressDeriver(
     entrancePositions.map(p => `${p.x},${p.y}`),
   );
 
+  const profile = getProfile(terrain);
+
   return {
+    baseTileType: profile.base,
     deriveTile(x: number, y: number, z: number): DerivedFortressTile {
       // Only z=0 (surface) and z=-1 (caves) are valid
       if (z !== SURFACE_Z && z !== CAVE_Z) {
@@ -436,8 +441,7 @@ export function createFortressDeriver(
         const center = Math.floor(FORTRESS_SIZE / 2);
         const nearCenter = Math.abs(x - center) <= 3 && Math.abs(y - center) <= 3;
         if (nearCenter) {
-          const p = getProfile(terrain);
-          return { tileType: p.base, material: p.baseMaterial };
+          return { tileType: profile.base, material: profile.baseMaterial };
         }
 
         return deriveSurfaceTile(x, y, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise, terrain);

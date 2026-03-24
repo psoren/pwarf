@@ -1,7 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
-import { makeDwarf, makeTask } from "./test-helpers.js";
+import { makeDwarf, makeTask, makeItem } from "./test-helpers.js";
 import { WORK_BUILD_WELL, WORK_BUILD_MUSHROOM_GARDEN } from "@pwarf/shared";
+
+function stoneBlock() {
+  return makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "test-civ", held_by_dwarf_id: null });
+}
+function woodLog() {
+  return makeItem({ name: "Wood log", category: "raw_material", material: "wood", located_in_civ_id: "test-civ", held_by_dwarf_id: null });
+}
 
 describe("build_well scenario", () => {
   it("completes and adds a well structure", async () => {
@@ -18,6 +25,7 @@ describe("build_well scenario", () => {
     const result = await runScenario({
       dwarves: [dwarf],
       tasks: [task],
+      items: [stoneBlock(), stoneBlock()],
       ticks: WORK_BUILD_WELL + 5,
     });
 
@@ -45,6 +53,7 @@ describe("build_well scenario", () => {
     const result = await runScenario({
       dwarves: [dwarf],
       tasks: [task],
+      items: [stoneBlock(), stoneBlock()],
       ticks: WORK_BUILD_WELL + 5,
     });
 
@@ -68,6 +77,7 @@ describe("build_mushroom_garden scenario", () => {
     const result = await runScenario({
       dwarves: [dwarf],
       tasks: [task],
+      items: [woodLog()],
       ticks: WORK_BUILD_MUSHROOM_GARDEN + 5,
     });
 
@@ -93,6 +103,7 @@ describe("build_mushroom_garden scenario", () => {
     const result = await runScenario({
       dwarves: [dwarf],
       tasks: [task],
+      items: [woodLog()],
       ticks: WORK_BUILD_MUSHROOM_GARDEN + 5,
     });
 

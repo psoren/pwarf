@@ -10,7 +10,11 @@ import {
   SLEEP_RESTORE_PER_TICK,
   MAX_NEED,
 } from "@pwarf/shared";
-import { makeDwarf, makeTask, makeSkill, makeContext, makeMapTile } from "../__tests__/test-helpers.js";
+import { makeDwarf, makeTask, makeSkill, makeContext, makeMapTile, makeItem } from "../__tests__/test-helpers.js";
+
+function stoneBlock() {
+  return makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "civ-1", held_by_dwarf_id: null });
+}
 import { taskExecution, getTileHardness } from "./task-execution.js";
 
 describe("getTileHardness", () => {
@@ -257,7 +261,7 @@ describe("taskExecution", () => {
       });
       task.assigned_dwarf_id = dwarf.id;
 
-      const ctx = makeContext({ dwarves: [dwarf], tasks: [task] });
+      const ctx = makeContext({ dwarves: [dwarf], tasks: [task], items: [stoneBlock()] });
 
       await taskExecution(ctx);
 

@@ -86,6 +86,8 @@ describe("skill level-up scenario (issue #476)", () => {
       foodItems.push(makeItem({ category: "food", name: "Plump helmet", position_x: 0, position_y: 1, position_z: 0 }));
       foodItems.push(makeItem({ category: "drink", name: "Dwarven ale", position_x: 0, position_y: 1, position_z: 0 }));
     }
+    // Stone block for build_floor
+    foodItems.push(makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "test-civ", held_by_dwarf_id: null }));
 
     const result = await runScenario({
       dwarves: [dwarf],

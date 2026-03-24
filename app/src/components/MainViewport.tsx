@@ -42,6 +42,8 @@ interface MainViewportProps {
   buildProgressTiles?: Map<string, number>;
   /** Active monster positions keyed by "x,y" */
   monsterPositions?: Map<string, { name: string; health: number }>;
+  /** Build tiles blocked due to missing resources keyed by "x,y" */
+  blockedBuildTiles?: Set<string>;
 }
 
 // Character cell dimensions (monospace)
@@ -87,6 +89,7 @@ export default function MainViewport({
   zLevel = 0,
   buildProgressTiles,
   monsterPositions,
+  blockedBuildTiles,
 }: MainViewportProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -126,6 +129,8 @@ export default function MainViewport({
   buildProgressTilesRef.current = buildProgressTiles;
   const monsterPositionsRef = useRef(monsterPositions);
   monsterPositionsRef.current = monsterPositions;
+  const blockedBuildTilesRef = useRef(blockedBuildTiles);
+  blockedBuildTilesRef.current = blockedBuildTiles;
 
   // Increment to force re-render when data (not offset) changes
   const [dataVersion, setDataVersion] = useState(0);
@@ -137,6 +142,7 @@ export default function MainViewport({
   const prevGroundItems = useRef(groundItems);
   const prevBuildProgressTiles = useRef(buildProgressTiles);
   const prevMonsterPositions = useRef(monsterPositions);
+  const prevBlockedBuildTiles = useRef(blockedBuildTiles);
 
   if (
     getWorldTileData !== prevGetWorldTileData.current ||
@@ -146,7 +152,8 @@ export default function MainViewport({
     stockpileTiles !== prevStockpileTiles.current ||
     groundItems !== prevGroundItems.current ||
     buildProgressTiles !== prevBuildProgressTiles.current ||
-    monsterPositions !== prevMonsterPositions.current
+    monsterPositions !== prevMonsterPositions.current ||
+    blockedBuildTiles !== prevBlockedBuildTiles.current
   ) {
     prevGetWorldTileData.current = getWorldTileData;
     prevGetFortressTileData.current = getFortressTileData;
@@ -156,6 +163,7 @@ export default function MainViewport({
     prevGroundItems.current = groundItems;
     prevBuildProgressTiles.current = buildProgressTiles;
     prevMonsterPositions.current = monsterPositions;
+    prevBlockedBuildTiles.current = blockedBuildTiles;
     setDataVersion((v) => v + 1);
   }
 
@@ -189,7 +197,8 @@ export default function MainViewport({
 
       // Check for ground items at this position
       if (groundItemsRef.current?.has(key) && (groundItemsRef.current.get(key) ?? 0) > 0) {
-        return { ch: GROUND_ITEM_GLYPH.ch, fg: GROUND_ITEM_GLYPH.fg };
+        const onStockpile = stockpileTilesRef.current?.has(`${wx},${wy},${zLevelRef.current}`);
+        return { ch: GROUND_ITEM_GLYPH.ch, fg: GROUND_ITEM_GLYPH.fg, ...(onStockpile ? { bg: STOCKPILE_GLYPH.bg } : {}) };
       }
 
       // Check for designation overlay
@@ -205,11 +214,14 @@ export default function MainViewport({
           // the task list may lag behind the tile update (race condition between polls).
           const tileIsBuilt = tile.tileType === 'constructed_wall' || tile.tileType === 'constructed_floor';
           if (taskType && !tileIsBuilt) {
+            const isBlocked = blockedBuildTilesRef.current?.has(key);
             const buildPct = buildProgressTilesRef.current?.get(key);
-            // Interpolate bg from dark brown (#442200) to amber (#886600) as progress increases
-            const bg = buildPct !== undefined && buildPct > 0
-              ? `rgb(${Math.round(0x44 + (0x88 - 0x44) * buildPct / 100)},${Math.round(0x22 + (0x66 - 0x22) * buildPct / 100)},0)`
-              : "#442200";
+            // Blocked tasks get a red background; normal tasks interpolate brown → amber
+            const bg = isBlocked
+              ? "#661111"
+              : buildPct !== undefined && buildPct > 0
+                ? `rgb(${Math.round(0x44 + (0x88 - 0x44) * buildPct / 100)},${Math.round(0x22 + (0x66 - 0x22) * buildPct / 100)},0)`
+                : "#442200";
             const preview = DESIGNATION_PREVIEW[taskType];
             if (preview) {
               return { ch: preview.ch, fg: preview.fg, bg };
@@ -217,7 +229,7 @@ export default function MainViewport({
             return { ...glyph, bg };
           }
           if (isStockpile) {
-            return { ...glyph, bg: STOCKPILE_GLYPH.bg };
+            return { ch: STOCKPILE_GLYPH.ch, fg: STOCKPILE_GLYPH.fg, bg: STOCKPILE_GLYPH.bg };
           }
           return glyph;
         }

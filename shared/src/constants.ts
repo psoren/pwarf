@@ -5,11 +5,11 @@
 /** Target sim steps executed per real-time second */
 export const STEPS_PER_SECOND = 10;
 
-/** Total sim steps in one in-game year (30 real minutes) */
-export const STEPS_PER_YEAR = 18_000;
+/** Sim steps in one in-game day (3 real minutes at 1× speed) */
+export const STEPS_PER_DAY = 1_800;
 
-/** Approximate sim steps in one in-game day (18000 / 365 ≈ 49) */
-export const STEPS_PER_DAY = 49;
+/** Sim steps in one in-game year (20 days = 1 real hour at 1× speed) */
+export const STEPS_PER_YEAR = STEPS_PER_DAY * 20;  // 36_000
 
 // ============================================================
 // World dimensions
@@ -37,29 +37,29 @@ export const STRESS_TANTRUM_THRESHOLD = 80;
 // Physical needs decay faster than psychological needs.
 
 /** How much food need decreases each tick */
-export const FOOD_DECAY_PER_TICK = 0.08;
+export const FOOD_DECAY_PER_TICK = 0.0022;
 
 /** How much drink need decreases each tick (thirst is more urgent) */
-export const DRINK_DECAY_PER_TICK = 0.12;
+export const DRINK_DECAY_PER_TICK = 0.0033;
 
 /** How much sleep need decreases each tick */
-export const SLEEP_DECAY_PER_TICK = 0.08;
+export const SLEEP_DECAY_PER_TICK = 0.0022;
 
 /** How much social need decreases each tick */
-export const SOCIAL_DECAY_PER_TICK = 0.05;
+export const SOCIAL_DECAY_PER_TICK = 0.0014;
 
 /** How much purpose need decreases each tick */
-export const PURPOSE_DECAY_PER_TICK = 0.04;
+export const PURPOSE_DECAY_PER_TICK = 0.0011;
 
 /** How much beauty need decreases each tick */
-export const BEAUTY_DECAY_PER_TICK = 0.03;
+export const BEAUTY_DECAY_PER_TICK = 0.0008;
 
 // ============================================================
 // Social / purpose / beauty need restoration
 // ============================================================
 
 /** How much social need restored per tick per nearby dwarf */
-export const SOCIAL_RESTORE_PER_NEARBY_DWARF = 0.3;
+export const SOCIAL_RESTORE_PER_NEARBY_DWARF = 0.0082;
 
 /** Manhattan-distance radius within which dwarves count as "nearby" for social need */
 export const SOCIAL_PROXIMITY_RADIUS = 8;
@@ -77,10 +77,10 @@ export const PURPOSE_RESTORE_HAUL = 5;
 export const PURPOSE_RESTORE_DEFAULT = 8;
 
 /** Passive purpose restoration per tick for idle dwarves (matches PURPOSE_DECAY_PER_TICK so idle dwarves maintain stable purpose) */
-export const PURPOSE_RESTORE_IDLE = 0.04;
+export const PURPOSE_RESTORE_IDLE = 0.0011;
 
 /** Baseline beauty restoration per tick (passive, always applies — matches BEAUTY_DECAY_PER_TICK for equilibrium) */
-export const BEAUTY_RESTORE_PASSIVE = 0.03;
+export const BEAUTY_RESTORE_PASSIVE = 0.0008;
 
 // ============================================================
 // Morale need (replaces social + purpose + beauty)
@@ -105,13 +105,13 @@ export const MORALE_RESTORE_NEAR_STRUCTURE = 0.1;
 export const MORALE_RESTORE_NEAR_ENGRAVING = 0.06;
 
 /** Bonus beauty restoration per tick when near a well or mushroom garden */
-export const BEAUTY_RESTORE_NEAR_STRUCTURE = 0.15;
+export const BEAUTY_RESTORE_NEAR_STRUCTURE = 0.0041;
 
 /** Manhattan-distance radius for beauty structure proximity */
 export const BEAUTY_STRUCTURE_RADIUS = 6;
 
 /** Bonus beauty restoration per tick when near an engraved stone tile */
-export const BEAUTY_RESTORE_NEAR_ENGRAVING = 0.08;
+export const BEAUTY_RESTORE_NEAR_ENGRAVING = 0.0022;
 
 /** Manhattan-distance radius within which an engraved tile provides beauty */
 export const BEAUTY_ENGRAVING_RADIUS = 4;
@@ -136,7 +136,7 @@ export const NEUROTICISM_STRESS_MULTIPLIER = 1.0;
  * Passive stress recovery added per tick at agreeableness=1.0.
  * Stacks on top of the base recovery when all needs are comfortable.
  */
-export const AGREEABLENESS_RECOVERY_BONUS = 0.1;
+export const AGREEABLENESS_RECOVERY_BONUS = 0.0027;
 
 /**
  * How much conscientiousness scales work speed.
@@ -183,8 +183,8 @@ export const ELDER_DEATH_CHANCE_PER_YEAR = 0.1;
 // Immigration
 // ============================================================
 
-/** Probability of an immigration wave arriving each year (starting year 2). */
-export const IMMIGRATION_CHANCE_PER_YEAR = 0.6;
+/** Probability of an immigration wave arriving each year (starting year 2). 1 year ≈ 1 hour at 1×. */
+export const IMMIGRATION_CHANCE_PER_YEAR = 0.8;
 
 /** Maximum number of immigrants that can arrive in a single wave. */
 export const IMMIGRATION_MAX_ARRIVALS = 3;
@@ -258,7 +258,7 @@ export const WITNESS_DEATH_RADIUS = 5;
 // ============================================================
 
 /** Stress delta per tick for each active memory (scaled by intensity). */
-export const MEMORY_STRESS_PER_TICK = 0.01;
+export const MEMORY_STRESS_PER_TICK = 0.00027;
 
 /** Intensity of a "witnessed_death" memory (positive = stress). */
 export const MEMORY_WITNESSED_DEATH_INTENSITY = 15;
@@ -283,7 +283,7 @@ export const MEMORY_MASTERWORK_DURATION_YEARS = 2;
 // ============================================================
 
 /** Stress applied per tick to a living dwarf near an active ghost */
-export const GHOST_STRESS_PER_TICK = 0.5;
+export const GHOST_STRESS_PER_TICK = 0.014;
 
 /** Manhattan-distance radius within which a ghost haunts nearby dwarves */
 export const GHOST_HAUNTING_RADIUS = 6;
@@ -301,26 +301,26 @@ export const STRESS_TANTRUM_MODERATE = 90;
 /** Severe tantrum threshold */
 export const STRESS_TANTRUM_SEVERE = 96;
 
-/** Minimum ticks a mild tantrum lasts (stress 80–89) */
-export const TANTRUM_DURATION_MILD = 50;
+/** Minimum ticks a mild tantrum lasts (stress 80–89, ~1 in-game day) */
+export const TANTRUM_DURATION_MILD = 1800;
 
-/** Minimum ticks a moderate tantrum lasts (stress 90–95) */
-export const TANTRUM_DURATION_MODERATE = 100;
+/** Minimum ticks a moderate tantrum lasts (stress 90–95, ~2 in-game days) */
+export const TANTRUM_DURATION_MODERATE = 3600;
 
-/** Minimum ticks a severe tantrum lasts (stress 96–100) */
-export const TANTRUM_DURATION_SEVERE = 200;
+/** Minimum ticks a severe tantrum lasts (stress 96–100, ~4 in-game days) */
+export const TANTRUM_DURATION_SEVERE = 7200;
 
 /** Per-tick probability a mild tantrum dwarf destroys a nearby item */
-export const TANTRUM_DESTROY_CHANCE_MILD = 0.02;
+export const TANTRUM_DESTROY_CHANCE_MILD = 0.00054;
 
 /** Per-tick probability a moderate tantrum dwarf destroys a nearby item */
-export const TANTRUM_DESTROY_CHANCE_MODERATE = 0.05;
+export const TANTRUM_DESTROY_CHANCE_MODERATE = 0.0014;
 
 /** Per-tick probability a severe tantrum dwarf destroys a nearby item */
-export const TANTRUM_DESTROY_CHANCE_SEVERE = 0.08;
+export const TANTRUM_DESTROY_CHANCE_SEVERE = 0.0022;
 
 /** Per-tick probability a moderate/severe tantrum dwarf attacks a nearby dwarf */
-export const TANTRUM_ATTACK_CHANCE = 0.02;
+export const TANTRUM_ATTACK_CHANCE = 0.00054;
 
 /** Damage dealt to victim of a tantrum attack */
 export const TANTRUM_ATTACK_DAMAGE = 10;
@@ -383,10 +383,10 @@ export const NEED_INTERRUPT_FOOD = 30;
 export const NEED_INTERRUPT_SLEEP = 20;
 
 /** Ticks at need_food=0 before starvation death (~10 in-game days) */
-export const STARVATION_TICKS = 490;
+export const STARVATION_TICKS = 18_000;
 
 /** Ticks at need_drink=0 before dehydration death (~5 in-game days) */
-export const DEHYDRATION_TICKS = 245;
+export const DEHYDRATION_TICKS = 9_000;
 
 /** Amount need_food is restored when eating basic food */
 export const FOOD_RESTORE_AMOUNT = 60;
@@ -398,7 +398,7 @@ export const DRINK_RESTORE_AMOUNT = 70;
 export const SLEEP_RESTORE_AMOUNT = 60;
 
 /** Stress penalty per tick for sleeping on the floor instead of a bed */
-export const FLOOR_SLEEP_STRESS = 5;
+export const FLOOR_SLEEP_STRESS = 0.14;
 
 // ============================================================
 // Task work requirements
@@ -437,11 +437,27 @@ export const WORK_EAT = 10;
 /** Work required for drinking */
 export const WORK_DRINK = 10;
 
-/** Work required for sleeping (~8 in-game hours ≈ 16 ticks) */
-export const WORK_SLEEP = 16;
+/** Work required for sleeping (~8 in-game hours = 600 ticks at 1800/day) */
+export const WORK_SLEEP = 600;
 
 /** Amount need_sleep is restored per tick while sleeping (SLEEP_RESTORE_AMOUNT / WORK_SLEEP) */
 export const SLEEP_RESTORE_PER_TICK = SLEEP_RESTORE_AMOUNT / WORK_SLEEP;
+
+// ============================================================
+// Building resource costs
+// ============================================================
+
+/** Resource cost for constructing a building. */
+export type BuildingCost = { category: 'raw_material'; material: string; count: number };
+
+/** Maps build task types to their required resources. */
+export const BUILDING_COSTS: Partial<Record<string, BuildingCost[]>> = {
+  build_wall:            [{ category: 'raw_material', material: 'stone', count: 1 }],
+  build_floor:           [{ category: 'raw_material', material: 'stone', count: 1 }],
+  build_bed:             [{ category: 'raw_material', material: 'wood', count: 1 }],
+  build_well:            [{ category: 'raw_material', material: 'stone', count: 2 }],
+  build_mushroom_garden: [{ category: 'raw_material', material: 'wood', count: 1 }],
+};
 
 /** Work required to build a wall */
 export const WORK_BUILD_WALL = 40;
@@ -545,11 +561,11 @@ export const SCORE_BEST_SKILL_BONUS = 5;
 // Monsters & Combat
 // ============================================================
 
-/** Ticks between monster spawn checks (500 ticks ≈ 10 in-game days). */
-export const MONSTER_SPAWN_INTERVAL = 500;
+/** Ticks between monster spawn checks (~1 in-game day). */
+export const MONSTER_SPAWN_INTERVAL = 1_800;
 
-/** No monsters spawn before this tick — gives the fortress time to establish. */
-export const MONSTER_PEACE_PERIOD_TICKS = 1000;
+/** No monsters spawn before this tick (~3 in-game days). */
+export const MONSTER_PEACE_PERIOD_TICKS = 5_400;
 
 /** Maximum number of active monsters at a time (MVP cap). */
 export const MONSTER_MAX_ACTIVE = 1;
@@ -655,8 +671,8 @@ export const FORTRESS_NAME_NOUNS = [
   'anvil', 'crown', 'tower', 'wall', 'barrow', 'haven',
 ];
 
-/** How many years between trade caravan arrivals */
-export const CARAVAN_INTERVAL_YEARS = 5;
+/** How many years between trade caravan arrivals (1 year = 1 hour at 1×) */
+export const CARAVAN_INTERVAL_YEARS = 2;
 
 /** Number of drink items a caravan brings */
 export const CARAVAN_DRINK_COUNT = 15;

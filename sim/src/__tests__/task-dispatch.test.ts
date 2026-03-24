@@ -310,6 +310,7 @@ describe("task execution", () => {
 
     // Deriver that returns open_air everywhere at z=0
     ctx.fortressDeriver = {
+      baseTileType: "grass" as FortressTileType,
       deriveTile() {
         return { tileType: "open_air" as FortressTileType, material: null };
       },
@@ -347,6 +348,7 @@ describe("task execution", () => {
     const ctx = makeContext({ dwarves: [dwarf], skills: [skill] });
 
     ctx.fortressDeriver = {
+      baseTileType: "grass" as FortressTileType,
       deriveTile(_x: number, _y: number, z: number) {
         if (z === 0) return { tileType: "open_air" as FortressTileType, material: null };
         return { tileType: "stone" as FortressTileType, material: "granite" };
@@ -565,7 +567,7 @@ describe("starvation scenario", () => {
 
     // Run needs decay until food drops below interrupt threshold
     let ticks = 0;
-    while (dwarf.need_food >= NEED_INTERRUPT_FOOD && ticks < 1000) {
+    while (dwarf.need_food >= NEED_INTERRUPT_FOOD && ticks < 5000) {
       await needsDecay(ctx);
       ticks++;
     }
@@ -640,10 +642,12 @@ describe("build tasks", () => {
     };
     dwarf.current_task_id = task.id;
 
+    const stone = makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "civ-1", held_by_dwarf_id: null });
     const ctx = makeContext({
       dwarves: [dwarf],
       tasks: [task],
       skills: [makeSkill(dwarf.id, "building", 0)],
+      items: [stone],
     });
 
     await taskExecution(ctx);
@@ -683,10 +687,12 @@ describe("build tasks", () => {
     };
     dwarf.current_task_id = task.id;
 
+    const stone = makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "civ-1", held_by_dwarf_id: null });
     const ctx = makeContext({
       dwarves: [dwarf],
       tasks: [task],
       skills: [makeSkill(dwarf.id, "building", 0)],
+      items: [stone],
     });
 
     await taskExecution(ctx);
@@ -759,10 +765,12 @@ describe("build tasks", () => {
     };
     dwarf.current_task_id = task.id;
 
+    const stone = makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "civ-1", held_by_dwarf_id: null });
     const ctx = makeContext({
       dwarves: [dwarf],
       tasks: [task],
       skills: [skill],
+      items: [stone],
     });
 
     await taskExecution(ctx);
@@ -809,7 +817,8 @@ describe("skill-based task preferences", () => {
       makeSkill(miner.id, "mining", 8),
       makeSkill(miner.id, "building", 2),
     ];
-    const ctx = makeContext({ dwarves: [miner], skills });
+    const stone = makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "civ-1", held_by_dwarf_id: null });
+    const ctx = makeContext({ dwarves: [miner], skills, items: [stone] });
 
     const buildTask = createTask(ctx, {
       task_type: "build_wall",
@@ -840,7 +849,8 @@ describe("skill-based task preferences", () => {
       makeSkill(dwarf.id, "mining", 5),
       makeSkill(dwarf.id, "building", 0),
     ];
-    const ctx = makeContext({ dwarves: [dwarf], skills });
+    const stone = makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "civ-1", held_by_dwarf_id: null });
+    const ctx = makeContext({ dwarves: [dwarf], skills, items: [stone] });
 
     // Build task with much higher priority
     const buildTask = createTask(ctx, {
@@ -873,7 +883,8 @@ describe("skill-based task preferences", () => {
       makeSkill(builder.id, "mining", 1),
       makeSkill(builder.id, "building", 8),
     ];
-    const ctx = makeContext({ dwarves: [miner, builder], skills });
+    const stone = makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "civ-1", held_by_dwarf_id: null });
+    const ctx = makeContext({ dwarves: [miner, builder], skills, items: [stone] });
 
     const mineTask = createTask(ctx, {
       task_type: "mine",
