@@ -14,7 +14,8 @@
     "@supabase/supabase-js": "^2.49.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "simplex-noise": "^4.0.3"
+    "simplex-noise": "^4.0.3",
+    "tone": "^15.1.22"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.3",

@@ -20,9 +20,11 @@ interface ToolbarProps {
   dwarves?: LiveDwarf[];
   onTutorial?: () => void;
   onInventory?: () => void;
+  soundMuted?: boolean;
+  onToggleMute?: () => void;
 }
 
-export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0, dwarves = [], onTutorial, onInventory }: ToolbarProps) {
+export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0, dwarves = [], onTutorial, onInventory, soundMuted = false, onToggleMute }: ToolbarProps) {
   const alert = mode === "fortress" ? deriveAlert(dwarves) : null;
 
   return (
@@ -86,6 +88,15 @@ export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isP
               </button>
             ))}
           </div>
+        )}
+        {onToggleMute && (
+          <button
+            onClick={onToggleMute}
+            className="px-2 py-0.5 border border-[var(--border)] text-[var(--text)] hover:text-[var(--amber)] hover:border-[var(--amber)] cursor-pointer"
+            title={soundMuted ? "Unmute soundtrack" : "Mute soundtrack"}
+          >
+            {soundMuted ? "Muted" : "Sound"}
+          </button>
         )}
         {onRestart && (
           <button
