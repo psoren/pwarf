@@ -203,34 +203,6 @@ export const DWARF_SURNAMES = [
 ];
 
 // ============================================================
-// Disease
-// ============================================================
-
-/** Per-year probability of a disease outbreak starting */
-export const DISEASE_OUTBREAK_CHANCE = 0.07;
-
-/** Per-year probability that each healthy dwarf adjacent to an infected dwarf catches the disease */
-export const DISEASE_SPREAD_CHANCE = 0.4;
-
-/**
- * Per-year probability that disease spreads when a well exists in the fortress.
- * Wells represent clean water access which reduces transmission.
- */
-export const DISEASE_SPREAD_CHANCE_WITH_WELL = 0.2;
-
-/** Health lost per year by an infected dwarf */
-export const DISEASE_HEALTH_DAMAGE_PER_YEAR = 15;
-
-/**
- * Per-year probability that an infected dwarf recovers naturally.
- * Dwarves at full health recover faster; this applies regardless.
- */
-export const DISEASE_RECOVERY_CHANCE = 0.5;
-
-/** Manhattan-distance radius within which dwarves can spread disease */
-export const DISEASE_SPREAD_RADIUS = 4;
-
-// ============================================================
 // Strange moods (artifact creation)
 // ============================================================
 
@@ -277,16 +249,6 @@ export const MEMORY_MASTERWORK_INTENSITY = -10;
 
 /** How many in-game years a masterwork memory lingers. */
 export const MEMORY_MASTERWORK_DURATION_YEARS = 2;
-
-// ============================================================
-// Haunting
-// ============================================================
-
-/** Stress applied per tick to a living dwarf near an active ghost */
-export const GHOST_STRESS_PER_TICK = 0.014;
-
-/** Manhattan-distance radius within which a ghost haunts nearby dwarves */
-export const GHOST_HAUNTING_RADIUS = 6;
 
 // ============================================================
 // Stress severity tiers

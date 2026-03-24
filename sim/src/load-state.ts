@@ -133,8 +133,6 @@ export async function loadStateFromSupabase(
     zeroFoodTicks: new Map(),
     zeroDrinkTicks: new Map(),
     tantrumTicks: new Map(),
-    infectedDwarfIds: new Set(),
-    ghostDwarfIds: new Set(),
     strangeMoodDwarfIds: new Set(),
     warnedNeedIds: new Map(),
     civPopulation: (civResult.data as { population: number } | null)?.population ?? 0,
