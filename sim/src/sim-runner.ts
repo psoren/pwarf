@@ -245,7 +245,7 @@ export class SimRunner {
       this.onTick({
         dwarves: this.ctx.state.dwarves,
         items: this.ctx.state.items,
-        tasks: this.ctx.state.tasks,
+        tasks: [...this.ctx.state.tasks],
         events: this.ctx.state.worldEvents,
         fortressTileOverrides: [...this.ctx.state.fortressTileOverrides.values()],
         monsters: this.ctx.state.monsters,
