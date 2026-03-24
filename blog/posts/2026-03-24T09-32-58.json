@@ -1,0 +1,43 @@
+{
+  "id": "2026-03-24T09-32-58",
+  "timestamp": "2026-03-24T09:32:58.656Z",
+  "title": "Digest — Mar 24, 2026, 09:32 AM UTC",
+  "summary": "# Devlog Digest for Pwarf\n\nHello, fellow colonizers! We've made some significant updates to enhance stability and gameplay in your dwarf colony. Here’s a summary of the latest changes:\n\n## Task Management Enhancements\n- **Upsert and Event Handling**: We've merged task insertion and dirty task updates into a single upsert call to avoid duplicate key errors during flushes. Additionally, world events now use a plain insert method with in-memory deduplication for better performance and to prevent deadlocks.\n- **Ordering Flushes**: Our new flush order prioritizes items before tasks to respect foreign key (FK) dependencies, preventing potential violations that arose when both were created simultaneously.\n\n## Farming Improvements\n- **Farming on Grass Tiles**: We've resolved a major usability issue where players could not farm on grass because only soil tiles were accepted. Now, grass tiles are included in the farmable set, allowing you to designate farm plots on the surface.\n\n## Cleanup and Maintenance\n- **Removed Dead Code**: Several unused simulation phases and associated files have been removed, streamlining the codebase. This includes dead constants and event types that were no longer needed.\n\n## Data Integrity Fixes\n- **Dangling Reference Cleanup**: A new pre-flush cleanup function has been added to sanitize dangling foreign key references. Tasks referencing deleted items are reset to ensure a smoother data flow during flush operations.\n\nThank you for your continued support as we refine and expand Pwarf!\n\n## Merged PRs\n- #629\n- #626\n- #627\n- #628\n- #623\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 629,
+      "title": "fix: task upsert + event deadlock prevention in flush-state",
+      "url": "https://github.com/psoren/pwarf/pull/629"
+    },
+    {
+      "number": 626,
+      "title": "chore: remove dead sim phases",
+      "url": "https://github.com/psoren/pwarf/pull/626"
+    },
+    {
+      "number": 627,
+      "title": "fix: allow farming on grass tiles (closes #624)",
+      "url": "https://github.com/psoren/pwarf/pull/627"
+    },
+    {
+      "number": 628,
+      "title": "fix: flush items before tasks to respect FK ordering",
+      "url": "https://github.com/psoren/pwarf/pull/628"
+    },
+    {
+      "number": 623,
+      "title": "fix: sanitize dangling FK refs before flushing to Supabase (closes #622)",
+      "url": "https://github.com/psoren/pwarf/pull/623"
+    }
+  ],
+  "images": []
+}
