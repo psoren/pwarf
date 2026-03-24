@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
-import { makeDwarf, makeTask, makeSkill } from "./test-helpers.js";
+import { makeDwarf, makeTask, makeSkill, makeItem } from "./test-helpers.js";
 import { WORK_MINE_BASE } from "@pwarf/shared";
 import type { FortressTile } from "@pwarf/shared";
 
@@ -62,10 +62,15 @@ describe("any dwarf can do any task", () => {
       work_required: 60,
     });
 
+    const stoneBlocks = [
+      makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "test-civ", held_by_dwarf_id: null }),
+      makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "test-civ", held_by_dwarf_id: null }),
+    ];
     const result = await runScenario({
       dwarves: [dwarf],
       dwarfSkills: [], // no skills at all!
       tasks: [buildTask],
+      items: stoneBlocks,
       ticks: 80,
     });
 

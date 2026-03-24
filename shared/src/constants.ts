@@ -443,6 +443,22 @@ export const WORK_SLEEP = 16;
 /** Amount need_sleep is restored per tick while sleeping (SLEEP_RESTORE_AMOUNT / WORK_SLEEP) */
 export const SLEEP_RESTORE_PER_TICK = SLEEP_RESTORE_AMOUNT / WORK_SLEEP;
 
+// ============================================================
+// Building resource costs
+// ============================================================
+
+/** Resource cost for constructing a building. */
+export type BuildingCost = { category: 'raw_material'; material: string; count: number };
+
+/** Maps build task types to their required resources. */
+export const BUILDING_COSTS: Partial<Record<string, BuildingCost[]>> = {
+  build_wall:            [{ category: 'raw_material', material: 'stone', count: 1 }],
+  build_floor:           [{ category: 'raw_material', material: 'stone', count: 1 }],
+  build_bed:             [{ category: 'raw_material', material: 'wood', count: 1 }],
+  build_well:            [{ category: 'raw_material', material: 'stone', count: 2 }],
+  build_mushroom_garden: [{ category: 'raw_material', material: 'wood', count: 1 }],
+};
+
 /** Work required to build a wall */
 export const WORK_BUILD_WALL = 40;
 
