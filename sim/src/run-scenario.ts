@@ -25,6 +25,7 @@ import {
   autoForage,
   taskRecovery,
   monsterSpawning,
+  expeditionTick,
 } from "./phases/index.js";
 
 /** Input configuration for a scenario run. */
@@ -126,6 +127,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     await monsterSpawning(ctx);
     await monsterPathfinding(ctx);
     await combatResolution(ctx);
+    expeditionTick(ctx);
     await constructionProgress(ctx);
     await idleWandering(ctx);
     await haulAssignment(ctx);
