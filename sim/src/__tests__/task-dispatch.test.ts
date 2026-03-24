@@ -310,6 +310,7 @@ describe("task execution", () => {
 
     // Deriver that returns open_air everywhere at z=0
     ctx.fortressDeriver = {
+      baseTileType: "grass" as FortressTileType,
       deriveTile() {
         return { tileType: "open_air" as FortressTileType, material: null };
       },

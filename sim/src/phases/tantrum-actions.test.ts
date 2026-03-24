@@ -21,18 +21,20 @@ function makeNearbyItem() {
   return makeItem({ position_x: 6, position_y: 5, position_z: 0, held_by_dwarf_id: null });
 }
 
-describe("tantrumActions — item destruction", () => {
-  it("destroys a nearby item within 200 distinct seeds (mild tantrum)", async () => {
+describe("tantrumActions -- item destruction", () => {
+  it("destroys a nearby item across many ticks (mild tantrum)", async () => {
     let destroyed = false;
-    for (let seed = 0; seed < 200; seed++) {
-      const dwarf = makeTantrumDwarf(85);
-      const item = makeNearbyItem();
-      const ctx = makeContext({ dwarves: [dwarf], items: [item] });
-      ctx.rng = createRng(seed);
-      await tantrumActions(ctx);
-      if (ctx.state.items.length === 0) {
-        destroyed = true;
-        break;
+    // Per-tick destroy chance is ~0.00054; run 100 ticks x 50 seeds = 5000 rolls
+    for (let seed = 0; seed < 50 && !destroyed; seed++) {
+      for (let tick = 0; tick < 100 && !destroyed; tick++) {
+        const dwarf = makeTantrumDwarf(85);
+        const item = makeNearbyItem();
+        const ctx = makeContext({ dwarves: [dwarf], items: [item] });
+        ctx.rng = createRng(seed * 1000 + tick);
+        await tantrumActions(ctx);
+        if (ctx.state.items.length === 0) {
+          destroyed = true;
+        }
       }
     }
     expect(destroyed).toBe(true);
@@ -62,17 +64,19 @@ describe("tantrumActions — item destruction", () => {
     }
   });
 
-  it("fires a discovery event when item is destroyed (within 200 seeds, severe tantrum)", async () => {
+  it("fires a discovery event when item is destroyed (across many ticks, severe tantrum)", async () => {
     let eventFired = false;
-    for (let seed = 0; seed < 200; seed++) {
-      const dwarf = makeTantrumDwarf(99);
-      const item = makeNearbyItem();
-      const ctx = makeContext({ dwarves: [dwarf], items: [item] });
-      ctx.rng = createRng(seed);
-      await tantrumActions(ctx);
-      if (ctx.state.pendingEvents.some(e => (e.event_data as Record<string, unknown>)?.action === 'destroy_item')) {
-        eventFired = true;
-        break;
+    // Per-tick destroy chance is ~0.0022 for severe; run 100 ticks x 50 seeds
+    for (let seed = 0; seed < 50 && !eventFired; seed++) {
+      for (let tick = 0; tick < 100 && !eventFired; tick++) {
+        const dwarf = makeTantrumDwarf(99);
+        const item = makeNearbyItem();
+        const ctx = makeContext({ dwarves: [dwarf], items: [item] });
+        ctx.rng = createRng(seed * 1000 + tick);
+        await tantrumActions(ctx);
+        if (ctx.state.pendingEvents.some(e => (e.event_data as Record<string, unknown>)?.action === 'destroy_item')) {
+          eventFired = true;
+        }
       }
     }
     expect(eventFired).toBe(true);
@@ -90,19 +94,21 @@ describe("tantrumActions — item destruction", () => {
   });
 });
 
-describe("tantrumActions — dwarf attacks", () => {
-  it("attacks a nearby dwarf during moderate tantrum within 200 seeds", async () => {
+describe("tantrumActions -- dwarf attacks", () => {
+  it("attacks a nearby dwarf during moderate tantrum across many ticks", async () => {
     let attackHappened = false;
-    for (let seed = 0; seed < 200; seed++) {
-      const rager = makeTantrumDwarf(92);
-      const victim = makeDwarf({ id: "victim", position_x: 6, position_y: 5, position_z: 0, health: 100 });
-      const ctx = makeContext({ dwarves: [rager, victim] });
-      ctx.rng = createRng(seed);
-      await tantrumActions(ctx);
-      const victimAfter = ctx.state.dwarves.find(d => d.id === victim.id);
-      if (victimAfter && victimAfter.health < 100) {
-        attackHappened = true;
-        break;
+    // Per-tick attack chance is ~0.00054; run 100 ticks x 50 seeds
+    for (let seed = 0; seed < 50 && !attackHappened; seed++) {
+      for (let tick = 0; tick < 100 && !attackHappened; tick++) {
+        const rager = makeTantrumDwarf(92);
+        const victim = makeDwarf({ id: "victim", position_x: 6, position_y: 5, position_z: 0, health: 100 });
+        const ctx = makeContext({ dwarves: [rager, victim] });
+        ctx.rng = createRng(seed * 1000 + tick);
+        await tantrumActions(ctx);
+        const victimAfter = ctx.state.dwarves.find(d => d.id === victim.id);
+        if (victimAfter && victimAfter.health < 100) {
+          attackHappened = true;
+        }
       }
     }
     expect(attackHappened).toBe(true);
@@ -110,7 +116,7 @@ describe("tantrumActions — dwarf attacks", () => {
 
   it("does not attack dwarves during mild tantrum", async () => {
     for (let seed = 0; seed < 100; seed++) {
-      const rager = makeTantrumDwarf(85); // mild — below MODERATE threshold
+      const rager = makeTantrumDwarf(85); // mild -- below MODERATE threshold
       const victim = makeDwarf({ id: "victim", position_x: 6, position_y: 5, position_z: 0, health: 100 });
       const ctx = makeContext({ dwarves: [rager, victim] });
       ctx.rng = createRng(seed);
@@ -120,19 +126,21 @@ describe("tantrumActions — dwarf attacks", () => {
     }
   });
 
-  it("applies witness stress to nearby dwarves within 300 seeds (severe tantrum)", async () => {
+  it("applies witness stress to nearby dwarves across many ticks (severe tantrum)", async () => {
     let witnessStressed = false;
-    for (let seed = 0; seed < 300; seed++) {
-      const rager = makeTantrumDwarf(99);
-      const victim = makeDwarf({ id: "victim", position_x: 6, position_y: 5, position_z: 0, health: 100 });
-      const witness = makeDwarf({ id: "witness", position_x: 7, position_y: 5, position_z: 0, stress_level: 10 });
-      const ctx = makeContext({ dwarves: [rager, victim, witness] });
-      ctx.rng = createRng(seed);
-      await tantrumActions(ctx);
-      const witnessAfter = ctx.state.dwarves.find(d => d.id === witness.id);
-      if (witnessAfter && witnessAfter.stress_level > 10) {
-        witnessStressed = true;
-        break;
+    // Attack chance is ~0.00054/tick; witness stress only fires on attack.
+    for (let seed = 0; seed < 50 && !witnessStressed; seed++) {
+      for (let tick = 0; tick < 100 && !witnessStressed; tick++) {
+        const rager = makeTantrumDwarf(99);
+        const victim = makeDwarf({ id: "victim", position_x: 6, position_y: 5, position_z: 0, health: 100 });
+        const witness = makeDwarf({ id: "witness", position_x: 7, position_y: 5, position_z: 0, stress_level: 10 });
+        const ctx = makeContext({ dwarves: [rager, victim, witness] });
+        ctx.rng = createRng(seed * 1000 + tick);
+        await tantrumActions(ctx);
+        const witnessAfter = ctx.state.dwarves.find(d => d.id === witness.id);
+        if (witnessAfter && witnessAfter.stress_level > 10) {
+          witnessStressed = true;
+        }
       }
     }
     expect(witnessStressed).toBe(true);
@@ -140,15 +148,17 @@ describe("tantrumActions — dwarf attacks", () => {
 
   it("fires an attack event when a dwarf is hit", async () => {
     let attackEvent = false;
-    for (let seed = 0; seed < 300; seed++) {
-      const rager = makeTantrumDwarf(99);
-      const victim = makeDwarf({ id: "v1", position_x: 5, position_y: 6, position_z: 0, health: 100 });
-      const ctx = makeContext({ dwarves: [rager, victim] });
-      ctx.rng = createRng(seed);
-      await tantrumActions(ctx);
-      if (ctx.state.pendingEvents.some(e => (e.event_data as Record<string, unknown>)?.action === 'attack_dwarf')) {
-        attackEvent = true;
-        break;
+    // Per-tick attack chance is ~0.00054; run 100 ticks x 50 seeds
+    for (let seed = 0; seed < 50 && !attackEvent; seed++) {
+      for (let tick = 0; tick < 100 && !attackEvent; tick++) {
+        const rager = makeTantrumDwarf(99);
+        const victim = makeDwarf({ id: "v1", position_x: 5, position_y: 6, position_z: 0, health: 100 });
+        const ctx = makeContext({ dwarves: [rager, victim] });
+        ctx.rng = createRng(seed * 1000 + tick);
+        await tantrumActions(ctx);
+        if (ctx.state.pendingEvents.some(e => (e.event_data as Record<string, unknown>)?.action === 'attack_dwarf')) {
+          attackEvent = true;
+        }
       }
     }
     expect(attackEvent).toBe(true);
