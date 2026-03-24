@@ -126,9 +126,7 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [], tasks }: DwarfM
           {needBar("Food", dwarf.need_food, "var(--green)")}
           {needBar("Drink", dwarf.need_drink, "#4488ff")}
           {needBar("Sleep", dwarf.need_sleep, "#aa88ff")}
-          {needBar("Social", dwarf.need_social, "#44ccaa")}
-          {needBar("Purpose", dwarf.need_purpose, "#ccaa44")}
-          {needBar("Beauty", dwarf.need_beauty, "#cc44aa")}
+          {needBar("Morale", dwarf.need_social, "#44ccaa")}
         </div>
 
         <div className="border-t border-[var(--border)] pt-2 mt-2">

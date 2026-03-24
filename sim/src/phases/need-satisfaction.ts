@@ -6,9 +6,14 @@ import {
   WORK_DRINK,
   WORK_SLEEP,
   MAX_NEED,
-  SOCIAL_RESTORE_PER_NEARBY_DWARF,
+  MORALE_RESTORE_PER_NEARBY_DWARF,
   SOCIAL_PROXIMITY_RADIUS,
   SOCIAL_PROXIMITY_MAX_DWARVES,
+  MORALE_RESTORE_NEAR_STRUCTURE,
+  MORALE_RESTORE_NEAR_ENGRAVING,
+  BEAUTY_STRUCTURE_RADIUS,
+  BEAUTY_ENGRAVING_RADIUS,
+  OPENNESS_BEAUTY_MULTIPLIER,
 } from "@pwarf/shared";
 import type { Dwarf, Item, TaskType, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -45,8 +50,8 @@ export async function needSatisfaction(ctx: SimContext): Promise<void> {
       maybeInterruptForNeed(dwarf, 'sleep', ctx);
     }
 
-    // Social: restore need based on proximity to other alive dwarves
-    restoreSocialNeed(dwarf, state.dwarves);
+    // Morale: restore need_social based on proximity to dwarves, structures, engravings
+    restoreMorale(dwarf, state.dwarves, state.structures, state.fortressTileOverrides);
   }
 }
 
@@ -279,11 +284,21 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
 }
 
 /**
- * Restores social need based on how many other alive dwarves are nearby.
- * Counts up to SOCIAL_PROXIMITY_MAX_DWARVES for diminishing returns.
+ * Restores morale (need_social) from three sources:
+ * 1. Nearby dwarf proximity (extraversion modifier)
+ * 2. Nearby beauty structures — well, mushroom_garden (openness modifier)
+ * 3. Nearby engraved stone tiles (openness modifier)
  * Exported for unit testing.
  */
-export function restoreSocialNeed(dwarf: Dwarf, allDwarves: Dwarf[]): void {
+export function restoreMorale(
+  dwarf: Dwarf,
+  allDwarves: Dwarf[],
+  structures: Structure[],
+  fortressTileOverrides: Map<string, { tile_type: string; x: number; y: number; z: number }>,
+): void {
+  let totalRestore = 0;
+
+  // 1. Nearby dwarves — same logic as before but with MORALE_RESTORE_PER_NEARBY_DWARF
   let nearbyCount = 0;
   for (const other of allDwarves) {
     if (other.id === dwarf.id) continue;
@@ -294,10 +309,50 @@ export function restoreSocialNeed(dwarf: Dwarf, allDwarves: Dwarf[]): void {
       nearbyCount++;
     }
   }
+  if (nearbyCount > 0) {
+    const effectiveCount = Math.min(nearbyCount, SOCIAL_PROXIMITY_MAX_DWARVES);
+    let dwarfRestore = effectiveCount * MORALE_RESTORE_PER_NEARBY_DWARF;
+    // Extraversion modifier
+    if (dwarf.trait_extraversion !== null) {
+      dwarfRestore *= Math.max(0.1, 1 + (dwarf.trait_extraversion - 0.5) * 1.0);
+    }
+    totalRestore += dwarfRestore;
+  }
 
-  if (nearbyCount === 0) return;
+  // Openness modifier for structure and engraving bonuses
+  const opennessModifier = dwarf.trait_openness !== null
+    ? Math.max(0.1, 1 + (dwarf.trait_openness - 0.5) * OPENNESS_BEAUTY_MULTIPLIER)
+    : 1;
 
-  const effectiveCount = Math.min(nearbyCount, SOCIAL_PROXIMITY_MAX_DWARVES);
-  const restore = effectiveCount * SOCIAL_RESTORE_PER_NEARBY_DWARF;
-  dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + restore);
+  // 2. Nearby beauty structures (well, mushroom_garden)
+  for (const s of structures) {
+    if (s.type !== 'well' && s.type !== 'mushroom_garden') continue;
+    if (s.completion_pct < 100) continue;
+    if (s.position_x === null || s.position_y === null || s.position_z === null) continue;
+    if (s.position_z !== dwarf.position_z) continue;
+    const dist = Math.abs(s.position_x - dwarf.position_x) + Math.abs(s.position_y - dwarf.position_y);
+    if (dist <= BEAUTY_STRUCTURE_RADIUS) {
+      totalRestore += MORALE_RESTORE_NEAR_STRUCTURE * opennessModifier;
+      break; // count only one structure bonus per tick
+    }
+  }
+
+  // 3. Nearby engraved tiles
+  let foundEngraving = false;
+  for (const [, tile] of fortressTileOverrides) {
+    if (tile.tile_type !== 'engraved_stone') continue;
+    if (tile.z !== dwarf.position_z) continue;
+    const dist = Math.abs(tile.x - dwarf.position_x) + Math.abs(tile.y - dwarf.position_y);
+    if (dist <= BEAUTY_ENGRAVING_RADIUS) {
+      foundEngraving = true;
+      break;
+    }
+  }
+  if (foundEngraving) {
+    totalRestore += MORALE_RESTORE_NEAR_ENGRAVING * opennessModifier;
+  }
+
+  if (totalRestore > 0) {
+    dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + totalRestore);
+  }
 }

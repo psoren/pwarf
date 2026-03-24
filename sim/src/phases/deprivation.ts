@@ -56,9 +56,6 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
     }
   }
 
-  // Add to ghost tracking — dwarf haunts until memorialized
-  state.ghostDwarfIds.add(dwarf.id);
-
   // Fail any task assigned to this dwarf
   if (dwarf.current_task_id) {
     const task = state.tasks.find(t => t.id === dwarf.current_task_id);

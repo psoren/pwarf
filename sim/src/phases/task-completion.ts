@@ -17,9 +17,8 @@ import {
   XP_COOK,
   XP_SMITH,
   XP_FORAGE,
-  PURPOSE_RESTORE_SKILLED,
-  PURPOSE_RESTORE_HAUL,
-  PURPOSE_RESTORE_DEFAULT,
+  MORALE_RESTORE_SKILLED_TASK,
+  MORALE_RESTORE_HAUL_TASK,
   SKILL_TIER_NAMES,
 } from "@pwarf/shared";
 import type { Dwarf, FortressTile, FortressTileType, Task, Item, Structure } from "@pwarf/shared";
@@ -27,9 +26,6 @@ import type { SimContext } from "../sim-context.js";
 import { canPickUp } from "../inventory.js";
 import { dwarfName } from "../dwarf-utils.js";
 import { generateEngravingScene } from "../engrave-scene.js";
-import { generateArtifactName, randomArtifactCategory, randomArtifactMaterial, randomArtifactQuality } from "../artifact-names.js";
-import { createArtifactMemory, createMasterworkMemory } from "../dwarf-memory.js";
-import { putGhostToRest } from "./haunting.js";
 import { createTask } from "../task-helpers.js";
 
 /** Build task type → resulting fortress tile type. */
@@ -154,10 +150,6 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       completeEngrave(task, ctx, dwarf);
       awardXp(dwarf.id, 'engraving', XP_ENGRAVE, ctx, dwarf);
       break;
-    case 'engrave_memorial':
-      completeEngraveMemorial(task, ctx, dwarf);
-      awardXp(dwarf.id, 'engraving', XP_ENGRAVE, ctx, dwarf);
-      break;
     case 'brew':
       completeBrew(dwarf, task, ctx);
       awardXp(dwarf.id, 'brewing', XP_BREW, ctx, dwarf);
@@ -170,36 +162,38 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       completeSmith(dwarf, task, ctx);
       awardXp(dwarf.id, 'smithing', XP_SMITH, ctx, dwarf);
       break;
-    case 'create_artifact':
-      completeArtifact(dwarf, ctx);
-      break;
     case 'forage':
       completeForage(dwarf, task, ctx);
       awardXp(dwarf.id, 'foraging', XP_FORAGE, ctx, dwarf);
       break;
   }
 
-  // Purpose restoration: work gives dwarves a sense of meaning
-  restorePurposeNeed(dwarf, task.task_type);
+  // Morale restoration: work gives dwarves a sense of meaning (restores need_social which is morale)
+  restoreMoraleOnTaskComplete(dwarf, task.task_type);
 }
 
 /**
- * Restores purpose need on task completion.
- * Skilled tasks restore more than hauling.
+ * Restores morale (need_social) on task completion.
+ * Skilled tasks restore more than hauling. Autonomous tasks restore nothing.
+ * Conscientiousness modifier: restore * (1 + (trait - 0.5) * 0.5)
  * Exported for unit testing.
  */
-export function restorePurposeNeed(dwarf: Dwarf, taskType: string): void {
-  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'smooth', 'engrave', 'engrave_memorial', 'brew', 'cook', 'smith', 'create_artifact', 'forage']);
-  const restore = SKILLED_TASKS.has(taskType)
-    ? PURPOSE_RESTORE_SKILLED
+export function restoreMoraleOnTaskComplete(dwarf: Dwarf, taskType: string): void {
+  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'smooth', 'engrave', 'brew', 'cook', 'smith', 'forage']);
+  let restore = SKILLED_TASKS.has(taskType)
+    ? MORALE_RESTORE_SKILLED_TASK
     : taskType === 'haul'
-      ? PURPOSE_RESTORE_HAUL
+      ? MORALE_RESTORE_HAUL_TASK
       : taskType === 'eat' || taskType === 'drink' || taskType === 'sleep'
-        ? 0  // autonomous tasks don't restore purpose
-        : PURPOSE_RESTORE_DEFAULT;
+        ? 0  // autonomous tasks don't restore morale
+        : 0;
 
   if (restore > 0) {
-    dwarf.need_purpose = Math.min(MAX_NEED, dwarf.need_purpose + restore);
+    // Apply conscientiousness modifier
+    if (dwarf.trait_conscientiousness !== null) {
+      restore *= (1 + (dwarf.trait_conscientiousness - 0.5) * 0.5);
+    }
+    dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + restore);
   }
 }
 
@@ -568,73 +562,6 @@ function completeSmooth(task: Task, ctx: SimContext): void {
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'smooth_stone', existing?.material ?? null, existing?.is_mined ?? false);
 }
 
-function completeArtifact(dwarf: Dwarf, ctx: SimContext): void {
-  const { state } = ctx;
-
-  // Remove from strange mood tracking
-  state.strangeMoodDwarfIds.delete(dwarf.id);
-
-  // Generate artifact
-  const artifactName = generateArtifactName(dwarf, ctx.rng);
-  const category = randomArtifactCategory(ctx.rng);
-  const material = randomArtifactMaterial(ctx.rng);
-  const quality = randomArtifactQuality(ctx.rng);
-
-  const artifact: Item = {
-    id: ctx.rng.uuid(),
-    name: artifactName,
-    category,
-    quality,
-    material,
-    weight: ctx.rng.int(1, 10),
-    value: ctx.rng.int(200, 2000),
-    is_artifact: true,
-    created_by_dwarf_id: dwarf.id,
-    created_in_civ_id: ctx.civilizationId,
-    created_year: ctx.year,
-    held_by_dwarf_id: dwarf.id,
-    located_in_civ_id: ctx.civilizationId,
-    located_in_ruin_id: null,
-    position_x: null,
-    position_y: null,
-    position_z: null,
-    lore: `Created during a strange mood by ${dwarfName(dwarf)}.`,
-    properties: {},
-    created_at: new Date().toISOString(),
-  };
-
-  state.items.push(artifact);
-  state.dirtyItemIds.add(artifact.id);
-
-  // Reduce stress after completing the artifact
-  dwarf.stress_level = Math.max(0, dwarf.stress_level - 30);
-  state.dirtyDwarfIds.add(dwarf.id);
-
-  // Create lasting positive memories for the creator
-  createArtifactMemory(dwarf, state, ctx.year);
-  // Masterwork-tier items also add a separate, shorter-lived memory of craft pride
-  if (quality === 'masterwork' || quality === 'artifact') {
-    createMasterworkMemory(dwarf, state, ctx.year);
-  }
-
-  // Fire artifact_created event
-  state.pendingEvents.push({
-    id: ctx.rng.uuid(),
-    world_id: '',
-    year: ctx.year,
-    category: 'artifact_created',
-    civilization_id: ctx.civilizationId,
-    ruin_id: null,
-    dwarf_id: dwarf.id,
-    item_id: artifact.id,
-    faction_id: null,
-    monster_id: null,
-    description: `${dwarfName(dwarf)} has created "${artifactName}" in the grip of a strange mood!`,
-    event_data: { artifact_id: artifact.id, quality, material, category },
-    created_at: new Date().toISOString(),
-  });
-}
-
 function completeEngrave(task: Task, ctx: SimContext, dwarf: Dwarf): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
@@ -667,13 +594,6 @@ function completeEngrave(task: Task, ctx: SimContext, dwarf: Dwarf): void {
     event_data: { action: 'engrave', scene },
     created_at: new Date().toISOString(),
   });
-}
-
-function completeEngraveMemorial(task: Task, ctx: SimContext, dwarf: Dwarf): void {
-  if (task.target_x === null || task.target_y === null || task.target_z === null) return;
-
-  // Put a ghost to rest (nearest ghost to this tile)
-  putGhostToRest(task.target_x, task.target_y, dwarfName(dwarf), ctx);
 }
 
 /**

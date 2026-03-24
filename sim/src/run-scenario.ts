@@ -20,8 +20,6 @@ import {
   idleWandering,
   thoughtGeneration,
   haulAssignment,
-  beautyRestoration,
-  haunting,
   autoCookPhase,
   autoBrew,
   autoForage,
@@ -40,10 +38,6 @@ export interface ScenarioConfig {
   tasks?: Task[];
   /** Pre-placed fortress tiles — bypasses the fortress deriver for controlled map fixtures. */
   fortressTileOverrides?: FortressTile[];
-  /** Pre-infected dwarf IDs — seeds the disease system without relying on the outbreak roll. */
-  infectedDwarfIds?: string[];
-  /** Pre-registered ghost dwarf IDs — these dead dwarves haunt living dwarves from tick 0. */
-  ghostDwarfIds?: string[];
   ticks: number;
   seed?: number;
 }
@@ -89,17 +83,6 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
       state.fortressTileOverrides.set(`${tile.x},${tile.y},${tile.z}`, { ...tile });
     }
   }
-  if (config.infectedDwarfIds) {
-    for (const id of config.infectedDwarfIds) {
-      state.infectedDwarfIds.add(id);
-    }
-  }
-  if (config.ghostDwarfIds) {
-    for (const id of config.ghostDwarfIds) {
-      state.ghostDwarfIds.add(id);
-    }
-  }
-
   const ctx: SimContext = {
     supabase: null as unknown as SupabaseClient,
     civilizationId: "test-civ",
@@ -146,8 +129,6 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     await jobClaiming(ctx);
     await eventFiring(ctx);
     await thoughtGeneration(ctx);
-    await beautyRestoration(ctx);
-    await haunting(ctx);
 
     if (stepCount % STEPS_PER_YEAR === 0) {
       currentYear++;

@@ -5,7 +5,7 @@ import {
   completeBrew,
   completeCook,
   completeSmith,
-  restorePurposeNeed,
+  restoreMoraleOnTaskComplete,
   SMOOTHABLE_TILES,
 } from "../phases/task-completion.js";
 
@@ -153,16 +153,16 @@ describe("completeSmith", () => {
 });
 
 // ---------------------------------------------------------------------------
-// restorePurposeNeed — crafting tasks are SKILLED_TASKS
+// restoreMoraleOnTaskComplete — crafting tasks are SKILLED_TASKS
 // ---------------------------------------------------------------------------
 
-describe("restorePurposeNeed for crafting tasks", () => {
+describe("restoreMoraleOnTaskComplete for crafting tasks", () => {
   it.each(["smooth", "engrave", "brew", "cook", "smith"] as const)(
-    "%s restores purpose like a skilled task",
+    "%s restores morale like a skilled task",
     (taskType) => {
-      const dwarf = makeDwarf({ need_purpose: 50 });
-      restorePurposeNeed(dwarf, taskType);
-      expect(dwarf.need_purpose).toBeGreaterThan(50);
+      const dwarf = makeDwarf({ need_social: 50, trait_conscientiousness: null });
+      restoreMoraleOnTaskComplete(dwarf, taskType);
+      expect(dwarf.need_social).toBeGreaterThan(50);
     },
   );
 });
