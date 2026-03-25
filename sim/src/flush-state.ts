@@ -1,20 +1,35 @@
 import type { Task } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 
+/** Guard against overlapping flushes — if a flush takes longer than the
+ *  interval, skip subsequent calls instead of piling up concurrent writes. */
+let flushInProgress = false;
+
 /**
  * Flush dirty entities and pending events to Supabase.
  *
- * All flushes run in parallel via Promise.all. Errors are
- * logged with console.warn but do not throw — the sim keeps running
- * and will retry on the next flush cycle.
+ * All writes are sequential to avoid gotrue auth-lock contention.
+ * Parallel Supabase calls each independently acquire the browser auth
+ * lock, causing 5-second timeouts and UI lag. Sequential writes use
+ * one lock acquisition for the whole flush.
+ *
+ * Errors are logged with console.warn but do not throw — the sim keeps
+ * running and will retry on the next flush cycle.
  */
 export async function flushToSupabase(ctx: SimContext): Promise<void> {
+  if (flushInProgress) return;
+  flushInProgress = true;
+  try {
+    await doFlush(ctx);
+  } finally {
+    flushInProgress = false;
+  }
+}
+
+async function doFlush(ctx: SimContext): Promise<void> {
   const { state, supabase } = ctx;
 
   // ── Pre-flush cleanup: fix dangling foreign keys ──────────────────────
-  // Items can be consumed (spliced from state.items) between flush cycles.
-  // Tasks and dwarves that reference those items via target_item_id or
-  // current_task_id will violate FK constraints if flushed as-is.
   sanitizeDanglingRefs(state);
 
   const dirtyDwarves = state.dwarves.filter((d) =>
@@ -35,9 +50,10 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
     state.dirtyDwarfRelationshipIds.has(r.id),
   );
 
-  // ── Flush in FK-safe order: items → tasks → dwarves → everything else ──
+  // ── Flush sequentially in FK-safe order ───────────────────────────────
   // FK chain: tasks.target_item_id → items.id, dwarves.current_task_id → tasks.id
-  // Each level must exist in the DB before the next level references it.
+  // Sequential writes avoid gotrue auth-lock contention (one lock per request,
+  // released before the next request acquires it).
 
   // 1. Items first — tasks reference them via target_item_id
   if (dirtyItems.length > 0) {
@@ -45,24 +61,24 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
     if (error) console.warn(`[flush] items upsert failed: ${error.message}`);
   }
 
-  // 2. Tasks second — dwarves reference them via current_task_id
-  //    Use upsert for both new and dirty tasks. A task can appear in both
-  //    newTasks AND dirtyTasks (created then modified in the same window),
-  //    so deduplicate by ID — dirtyTasks version wins (more recent state).
+  // 2. Structures — sleep tasks reference them via target_item_id
+  if (dirtyStructures.length > 0) {
+    const { error } = await supabase.from("structures").upsert(dirtyStructures);
+    if (error) console.warn(`[flush] structures upsert failed: ${error.message}`);
+  }
+
+  // 3. Tasks — dwarves reference them via current_task_id
   const taskById = new Map<string, Task>();
   for (const t of newTasks) taskById.set(t.id, t);
-  for (const t of dirtyTasks) taskById.set(t.id, t); // overwrites newTasks entry
+  for (const t of dirtyTasks) taskById.set(t.id, t);
   const dedupedTasks = [...taskById.values()];
   if (dedupedTasks.length > 0) {
     const { error } = await supabase.from("tasks").upsert(dedupedTasks);
     if (error) console.warn(`[flush] tasks upsert failed: ${error.message}`);
   }
 
-  // 3. Everything else in parallel (dwarves can now safely reference tasks)
-  const promises: PromiseLike<void>[] = [];
-
+  // 4. Dwarves
   if (dirtyDwarves.length > 0) {
-    // Round need values — DB columns are integer, sim computes fractional decay
     const rounded = dirtyDwarves.map((d) => ({
       ...d,
       need_food: Math.round(d.need_food),
@@ -74,95 +90,54 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
       stress_level: Math.round(d.stress_level),
       health: Math.round(d.health),
     }));
-    promises.push(
-      supabase
-        .from("dwarves")
-        .upsert(rounded)
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] dwarves upsert failed: ${error.message}`);
-        }),
-    );
+    const { error } = await supabase.from("dwarves").upsert(rounded);
+    if (error) console.warn(`[flush] dwarves upsert failed: ${error.message}`);
   }
 
-  if (dirtyStructures.length > 0) {
-    promises.push(
-      supabase
-        .from("structures")
-        .upsert(dirtyStructures)
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] structures upsert failed: ${error.message}`);
-        }),
-    );
-  }
-
+  // 5. Monsters
   if (dirtyMonsters.length > 0) {
-    promises.push(
-      supabase
-        .from("monsters")
-        .upsert(dirtyMonsters)
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] monsters upsert failed: ${error.message}`);
-        }),
-    );
+    const { error } = await supabase.from("monsters").upsert(dirtyMonsters);
+    if (error) console.warn(`[flush] monsters upsert failed: ${error.message}`);
   }
 
+  // 6. Skills
   if (state.dirtyDwarfSkillIds.size > 0) {
     const dirtySkills = state.dwarfSkills.filter((s) =>
       state.dirtyDwarfSkillIds.has(s.id),
     );
     if (dirtySkills.length > 0) {
-      promises.push(
-        supabase
-          .from("dwarf_skills")
-          .upsert(dirtySkills)
-          .then(({ error }) => {
-            if (error) console.warn(`[flush] dwarf_skills upsert failed: ${error.message}`);
-          }),
-      );
+      const { error } = await supabase.from("dwarf_skills").upsert(dirtySkills);
+      if (error) console.warn(`[flush] dwarf_skills upsert failed: ${error.message}`);
     }
   }
 
+  // 7. Fortress tiles
   if (state.dirtyFortressTileKeys.size > 0) {
     const dirtyTiles = [...state.dirtyFortressTileKeys]
       .map((key) => state.fortressTileOverrides.get(key))
       .filter(Boolean);
     if (dirtyTiles.length > 0) {
-      promises.push(
-        supabase
-          .from("fortress_tiles")
-          .upsert(dirtyTiles, { onConflict: "civilization_id,x,y,z" })
-          .then(({ error }) => {
-            if (error) console.warn(`[flush] fortress_tiles upsert failed: ${error.message}`);
-          }),
-      );
+      const { error } = await supabase
+        .from("fortress_tiles")
+        .upsert(dirtyTiles, { onConflict: "civilization_id,x,y,z" });
+      if (error) console.warn(`[flush] fortress_tiles upsert failed: ${error.message}`);
     }
   }
 
+  // 8. Relationships
   if (newRelationships.length > 0) {
-    promises.push(
-      supabase
-        .from("dwarf_relationships")
-        .insert(newRelationships)
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] dwarf_relationships insert failed: ${error.message}`);
-        }),
-    );
+    const { error } = await supabase.from("dwarf_relationships").insert(newRelationships);
+    if (error) console.warn(`[flush] dwarf_relationships insert failed: ${error.message}`);
   }
-
   if (dirtyRelationships.length > 0) {
-    promises.push(
-      supabase
-        .from("dwarf_relationships")
-        .upsert(dirtyRelationships)
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] dwarf_relationships upsert failed: ${error.message}`);
-        }),
-    );
+    const { error } = await supabase.from("dwarf_relationships").upsert(dirtyRelationships);
+    if (error) console.warn(`[flush] dwarf_relationships upsert failed: ${error.message}`);
   }
 
+  // 9. Civilization status
   if (state.civFallen) {
-    promises.push(
-      supabase
+    {
+      const { error } = await supabase
         .from("civilizations")
         .update({
           status: 'fallen',
@@ -170,77 +145,52 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
           cause_of_death: state.civFallenCause,
           population: 0,
         })
-        .eq("id", ctx.civilizationId)
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] civilizations fallen update failed: ${error.message}`);
-        }),
-    );
-    // Fossilize: create a ruin record for this fallen fortress
-    promises.push(
-      supabase
-        .from("ruins")
-        .insert({
-          civilization_id: ctx.civilizationId,
-          world_id: ctx.worldId,
-          name: ctx.civName,
-          tile_x: ctx.civTileX,
-          tile_y: ctx.civTileY,
-          fallen_year: ctx.year,
-          cause_of_death: state.civFallenCause,
-          peak_population: state.civPeakPopulation,
-        })
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] ruins insert failed: ${error.message}`);
-        }),
-    );
+        .eq("id", ctx.civilizationId);
+      if (error) console.warn(`[flush] civilizations fallen update failed: ${error.message}`);
+    }
+    {
+      const { error } = await supabase.from("ruins").insert({
+        civilization_id: ctx.civilizationId,
+        world_id: ctx.worldId,
+        name: ctx.civName,
+        tile_x: ctx.civTileX,
+        tile_y: ctx.civTileY,
+        fallen_year: ctx.year,
+        cause_of_death: state.civFallenCause,
+        peak_population: state.civPeakPopulation,
+      });
+      if (error) console.warn(`[flush] ruins insert failed: ${error.message}`);
+    }
   } else if (state.civDirty) {
-    promises.push(
-      supabase
-        .from("civilizations")
-        .update({ population: state.civPopulation, wealth: state.civWealth })
-        .eq("id", ctx.civilizationId)
-        .then(({ error }) => {
-          if (error) console.warn(`[flush] civilizations update failed: ${error.message}`);
-        }),
-    );
+    const { error } = await supabase
+      .from("civilizations")
+      .update({ population: state.civPopulation, wealth: state.civWealth })
+      .eq("id", ctx.civilizationId);
+    if (error) console.warn(`[flush] civilizations update failed: ${error.message}`);
   }
 
+  // 10. Expeditions
   if (state.dirtyExpeditionIds.size > 0) {
     const dirtyExpeditions = state.expeditions.filter(e => state.dirtyExpeditionIds.has(e.id));
     if (dirtyExpeditions.length > 0) {
-      promises.push(
-        supabase
-          .from("expeditions")
-          .upsert(dirtyExpeditions)
-          .then(({ error }) => {
-            if (error) console.warn(`[flush] expeditions upsert failed: ${error.message}`);
-          }),
-      );
+      const { error } = await supabase.from("expeditions").upsert(dirtyExpeditions);
+      if (error) console.warn(`[flush] expeditions upsert failed: ${error.message}`);
     }
   }
 
+  // 11. Ruins
   if (state.dirtyRuinIds.size > 0) {
     const dirtyRuins = state.ruins.filter(r => state.dirtyRuinIds.has(r.id));
     if (dirtyRuins.length > 0) {
-      promises.push(
-        supabase
-          .from("ruins")
-          .upsert(dirtyRuins)
-          .then(({ error }) => {
-            if (error) console.warn(`[flush] ruins upsert failed: ${error.message}`);
-          }),
-      );
+      const { error } = await supabase.from("ruins").upsert(dirtyRuins);
+      if (error) console.warn(`[flush] ruins upsert failed: ${error.message}`);
     }
   }
 
+  // 12. Events (last — least critical, immutable)
   if (events.length > 0) {
-    // Stamp world_id on events (phases leave it empty).
-    // Deduplicate by ID before inserting — events from a failed previous flush
-    // may still be in the pendingEvents array. Also skip any IDs already sent.
     const worldId = ctx.worldId;
     const stamped = events.map((e) => ({ ...e, world_id: worldId }));
-    // Plain insert is fine — events are immutable (never updated).
-    // Duplicate IDs from retried flushes are handled by deduplicating in memory.
     const seen = new Set<string>();
     const unique = stamped.filter((e) => {
       if (seen.has(e.id)) return false;
@@ -248,23 +198,14 @@ export async function flushToSupabase(ctx: SimContext): Promise<void> {
       return true;
     });
     if (unique.length > 0) {
-      promises.push(
-        supabase
-          .from("world_events")
-          .insert(unique)
-          .then(({ error }) => {
-            if (error && !error.message.includes('duplicate key')) {
-              console.warn(`[flush] events insert failed: ${error.message}`);
-            }
-            // Silently ignore duplicate key errors — event already exists in DB
-          }),
-      );
+      const { error } = await supabase.from("world_events").insert(unique);
+      if (error && !error.message.includes('duplicate key')) {
+        console.warn(`[flush] events insert failed: ${error.message}`);
+      }
     }
   }
 
-  await Promise.all(promises);
-
-  // Clear dirty tracking after successful flush
+  // Clear dirty tracking
   state.dirtyDwarfIds.clear();
   state.dirtyItemIds.clear();
   state.dirtyStructureIds.clear();
