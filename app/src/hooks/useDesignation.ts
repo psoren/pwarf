@@ -12,6 +12,9 @@ import {
   WORK_BUILD_WELL,
   WORK_BUILD_MUSHROOM_GARDEN,
   WORK_BUILD_DOOR,
+  WORK_BUILD_STILL,
+  WORK_BUILD_KITCHEN,
+  WORK_BUILD_FORGE,
   WORK_DECONSTRUCT,
   WORK_FARM_TILL_BASE,
 } from "@pwarf/shared";
@@ -19,7 +22,7 @@ import { supabase } from "../lib/supabase";
 import type { FortressViewTile } from "./useFortressTiles";
 import type { OptimisticDesignation } from "./useTasks";
 
-export type DesignationMode = "none" | "mine" | "farm_till" | "build_wall" | "build_floor" | "build_bed" | "build_well" | "build_mushroom_garden" | "build_door" | "stockpile" | "deconstruct";
+export type DesignationMode = "none" | "mine" | "farm_till" | "build_wall" | "build_floor" | "build_bed" | "build_well" | "build_mushroom_garden" | "build_door" | "build_still" | "build_kitchen" | "build_forge" | "stockpile" | "deconstruct";
 
 const BUILD_TASK_TYPES = TASK_TYPES.filter(t => t.startsWith('build_'));
 
@@ -30,12 +33,16 @@ const BUILD_WORK: Record<string, number> = {
   build_well: WORK_BUILD_WELL,
   build_mushroom_garden: WORK_BUILD_MUSHROOM_GARDEN,
   build_door: WORK_BUILD_DOOR,
+  build_still: WORK_BUILD_STILL,
+  build_kitchen: WORK_BUILD_KITCHEN,
+  build_forge: WORK_BUILD_FORGE,
   farm_till: WORK_FARM_TILL_BASE,
 };
 
 /** Tile types that can be deconstructed. */
 const DECONSTRUCTIBLE: ReadonlySet<string> = new Set([
   'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden', 'door',
+  'still', 'kitchen', 'forge',
 ]);
 
 /** Tile types that can be designated as farm plots. */

@@ -93,6 +93,9 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
   // Accumulate all events fired across the run
   const allEvents: WorldEvent[] = [];
+  // Accumulate terminal (completed/cancelled/failed) tasks pruned from state.tasks,
+  // so test assertions on result.tasks still see the final status of every task.
+  const prunedTasks: Task[] = [];
   let stepCount = 0;
   let currentYear = 1;
 
@@ -103,12 +106,40 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     await runTick(ctx);
     currentYear = await maybeYearRollup(ctx, stepCount, currentYear);
 
-    // Flush pendingEvents → worldEvents (mirrors what flush-state does for the DB)
+    // Flush pendingEvents → allEvents directly (avoid growing state.worldEvents unboundedly).
+    // The real DB runner pushes to worldEvents for the flush cycle; the scenario runner
+    // collects them directly into allEvents to keep memory bounded.
     if (state.pendingEvents.length > 0) {
-      state.worldEvents.push(...state.pendingEvents);
+      allEvents.push(...state.pendingEvents);
       state.pendingEvents = [];
     }
-    allEvents.push(...state.worldEvents.slice(allEvents.length));
+
+    // Prune terminal tasks from the in-memory list to keep O(n) scans bounded.
+    // Completed/cancelled/failed tasks are accumulated in prunedTasks so
+    // test assertions on result.tasks still see every task's final status.
+    const surviving: Task[] = [];
+    for (const t of state.tasks) {
+      if (t.status === 'completed' || t.status === 'cancelled' || t.status === 'failed') {
+        prunedTasks.push(t);
+      } else {
+        surviving.push(t);
+      }
+    }
+    state.tasks = surviving;
+
+    // Clear bookkeeping arrays/sets that are only needed for the DB flush cycle.
+    // In scenarios there is no flush, so these accumulate unboundedly without a drain.
+    state.newTasks = [];
+    state.newDwarfRelationships = [];
+    state.dirtyTaskIds.clear();
+    state.dirtyDwarfIds.clear();
+    state.dirtyItemIds.clear();
+    state.dirtyStructureIds.clear();
+    state.dirtyDwarfSkillIds.clear();
+    state.dirtyDwarfRelationshipIds.clear();
+    state.dirtyFortressTileKeys.clear();
+    state.dirtyExpeditionIds.clear();
+    state.dirtyRuinIds.clear();
   }
 
   return {
@@ -116,7 +147,9 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     items: state.items,
     structures: state.structures,
     events: allEvents,
-    tasks: state.tasks,
+    // prunedTasks first preserves insertion order: tasks created earlier sort before later ones,
+    // so result.tasks[0] is the first task provided by the test (matches pre-idle-behavior behavior).
+    tasks: [...prunedTasks, ...state.tasks],
     expeditions: state.expeditions,
     ticks: stepCount,
     year: currentYear,

@@ -32,6 +32,13 @@ const WALKABLE_TILES: ReadonlySet<FortressTileType> = new Set([
   'rock',
   'bed',
   'door',
+  'still',
+  'kitchen',
+  'forge',
+  'flower',
+  'spring',
+  'glowing_moss',
+  'fungal_growth',
   'cave_mushroom',
 ]);
 
@@ -143,15 +150,18 @@ export function bfsNextStep(
   const visited = new Set<string>();
   const parent = new Map<string, Position>();
 
+  // Use an indexed array as an O(1) dequeue — `head` tracks the front index.
+  // This avoids the O(n) cost of Array.shift() on large queues.
   const queue: Position[] = [start];
+  let head = 0;
   visited.add(posKey(start));
 
-  while (queue.length > 0) {
+  while (head < queue.length) {
     if (visited.size >= MAX_BFS_NODES) {
       return null; // Search space exhausted — no path
     }
 
-    const current = queue.shift()!;
+    const current = queue[head++]!;
     const neighbors = getNeighbors(current, getTile, zResolver);
 
     for (const neighbor of neighbors) {

@@ -1,11 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
-import { makeDwarf, makeSkill, makeTask, makeItem, makeMapTile } from "./test-helpers.js";
+import { makeDwarf, makeSkill, makeTask, makeItem, makeMapTile, makeStructure } from "./test-helpers.js";
 
 describe("auto-brew material filter", () => {
-  it("does not consume stone blocks for brewing", async () => {
-    // Scenario: fortress has stone blocks but no plant materials.
-    // Auto-brew should NOT create a brew task since there are no plant raw_materials.
+  it("does not consume stone blocks for brewing (and creates no brew task without a still)", async () => {
+    // Scenario: fortress has stone blocks but no plant materials and no still.
+    // Auto-brew should NOT create a brew task.
 
     const dwarf = makeDwarf({
       name: "Brewer",
@@ -29,6 +29,7 @@ describe("auto-brew material filter", () => {
         makeItem({ name: "Stone block", category: "raw_material", material: "stone", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
         makeItem({ name: "Stone block", category: "raw_material", material: "stone", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
       ],
+      structures: [], // no still
       tasks: [],
       fortressTileOverrides: tiles,
       ticks: 100,
@@ -44,8 +45,8 @@ describe("auto-brew material filter", () => {
     expect(brewTasks.length).toBe(0);
   });
 
-  it("correctly brews with plant raw_materials", async () => {
-    // Scenario: fortress has plant raw_materials. Auto-brew should use them.
+  it("correctly brews with plant raw_materials when a still is present", async () => {
+    // Scenario: fortress has plant raw_materials and a still. Auto-brew should use them.
 
     const dwarf = makeDwarf({
       name: "Brewer",
@@ -57,9 +58,22 @@ describe("auto-brew material filter", () => {
       need_sleep: 100,
     });
 
-    const tiles = Array.from({ length: 10 }, (_, x) =>
-      Array.from({ length: 10 }, (_, y) => makeMapTile(x, y, 0, "grass")),
-    ).flat();
+    const still = makeStructure({
+      type: "still",
+      civilization_id: "test-civ",
+      completion_pct: 100,
+      occupied_by_dwarf_id: null,
+      position_x: 5,
+      position_y: 5,
+      position_z: 0,
+    });
+
+    const tiles = [
+      ...Array.from({ length: 10 }, (_, x) =>
+        Array.from({ length: 10 }, (_, y) => makeMapTile(x, y, 0, "grass")),
+      ).flat(),
+      makeMapTile(5, 5, 0, "still"),
+    ];
 
     const result = await runScenario({
       dwarves: [dwarf],
@@ -70,9 +84,10 @@ describe("auto-brew material filter", () => {
         // Stone block — should NOT be consumed
         makeItem({ name: "Stone block", category: "raw_material", material: "stone", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
       ],
+      structures: [still],
       tasks: [],
       fortressTileOverrides: tiles,
-      ticks: 100,
+      ticks: 200,
       seed: 42,
     });
 
