@@ -12,7 +12,7 @@ import {
 import type { Dwarf, Task } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { getDwarfSkillLevel, getRequiredSkill } from "../task-helpers.js";
-import { bfsNextStep, type ZResolver } from "../pathfinding.js";
+import { bfsNextStep, getNeighbors, type ZResolver } from "../pathfinding.js";
 import { buildTileLookup } from "../tile-lookup.js";
 import { canPickUp, pickUpItem } from "../inventory.js";
 import { handleDeprivationDeaths } from "./deprivation.js";
@@ -124,6 +124,17 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
         ? isAdjacentToTarget(dwarf, task)
         : (dwarf.position_x === task.target_x && dwarf.position_y === task.target_y && dwarf.position_z === task.target_z);
 
+      // Special case: dwarf is standing ON an adjacent task's target.
+      // They need to step off to an adjacent tile before they can work.
+      if (!atSite && needsAdjacent
+        && dwarf.position_x === task.target_x && dwarf.position_y === task.target_y && dwarf.position_z === task.target_z) {
+        const stepped = stepOffTarget(dwarf, task, ctx, occupiedTiles, zResolver);
+        if (!stepped) {
+          failTask(dwarf, task, state);
+        }
+        continue;
+      }
+
       if (!atSite) {
         const moved = moveTowardTarget(dwarf, task, ctx, occupiedTiles, zResolver);
         if (!moved) {
@@ -220,6 +231,37 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
   dwarf.position_z = nextStep.z;
   ctx.state.dirtyDwarfIds.add(dwarf.id);
   return true;
+}
+
+/**
+ * Move the dwarf off the target tile to any adjacent walkable tile.
+ * Used when a dwarf is standing ON an adjacent task's target — they
+ * need to step off before they can work (e.g. deconstruct the floor
+ * they're standing on).
+ */
+function stepOffTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTiles: Set<string>, zResolver?: ZResolver): boolean {
+  const getTile = buildTileLookup(ctx);
+  const neighbors = getNeighbors(
+    { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z },
+    getTile,
+    zResolver,
+  );
+
+  for (const neighbor of neighbors) {
+    const key = `${neighbor.x},${neighbor.y},${neighbor.z}`;
+    if (occupiedTiles.has(key)) continue;
+
+    const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
+    occupiedTiles.delete(prevKey);
+    occupiedTiles.add(key);
+    dwarf.position_x = neighbor.x;
+    dwarf.position_y = neighbor.y;
+    dwarf.position_z = neighbor.z;
+    ctx.state.dirtyDwarfIds.add(dwarf.id);
+    return true;
+  }
+
+  return false; // All neighbors blocked
 }
 
 /**
