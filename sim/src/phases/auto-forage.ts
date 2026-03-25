@@ -1,9 +1,6 @@
-import { MIN_FORAGE_FOOD_STOCK, WORK_FORAGE } from "@pwarf/shared";
+import { MIN_FORAGE_FOOD_STOCK, WORK_FORAGE, FORAGEABLE_TILE_TYPES } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createTask } from "../task-helpers.js";
-
-/** Tile types that dwarves can forage food from. */
-const FORAGEABLE_TILES = new Set(['grass', 'tree', 'bush', 'flower', 'fungal_growth', 'cave_mushroom']);
 
 /**
  * Auto-Forage Phase
@@ -39,7 +36,7 @@ export async function autoForage(ctx: SimContext): Promise<void> {
   let targetZ: number | null = null;
 
   for (const tile of state.fortressTileOverrides.values()) {
-    if (FORAGEABLE_TILES.has(tile.tile_type)) {
+    if (FORAGEABLE_TILE_TYPES.has(tile.tile_type)) {
       targetX = tile.x;
       targetY = tile.y;
       targetZ = tile.z;

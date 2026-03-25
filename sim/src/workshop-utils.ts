@@ -1,13 +1,8 @@
-import { WORKSHOP_INGREDIENT_RADIUS } from "@pwarf/shared";
+import { WORKSHOP_INGREDIENT_RADIUS, TASK_WORKSHOP_MAP } from "@pwarf/shared";
 import type { Item, Structure, Task } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 
-/** Maps crafting task types to their required workshop tile/structure type. */
-export const TASK_WORKSHOP_MAP: Record<string, string> = {
-  brew:  'still',
-  cook:  'kitchen',
-  smith: 'forge',
-};
+export { TASK_WORKSHOP_MAP };
 
 /**
  * Find the first available (unoccupied, complete) workshop of the given type

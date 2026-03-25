@@ -7,6 +7,12 @@ import {
   CAVE_NAME_ADJECTIVES,
   CAVE_NAME_NOUNS,
   CAVE_NAME_MATERIALS,
+  CAVE_GLOWING_MOSS_THRESHOLD,
+  CAVE_FUNGAL_GROWTH_THRESHOLD,
+  CAVE_MUSHROOM_THRESHOLD,
+  SURFACE_FLOWER_THRESHOLD,
+  SURFACE_SPRING_REGION_OFFSET,
+  SURFACE_SPRING_DETAIL_OFFSET,
 } from "./constants.js";
 
 // ============================================================
@@ -419,7 +425,7 @@ export function deriveSurfaceTile(
   }
 
   // Flowers — appear in grass regions with a different noise detail threshold
-  if (treeRegion < p.bushRegionMin && treeDetail > 0.85) {
+  if (treeRegion < p.bushRegionMin && treeDetail > SURFACE_FLOWER_THRESHOLD) {
     return { tileType: "flower", material: null };
   }
 
@@ -429,7 +435,7 @@ export function deriveSurfaceTile(
   }
 
   // Spring — very rare natural water source
-  if (pondRegion > p.pondRegion + 0.1 && pondVal > p.pondDetail + 0.15) {
+  if (pondRegion > p.pondRegion + SURFACE_SPRING_REGION_OFFSET && pondVal > p.pondDetail + SURFACE_SPRING_DETAIL_OFFSET) {
     return { tileType: "spring", material: null };
   }
 
@@ -529,13 +535,13 @@ export function createFortressDeriver(
         if (cave.grid[cy * CAVE_SIZE + cx]) {
           // Floor variants using noise
           const floorVal = (cave.floorNoise(cx * 0.07, cy * 0.07) + 1) / 2;
-          if (floorVal > 0.92) {
+          if (floorVal > CAVE_GLOWING_MOSS_THRESHOLD) {
             return { tileType: "glowing_moss", material: null };
           }
-          if (floorVal > 0.87) {
+          if (floorVal > CAVE_FUNGAL_GROWTH_THRESHOLD) {
             return { tileType: "fungal_growth", material: null };
           }
-          if (floorVal > 0.82) {
+          if (floorVal > CAVE_MUSHROOM_THRESHOLD) {
             return { tileType: "cave_mushroom", material: "mushroom" };
           }
           return { tileType: "cavern_floor", material: null };

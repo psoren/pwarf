@@ -1,4 +1,4 @@
-import type { TaskType } from "./db-types.js";
+import type { FortressTileType, TaskType } from "./db-types.js";
 
 // ============================================================
 // Domain sets
@@ -9,6 +9,41 @@ export const AUTONOMOUS_TASK_TYPES: ReadonlySet<TaskType> = new Set(['eat', 'dri
 
 /** Task types that represent idle behavior (can be interrupted by higher-priority work). */
 export const IDLE_TASK_TYPES: ReadonlySet<string> = new Set(['wander', 'socialize', 'rest']);
+
+/** Task types where the dwarf stands adjacent to (not on) the target tile. */
+export const ADJACENT_TASK_TYPES: ReadonlySet<TaskType> = new Set([
+  'mine', 'build_wall', 'deconstruct', 'socialize', 'rest',
+]);
+
+/** Task types that restore morale when completed (player-designatable skilled work). */
+export const SKILLED_TASK_TYPES: ReadonlySet<TaskType> = new Set([
+  'mine', 'build_wall', 'build_floor', 'build_bed', 'build_well',
+  'build_mushroom_garden', 'build_door', 'build_still', 'build_kitchen',
+  'build_forge', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest',
+  'brew', 'cook', 'smith', 'forage',
+]);
+
+/** Tile types that dwarves can forage food from. */
+export const FORAGEABLE_TILE_TYPES: ReadonlySet<FortressTileType> = new Set([
+  'grass', 'tree', 'bush', 'flower', 'fungal_growth', 'cave_mushroom',
+]);
+
+/** Maps crafting task types to their required workshop structure type. */
+export const TASK_WORKSHOP_MAP: Record<string, string> = {
+  brew: 'still',
+  cook: 'kitchen',
+  smith: 'forge',
+};
+
+// Cave floor variant generation thresholds
+export const CAVE_GLOWING_MOSS_THRESHOLD = 0.92;
+export const CAVE_FUNGAL_GROWTH_THRESHOLD = 0.87;
+export const CAVE_MUSHROOM_THRESHOLD = 0.82;
+
+// Surface feature generation thresholds
+export const SURFACE_FLOWER_THRESHOLD = 0.85;
+export const SURFACE_SPRING_REGION_OFFSET = 0.1;
+export const SURFACE_SPRING_DETAIL_OFFSET = 0.15;
 
 // ============================================================
 // Simulation timing

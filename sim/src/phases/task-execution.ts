@@ -9,6 +9,7 @@ import {
   HARDNESS_GEM,
   HARDNESS_CAVE_MUSHROOM,
   CONSCIENTIOUSNESS_WORK_MULTIPLIER,
+  ADJACENT_TASK_TYPES,
 } from "@pwarf/shared";
 import type { Dwarf, Task } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -19,9 +20,6 @@ import { canPickUp, pickUpItem } from "../inventory.js";
 import { handleDeprivationDeaths } from "./deprivation.js";
 import { completeTask } from "./task-completion.js";
 import { releaseWorkshopOccupancy } from "../workshop-utils.js";
-
-/** Task types where the dwarf stands adjacent to (not on) the target tile. */
-const ADJACENT_TASK_TYPES: ReadonlySet<string> = new Set(['mine', 'build_wall', 'deconstruct', 'socialize', 'rest']);
 
 /** Max ticks a dwarf will wait for occupancy to clear before releasing its task. */
 const MAX_OCCUPANCY_WAIT_TICKS = 10;

@@ -19,13 +19,14 @@ import {
   MORALE_RESTORE_HAUL_TASK,
   SKILL_TIER_NAMES,
   AUTONOMOUS_TASK_TYPES,
+  SKILLED_TASK_TYPES,
   generateCaveName,
   getCaveSeed,
   SOCIALIZE_MORALE_RESTORE,
   REST_MORALE_RESTORE,
   SOCIALIZE_ACQUAINTANCE_CHANCE,
 } from "@pwarf/shared";
-import type { Dwarf, FortressTile, FortressTileType, Task, Item, ItemCategory, Structure } from "@pwarf/shared";
+import type { Dwarf, FortressTile, FortressTileType, Task, Item, ItemCategory, Structure, TaskType } from "@pwarf/shared";
 import type { SimContext, CachedState } from "../sim-context.js";
 import { canPickUp } from "../inventory.js";
 import { dwarfName } from "../dwarf-utils.js";
@@ -252,8 +253,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
  * Exported for unit testing.
  */
 export function restoreMoraleOnTaskComplete(dwarf: Dwarf, taskType: string): void {
-  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'build_door', 'build_still', 'build_kitchen', 'build_forge', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'brew', 'cook', 'smith', 'forage']);
-  let restore = SKILLED_TASKS.has(taskType)
+  let restore = SKILLED_TASK_TYPES.has(taskType as TaskType)
     ? MORALE_RESTORE_SKILLED_TASK
     : taskType === 'haul'
       ? MORALE_RESTORE_HAUL_TASK
