@@ -521,4 +521,98 @@ describe("taskExecution", () => {
       expect(soilTask.work_progress).toBeGreaterThan(stoneTask.work_progress);
     });
   });
+
+  describe("anti-oscillation", () => {
+    it("prevents a dwarf from oscillating via alt-path backtracking", async () => {
+      // Narrow 1-wide corridor: (0,0) → (1,0) → (2,0) → (3,0)
+      // Everything else is wall. Dwarf at (1,0), blocker at (2,0), task at (3,0).
+      // Primary BFS says go to (2,0), but it's occupied. Alt BFS can only
+      // route back to (0,0). With anti-oscillation: dwarf waits instead.
+      const blocker = makeDwarf({
+        position_x: 2,
+        position_y: 0,
+        position_z: 0,
+      });
+
+      const task = makeTask("farm_till", {
+        status: "in_progress",
+        target_x: 3,
+        target_y: 0,
+        target_z: 0,
+        work_required: 100,
+        work_progress: 0,
+      });
+
+      const dwarf = makeDwarf({
+        current_task_id: task.id,
+        position_x: 1,
+        position_y: 0,
+        position_z: 0,
+      });
+      task.assigned_dwarf_id = dwarf.id;
+
+      const ctx = makeContext({ dwarves: [dwarf, blocker], tasks: [task] });
+
+      // Use a deriver that returns walls everywhere — only overrides are walkable
+      ctx.fortressDeriver = {
+        deriveTile: () => ({ tileType: 'constructed_wall' as const, material: 'stone', isMined: false }),
+        baseTileType: 'constructed_wall' as any,
+        getZForEntrance: () => null,
+        getEntranceForZ: () => null,
+        getCaveName: () => null,
+      } as any;
+
+      // Only the corridor tiles are walkable
+      for (let x = 0; x <= 3; x++) {
+        ctx.state.fortressTileOverrides.set(`${x},0,0`, makeMapTile(x, 0, 0, "open_air"));
+      }
+
+      // Simulate that the dwarf previously came from (0,0)
+      ctx.state._previousPositions = new Map();
+      ctx.state._previousPositions.set(dwarf.id, "0,0,0");
+
+      await taskExecution(ctx);
+
+      // The dwarf should NOT have moved back to (0,0) — should stay at (1,0)
+      expect(dwarf.position_x).toBe(1);
+      expect(dwarf.position_y).toBe(0);
+
+      // Occupancy wait counter should have incremented
+      expect(ctx.state._occupancyWaitTicks?.get(dwarf.id)).toBe(1);
+    });
+
+    it("records previous position on successful movement", async () => {
+      const task = makeTask("farm_till", {
+        status: "in_progress",
+        target_x: 3,
+        target_y: 0,
+        target_z: 0,
+        work_required: 100,
+        work_progress: 0,
+      });
+
+      const dwarf = makeDwarf({
+        current_task_id: task.id,
+        position_x: 0,
+        position_y: 0,
+        position_z: 0,
+      });
+      task.assigned_dwarf_id = dwarf.id;
+
+      const ctx = makeContext({ dwarves: [dwarf], tasks: [task] });
+
+      // Set up walkable corridor
+      for (let x = 0; x <= 3; x++) {
+        ctx.state.fortressTileOverrides.set(`${x},0,0`, makeMapTile(x, 0, 0, "open_air"));
+      }
+
+      await taskExecution(ctx);
+
+      // Dwarf should have moved to (1,0,0)
+      expect(dwarf.position_x).toBe(1);
+
+      // Previous position should be recorded as (0,0,0)
+      expect(ctx.state._previousPositions?.get(dwarf.id)).toBe("0,0,0");
+    });
+  });
 });
