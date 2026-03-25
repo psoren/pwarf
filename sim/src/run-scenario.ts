@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Dwarf, DwarfSkill, FortressTile, Item, StockpileTile, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
+import type { Dwarf, DwarfSkill, Expedition, FortressDeriver, FortressTile, Item, Ruin, StockpileTile, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext, CachedState } from "./sim-context.js";
 import { createEmptyCachedState, createRng } from "./sim-context.js";
 import { DEFAULT_TEST_SEED } from "./rng.js";
@@ -13,11 +13,15 @@ export interface ScenarioConfig {
   items?: Item[];
   structures?: Structure[];
   monsters?: Monster[];
+  expeditions?: Expedition[];
+  ruins?: Ruin[];
   tasks?: Task[];
   /** Pre-placed fortress tiles — bypasses the fortress deriver for controlled map fixtures. */
   fortressTileOverrides?: FortressTile[];
   /** Pre-placed stockpile tiles for haul testing. */
   stockpileTiles?: StockpileTile[];
+  /** Fortress deriver for cave entrance lookups and procedural tile generation. */
+  fortressDeriver?: FortressDeriver;
   ticks: number;
   seed?: number;
 }
@@ -34,6 +38,8 @@ export interface ScenarioResult {
   events: WorldEvent[];
   /** All tasks at end of run. */
   tasks: Task[];
+  /** Active and completed expeditions at end of run. */
+  expeditions: Expedition[];
   /** Total ticks executed. */
   ticks: number;
   /** Final in-game year. */
@@ -57,6 +63,8 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
   state.items = config.items ? config.items.map(i => ({ ...i })) : [];
   state.structures = config.structures ? config.structures.map(s => ({ ...s })) : [];
   state.monsters = config.monsters ? config.monsters.map(m => ({ ...m })) : [];
+  state.expeditions = config.expeditions ? config.expeditions.map(e => ({ ...e })) : [];
+  state.ruins = config.ruins ? config.ruins.map(r => ({ ...r })) : [];
   state.tasks = config.tasks ? config.tasks.map(t => ({ ...t })) : [];
   if (config.fortressTileOverrides) {
     for (const tile of config.fortressTileOverrides) {
@@ -75,7 +83,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     civName: "Test Fortress",
     civTileX: 0,
     civTileY: 0,
-    fortressDeriver: null,
+    fortressDeriver: config.fortressDeriver ?? null,
     step: 0,
     year: 1,
     day: 1,
@@ -109,6 +117,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     structures: state.structures,
     events: allEvents,
     tasks: state.tasks,
+    expeditions: state.expeditions,
     ticks: stepCount,
     year: currentYear,
     fortressTileOverrides: [...state.fortressTileOverrides.values()],

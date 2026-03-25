@@ -126,6 +126,7 @@ All sim phase ordering lives in `sim/src/tick.ts` (`runTick`, `advanceTime`, `ma
 ## Database migrations
 
 - **Every new table or schema change needs a migration file.** If code references a new Supabase table or column (in `load-state.ts`, a hook, the sim, etc.), a corresponding `supabase/migrations/` file must exist. No exceptions. Forgetting this means the schema only exists in production and breaks every other environment.
+- **Adding a value to a TypeScript `as const` enum requires a matching migration.** When you add a new entry to `TASK_TYPES`, `DWARF_STATUSES`, or any other `as const` array that maps to a Postgres enum, you **must** also write a migration with `ALTER TYPE <enum> ADD VALUE IF NOT EXISTS '<value>';`. The TypeScript type system cannot catch this — inserts will silently fail at runtime. This has caused bugs before (e.g. `scout_cave`, `forage`, `build_well`, `build_door`, `deconstruct`, `build_mushroom_garden` were all missing).
 - **Never apply changes via Supabase MCP without also writing a migration file.** If you use MCP to apply a policy or column, immediately write and commit the corresponding `supabase/migrations/00NNN_name.sql` file in the same PR.
 - **After writing a migration, apply it to production via Supabase MCP** in the same PR. Migration files are not auto-applied — they must be explicitly applied with `mcp__supabase__apply_migration`.
 - **Playtests must be run against local Supabase** for any PR that touches DB schema. A playtest against production will silently pass even if the migration is missing.
