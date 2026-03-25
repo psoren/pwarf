@@ -10,7 +10,6 @@ import {
   monsterSpawning,
   monsterPathfinding,
   combatResolution,
-  constructionProgress,
   jobClaiming,
   eventFiring,
   yearlyRollup,
@@ -35,7 +34,6 @@ export async function runTick(ctx: SimContext): Promise<void> {
   await monsterPathfinding(ctx);
   await combatResolution(ctx);
   expeditionTick(ctx);
-  await constructionProgress(ctx);
   await haulAssignment(ctx);
   taskRecovery(ctx);
   await autoCookPhase(ctx);

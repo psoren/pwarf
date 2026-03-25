@@ -117,6 +117,13 @@ export interface CachedState {
    * Not persisted — if the sim restarts mid-expedition, loot is lost.
    */
   _pendingExpeditionLoot: Map<string, Array<{ category: ItemCategory; material: string; quality: ItemQuality }>>;
+
+  /**
+   * Tracks how many consecutive ticks each dwarf has been waiting due to
+   * occupancy blocking. Keyed by dwarf ID. Cleared on successful movement.
+   * In-memory only; not persisted.
+   */
+  _occupancyWaitTicks?: Map<string, number>;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */

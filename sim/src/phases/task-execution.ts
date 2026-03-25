@@ -21,6 +21,9 @@ import { completeTask } from "./task-completion.js";
 /** Task types where the dwarf stands adjacent to (not on) the target tile. */
 const ADJACENT_TASK_TYPES: ReadonlySet<string> = new Set(['mine', 'build_wall', 'deconstruct']);
 
+/** Max ticks a dwarf will wait for occupancy to clear before releasing its task. */
+const MAX_OCCUPANCY_WAIT_TICKS = 10;
+
 /**
  * Task Execution Phase
  *
@@ -96,6 +99,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
               }
               const finalKey = `${haulNext.x},${haulNext.y},${haulNext.z}`;
               if (!occupiedTiles.has(finalKey)) {
+                ctx.state._occupancyWaitTicks?.delete(dwarf.id);
                 const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
                 occupiedTiles.delete(prevKey);
                 occupiedTiles.add(finalKey);
@@ -103,6 +107,15 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
                 dwarf.position_y = haulNext.y;
                 dwarf.position_z = haulNext.z;
                 state.dirtyDwarfIds.add(dwarf.id);
+              } else {
+                // Blocked by occupancy — track wait and fail after threshold
+                const waitTicks = (ctx.state._occupancyWaitTicks?.get(dwarf.id) ?? 0) + 1;
+                if (!ctx.state._occupancyWaitTicks) ctx.state._occupancyWaitTicks = new Map();
+                ctx.state._occupancyWaitTicks.set(dwarf.id, waitTicks);
+                if (waitTicks >= MAX_OCCUPANCY_WAIT_TICKS) {
+                  ctx.state._occupancyWaitTicks.delete(dwarf.id);
+                  failTask(dwarf, task, state);
+                }
               }
             } else {
               failTask(dwarf, task, state);
@@ -216,9 +229,22 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
     if (altStep) {
       nextStep = altStep;
     } else {
-      return true; // All paths blocked — wait, don't fail the task
+      // All paths blocked by occupancy — track wait ticks and fail after threshold
+      // so the task gets released and can be reclaimed when the area clears.
+      const waitKey = dwarf.id;
+      const waitTicks = (ctx.state._occupancyWaitTicks?.get(waitKey) ?? 0) + 1;
+      if (!ctx.state._occupancyWaitTicks) ctx.state._occupancyWaitTicks = new Map();
+      ctx.state._occupancyWaitTicks.set(waitKey, waitTicks);
+      if (waitTicks >= MAX_OCCUPANCY_WAIT_TICKS) {
+        ctx.state._occupancyWaitTicks.delete(waitKey);
+        return false; // Give up — release the task
+      }
+      return true; // Wait a bit longer
     }
   }
+
+  // Successfully moving — clear any occupancy wait counter
+  ctx.state._occupancyWaitTicks?.delete(dwarf.id);
 
   // Update occupancy tracking
   const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;

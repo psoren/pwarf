@@ -12,7 +12,6 @@ export { combatResolution } from "./combat-resolution.js";
 export { findNearestDwarf, stepToward } from "./monster-pathfinding.js";
 export { rollDamage } from "./combat-resolution.js";
 export { generateMonsterName } from "./monster-spawning.js";
-export { constructionProgress } from "./construction-progress.js";
 export { jobClaiming } from "./job-claiming.js";
 export { eventFiring } from "./event-firing.js";
 export { yearlyRollup } from "./yearly-rollup.js";
