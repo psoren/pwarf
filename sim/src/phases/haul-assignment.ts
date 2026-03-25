@@ -143,7 +143,7 @@ export function findBestStockpile(
     if (count >= STOCKPILE_TILE_CAPACITY) continue;
 
     // Skip if this stockpile doesn't accept the item's category
-    if (tile.accepts_categories !== null && !tile.accepts_categories.includes(itemCategory)) continue;
+    if (tile.accepts_categories != null && !tile.accepts_categories.includes(itemCategory)) continue;
 
     const dist = manhattanDistance(
       { x: fromX, y: fromY, z: fromZ },
