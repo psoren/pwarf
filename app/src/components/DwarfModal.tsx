@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { DwarfSkill, Item } from "@pwarf/shared";
-import { DWARF_CARRY_CAPACITY } from "@pwarf/shared";
+import { DWARF_CARRY_CAPACITY, AUTONOMOUS_TASK_TYPES, IDLE_TASK_TYPES } from "@pwarf/shared";
 import { supabase } from "../lib/supabase";
 import type { LiveDwarf, DwarfThought } from "../hooks/useDwarves";
 import type { ActiveTask } from "../hooks/useTasks";
@@ -14,14 +14,18 @@ interface DwarfModalProps {
   tasks?: ActiveTask[];
 }
 
-const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
+/** Task types that should not show a work percentage in the dwarf job label. */
+const NO_PROGRESS_TASK_TYPES: ReadonlySet<string> = new Set([
+  ...AUTONOMOUS_TASK_TYPES,
+  ...IDLE_TASK_TYPES,
+]);
 
 function dwarfJobLabel(d: LiveDwarf, tasks?: ActiveTask[]): string {
   if (!d.current_task_id) return "Idle";
   const task = tasks?.find(t => t.id === d.current_task_id);
   if (!task) return "Working";
   const label = task.task_type.replace(/_/g, " ");
-  if (AUTONOMOUS_TASK_TYPES.has(task.task_type) || task.work_required === 0) {
+  if (NO_PROGRESS_TASK_TYPES.has(task.task_type) || task.work_required === 0) {
     return label;
   }
   const pct = Math.round((task.work_progress / task.work_required) * 100);

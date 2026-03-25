@@ -20,6 +20,12 @@ jobs:
       - run: npm ci
       - run: npm run build
         name: Typecheck all workspaces
+      - name: Verify clean rebuild (catch stale .d.ts cache)
+        run: |
+          rm -rf shared/dist sim/dist
+          npm run build --workspace=shared
+          npm run build --workspace=sim
+          npm run build --workspace=app
       - run: npm test
         name: Run tests
       - run: node scripts/check-migrations.mjs
