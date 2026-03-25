@@ -231,9 +231,9 @@ export function restoreMoraleOnTaskComplete(dwarf: Dwarf, taskType: string): voi
         : 0;
 
   if (restore > 0) {
-    // Apply conscientiousness modifier
+    // Apply conscientiousness modifier (clamped same as work rate to handle legacy -3..3 values)
     if (dwarf.trait_conscientiousness !== null) {
-      restore *= (1 + (dwarf.trait_conscientiousness - 0.5) * 0.5);
+      restore *= Math.max(0.1, 1 + (dwarf.trait_conscientiousness - 0.5) * 0.5);
     }
     dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + restore);
   }
@@ -612,11 +612,10 @@ export function completeBrew(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   // Consume a plant raw_material at the target tile (or anywhere in inventory)
   const plant = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'raw_material', 'plant') ??
     findItemHeldBy(ctx, dwarf.id, 'raw_material', 'plant');
-  if (plant) {
-    const idx = ctx.state.items.findIndex(i => i.id === plant.id);
-    if (idx !== -1) ctx.state.items.splice(idx, 1);
-    ctx.state.dirtyItemIds.add(plant.id);
-  }
+  if (!plant) return; // No ingredient — nothing to brew
+  const plantIdx = ctx.state.items.findIndex(i => i.id === plant.id);
+  if (plantIdx !== -1) ctx.state.items.splice(plantIdx, 1);
+  ctx.state.dirtyItemIds.add(plant.id);
 
   // Produce ale drink item
   const ale: Item = {
@@ -654,11 +653,10 @@ export function completeCook(dwarf: Dwarf, task: Task, ctx: SimContext): void {
 
   const ingredient = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'food') ??
     findItemHeldBy(ctx, dwarf.id, 'food');
-  if (ingredient) {
-    const idx = ctx.state.items.findIndex(i => i.id === ingredient.id);
-    if (idx !== -1) ctx.state.items.splice(idx, 1);
-    ctx.state.dirtyItemIds.add(ingredient.id);
-  }
+  if (!ingredient) return; // No ingredient — nothing to cook
+  const ingredientIdx = ctx.state.items.findIndex(i => i.id === ingredient.id);
+  if (ingredientIdx !== -1) ctx.state.items.splice(ingredientIdx, 1);
+  ctx.state.dirtyItemIds.add(ingredient.id);
 
   const meal: Item = {
     id: ctx.rng.uuid(),
