@@ -1,0 +1,28 @@
+{
+  "id": "2026-03-25T03-42-52",
+  "timestamp": "2026-03-25T03:42:52.993Z",
+  "title": "Digest — Mar 25, 2026, 03:42 AM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nHello Pwarf community! Here are the latest changes merged into the main branch that enhance performance and stability.\n\n## Major Enhancements\n- **Single RPC for State Management**: We introduced a new Postgres function, `flush_state()`, which consolidates the state update process. This replaces 12 separate REST calls with just 1 RPC call, improving efficiency significantly. The function can now handle inserts in any order due to `DEFERRABLE` foreign key constraints.\n\n## Bug Fixes\n- **Task Deduplication**: To prevent errors during upsert operations, we now deduplicate tasks by their IDs. This change addresses issues with conflicting updates that occurred when a task appeared in both `newTasks` and `dirtyTasks`. Integration tests were also updated to reject duplicate IDs, ensuring consistency with real PostgreSQL behavior.\n\nStay tuned for more updates, and thank you for being part of the Pwarf community!\n\n## Merged PRs\n- #635\n- #632\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 635,
+      "title": "feat: single RPC flush_state replaces 12 REST calls (closes #634)",
+      "url": "https://github.com/psoren/pwarf/pull/635"
+    },
+    {
+      "number": 632,
+      "title": "fix: deduplicate tasks before upsert to prevent duplicate-row error (closes #630)",
+      "url": "https://github.com/psoren/pwarf/pull/632"
+    }
+  ],
+  "images": []
+}
