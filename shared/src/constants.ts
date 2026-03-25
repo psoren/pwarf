@@ -482,6 +482,7 @@ export const HARDNESS_STONE = 1.0;
 export const HARDNESS_IGNITE = 1.5;
 export const HARDNESS_ORE = 1.2;
 export const HARDNESS_GEM = 1.4;
+export const HARDNESS_CAVE_MUSHROOM = 0.2;
 
 // ============================================================
 // XP awards

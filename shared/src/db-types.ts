@@ -182,6 +182,7 @@ export type FortressTileType =
   | 'ice'
   | 'mud'
   | 'cave_entrance'
+  | 'cave_mushroom'
   | 'empty';
 
 // ============================================================

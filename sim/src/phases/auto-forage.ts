@@ -3,7 +3,7 @@ import type { SimContext } from "../sim-context.js";
 import { createTask } from "../task-helpers.js";
 
 /** Tile types that dwarves can forage food from. */
-const FORAGEABLE_TILES = new Set(['grass', 'tree', 'bush']);
+const FORAGEABLE_TILES = new Set(['grass', 'tree', 'bush', 'cave_mushroom']);
 
 /**
  * Auto-Forage Phase

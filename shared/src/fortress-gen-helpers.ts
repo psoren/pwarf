@@ -166,11 +166,14 @@ function caveSeed(baseSeed: bigint, entranceX: number, entranceY: number): bigin
   return baseSeed ^ BigInt(entranceX * 7919 + entranceY * 6271);
 }
 
+/** Noise threshold for cave mushroom patches (lower = more common). */
+const CAVE_MUSHROOM_THRESHOLD = 0.78;
+
 function buildCaveForEntrance(
   baseSeed: bigint,
   entranceX: number,
   entranceY: number,
-): { grid: boolean[]; materialNoises: NoiseFunction2D[] } {
+): { grid: boolean[]; materialNoises: NoiseFunction2D[]; mushroomNoise: NoiseFunction2D } {
   const seed = caveSeed(baseSeed, entranceX, entranceY);
   const rng = createAleaRng(seed);
   const noise = createNoise2D(rng);
@@ -189,7 +192,8 @@ function buildCaveForEntrance(
   }
 
   const materialNoises: NoiseFunction2D[] = CAVE_MATERIALS.map(() => createNoise2D(rng));
-  return { grid, materialNoises };
+  const mushroomNoise = createNoise2D(rng);
+  return { grid, materialNoises, mushroomNoise };
 }
 
 // ============================================================
@@ -456,7 +460,7 @@ export function createFortressDeriver(
     entrances.map(e => [e.z, e]),
   );
 
-  const caveCache = new Map<number, { grid: boolean[]; materialNoises: NoiseFunction2D[] }>();
+  const caveCache = new Map<number, { grid: boolean[]; materialNoises: NoiseFunction2D[]; mushroomNoise: NoiseFunction2D }>();
 
   function getCaveData(z: number) {
     const entrance = entranceByZ.get(z);
@@ -515,6 +519,11 @@ export function createFortressDeriver(
         }
 
         if (cave.grid[cy * CAVE_SIZE + cx]) {
+          // Check for mushroom patches on cave floor tiles
+          const mushroomVal = (cave.mushroomNoise(cx * 0.06, cy * 0.06) + 1) / 2;
+          if (mushroomVal > CAVE_MUSHROOM_THRESHOLD) {
+            return { tileType: "cave_mushroom", material: "mushroom" };
+          }
           return { tileType: "cavern_floor", material: null };
         }
 
