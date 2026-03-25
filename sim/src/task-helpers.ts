@@ -18,6 +18,9 @@ const TASK_SKILL_MAP: Record<TaskType, SkillName | null> = {
   build_well: 'building',
   build_mushroom_garden: 'building',
   build_door: 'building',
+  build_still: 'building',
+  build_kitchen: 'building',
+  build_forge: 'building',
   deconstruct: 'building',
   wander: null,
   engrave_memorial: 'engraving',
@@ -27,6 +30,8 @@ const TASK_SKILL_MAP: Record<TaskType, SkillName | null> = {
   create_artifact: null,
   forage: null,
   scout_cave: null,
+  socialize: null,
+  rest: null,
 };
 
 /** Get the skill name required for a task type, or null if no skill needed. */

@@ -133,6 +133,12 @@ export interface CachedState {
    * In-memory only; not persisted.
    */
   _previousPositions?: Map<string, string>;
+
+  /**
+   * Cooldown tracking: tick when each dwarf last completed an idle task.
+   * Keyed by dwarf ID. In-memory only; not persisted.
+   */
+  _idleCooldowns: Map<string, number>;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */
@@ -176,6 +182,7 @@ export function createEmptyCachedState(): CachedState {
     ruins: [],
     dirtyRuinIds: new Set(),
     _pendingExpeditionLoot: new Map(),
+    _idleCooldowns: new Map(),
   };
 }
 

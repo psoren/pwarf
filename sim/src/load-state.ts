@@ -147,5 +147,6 @@ export async function loadStateFromSupabase(
     ruins: (ruinsResult.data ?? []) as Ruin[],
     dirtyRuinIds: new Set(),
     _pendingExpeditionLoot: new Map(),
+    _idleCooldowns: new Map(),
   };
 }
