@@ -333,8 +333,20 @@ function incrementOccupancyWait(dwarf: Dwarf, ctx: SimContext): boolean {
   return true; // Wait a bit longer
 }
 
+/**
+ * Task types that should be cancelled (not re-queued) when they fail.
+ * These are self-generated — haul tasks are recreated by haulAssignment,
+ * eat/drink/sleep by needSatisfaction.
+ */
+const NO_REQUEUE_TASK_TYPES: ReadonlySet<string> = new Set([
+  'haul', 'eat', 'drink', 'sleep',
+]);
+
 function failTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {
-  task.status = 'pending';
+  // Self-generated tasks (haul, eat, drink, sleep) get cancelled — their
+  // respective phases will recreate them if still needed. This prevents the
+  // fail→pending→reclaim→fail loop that kept haul tasks stuck at 0%.
+  task.status = NO_REQUEUE_TASK_TYPES.has(task.task_type) ? 'cancelled' : 'pending';
   task.assigned_dwarf_id = null;
   task.work_progress = 0;
   state.dirtyTaskIds.add(task.id);

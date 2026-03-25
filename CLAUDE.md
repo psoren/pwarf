@@ -127,6 +127,7 @@ All sim phase ordering lives in `sim/src/tick.ts` (`runTick`, `advanceTime`, `ma
 
 ## PR Self-Review
 
+- **Always rebase onto `origin/main` before creating a PR.** Run `git rebase origin/main` (or `git fetch origin && git rebase origin/main`) so the PR contains only your commits — not merge commits or unrelated history from a stale branch point.
 - **Run `npm test` and `npm run build` before creating a PR.** Confirm both pass before pushing.
 - **Every PR must be self-reviewed after creation, before merging.** The workflow is: push branch → create PR → run `/review-pr` → fix blocking issues → merge.
 - `/review-pr` checks diff, tests, types, code quality, and embeds the Claude cost in the PR description.
