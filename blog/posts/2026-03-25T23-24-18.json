@@ -1,0 +1,32 @@
+{
+  "id": "2026-03-25T23-24-18",
+  "timestamp": "2026-03-25T23:24:18.124Z",
+  "title": "Digest — Mar 25, 2026, 11:24 PM UTC",
+  "summary": "# Pwarf Devlog: Recent Changes\n\nHello, Pwarf community! Here’s the latest update on the game as we continually refine your experience. We've focused on improving task management and enhancing how information is presented in the UI.\n\n## Task Management Improvements\n- **Haul Task Fix**: We tackled a critical issue where haul tasks got stuck in a 0% loop due to recurring failure. Now, when a haul, eat, drink, or sleep task fails due to reasons like full inventory or unreachable items, it's **cancelled** instead of being re-queued. This change ensures smoother gameplay without frustrating loop scenarios.\n\n## UI Enhancements\n- **Idle Task Display Fix**: We repaired a misleading progress display for idle tasks in both the LeftPanel and DwarfModal. Previously, these components had local versions of task types that omitted `socialize` and `rest`. The display now accurately reflects progress, eliminating confusing percentages, and has been updated to use dynamic imports from `@pwarf/shared`.\n\nThese updates enhance both functionality and clarity, making the game experience more enjoyable. Thank you for your continued support and feedback as we build a better world together!\n\n## Merged PRs\n- #677 \n- #679\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 677,
+      "title": "fix: break haul task fail-reclaim loop stuck at 0% (closes #676)",
+      "url": "https://github.com/psoren/pwarf/pull/677",
+      "cost": {
+        "amount": "$18.86",
+        "tokens": "31.8M tokens"
+      }
+    },
+    {
+      "number": 679,
+      "title": "fix: idle task display + missing socialize/rest types",
+      "url": "https://github.com/psoren/pwarf/pull/679"
+    }
+  ],
+  "images": []
+}
