@@ -22,12 +22,16 @@ import {
   generateCaveName,
   getCaveSeed,
 } from "@pwarf/shared";
-import type { Dwarf, FortressTile, FortressTileType, Task, Item, Structure } from "@pwarf/shared";
+import type { Dwarf, FortressTile, FortressTileType, Task, Item, ItemCategory, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { canPickUp } from "../inventory.js";
 import { dwarfName } from "../dwarf-utils.js";
 import { createTask } from "../task-helpers.js";
 import { consumeResources } from "../resource-check.js";
+import { generateArtifactName, randomArtifactQuality } from "../artifact-names.js";
+
+/** Chance of finding a rare artifact when mining a gem tile. */
+export const ARTIFACT_CHANCE_GEM = 0.05;
 
 /** Build task type → resulting fortress tile type. */
 const BUILD_TILE_MAP: Record<string, FortressTileType> = {
@@ -242,21 +246,24 @@ export function restoreMoraleOnTaskComplete(dwarf: Dwarf, taskType: string): voi
 function completeMine(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
-  // Look up the tile type being mined (check overrides first, then deriver)
+  // Look up the tile type and material being mined (check overrides first, then deriver)
   const key = `${task.target_x},${task.target_y},${task.target_z}`;
   const override = ctx.state.fortressTileOverrides.get(key);
   let tileType = override?.tile_type ?? null;
+  let tileMaterial = override?.material ?? null;
   if (!tileType && ctx.fortressDeriver) {
-    tileType = ctx.fortressDeriver.deriveTile(task.target_x, task.target_y, task.target_z).tileType;
+    const derived = ctx.fortressDeriver.deriveTile(task.target_x, task.target_y, task.target_z);
+    tileType = derived.tileType;
+    tileMaterial = derived.material;
   }
 
-  const { itemName, itemMaterial, itemWeight, itemValue } = getMineProduct(tileType);
+  const { itemName, itemCategory, itemMaterial, itemWeight, itemValue } = getMineProduct(tileType, tileMaterial);
 
   if (itemName) {
     const minedItem: Item = {
       id: ctx.rng.uuid(),
       name: itemName,
-      category: 'raw_material',
+      category: itemCategory,
       quality: 'standard',
       material: itemMaterial,
       weight: itemWeight,
@@ -289,29 +296,77 @@ function completeMine(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     ctx.state.dirtyItemIds.add(minedItem.id);
   }
 
+  // Rare artifact find: 5% chance when mining gem tiles
+  if (tileType === 'gem' && ctx.rng.random() < ARTIFACT_CHANCE_GEM) {
+    const artifact = createGemArtifact(dwarf, task, ctx, tileMaterial);
+    ctx.state.items.push(artifact);
+    ctx.state.dirtyItemIds.add(artifact.id);
+
+    const dwarfLabel = dwarfName(dwarf);
+    ctx.state.pendingEvents.push({
+      id: ctx.rng.uuid(),
+      world_id: '',
+      year: ctx.year,
+      category: 'discovery',
+      civilization_id: ctx.civilizationId,
+      ruin_id: null,
+      dwarf_id: dwarf.id,
+      item_id: artifact.id,
+      faction_id: null,
+      monster_id: null,
+      description: `${dwarfLabel} unearthed ${artifact.name}!`,
+      event_data: { action: 'artifact_find', item_name: artifact.name },
+      created_at: new Date().toISOString(),
+    });
+  }
+
   // Surface features (z=0) become the biome base tile (grass, mud, sand, etc.);
-  // underground becomes open_air
+  // underground becomes open_air (cave mushrooms revert to cavern_floor since they grow on the floor)
   const baseTile = ctx.fortressDeriver?.baseTileType ?? 'grass';
-  const resultTile: FortressTileType = task.target_z === 0 ? baseTile : 'open_air';
-  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, resultTile, null, true);
+  let resultTile: FortressTileType;
+  if (task.target_z === 0) {
+    resultTile = baseTile;
+  } else if (tileType === 'cave_mushroom') {
+    resultTile = 'cavern_floor';
+  } else {
+    resultTile = 'open_air';
+  }
+  upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, resultTile, null, tileType !== 'cave_mushroom');
+}
+
+/** Capitalize the first letter of a string. */
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 /** Returns the item produced when mining a given tile type. */
-export function getMineProduct(tileType: string | null): {
+export function getMineProduct(tileType: string | null, material: string | null = null): {
   itemName: string | null;
+  itemCategory: ItemCategory;
   itemMaterial: string;
   itemWeight: number;
   itemValue: number;
 } {
   switch (tileType) {
     case 'tree':
-      return { itemName: 'Wood log', itemMaterial: 'wood', itemWeight: 8, itemValue: 2 };
+      return { itemName: 'Wood log', itemCategory: 'raw_material', itemMaterial: 'wood', itemWeight: 8, itemValue: 2 };
     case 'rock':
-      return { itemName: 'Stone block', itemMaterial: 'stone', itemWeight: 10, itemValue: 1 };
+    case 'cavern_wall':
+      return { itemName: 'Stone block', itemCategory: 'raw_material', itemMaterial: 'stone', itemWeight: 10, itemValue: 1 };
+    case 'ore': {
+      const mat = material ?? 'iron';
+      return { itemName: `${capitalize(mat)} ore`, itemCategory: 'raw_material', itemMaterial: mat, itemWeight: 8, itemValue: 5 };
+    }
+    case 'gem': {
+      const mat = material ?? 'gem';
+      return { itemName: capitalize(mat), itemCategory: 'gem', itemMaterial: mat, itemWeight: 2, itemValue: 15 };
+    }
+    case 'cave_mushroom':
+      return { itemName: 'Cave mushroom', itemCategory: 'food', itemMaterial: 'mushroom', itemWeight: 1, itemValue: 2 };
     case 'bush':
-      return { itemName: null, itemMaterial: '', itemWeight: 0, itemValue: 0 };
+      return { itemName: null, itemCategory: 'raw_material', itemMaterial: '', itemWeight: 0, itemValue: 0 };
     default:
-      return { itemName: 'Stone block', itemMaterial: 'stone', itemWeight: 10, itemValue: 1 };
+      return { itemName: 'Stone block', itemCategory: 'raw_material', itemMaterial: 'stone', itemWeight: 10, itemValue: 1 };
   }
 }
 
@@ -762,6 +817,34 @@ export function completeScoutCave(dwarf: Dwarf, task: Task, ctx: SimContext): vo
     event_data: { action: 'scout_cave', cave_name: caveName, cave_z: caveZ },
     created_at: new Date().toISOString(),
   });
+}
+
+/** Creates a rare artifact item when mining gems. */
+function createGemArtifact(dwarf: Dwarf, task: Task, ctx: SimContext, material: string | null): Item {
+  const name = generateArtifactName(dwarf, ctx.rng);
+  const quality = randomArtifactQuality(ctx.rng);
+  return {
+    id: ctx.rng.uuid(),
+    name,
+    category: 'gem',
+    quality,
+    material: material ?? 'crystal',
+    weight: 1,
+    value: 50,
+    is_artifact: true,
+    created_by_dwarf_id: dwarf.id,
+    created_in_civ_id: ctx.civilizationId,
+    created_year: ctx.year,
+    held_by_dwarf_id: null,
+    located_in_civ_id: ctx.civilizationId,
+    located_in_ruin_id: null,
+    position_x: task.target_x,
+    position_y: task.target_y,
+    position_z: task.target_z,
+    lore: `Unearthed from deep beneath the earth by ${dwarfName(dwarf)} in year ${ctx.year}.`,
+    properties: {},
+    created_at: new Date().toISOString(),
+  };
 }
 
 /** Find the first item at a given tile position with the given category (and optionally material). */
