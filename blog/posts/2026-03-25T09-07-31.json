@@ -1,0 +1,94 @@
+{
+  "id": "2026-03-25T09-07-31",
+  "timestamp": "2026-03-25T09:07:31.586Z",
+  "title": "Digest — Mar 25, 2026, 09:07 AM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nHello, Pwarf community! We've been hard at work since our last digest and are excited to share several important updates, both in bug fixes and feature enhancements. Let's dive in!\n\n## Bug Fixes\n- **Scout Task Management**: The scout cave task now correctly waits for task insertion and logs any errors, improving user feedback when issues arise.\n- **Dwarf Pathfinding**: Updated dwarf movement logic ensures they step off adjacent task targets before starting work, which should prevent unwanted overlaps.\n- **Oscillation Prevention**: Dwarves will no longer oscillate between two tiles due to pathfinding issues, thanks to enhanced tracking of their previous positions.\n- **Haul Task Claims**: Fixed an issue where the wrong dwarf could claim haul tasks, which would cause indefinite task cycling at 0%.\n- **Task Type Queries**: Switched from using `.like()` to `.in()` for enumerated task types to ensure proper querying in PostgreSQL.\n- **Resource Management for Brew/Cook**: Added requirements for ingredients in cooking and brewing processes, ensuring no items are created from nothing.\n- **Item Drop on Death**: Dwarves now drop their items upon death, preventing loss of important resources.\n\n## Feature Enhancements\n- **Cave Scout Confirmation Modal**: A new confirmation modal appears when interacting with undiscovered caves, showing task status and allowing for better decision-making.\n- **System Improvements**: Removed a redundant session check to eliminate auth lock contention, enhancing performance.\n\n## Testing Improvements\n- **Comprehensive Testing**: Added 16 integration tests for various gameplay systems, improving our testing framework and strengthening overall game reliability.\n- **Occupancy Deadlock**: Resolved a critical occupancy deadlock issue, which would sometimes prevent dwarves from progressing with their tasks.\n\nWe’re committed to making Pwarf a robust and delightful experience, so your feedback and engagement are always welcome!\n\n## Merged PRs\n- #663\n- #661\n- #660\n- #659\n- #656\n- #655\n- #650\n- #648\n- #646\n- #645\n- #641\n- #639\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 663,
+      "title": "fix: await scout_cave task insert instead of silent fire-and-forget",
+      "url": "https://github.com/psoren/pwarf/pull/663"
+    },
+    {
+      "number": 661,
+      "title": "fix: dwarf steps off adjacent task target before working (closes #640)",
+      "url": "https://github.com/psoren/pwarf/pull/661"
+    },
+    {
+      "number": 660,
+      "title": "fix: prevent dwarf oscillation between two tiles",
+      "url": "https://github.com/psoren/pwarf/pull/660",
+      "cost": {
+        "amount": "$10.42",
+        "tokens": "14.7M tokens"
+      }
+    },
+    {
+      "number": 659,
+      "title": "fix: prevent wrong dwarf from claiming haul tasks for held items (closes #658)",
+      "url": "https://github.com/psoren/pwarf/pull/659"
+    },
+    {
+      "number": 656,
+      "title": "fix: use .in() instead of .like() for enum task_type column",
+      "url": "https://github.com/psoren/pwarf/pull/656",
+      "cost": {
+        "amount": "$0.91",
+        "tokens": "512k tokens"
+      }
+    },
+    {
+      "number": 655,
+      "title": "fix: brew/cook require ingredients, dead dwarves drop items, clamp morale",
+      "url": "https://github.com/psoren/pwarf/pull/655"
+    },
+    {
+      "number": 650,
+      "title": "feat: add cave scout confirmation modal",
+      "url": "https://github.com/psoren/pwarf/pull/650",
+      "cost": {
+        "amount": "$1.79",
+        "tokens": "1.7M tokens"
+      }
+    },
+    {
+      "number": 648,
+      "title": "fix: remove redundant getSession() to eliminate auth lock contention",
+      "url": "https://github.com/psoren/pwarf/pull/648",
+      "cost": {
+        "amount": "$1.54",
+        "tokens": "1.7M tokens"
+      }
+    },
+    {
+      "number": 646,
+      "title": "test: comprehensive scenario tests for beds, monsters, caves, priorities",
+      "url": "https://github.com/psoren/pwarf/pull/646"
+    },
+    {
+      "number": 645,
+      "title": "fix: occupancy deadlock and remove construction-progress stub",
+      "url": "https://github.com/psoren/pwarf/pull/645"
+    },
+    {
+      "number": 641,
+      "title": "fix: dwarves can now use held items to build",
+      "url": "https://github.com/psoren/pwarf/pull/641"
+    },
+    {
+      "number": 639,
+      "title": "test: fix dist/ duplicates + add missing test coverage (closes #638)",
+      "url": "https://github.com/psoren/pwarf/pull/639"
+    }
+  ],
+  "images": []
+}
