@@ -527,13 +527,16 @@ export function createFortressDeriver(
         }
 
         if (cave.grid[cy * CAVE_SIZE + cx]) {
-          // Floor variants: glowing_moss (~10%) and fungal_growth (~5%)
+          // Floor variants using noise
           const floorVal = (cave.floorNoise(cx * 0.07, cy * 0.07) + 1) / 2;
-          if (floorVal > 0.90) {
+          if (floorVal > 0.92) {
             return { tileType: "glowing_moss", material: null };
           }
-          if (floorVal > 0.85) {
+          if (floorVal > 0.87) {
             return { tileType: "fungal_growth", material: null };
+          }
+          if (floorVal > 0.82) {
+            return { tileType: "cave_mushroom", material: "mushroom" };
           }
           return { tileType: "cavern_floor", material: null };
         }

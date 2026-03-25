@@ -192,6 +192,7 @@ export type FortressTileType =
   | 'crystal'
   | 'glowing_moss'
   | 'fungal_growth'
+  | 'cave_mushroom'
   | 'empty';
 
 // ============================================================

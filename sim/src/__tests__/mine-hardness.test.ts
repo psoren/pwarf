@@ -8,6 +8,7 @@ import {
   HARDNESS_ORE,
   HARDNESS_GEM,
   HARDNESS_IGNITE,
+  HARDNESS_CAVE_MUSHROOM,
   WORK_MINE_BASE,
 } from "@pwarf/shared";
 
@@ -35,6 +36,11 @@ describe("getTileHardness", () => {
   it("gem is harder than ore", () => {
     expect(getTileHardness("gem")).toBe(HARDNESS_GEM);
     expect(HARDNESS_GEM).toBeGreaterThan(HARDNESS_ORE);
+  });
+
+  it("cave_mushroom has very low hardness (fastest to mine)", () => {
+    expect(getTileHardness("cave_mushroom")).toBe(HARDNESS_CAVE_MUSHROOM);
+    expect(HARDNESS_CAVE_MUSHROOM).toBeLessThan(HARDNESS_SOIL);
   });
 
   it("lava_stone and cavern_wall have highest hardness", () => {

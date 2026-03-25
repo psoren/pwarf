@@ -51,6 +51,7 @@ export const FORTRESS_GLYPHS: Record<FortressTileType, { ch: string; fg: string 
   crystal:            { ch: "\u25C7", fg: "#88ffff" },
   glowing_moss:       { ch: "\u00B7", fg: "#44ff88" },
   fungal_growth:      { ch: "\u2663", fg: "#aa88cc" },
+  cave_mushroom:      { ch: "\u2660", fg: "#55aa55" },
   empty:              { ch: " ",  fg: "#000" },
 };
 

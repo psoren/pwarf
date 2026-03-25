@@ -543,7 +543,7 @@ describe("Tile Variety Chaos", () => {
     expect(shard!.material).toBe("crystal");
     expect(shard!.value).toBe(15);
     expect(shard!.weight).toBe(3);
-    expect(shard!.category).toBe("raw_material");
+    expect(shard!.category).toBe("gem");
   });
 
   it("10. forage a fungal_growth tile — Cave Mushroom produced", async () => {

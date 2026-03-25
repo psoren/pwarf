@@ -90,6 +90,10 @@ describe("isWalkable", () => {
   it("gem is not walkable (underground wall)", () => {
     expect(isWalkable("gem")).toBe(false);
   });
+
+  it("cave_mushroom is walkable (cave floor feature)", () => {
+    expect(isWalkable("cave_mushroom")).toBe(true);
+  });
 });
 
 describe("getNeighbors", () => {
