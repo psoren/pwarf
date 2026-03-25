@@ -108,6 +108,7 @@ export function findNearestWaterSource(
   fromX: number,
   fromY: number,
   fromZ: number,
+  springTiles?: Array<{ x: number; y: number; z: number }>,
 ): { x: number; y: number; z: number; itemId: string | null } | null {
   // Prefer well structures (infinite supply)
   let nearest: { x: number; y: number; z: number; itemId: string | null } | null = null;
@@ -122,6 +123,17 @@ export function findNearestWaterSource(
     if (dist < nearestDist) {
       nearest = { x: s.position_x, y: s.position_y, z: s.position_z, itemId: null };
       nearestDist = dist;
+    }
+  }
+
+  // Natural spring tiles (infinite supply, like wells)
+  if (springTiles) {
+    for (const spring of springTiles) {
+      const dist = Math.abs(spring.x - fromX) + Math.abs(spring.y - fromY) + Math.abs(spring.z - fromZ) * 10;
+      if (dist < nearestDist) {
+        nearest = { x: spring.x, y: spring.y, z: spring.z, itemId: null };
+        nearestDist = dist;
+      }
     }
   }
 
@@ -210,7 +222,10 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
     targetY = food.held_by_dwarf_id === dwarf.id ? dwarf.position_y : (food.position_y ?? dwarf.position_y);
     targetZ = food.held_by_dwarf_id === dwarf.id ? dwarf.position_z : (food.position_z ?? dwarf.position_z);
   } else if (taskType === 'drink') {
-    const water = findNearestWaterSource(state.structures, state.items, dwarf.id, dwarf.position_x, dwarf.position_y, dwarf.position_z);
+    const springTiles = [...state.fortressTileOverrides.values()]
+      .filter(t => t.tile_type === 'spring')
+      .map(t => ({ x: t.x, y: t.y, z: t.z }));
+    const water = findNearestWaterSource(state.structures, state.items, dwarf.id, dwarf.position_x, dwarf.position_y, dwarf.position_z, springTiles);
     if (!water) return; // No water available — dwarf goes thirsty
     targetX = water.x;
     targetY = water.y;

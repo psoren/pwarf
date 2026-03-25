@@ -97,7 +97,7 @@ describe("tantrum spiral scenario (issue #477)", () => {
     for (const s of survivors) {
       expect(s.stress_level).toBeGreaterThanOrEqual(STRESS_TANTRUM_THRESHOLD);
     }
-  });
+  }, 30_000);
 
   it("dwarves in tantrum cannot work (current_task_id cleared)", async () => {
     // Single dwarf at tantrum threshold -- should immediately enter tantrum

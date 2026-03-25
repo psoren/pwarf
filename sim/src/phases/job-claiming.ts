@@ -4,6 +4,7 @@ import {
   SCORE_DISTANCE_WEIGHT,
   SCORE_BEST_SKILL_BONUS,
   DWARF_CARRY_CAPACITY,
+  IDLE_TASK_TYPES,
 } from "@pwarf/shared";
 import type { Dwarf, Task } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -18,6 +19,7 @@ import {
 import { manhattanDistance } from "../pathfinding.js";
 import { getCarriedWeight } from "../inventory.js";
 import { hasResources } from "../resource-check.js";
+import { setWorkshopOccupancy } from "../workshop-utils.js";
 
 /**
  * Job Claiming Phase
@@ -31,7 +33,25 @@ export async function jobClaiming(ctx: SimContext): Promise<void> {
   const pendingTasks = state.tasks.filter(t => t.status === 'pending');
   if (pendingTasks.length === 0) return;
 
-  const idleDwarves = state.dwarves.filter(isDwarfIdle);
+  // Build a fast task lookup map to avoid O(n) searches in the dwarf filter below
+  const taskById = new Map<string, Task>();
+  for (const task of state.tasks) {
+    // Only index active tasks (claimed/in_progress) — completed tasks aren't needed here
+    const s = task.status;
+    if (s === 'claimed' || s === 'in_progress') {
+      taskById.set(task.id, task);
+    }
+  }
+
+  const idleDwarves = state.dwarves.filter(d => {
+    if (isDwarfIdle(d)) return true;
+    // Dwarves on idle tasks can be reassigned to higher-priority work
+    if (d.current_task_id) {
+      const currentTask = taskById.get(d.current_task_id);
+      if (currentTask && IDLE_TASK_TYPES.has(currentTask.task_type)) return true;
+    }
+    return false;
+  });
   if (idleDwarves.length === 0) return;
 
   // Track which tasks get claimed this tick to avoid double-assignment
@@ -81,7 +101,7 @@ export async function jobClaiming(ctx: SimContext): Promise<void> {
     }
 
     if (bestTask) {
-      claimTask(dwarf, bestTask, ctx);
+      claimTask(dwarf, bestTask, ctx, taskById);
       claimedTaskIds.add(bestTask.id);
     }
   }
@@ -109,11 +129,27 @@ function scoreTask(dwarf: Dwarf, task: Task, skills: SimContext['state']['dwarfS
     - (distance * SCORE_DISTANCE_WEIGHT);
 }
 
-function claimTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+function claimTask(dwarf: Dwarf, task: Task, ctx: SimContext, taskById?: Map<string, Task>): void {
   const { state } = ctx;
+
+  // If dwarf is on an idle task, cancel it before claiming the new task
+  if (dwarf.current_task_id) {
+    const oldTask = taskById
+      ? taskById.get(dwarf.current_task_id)
+      : state.tasks.find(t => t.id === dwarf.current_task_id);
+    if (oldTask && IDLE_TASK_TYPES.has(oldTask.task_type)) {
+      oldTask.status = 'cancelled';
+      state.dirtyTaskIds.add(oldTask.id);
+      dwarf.current_task_id = null;
+    }
+  }
+
   task.status = 'claimed';
   task.assigned_dwarf_id = dwarf.id;
   dwarf.current_task_id = task.id;
+
+  // Mark workshop as occupied when claiming a crafting task
+  setWorkshopOccupancy(task, dwarf.id, state);
 
   state.dirtyDwarfIds.add(dwarf.id);
   state.dirtyTaskIds.add(task.id);

@@ -1240,12 +1240,11 @@ describe("Auto-system feedback loops", () => {
   });
 
   it("test-32: autoBrew sees plant material, creates brew task, dwarf completes brew — drink count increases", async () => {
-    // WHY: autoBrew requires plant raw_material. completeBrew consumes it. If the plant
-    // item is held by a different dwarf (not the brewer), findItemAt fails and the plant
-    // is also checked via findItemHeldBy. The test verifies ale is produced.
-    const brewer = makeDwarf({ name: "Brewer", need_drink: 80, need_food: 80 });
+    // WHY: autoBrew requires plant raw_material AND a still workshop. completeBrew consumes
+    // the plant within WORKSHOP_INGREDIENT_RADIUS. The test verifies ale is produced.
+    const brewer = makeDwarf({ name: "Brewer", need_drink: 80, need_food: 80, position_x: 3, position_y: 3 });
     const brewSkill = makeSkill(brewer.id, "brewing", 5, 500);
-    // Plant at a ground location (not held)
+    // Plant at a ground location near the still (not held)
     const plant = makeItem({
       category: "raw_material",
       material: "plant",
@@ -1254,11 +1253,28 @@ describe("Auto-system feedback loops", () => {
       position_y: 3,
       position_z: 0,
     });
+    // Still needed for brewing to work
+    const still = makeStructure({
+      type: "still",
+      civilization_id: "test-civ",
+      completion_pct: 100,
+      occupied_by_dwarf_id: null,
+      position_x: 3,
+      position_y: 3,
+      position_z: 0,
+    });
+
+    const tiles = Array.from({ length: 10 }, (_, x) =>
+      Array.from({ length: 10 }, (_, y) => makeMapTile(x, y, 0, "grass")),
+    ).flat();
+    tiles.push(makeMapTile(3, 3, 0, "still"));
 
     const result = await runScenario({
       dwarves: [brewer],
       dwarfSkills: [brewSkill],
       items: [plant],
+      structures: [still],
+      fortressTileOverrides: tiles,
       ticks: 300,
     });
 

@@ -74,10 +74,10 @@ describe("createFortressDeriver", () => {
     expect(differences).toBeGreaterThan(0);
   });
 
-  it("z=0 has surface features (grass, tree, rock, bush, pond) or cave_entrance", () => {
+  it("z=0 has surface features (grass, tree, rock, bush, pond, flower, spring) or cave_entrance", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
     const surfaceTypes = new Set([
-      "grass", "tree", "rock", "bush", "pond", "cave_entrance",
+      "grass", "tree", "rock", "bush", "pond", "cave_entrance", "flower", "spring",
     ]);
     for (let x = 0; x < 50; x++) {
       for (let y = 0; y < 50; y++) {
@@ -150,13 +150,13 @@ describe("createFortressDeriver", () => {
     }
   });
 
-  it("ore/gem tiles in caves have non-null material", () => {
+  it("ore/gem/crystal tiles in caves have non-null material", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
     const z = d.entrances[0]?.z ?? CAVE_Z;
     for (let x = CAVE_OFFSET; x < CAVE_OFFSET + CAVE_SIZE; x += 2) {
       for (let y = CAVE_OFFSET; y < CAVE_OFFSET + CAVE_SIZE; y += 2) {
         const tile = d.deriveTile(x, y, z);
-        if (tile.tileType === "ore" || tile.tileType === "gem") {
+        if (tile.tileType === "ore" || tile.tileType === "gem" || tile.tileType === "crystal") {
           expect(tile.material).not.toBeNull();
         }
       }

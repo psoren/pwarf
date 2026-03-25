@@ -19,15 +19,20 @@ import {
   MORALE_RESTORE_HAUL_TASK,
   SKILL_TIER_NAMES,
   AUTONOMOUS_TASK_TYPES,
+  SKILLED_TASK_TYPES,
   generateCaveName,
   getCaveSeed,
+  SOCIALIZE_MORALE_RESTORE,
+  REST_MORALE_RESTORE,
+  SOCIALIZE_ACQUAINTANCE_CHANCE,
 } from "@pwarf/shared";
-import type { Dwarf, FortressTile, FortressTileType, Task, Item, ItemCategory, Structure } from "@pwarf/shared";
-import type { SimContext } from "../sim-context.js";
+import type { Dwarf, FortressTile, FortressTileType, Task, Item, ItemCategory, Structure, TaskType } from "@pwarf/shared";
+import type { SimContext, CachedState } from "../sim-context.js";
 import { canPickUp } from "../inventory.js";
 import { dwarfName } from "../dwarf-utils.js";
 import { createTask } from "../task-helpers.js";
 import { consumeResources } from "../resource-check.js";
+import { findItemsNearWorkshop, releaseWorkshopOccupancy } from "../workshop-utils.js";
 import { generateArtifactName, randomArtifactQuality } from "../artifact-names.js";
 
 /** Chance of finding a rare artifact when mining a gem tile. */
@@ -66,9 +71,19 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'build_door':
       buildSuccess = completeBuildStructure(task, ctx, 'door', 'door', dwarf.id);
       break;
+    case 'build_still':
+      buildSuccess = completeBuildStructure(task, ctx, 'still', 'still', dwarf.id);
+      break;
+    case 'build_kitchen':
+      buildSuccess = completeBuildStructure(task, ctx, 'kitchen', 'kitchen', dwarf.id);
+      break;
+    case 'build_forge':
+      buildSuccess = completeBuildStructure(task, ctx, 'forge', 'forge', dwarf.id);
+      break;
   }
 
   if (!buildSuccess) {
+    releaseWorkshopOccupancy(task, ctx.state);
     // Not enough resources — revert task to pending and free the dwarf
     task.status = 'pending';
     task.assigned_dwarf_id = null;
@@ -186,6 +201,9 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'build_well':
     case 'build_mushroom_garden':
     case 'build_door':
+    case 'build_still':
+    case 'build_kitchen':
+    case 'build_forge':
       // Already handled above — just award XP
       awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
       break;
@@ -212,6 +230,16 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'scout_cave':
       completeScoutCave(dwarf, task, ctx);
       break;
+    case 'socialize':
+      completeSocialize(dwarf, task, ctx);
+      break;
+    case 'rest':
+      completeRest(dwarf, task, ctx);
+      break;
+    case 'wander':
+      // No special completion effect — just set idle cooldown
+      ctx.state._idleCooldowns.set(dwarf.id, ctx.step);
+      break;
   }
 
   // Morale restoration: work gives dwarves a sense of meaning (restores need_social which is morale)
@@ -225,8 +253,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
  * Exported for unit testing.
  */
 export function restoreMoraleOnTaskComplete(dwarf: Dwarf, taskType: string): void {
-  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'build_door', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'brew', 'cook', 'smith', 'forage']);
-  let restore = SKILLED_TASKS.has(taskType)
+  let restore = SKILLED_TASK_TYPES.has(taskType as TaskType)
     ? MORALE_RESTORE_SKILLED_TASK
     : taskType === 'haul'
       ? MORALE_RESTORE_HAUL_TASK
@@ -241,6 +268,90 @@ export function restoreMoraleOnTaskComplete(dwarf: Dwarf, taskType: string): voi
     }
     dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + restore);
   }
+}
+
+function completeSocialize(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  const { state } = ctx;
+
+  // Restore social need
+  dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + SOCIALIZE_MORALE_RESTORE);
+  state.dirtyDwarfIds.add(dwarf.id);
+
+  // If a target dwarf was encoded in target_item_id, check relationships
+  const targetDwarfId = task.target_item_id;
+  if (targetDwarfId) {
+    const existingRel = state.dwarfRelationships.find(
+      r => (r.dwarf_a_id === dwarf.id && r.dwarf_b_id === targetDwarfId)
+        || (r.dwarf_a_id === targetDwarfId && r.dwarf_b_id === dwarf.id),
+    );
+    if (!existingRel && ctx.rng.random() < SOCIALIZE_ACQUAINTANCE_CHANCE) {
+      // Form acquaintance relationship
+      const [aId, bId] = dwarf.id < targetDwarfId ? [dwarf.id, targetDwarfId] : [targetDwarfId, dwarf.id];
+      const newRel = {
+        id: ctx.rng.uuid(),
+        dwarf_a_id: aId,
+        dwarf_b_id: bId,
+        type: 'acquaintance' as const,
+        strength: 1,
+        shared_events: [],
+        formed_year: ctx.year,
+      };
+      state.dwarfRelationships.push(newRel);
+      state.newDwarfRelationships.push(newRel);
+    }
+
+    // Generate thought event
+    const targetDwarf = state.dwarves.find(d => d.id === targetDwarfId);
+    const dwarfLabel = dwarfName(dwarf);
+    const otherLabel = targetDwarf ? dwarfName(targetDwarf) : 'someone';
+    state.pendingEvents.push({
+      id: ctx.rng.uuid(),
+      world_id: '',
+      year: ctx.year,
+      category: 'discovery',
+      civilization_id: ctx.civilizationId,
+      ruin_id: null,
+      dwarf_id: dwarf.id,
+      item_id: null,
+      faction_id: null,
+      monster_id: null,
+      description: `${dwarfLabel} enjoyed talking with ${otherLabel}.`,
+      event_data: { task_type: task.task_type, task_id: task.id },
+      created_at: new Date().toISOString(),
+    });
+  }
+
+  // Set idle cooldown
+  state._idleCooldowns.set(dwarf.id, ctx.step);
+}
+
+function completeRest(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  const { state } = ctx;
+
+  // Restore social need (passive rest also improves morale)
+  dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + REST_MORALE_RESTORE);
+  state.dirtyDwarfIds.add(dwarf.id);
+
+  // Generate thought event
+  const dwarfLabel = dwarfName(dwarf);
+  state.pendingEvents.push({
+    id: ctx.rng.uuid(),
+    world_id: '',
+    year: ctx.year,
+    category: 'discovery',
+    civilization_id: ctx.civilizationId,
+    ruin_id: null,
+    dwarf_id: dwarf.id,
+    item_id: null,
+    faction_id: null,
+    monster_id: null,
+    description: `${dwarfLabel} enjoyed resting.`,
+    event_data: { task_type: task.task_type, task_id: task.id },
+    created_at: new Date().toISOString(),
+  });
+
+  // Set idle cooldown
+  state._idleCooldowns.set(dwarf.id, ctx.step);
 }
 
 function completeMine(dwarf: Dwarf, task: Task, ctx: SimContext): void {
@@ -365,6 +476,8 @@ export function getMineProduct(tileType: string | null, material: string | null 
       return { itemName: 'Cave mushroom', itemCategory: 'food', itemMaterial: 'mushroom', itemWeight: 1, itemValue: 2 };
     case 'bush':
       return { itemName: null, itemCategory: 'raw_material', itemMaterial: '', itemWeight: 0, itemValue: 0 };
+    case 'crystal':
+      return { itemName: 'Crystal shard', itemCategory: 'gem', itemMaterial: 'crystal', itemWeight: 3, itemValue: 15 };
     default:
       return { itemName: 'Stone block', itemCategory: 'raw_material', itemMaterial: 'stone', itemWeight: 10, itemValue: 1 };
   }
@@ -463,8 +576,23 @@ function completeFarmHarvest(task: Task, ctx: SimContext): void {
 export const FORAGE_FOOD_NAMES = ['Wild mushroom', 'Berries'] as const;
 
 function completeForage(dwarf: Dwarf, task: Task, ctx: SimContext): void {
-  const names = FORAGE_FOOD_NAMES;
-  const name = names[Math.floor(ctx.rng.random() * names.length)]!;
+  // Determine foraged item based on tile type
+  let name: string;
+  if (task.target_x !== null && task.target_y !== null && task.target_z !== null) {
+    const key = `${task.target_x},${task.target_y},${task.target_z}`;
+    const override = ctx.state.fortressTileOverrides.get(key);
+    const tileType = override?.tile_type
+      ?? ctx.fortressDeriver?.deriveTile(task.target_x, task.target_y, task.target_z).tileType;
+    if (tileType === 'fungal_growth') {
+      name = 'Cave mushroom';
+    } else {
+      const names = FORAGE_FOOD_NAMES;
+      name = names[Math.floor(ctx.rng.random() * names.length)]!;
+    }
+  } else {
+    const names = FORAGE_FOOD_NAMES;
+    name = names[Math.floor(ctx.rng.random() * names.length)]!;
+  }
   const food: Item = {
     id: ctx.rng.uuid(),
     name,
@@ -605,6 +733,7 @@ function completeBuildStructure(
 /** Deconstructible tile types — only these can be targeted for removal. */
 const DECONSTRUCTIBLE_TILES = new Set([
   'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden', 'door',
+  'still', 'kitchen', 'forge',
 ]);
 
 function completeDeconstruct(task: Task, ctx: SimContext): void {
@@ -640,8 +769,9 @@ function completeDeconstruct(task: Task, ctx: SimContext): void {
     }
   }
 
-  // Remove other structures (well, mushroom_garden, door) at this tile
-  if (tileType === 'well' || tileType === 'mushroom_garden' || tileType === 'door') {
+  // Remove other structures (well, mushroom_garden, door, workshops) at this tile
+  if (tileType === 'well' || tileType === 'mushroom_garden' || tileType === 'door' ||
+      tileType === 'still' || tileType === 'kitchen' || tileType === 'forge') {
     const structIdx = ctx.state.structures.findIndex(
       s => s.position_x === task.target_x
         && s.position_y === task.target_y
@@ -657,22 +787,29 @@ function completeDeconstruct(task: Task, ctx: SimContext): void {
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'open_air', null, false);
 }
 
+
+
 /**
- * Brew: consumes a plant item at the target tile, creates an ale (drink item).
+ * Brew: consumes a plant item within workshop radius, creates an ale (drink item).
  * Exported for unit testing.
  */
 export function completeBrew(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
-  // Consume a plant raw_material at the target tile (or anywhere in inventory)
-  const plant = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'raw_material', 'plant') ??
-    findItemHeldBy(ctx, dwarf.id, 'raw_material', 'plant');
-  if (!plant) return; // No ingredient — nothing to brew
+  // Search for plant ingredient within workshop radius, then fall back to dwarf inventory
+  const nearbyPlants = findItemsNearWorkshop(
+    ctx.state.items, task.target_x, task.target_y, task.target_z, 'raw_material', 'plant',
+  );
+  const plant = nearbyPlants[0] ?? findItemHeldBy(ctx, dwarf.id, 'raw_material', 'plant');
+  if (!plant) {
+    releaseWorkshopOccupancy(task, ctx.state);
+    return; // No ingredient — nothing to brew
+  }
   const plantIdx = ctx.state.items.findIndex(i => i.id === plant.id);
   if (plantIdx !== -1) ctx.state.items.splice(plantIdx, 1);
   ctx.state.dirtyItemIds.add(plant.id);
 
-  // Produce ale drink item
+  // Produce ale drink item at workshop position
   const ale: Item = {
     id: ctx.rng.uuid(),
     name: 'Plump helmet brew',
@@ -697,18 +834,26 @@ export function completeBrew(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   };
   ctx.state.items.push(ale);
   ctx.state.dirtyItemIds.add(ale.id);
+
+  releaseWorkshopOccupancy(task, ctx.state);
 }
 
 /**
- * Cook: consumes a food item at the target tile, creates a prepared meal (higher value).
+ * Cook: consumes a food item within workshop radius, creates a prepared meal (higher value).
  * Exported for unit testing.
  */
 export function completeCook(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
-  const ingredient = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'food') ??
-    findItemHeldBy(ctx, dwarf.id, 'food');
-  if (!ingredient) return; // No ingredient — nothing to cook
+  // Search within workshop radius first, then fall back to dwarf inventory
+  const nearbyFood = findItemsNearWorkshop(
+    ctx.state.items, task.target_x, task.target_y, task.target_z, 'food',
+  );
+  const ingredient = nearbyFood[0] ?? findItemHeldBy(ctx, dwarf.id, 'food');
+  if (!ingredient) {
+    releaseWorkshopOccupancy(task, ctx.state);
+    return; // No ingredient — nothing to cook
+  }
   const ingredientIdx = ctx.state.items.findIndex(i => i.id === ingredient.id);
   if (ingredientIdx !== -1) ctx.state.items.splice(ingredientIdx, 1);
   ctx.state.dirtyItemIds.add(ingredient.id);
@@ -737,17 +882,22 @@ export function completeCook(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   };
   ctx.state.items.push(meal);
   ctx.state.dirtyItemIds.add(meal.id);
+
+  releaseWorkshopOccupancy(task, ctx.state);
 }
 
 /**
- * Smith: consumes an ore/metal raw_material item, creates a tool.
+ * Smith: consumes an ore/metal raw_material item within workshop radius, creates a tool.
  * Exported for unit testing.
  */
 export function completeSmith(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
-  const ore = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'raw_material') ??
-    findItemHeldBy(ctx, dwarf.id, 'raw_material');
+  // Search within workshop radius first, then fall back to dwarf inventory
+  const nearbyOre = findItemsNearWorkshop(
+    ctx.state.items, task.target_x, task.target_y, task.target_z, 'raw_material',
+  );
+  const ore = nearbyOre[0] ?? findItemHeldBy(ctx, dwarf.id, 'raw_material');
   if (ore) {
     const idx = ctx.state.items.findIndex(i => i.id === ore.id);
     if (idx !== -1) ctx.state.items.splice(idx, 1);
@@ -778,6 +928,8 @@ export function completeSmith(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   };
   ctx.state.items.push(tool);
   ctx.state.dirtyItemIds.add(tool.id);
+
+  releaseWorkshopOccupancy(task, ctx.state);
 }
 
 /**
