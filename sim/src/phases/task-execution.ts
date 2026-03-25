@@ -99,21 +99,28 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
               }
               const finalKey = `${haulNext.x},${haulNext.y},${haulNext.z}`;
               if (!occupiedTiles.has(finalKey)) {
-                ctx.state._occupancyWaitTicks?.delete(dwarf.id);
-                const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
-                occupiedTiles.delete(prevKey);
-                occupiedTiles.add(finalKey);
-                dwarf.position_x = haulNext.x;
-                dwarf.position_y = haulNext.y;
-                dwarf.position_z = haulNext.z;
-                state.dirtyDwarfIds.add(dwarf.id);
+                // Check anti-oscillation only when we used the alt path
+                const haulUsedAlt = nextKey !== finalKey;
+                const haulPrevPos = ctx.state._previousPositions?.get(dwarf.id);
+                if (haulUsedAlt && haulPrevPos && haulPrevPos === finalKey) {
+                  if (!incrementOccupancyWait(dwarf, ctx)) {
+                    failTask(dwarf, task, state);
+                  }
+                } else {
+                  ctx.state._occupancyWaitTicks?.delete(dwarf.id);
+                  if (!ctx.state._previousPositions) ctx.state._previousPositions = new Map();
+                  ctx.state._previousPositions.set(dwarf.id, `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`);
+                  const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
+                  occupiedTiles.delete(prevKey);
+                  occupiedTiles.add(finalKey);
+                  dwarf.position_x = haulNext.x;
+                  dwarf.position_y = haulNext.y;
+                  dwarf.position_z = haulNext.z;
+                  state.dirtyDwarfIds.add(dwarf.id);
+                }
               } else {
                 // Blocked by occupancy — track wait and fail after threshold
-                const waitTicks = (ctx.state._occupancyWaitTicks?.get(dwarf.id) ?? 0) + 1;
-                if (!ctx.state._occupancyWaitTicks) ctx.state._occupancyWaitTicks = new Map();
-                ctx.state._occupancyWaitTicks.set(dwarf.id, waitTicks);
-                if (waitTicks >= MAX_OCCUPANCY_WAIT_TICKS) {
-                  ctx.state._occupancyWaitTicks.delete(dwarf.id);
+                if (!incrementOccupancyWait(dwarf, ctx)) {
                   failTask(dwarf, task, state);
                 }
               }
@@ -223,32 +230,38 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
 
   // If the next step is occupied, retry BFS routing around occupied tiles.
   // This prevents dwarves from waiting forever when an alternative path exists.
+  let usedAltPath = false;
   const nextKey = `${nextStep.x},${nextStep.y},${nextStep.z}`;
   if (occupiedTiles.has(nextKey)) {
     const altStep = bfsNextStep(start, goal, getTile, needsAdjacent, zResolver, occupiedTiles);
     if (altStep) {
       nextStep = altStep;
+      usedAltPath = true;
     } else {
       // All paths blocked by occupancy — track wait ticks and fail after threshold
       // so the task gets released and can be reclaimed when the area clears.
-      const waitKey = dwarf.id;
-      const waitTicks = (ctx.state._occupancyWaitTicks?.get(waitKey) ?? 0) + 1;
-      if (!ctx.state._occupancyWaitTicks) ctx.state._occupancyWaitTicks = new Map();
-      ctx.state._occupancyWaitTicks.set(waitKey, waitTicks);
-      if (waitTicks >= MAX_OCCUPANCY_WAIT_TICKS) {
-        ctx.state._occupancyWaitTicks.delete(waitKey);
-        return false; // Give up — release the task
-      }
-      return true; // Wait a bit longer
+      return incrementOccupancyWait(dwarf, ctx);
     }
   }
 
-  // Successfully moving — clear any occupancy wait counter
+  // Anti-oscillation: when using an alternate path around occupied tiles,
+  // if BFS wants to send us back to where we just were, wait instead of
+  // ping-ponging between two tiles every tick.
+  const finalKey = `${nextStep.x},${nextStep.y},${nextStep.z}`;
+  if (usedAltPath) {
+    const prevPos = ctx.state._previousPositions?.get(dwarf.id);
+    if (prevPos && prevPos === finalKey) {
+      return incrementOccupancyWait(dwarf, ctx);
+    }
+  }
+
+  // Successfully moving — clear any occupancy wait counter and record position
   ctx.state._occupancyWaitTicks?.delete(dwarf.id);
+  if (!ctx.state._previousPositions) ctx.state._previousPositions = new Map();
+  ctx.state._previousPositions.set(dwarf.id, `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`);
 
   // Update occupancy tracking
   const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
-  const finalKey = `${nextStep.x},${nextStep.y},${nextStep.z}`;
   occupiedTiles.delete(prevKey);
   occupiedTiles.add(finalKey);
 
@@ -304,6 +317,18 @@ export function getTileHardness(tileType: string | null): number {
     case 'cavern_wall': return HARDNESS_IGNITE; // 1.5 — slow
     default:           return HARDNESS_STONE;   // 1.0 — rock, open_air, etc.
   }
+}
+
+/** Increment the occupancy wait counter for a dwarf. Returns false (= fail task) when threshold is reached. */
+function incrementOccupancyWait(dwarf: Dwarf, ctx: SimContext): boolean {
+  const waitTicks = (ctx.state._occupancyWaitTicks?.get(dwarf.id) ?? 0) + 1;
+  if (!ctx.state._occupancyWaitTicks) ctx.state._occupancyWaitTicks = new Map();
+  ctx.state._occupancyWaitTicks.set(dwarf.id, waitTicks);
+  if (waitTicks >= MAX_OCCUPANCY_WAIT_TICKS) {
+    ctx.state._occupancyWaitTicks.delete(dwarf.id);
+    return false; // Give up — release the task
+  }
+  return true; // Wait a bit longer
 }
 
 function failTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {

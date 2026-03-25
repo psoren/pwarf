@@ -124,6 +124,15 @@ export interface CachedState {
    * In-memory only; not persisted.
    */
   _occupancyWaitTicks?: Map<string, number>;
+
+  /**
+   * Tracks the previous position of each dwarf (before last movement).
+   * Used to detect oscillation: if BFS suggests moving back to the previous
+   * position, we treat it as blocked instead of ping-ponging.
+   * Keyed by dwarf ID → "x,y,z".
+   * In-memory only; not persisted.
+   */
+  _previousPositions?: Map<string, string>;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */
