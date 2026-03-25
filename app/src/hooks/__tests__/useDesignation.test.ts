@@ -208,7 +208,9 @@ describe("useDesignation", () => {
       expect(calls.some((c) => c.method === "delete")).toBe(true);
       expect(findCall("eq", "target_x")?.args[1]).toBe(5);
       expect(findCall("eq", "target_y")?.args[1]).toBe(5);
-      expect(findCall("like", "task_type")?.args[1]).toBe("build_%");
+      const inCall = findCall("in", "task_type");
+      expect(inCall).toBeTruthy();
+      expect((inCall?.args[1] as string[]).every((t) => t.startsWith("build_"))).toBe(true);
     });
 
     it("does not cancel non-build tasks when deconstructing", async () => {
