@@ -419,7 +419,10 @@ export const BUILDING_COSTS: Partial<Record<string, BuildingCost[]>> = {
   build_bed:             [{ category: 'raw_material', material: 'wood', count: 1 }],
   build_well:            [{ category: 'raw_material', material: 'stone', count: 2 }],
   build_mushroom_garden: [{ category: 'raw_material', material: 'wood', count: 1 }],
-  build_door: [{ category: 'raw_material', material: 'wood', count: 1 }],
+  build_door:            [{ category: 'raw_material', material: 'wood', count: 1 }],
+  build_still:           [{ category: 'raw_material', material: 'wood', count: 1 }],
+  build_kitchen:         [{ category: 'raw_material', material: 'stone', count: 1 }, { category: 'raw_material', material: 'wood', count: 1 }],
+  build_forge:           [{ category: 'raw_material', material: 'stone', count: 2 }],
 };
 
 /** Work required to build a wall */
@@ -439,6 +442,18 @@ export const WORK_BUILD_MUSHROOM_GARDEN = 50;
 
 /** Work required to build a door */
 export const WORK_BUILD_DOOR = 35;
+
+/** Work required to build a still */
+export const WORK_BUILD_STILL = 50;
+
+/** Work required to build a kitchen */
+export const WORK_BUILD_KITCHEN = 50;
+
+/** Work required to build a forge */
+export const WORK_BUILD_FORGE = 70;
+
+/** Manhattan-distance radius around a workshop for ingredient search */
+export const WORKSHOP_INGREDIENT_RADIUS = 5;
 
 /** Work required to scout a cave entrance */
 export const WORK_SCOUT_CAVE = 50;

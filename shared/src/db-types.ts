@@ -145,6 +145,7 @@ export const TASK_TYPES = [
   'mine', 'haul', 'farm_till', 'farm_plant', 'farm_harvest',
   'eat', 'drink', 'sleep',
   'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'build_door',
+  'build_still', 'build_kitchen', 'build_forge',
   'deconstruct', 'wander', 'engrave_memorial',
   'brew', 'cook', 'smith', 'create_artifact', 'forage', 'scout_cave',
 ] as const;
@@ -178,6 +179,9 @@ export type FortressTileType =
   | 'well'
   | 'mushroom_garden'
   | 'door'
+  | 'still'
+  | 'kitchen'
+  | 'forge'
   | 'sand'
   | 'ice'
   | 'mud'

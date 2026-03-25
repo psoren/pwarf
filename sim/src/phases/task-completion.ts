@@ -23,11 +23,12 @@ import {
   getCaveSeed,
 } from "@pwarf/shared";
 import type { Dwarf, FortressTile, FortressTileType, Task, Item, Structure } from "@pwarf/shared";
-import type { SimContext } from "../sim-context.js";
+import type { SimContext, CachedState } from "../sim-context.js";
 import { canPickUp } from "../inventory.js";
 import { dwarfName } from "../dwarf-utils.js";
 import { createTask } from "../task-helpers.js";
 import { consumeResources } from "../resource-check.js";
+import { findItemsNearWorkshop } from "../workshop-utils.js";
 
 /** Build task type → resulting fortress tile type. */
 const BUILD_TILE_MAP: Record<string, FortressTileType> = {
@@ -62,9 +63,19 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'build_door':
       buildSuccess = completeBuildStructure(task, ctx, 'door', 'door', dwarf.id);
       break;
+    case 'build_still':
+      buildSuccess = completeBuildStructure(task, ctx, 'still', 'still', dwarf.id);
+      break;
+    case 'build_kitchen':
+      buildSuccess = completeBuildStructure(task, ctx, 'kitchen', 'kitchen', dwarf.id);
+      break;
+    case 'build_forge':
+      buildSuccess = completeBuildStructure(task, ctx, 'forge', 'forge', dwarf.id);
+      break;
   }
 
   if (!buildSuccess) {
+    releaseWorkshopOccupancy(task, ctx.state);
     // Not enough resources — revert task to pending and free the dwarf
     task.status = 'pending';
     task.assigned_dwarf_id = null;
@@ -182,6 +193,9 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'build_well':
     case 'build_mushroom_garden':
     case 'build_door':
+    case 'build_still':
+    case 'build_kitchen':
+    case 'build_forge':
       // Already handled above — just award XP
       awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
       break;
@@ -221,7 +235,7 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
  * Exported for unit testing.
  */
 export function restoreMoraleOnTaskComplete(dwarf: Dwarf, taskType: string): void {
-  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'build_door', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'brew', 'cook', 'smith', 'forage']);
+  const SKILLED_TASKS = new Set(['mine', 'build_wall', 'build_floor', 'build_bed', 'build_well', 'build_mushroom_garden', 'build_door', 'build_still', 'build_kitchen', 'build_forge', 'deconstruct', 'farm_till', 'farm_plant', 'farm_harvest', 'brew', 'cook', 'smith', 'forage']);
   let restore = SKILLED_TASKS.has(taskType)
     ? MORALE_RESTORE_SKILLED_TASK
     : taskType === 'haul'
@@ -550,6 +564,7 @@ function completeBuildStructure(
 /** Deconstructible tile types — only these can be targeted for removal. */
 const DECONSTRUCTIBLE_TILES = new Set([
   'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden', 'door',
+  'still', 'kitchen', 'forge',
 ]);
 
 function completeDeconstruct(task: Task, ctx: SimContext): void {
@@ -585,8 +600,9 @@ function completeDeconstruct(task: Task, ctx: SimContext): void {
     }
   }
 
-  // Remove other structures (well, mushroom_garden, door) at this tile
-  if (tileType === 'well' || tileType === 'mushroom_garden' || tileType === 'door') {
+  // Remove other structures (well, mushroom_garden, door, workshops) at this tile
+  if (tileType === 'well' || tileType === 'mushroom_garden' || tileType === 'door' ||
+      tileType === 'still' || tileType === 'kitchen' || tileType === 'forge') {
     const structIdx = ctx.state.structures.findIndex(
       s => s.position_x === task.target_x
         && s.position_y === task.target_y
@@ -603,21 +619,39 @@ function completeDeconstruct(task: Task, ctx: SimContext): void {
 }
 
 /**
- * Brew: consumes a plant item at the target tile, creates an ale (drink item).
+ * Release workshop occupancy: if task.target_item_id is a structure ID,
+ * clear its occupied_by_dwarf_id. Used by brew/cook/smith on both success and failure.
+ */
+function releaseWorkshopOccupancy(task: Task, state: CachedState): void {
+  if (!task.target_item_id) return;
+  const workshop = state.structures.find(s => s.id === task.target_item_id);
+  if (workshop) {
+    workshop.occupied_by_dwarf_id = null;
+    state.dirtyStructureIds.add(workshop.id);
+  }
+}
+
+/**
+ * Brew: consumes a plant item within workshop radius, creates an ale (drink item).
  * Exported for unit testing.
  */
 export function completeBrew(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
-  // Consume a plant raw_material at the target tile (or anywhere in inventory)
-  const plant = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'raw_material', 'plant') ??
-    findItemHeldBy(ctx, dwarf.id, 'raw_material', 'plant');
-  if (!plant) return; // No ingredient — nothing to brew
+  // Search for plant ingredient within workshop radius, then fall back to dwarf inventory
+  const nearbyPlants = findItemsNearWorkshop(
+    ctx.state.items, task.target_x, task.target_y, task.target_z, 'raw_material', 'plant',
+  );
+  const plant = nearbyPlants[0] ?? findItemHeldBy(ctx, dwarf.id, 'raw_material', 'plant');
+  if (!plant) {
+    releaseWorkshopOccupancy(task, ctx.state);
+    return; // No ingredient — nothing to brew
+  }
   const plantIdx = ctx.state.items.findIndex(i => i.id === plant.id);
   if (plantIdx !== -1) ctx.state.items.splice(plantIdx, 1);
   ctx.state.dirtyItemIds.add(plant.id);
 
-  // Produce ale drink item
+  // Produce ale drink item at workshop position
   const ale: Item = {
     id: ctx.rng.uuid(),
     name: 'Plump helmet brew',
@@ -642,18 +676,26 @@ export function completeBrew(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   };
   ctx.state.items.push(ale);
   ctx.state.dirtyItemIds.add(ale.id);
+
+  releaseWorkshopOccupancy(task, ctx.state);
 }
 
 /**
- * Cook: consumes a food item at the target tile, creates a prepared meal (higher value).
+ * Cook: consumes a food item within workshop radius, creates a prepared meal (higher value).
  * Exported for unit testing.
  */
 export function completeCook(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
-  const ingredient = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'food') ??
-    findItemHeldBy(ctx, dwarf.id, 'food');
-  if (!ingredient) return; // No ingredient — nothing to cook
+  // Search within workshop radius first, then fall back to dwarf inventory
+  const nearbyFood = findItemsNearWorkshop(
+    ctx.state.items, task.target_x, task.target_y, task.target_z, 'food',
+  );
+  const ingredient = nearbyFood[0] ?? findItemHeldBy(ctx, dwarf.id, 'food');
+  if (!ingredient) {
+    releaseWorkshopOccupancy(task, ctx.state);
+    return; // No ingredient — nothing to cook
+  }
   const ingredientIdx = ctx.state.items.findIndex(i => i.id === ingredient.id);
   if (ingredientIdx !== -1) ctx.state.items.splice(ingredientIdx, 1);
   ctx.state.dirtyItemIds.add(ingredient.id);
@@ -682,17 +724,22 @@ export function completeCook(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   };
   ctx.state.items.push(meal);
   ctx.state.dirtyItemIds.add(meal.id);
+
+  releaseWorkshopOccupancy(task, ctx.state);
 }
 
 /**
- * Smith: consumes an ore/metal raw_material item, creates a tool.
+ * Smith: consumes an ore/metal raw_material item within workshop radius, creates a tool.
  * Exported for unit testing.
  */
 export function completeSmith(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
-  const ore = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'raw_material') ??
-    findItemHeldBy(ctx, dwarf.id, 'raw_material');
+  // Search within workshop radius first, then fall back to dwarf inventory
+  const nearbyOre = findItemsNearWorkshop(
+    ctx.state.items, task.target_x, task.target_y, task.target_z, 'raw_material',
+  );
+  const ore = nearbyOre[0] ?? findItemHeldBy(ctx, dwarf.id, 'raw_material');
   if (ore) {
     const idx = ctx.state.items.findIndex(i => i.id === ore.id);
     if (idx !== -1) ctx.state.items.splice(idx, 1);
@@ -723,6 +770,8 @@ export function completeSmith(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   };
   ctx.state.items.push(tool);
   ctx.state.dirtyItemIds.add(tool.id);
+
+  releaseWorkshopOccupancy(task, ctx.state);
 }
 
 /**
