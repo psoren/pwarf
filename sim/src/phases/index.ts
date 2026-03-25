@@ -22,3 +22,4 @@ export { autoBrew } from "./auto-brew.js";
 export { autoForage } from "./auto-forage.js";
 export { taskRecovery } from "./task-recovery.js";
 export { expeditionTick } from "./expedition-tick.js";
+export { idleBehavior } from "./idle-behavior.js";

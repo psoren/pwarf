@@ -30,6 +30,8 @@ const TASK_SKILL_MAP: Record<TaskType, SkillName | null> = {
   create_artifact: null,
   forage: null,
   scout_cave: null,
+  socialize: null,
+  rest: null,
 };
 
 /** Get the skill name required for a task type, or null if no skill needed. */

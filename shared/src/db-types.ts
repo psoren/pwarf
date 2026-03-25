@@ -148,6 +148,7 @@ export const TASK_TYPES = [
   'build_still', 'build_kitchen', 'build_forge',
   'deconstruct', 'wander', 'engrave_memorial',
   'brew', 'cook', 'smith', 'create_artifact', 'forage', 'scout_cave',
+  'socialize', 'rest',
 ] as const;
 export type TaskType = (typeof TASK_TYPES)[number];
 

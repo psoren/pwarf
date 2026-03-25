@@ -21,6 +21,9 @@ import {
   AUTONOMOUS_TASK_TYPES,
   generateCaveName,
   getCaveSeed,
+  SOCIALIZE_MORALE_RESTORE,
+  REST_MORALE_RESTORE,
+  SOCIALIZE_ACQUAINTANCE_CHANCE,
 } from "@pwarf/shared";
 import type { Dwarf, FortressTile, FortressTileType, Task, Item, Structure } from "@pwarf/shared";
 import type { SimContext, CachedState } from "../sim-context.js";
@@ -222,6 +225,16 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'scout_cave':
       completeScoutCave(dwarf, task, ctx);
       break;
+    case 'socialize':
+      completeSocialize(dwarf, task, ctx);
+      break;
+    case 'rest':
+      completeRest(dwarf, task, ctx);
+      break;
+    case 'wander':
+      // No special completion effect — just set idle cooldown
+      ctx.state._idleCooldowns.set(dwarf.id, ctx.step);
+      break;
   }
 
   // Morale restoration: work gives dwarves a sense of meaning (restores need_social which is morale)
@@ -251,6 +264,90 @@ export function restoreMoraleOnTaskComplete(dwarf: Dwarf, taskType: string): voi
     }
     dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + restore);
   }
+}
+
+function completeSocialize(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  const { state } = ctx;
+
+  // Restore social need
+  dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + SOCIALIZE_MORALE_RESTORE);
+  state.dirtyDwarfIds.add(dwarf.id);
+
+  // If a target dwarf was encoded in target_item_id, check relationships
+  const targetDwarfId = task.target_item_id;
+  if (targetDwarfId) {
+    const existingRel = state.dwarfRelationships.find(
+      r => (r.dwarf_a_id === dwarf.id && r.dwarf_b_id === targetDwarfId)
+        || (r.dwarf_a_id === targetDwarfId && r.dwarf_b_id === dwarf.id),
+    );
+    if (!existingRel && ctx.rng.random() < SOCIALIZE_ACQUAINTANCE_CHANCE) {
+      // Form acquaintance relationship
+      const [aId, bId] = dwarf.id < targetDwarfId ? [dwarf.id, targetDwarfId] : [targetDwarfId, dwarf.id];
+      const newRel = {
+        id: ctx.rng.uuid(),
+        dwarf_a_id: aId,
+        dwarf_b_id: bId,
+        type: 'acquaintance' as const,
+        strength: 1,
+        shared_events: [],
+        formed_year: ctx.year,
+      };
+      state.dwarfRelationships.push(newRel);
+      state.newDwarfRelationships.push(newRel);
+    }
+
+    // Generate thought event
+    const targetDwarf = state.dwarves.find(d => d.id === targetDwarfId);
+    const dwarfLabel = dwarfName(dwarf);
+    const otherLabel = targetDwarf ? dwarfName(targetDwarf) : 'someone';
+    state.pendingEvents.push({
+      id: ctx.rng.uuid(),
+      world_id: '',
+      year: ctx.year,
+      category: 'discovery',
+      civilization_id: ctx.civilizationId,
+      ruin_id: null,
+      dwarf_id: dwarf.id,
+      item_id: null,
+      faction_id: null,
+      monster_id: null,
+      description: `${dwarfLabel} enjoyed talking with ${otherLabel}.`,
+      event_data: { task_type: task.task_type, task_id: task.id },
+      created_at: new Date().toISOString(),
+    });
+  }
+
+  // Set idle cooldown
+  state._idleCooldowns.set(dwarf.id, ctx.step);
+}
+
+function completeRest(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  const { state } = ctx;
+
+  // Restore social need (passive rest also improves morale)
+  dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + REST_MORALE_RESTORE);
+  state.dirtyDwarfIds.add(dwarf.id);
+
+  // Generate thought event
+  const dwarfLabel = dwarfName(dwarf);
+  state.pendingEvents.push({
+    id: ctx.rng.uuid(),
+    world_id: '',
+    year: ctx.year,
+    category: 'discovery',
+    civilization_id: ctx.civilizationId,
+    ruin_id: null,
+    dwarf_id: dwarf.id,
+    item_id: null,
+    faction_id: null,
+    monster_id: null,
+    description: `${dwarfLabel} enjoyed resting.`,
+    event_data: { task_type: task.task_type, task_id: task.id },
+    created_at: new Date().toISOString(),
+  });
+
+  // Set idle cooldown
+  state._idleCooldowns.set(dwarf.id, ctx.step);
 }
 
 function completeMine(dwarf: Dwarf, task: Task, ctx: SimContext): void {

@@ -7,6 +7,9 @@ import type { TaskType } from "./db-types.js";
 /** Task types that dwarves perform autonomously (not player-designated). */
 export const AUTONOMOUS_TASK_TYPES: ReadonlySet<TaskType> = new Set(['eat', 'drink', 'sleep']);
 
+/** Task types that represent idle behavior (can be interrupted by higher-priority work). */
+export const IDLE_TASK_TYPES: ReadonlySet<string> = new Set(['wander', 'socialize', 'rest']);
+
 // ============================================================
 // Simulation timing
 // ============================================================
@@ -680,3 +683,52 @@ export const CAVE_NAME_NOUNS = [
 export const CAVE_NAME_MATERIALS = [
   'Iron', 'Gold', 'Silver', 'Emerald',
 ];
+
+// ============================================================
+// Idle behavior
+// ============================================================
+
+/** Ticks a dwarf must wait after completing an idle task before receiving another */
+export const IDLE_BEHAVIOR_COOLDOWN_TICKS = 50;
+
+/** Work required for a socialize task (~chatting after arrival) */
+export const WORK_SOCIALIZE = 30;
+
+/** Work required for a rest task */
+export const WORK_REST = 20;
+
+/** Work required for a wander task.
+ * Wander tasks accumulate 1 work per tick while traveling (wander-while-traveling),
+ * so this controls how many ticks the wander takes to complete regardless of arrival.
+ */
+export const WORK_WANDER = 30;
+
+/** How much need_social is restored when socializing completes */
+export const SOCIALIZE_MORALE_RESTORE = 8;
+
+/** How much need_social is restored when resting completes */
+export const REST_MORALE_RESTORE = 5;
+
+/** Probability that socializing with a stranger forms an acquaintance relationship */
+export const SOCIALIZE_ACQUAINTANCE_CHANCE = 0.3;
+
+/** Manhattan-distance radius within which another dwarf can be chosen as a socialize target */
+export const SOCIALIZE_MAX_DISTANCE = 30;
+
+/** Minimum distance for a wander target */
+export const WANDER_DISTANCE_MIN = 3;
+
+/** Maximum distance for a wander target */
+export const WANDER_DISTANCE_MAX = 8;
+
+/** Base weight for re-farm behavior in idle selection */
+export const IDLE_WEIGHT_REFARM = 10;
+
+/** Base weight for socialize behavior in idle selection */
+export const IDLE_WEIGHT_SOCIALIZE = 8;
+
+/** Base weight for rest behavior in idle selection */
+export const IDLE_WEIGHT_REST = 6;
+
+/** Base weight for wander behavior in idle selection */
+export const IDLE_WEIGHT_WANDER = 3;
