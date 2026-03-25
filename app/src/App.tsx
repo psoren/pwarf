@@ -23,6 +23,7 @@ import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
 import TaskPriorities from "./components/TaskPriorities";
 import { DwarfModal } from "./components/DwarfModal";
 import { InventoryModal } from "./components/InventoryModal";
+import { CaveScoutModal } from "./components/CaveScoutModal";
 import { EpitaphScreen } from "./components/EpitaphScreen";
 import { TutorialOverlay } from "./components/TutorialOverlay";
 import { useTutorial } from "./hooks/useTutorial";
@@ -406,6 +407,29 @@ export default function App() {
     setFollowedDwarfId(dwarf.id);
   }, []);
 
+  // Cave scout modal state
+  const [caveScoutModal, setCaveScoutModal] = useState<{
+    caveName: string;
+    alreadyScouting: boolean;
+    entranceX: number;
+    entranceY: number;
+  } | null>(null);
+
+  const handleConfirmScout = useCallback(() => {
+    if (!caveScoutModal || caveScoutModal.alreadyScouting || !world.civId) return;
+    void supabase.from('tasks').insert({
+      civilization_id: world.civId,
+      task_type: 'scout_cave',
+      status: 'pending',
+      priority: 5,
+      target_x: caveScoutModal.entranceX,
+      target_y: caveScoutModal.entranceY,
+      target_z: 0,
+      work_required: WORK_SCOUT_CAVE,
+    });
+    setCaveScoutModal(null);
+  }, [caveScoutModal, world.civId]);
+
   // Handle clicking a cave entrance tile — scout or enter
   const handleFortressTileClick = useCallback((x: number, y: number) => {
     setSelectedFortressTile({ x, y });
@@ -436,27 +460,17 @@ export default function App() {
         center - Math.floor(vpRows / 2),
       );
     } else {
-      // Check if there's already a scout task for this entrance
+      // Show confirmation modal instead of directly creating the task
+      const caveName = deriver.getCaveName(caveZ) ?? "Unknown Cave";
       const alreadyScouting = liveTasks.some(
         t => t.task_type === 'scout_cave'
           && t.target_x === x
           && t.target_y === y
           && ['pending', 'claimed', 'in_progress'].includes(t.status),
       );
-      if (!alreadyScouting && world.civId) {
-        void supabase.from('tasks').insert({
-          civilization_id: world.civId,
-          task_type: 'scout_cave',
-          status: 'pending',
-          priority: 5,
-          target_x: x,
-          target_y: y,
-          target_z: 0,
-          work_required: WORK_SCOUT_CAVE,
-        });
-      }
+      setCaveScoutModal({ caveName, alreadyScouting, entranceX: x, entranceY: y });
     }
-  }, [zLevel, getFortressTile, getFortressTileResult.deriver, snapshot?.fortressTileOverrides, liveTasks, world.civId, viewport, vpCols, vpRows]);
+  }, [zLevel, getFortressTile, getFortressTileResult.deriver, snapshot?.fortressTileOverrides, liveTasks, viewport, vpCols, vpRows]);
 
   // Dwarf info modal
   const [modalDwarfId, setModalDwarfId] = useState<string | null>(null);
@@ -662,6 +676,15 @@ export default function App() {
             onGoTo={handleGoToDwarf}
             items={liveItems}
             tasks={liveTasks}
+          />
+        )}
+
+        {caveScoutModal && (
+          <CaveScoutModal
+            caveName={caveScoutModal.caveName}
+            alreadyScouting={caveScoutModal.alreadyScouting}
+            onScout={handleConfirmScout}
+            onClose={() => setCaveScoutModal(null)}
           />
         )}
 
