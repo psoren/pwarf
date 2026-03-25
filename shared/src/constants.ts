@@ -7,6 +7,9 @@ import type { TaskType } from "./db-types.js";
 /** Task types that dwarves perform autonomously (not player-designated). */
 export const AUTONOMOUS_TASK_TYPES: ReadonlySet<TaskType> = new Set(['eat', 'drink', 'sleep']);
 
+/** Task types that represent idle behavior (can be interrupted by higher-priority work). */
+export const IDLE_TASK_TYPES: ReadonlySet<TaskType> = new Set(['wander', 'socialize', 'rest']);
+
 // ============================================================
 // Simulation timing
 // ============================================================

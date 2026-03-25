@@ -96,6 +96,7 @@ This is done as part of the `/review-pr` skill — no need to run it manually fo
 - Dev app: `npm run dev:app`
 - Dev sim: `npm run dev:sim`
 - **Always run `npm run build` before committing.** TypeScript composite builds cache `.d.ts` files locally; a previously-passing cache can hide errors at cross-package boundaries. If a build passes locally but fails in CI, run `tsc -b --force` in the affected workspace to bust the cache.
+- **CI runs a clean rebuild** (`rm -rf shared/dist sim/dist` then rebuild) to catch stale cache issues. If you add, remove, or rename exports in `shared/`, verify locally with a clean build: `rm -rf shared/dist && npm run build --workspace=shared && npm run build --workspace=sim && npm run build --workspace=app`.
 
 ## Code Style
 
@@ -123,7 +124,7 @@ All sim phase ordering lives in `sim/src/tick.ts` (`runTick`, `advanceTime`, `ma
 ### Types and constants
 
 - **Derive union types from `as const` arrays.** `TaskType`, `TaskStatus`, `DwarfStatus`, `SkillName` are all defined as `as const` arrays in `shared/src/db-types.ts` with the type derived via `(typeof ARRAY)[number]`. This gives both a runtime value and a compile-time type from a single source of truth. Follow this pattern for new enum-like types.
-- **Domain sets belong in `shared/src/constants.ts`.** Sets like `AUTONOMOUS_TASK_TYPES` that both `sim/` and `app/` need should be defined once in shared and imported everywhere. Never duplicate a set of values across files.
+- **Domain sets belong in `shared/src/constants.ts`.** Sets like `AUTONOMOUS_TASK_TYPES` and `IDLE_TASK_TYPES` that both `sim/` and `app/` need should be defined once in shared and imported everywhere. Never duplicate a set of values across files. In particular, never create a local `const AUTONOMOUS_TASK_TYPES = new Set([...])` in an app component — import it from `@pwarf/shared` instead. Duplicated sets drift out of sync when new task types are added and cause display bugs.
 - **Skill-to-task mappings stay in `sim/src/task-helpers.ts`.** `TASK_SKILL_MAP` is sim-internal logic — it doesn't need to be in shared.
 
 ## PR Self-Review

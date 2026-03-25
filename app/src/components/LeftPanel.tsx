@@ -1,9 +1,14 @@
 import { useState } from "react";
 import type { WorldTile, Item } from "@pwarf/shared";
+import { AUTONOMOUS_TASK_TYPES, IDLE_TASK_TYPES } from "@pwarf/shared";
 import type { LiveDwarf } from "../hooks/useDwarves";
 import type { ActiveTask } from "../hooks/useTasks";
 
-const AUTONOMOUS_TASK_TYPES: ReadonlySet<string> = new Set(['eat', 'drink', 'sleep', 'wander']);
+/** Task types that should not show a work percentage in the dwarf job label. */
+const NO_PROGRESS_TASK_TYPES: ReadonlySet<string> = new Set([
+  ...AUTONOMOUS_TASK_TYPES,
+  ...IDLE_TASK_TYPES,
+]);
 
 type SortMode = "stress" | "name" | "activity";
 
@@ -53,6 +58,9 @@ const TASK_ICONS: Record<string, string> = {
   build_mushroom_garden: "🔨",
   build_door: "🔨",
   deconstruct: "💥",
+  wander: "🚶",
+  socialize: "💬",
+  rest: "🪑",
 };
 
 export function taskIcon(taskType: string, isTantrum: boolean): string {
@@ -67,7 +75,7 @@ function dwarfJobLabel(d: LiveDwarf, tasks?: ActiveTask[]): string {
   if (!task) return "⚒ Working";
   const icon = taskIcon(task.task_type, d.is_in_tantrum);
   const label = task.task_type.replace(/_/g, " ");
-  if (AUTONOMOUS_TASK_TYPES.has(task.task_type) || task.work_required === 0) return `${icon} ${label}`;
+  if (NO_PROGRESS_TASK_TYPES.has(task.task_type) || task.work_required === 0) return `${icon} ${label}`;
   const pct = Math.round((task.work_progress / task.work_required) * 100);
   return `${icon} ${label} (${pct}%)`;
 }
