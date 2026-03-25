@@ -67,6 +67,17 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
     dwarf.current_task_id = null;
   }
 
+  // Drop all items held by this dwarf so they're not permanently lost
+  for (const item of state.items) {
+    if (item.held_by_dwarf_id === dwarf.id) {
+      item.held_by_dwarf_id = null;
+      item.position_x = dwarf.position_x;
+      item.position_y = dwarf.position_y;
+      item.position_z = dwarf.position_z;
+      state.dirtyItemIds.add(item.id);
+    }
+  }
+
   // Release any bed occupied by this dwarf
   for (const structure of state.structures) {
     if (structure.occupied_by_dwarf_id === dwarf.id) {

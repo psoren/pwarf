@@ -45,7 +45,7 @@ describe("completeBrew", () => {
     expect(ale?.position_y).toBe(5);
   });
 
-  it("creates a drink even if no plant ingredient is available", () => {
+  it("does not create a drink when no plant ingredient is available", () => {
     const ctx = createTestContext();
     const dwarf = makeDwarf();
     const task = makeTask("brew", { target_x: 0, target_y: 0, target_z: 0 });
@@ -53,7 +53,7 @@ describe("completeBrew", () => {
     completeBrew(dwarf, task, ctx);
 
     const ale = ctx.state.items.find(i => i.category === "drink");
-    expect(ale).toBeDefined();
+    expect(ale).toBeUndefined();
   });
 
   it("consumes a plant held by the dwarf if none at tile", () => {
@@ -104,12 +104,12 @@ describe("completeCook", () => {
     expect(meal?.value).toBeGreaterThan(2);
   });
 
-  it("creates a meal even without an ingredient", () => {
+  it("does not create a meal when no ingredient is available", () => {
     const ctx = createTestContext();
     const dwarf = makeDwarf();
     const task = makeTask("cook", { target_x: 0, target_y: 0, target_z: 0 });
     completeCook(dwarf, task, ctx);
-    expect(ctx.state.items.find(i => i.name === "Prepared meal")).toBeDefined();
+    expect(ctx.state.items.find(i => i.name === "Prepared meal")).toBeUndefined();
   });
 });
 
