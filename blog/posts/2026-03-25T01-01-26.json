@@ -1,0 +1,23 @@
+{
+  "id": "2026-03-25T01-01-26",
+  "timestamp": "2026-03-25T01:01:26.361Z",
+  "title": "Digest — Mar 25, 2026, 01:01 AM UTC",
+  "summary": "# Pwarf Devlog - Recent Updates\n\n## New Testing Features\n- Integrated a **fake Supabase client** to simulate and enforce foreign key (FK) constraints in memory, enhancing the integrity of our database interactions.\n- Implemented a series of **integration tests** that run the full simulation and flush cycle. These tests ensure zero FK violations across multiple scenarios:\n  - Normal gameplay with 500 ticks and flush every 10 ticks.\n  - Rapid eat/drink scenarios to test for potential issues under stress conditions.\n\nThis update strengthens our backend reliability and improves overall game stability, making your pwarf experience smoother.\n\n## Merged PRs\n- #631: Added flush FK integration tests with fake Supabase (closes #630)\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 631,
+      "title": "test: flush FK integration tests with fake Supabase (closes #630)",
+      "url": "https://github.com/psoren/pwarf/pull/631"
+    }
+  ],
+  "images": []
+}
