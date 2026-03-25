@@ -23,13 +23,22 @@ The sim must be runnable with zero UI, zero browser, zero human input. All rando
 
 ### Scenario tests
 
-Every new sim feature must include a `runScenario()` integration test in `sim/src/__tests__/`. Scenario tests exercise the full tick loop end-to-end — dwarves claim tasks, walk to targets, complete work, and produce results — unlike unit tests which test a single function in isolation. If your feature adds new `ScenarioConfig` fields (e.g. `expeditions`, `ruins`, `fortressDeriver`), wire them into `run-scenario.ts` so scenarios can use them.
+Every new sim feature **must** include a `runScenario()` integration test in `sim/src/__tests__/`. Scenario tests exercise the full tick loop end-to-end — dwarves claim tasks, walk to targets, complete work, and produce results — unlike unit tests which test a single function in isolation.
+
+**What makes a good scenario test:**
+- Realistic conditions: multiple dwarves, needs that decay, autonomous task interruptions
+- Tests the full lifecycle, not just one function (e.g., mine → pick up stone → build wall, not just `completeMine()`)
+- Asserts on outcomes the player cares about: did the task complete? did the item appear? is the dwarf alive?
+- Includes "stuck detection" — verify no dwarf is idle with pending tasks, no task has zero work progress after many ticks
+- Suppress autonomous distractions with high needs and pre-placed food/drink when testing non-survival features
+
+**When adding `ScenarioConfig` fields:** If your feature needs new config (e.g. `expeditions`, `ruins`, `fortressDeriver`), wire them into `run-scenario.ts` so scenarios can use them.
 
 ### New feature testing checklist
 
 Before merging any new sim system:
 - Unit tests for all pure functions
-- A `runScenario()` integration test covering the full feature lifecycle
+- A detailed `runScenario()` integration test covering the full feature lifecycle with realistic conditions
 - Headless mode still works (no new browser dependencies)
 
 ### Sim/app integration contract
