@@ -19,6 +19,7 @@ import {
 import { manhattanDistance } from "../pathfinding.js";
 import { getCarriedWeight } from "../inventory.js";
 import { hasResources } from "../resource-check.js";
+import { setWorkshopOccupancy } from "../workshop-utils.js";
 
 /**
  * Job Claiming Phase
@@ -146,6 +147,9 @@ function claimTask(dwarf: Dwarf, task: Task, ctx: SimContext, taskById?: Map<str
   task.status = 'claimed';
   task.assigned_dwarf_id = dwarf.id;
   dwarf.current_task_id = task.id;
+
+  // Mark workshop as occupied when claiming a crafting task
+  setWorkshopOccupancy(task, dwarf.id, state);
 
   state.dirtyDwarfIds.add(dwarf.id);
   state.dirtyTaskIds.add(task.id);

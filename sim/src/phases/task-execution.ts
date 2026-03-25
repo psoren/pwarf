@@ -17,6 +17,7 @@ import { buildTileLookup } from "../tile-lookup.js";
 import { canPickUp, pickUpItem } from "../inventory.js";
 import { handleDeprivationDeaths } from "./deprivation.js";
 import { completeTask } from "./task-completion.js";
+import { releaseWorkshopOccupancy } from "../workshop-utils.js";
 
 /** Task types where the dwarf stands adjacent to (not on) the target tile. */
 const ADJACENT_TASK_TYPES: ReadonlySet<string> = new Set(['mine', 'build_wall', 'deconstruct', 'socialize', 'rest']);
@@ -393,6 +394,9 @@ function stepTowardWander(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
 const IDLE_TASK_TYPES_EXECUTION: ReadonlySet<string> = new Set(['wander', 'socialize', 'rest']);
 
 function failTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {
+  // Release workshop occupancy if this was a crafting task
+  releaseWorkshopOccupancy(task, state);
+
   // Idle tasks are self-generated per-dwarf; cancel rather than re-queue when they fail
   task.status = IDLE_TASK_TYPES_EXECUTION.has(task.task_type) ? 'cancelled' : 'pending';
   task.assigned_dwarf_id = null;

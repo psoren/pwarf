@@ -31,7 +31,7 @@ import { canPickUp } from "../inventory.js";
 import { dwarfName } from "../dwarf-utils.js";
 import { createTask } from "../task-helpers.js";
 import { consumeResources } from "../resource-check.js";
-import { findItemsNearWorkshop } from "../workshop-utils.js";
+import { findItemsNearWorkshop, releaseWorkshopOccupancy } from "../workshop-utils.js";
 
 /** Build task type → resulting fortress tile type. */
 const BUILD_TILE_MAP: Record<string, FortressTileType> = {
@@ -732,18 +732,7 @@ function completeDeconstruct(task: Task, ctx: SimContext): void {
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, 'open_air', null, false);
 }
 
-/**
- * Release workshop occupancy: if task.target_item_id is a structure ID,
- * clear its occupied_by_dwarf_id. Used by brew/cook/smith on both success and failure.
- */
-function releaseWorkshopOccupancy(task: Task, state: CachedState): void {
-  if (!task.target_item_id) return;
-  const workshop = state.structures.find(s => s.id === task.target_item_id);
-  if (workshop) {
-    workshop.occupied_by_dwarf_id = null;
-    state.dirtyStructureIds.add(workshop.id);
-  }
-}
+
 
 /**
  * Brew: consumes a plant item within workshop radius, creates an ale (drink item).

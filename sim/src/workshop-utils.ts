@@ -1,5 +1,5 @@
 import { WORKSHOP_INGREDIENT_RADIUS } from "@pwarf/shared";
-import type { Item, Structure } from "@pwarf/shared";
+import type { Item, Structure, Task } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 
 /** Maps crafting task types to their required workshop tile/structure type. */
@@ -48,4 +48,32 @@ export function findItemsNearWorkshop(
     const dist = Math.abs(i.position_x - x) + Math.abs(i.position_y - y);
     return dist <= WORKSHOP_INGREDIENT_RADIUS;
   });
+}
+
+/**
+ * Set workshop occupancy when a dwarf claims a crafting task.
+ * Only applies to tasks whose task_type is in TASK_WORKSHOP_MAP
+ * and whose target_item_id points to a workshop structure.
+ */
+export function setWorkshopOccupancy(task: Task, dwarfId: string, state: CachedState): void {
+  if (!task.target_item_id) return;
+  if (!(task.task_type in TASK_WORKSHOP_MAP)) return;
+  const workshop = state.structures.find(s => s.id === task.target_item_id);
+  if (workshop) {
+    workshop.occupied_by_dwarf_id = dwarfId;
+    state.dirtyStructureIds.add(workshop.id);
+  }
+}
+
+/**
+ * Release workshop occupancy when a task completes, fails, or is cancelled.
+ */
+export function releaseWorkshopOccupancy(task: Task, state: CachedState): void {
+  if (!task.target_item_id) return;
+  if (!(task.task_type in TASK_WORKSHOP_MAP)) return;
+  const workshop = state.structures.find(s => s.id === task.target_item_id);
+  if (workshop) {
+    workshop.occupied_by_dwarf_id = null;
+    state.dirtyStructureIds.add(workshop.id);
+  }
 }
