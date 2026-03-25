@@ -7,29 +7,27 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const timeout = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("timeout")), 5000),
-    );
-
-    Promise.race([supabase.auth.getSession(), timeout])
-      .then(({ data: { session: s } }) => {
-        setSession(s);
-      })
-      .catch(() => {
-        // getSession hung or failed — show login screen
-        setSession(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    // onAuthStateChange fires INITIAL_SESSION synchronously with the current
+    // session, so a separate getSession() call is unnecessary and causes lock
+    // contention in @supabase/auth-js (the "lock not released within 5000ms"
+    // warning).  A safety timeout ensures we still show the login screen if
+    // the initial event never arrives.
+    const timer = setTimeout(() => {
+      setLoading(false); // show login screen on timeout
+    }, 5000);
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, s) => {
+      clearTimeout(timer);
       setSession(s);
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timer);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
