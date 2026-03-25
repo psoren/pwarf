@@ -415,9 +415,9 @@ export default function App() {
     entranceY: number;
   } | null>(null);
 
-  const handleConfirmScout = useCallback(() => {
+  const handleConfirmScout = useCallback(async () => {
     if (!caveScoutModal || caveScoutModal.alreadyScouting || !world.civId) return;
-    void supabase.from('tasks').insert({
+    const { error } = await supabase.from('tasks').insert({
       civilization_id: world.civId,
       task_type: 'scout_cave',
       status: 'pending',
@@ -427,6 +427,7 @@ export default function App() {
       target_z: 0,
       work_required: WORK_SCOUT_CAVE,
     });
+    if (error) console.error('[scout] failed to create task:', error.message);
     setCaveScoutModal(null);
   }, [caveScoutModal, world.civId]);
 
