@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import type { TaskType } from "@pwarf/shared";
+import { TASK_TYPES } from "@pwarf/shared";
 import {
   WORK_MINE_BASE,
   WORK_CHOP_TREE,
@@ -19,6 +20,8 @@ import type { FortressViewTile } from "./useFortressTiles";
 import type { OptimisticDesignation } from "./useTasks";
 
 export type DesignationMode = "none" | "mine" | "farm_till" | "build_wall" | "build_floor" | "build_bed" | "build_well" | "build_mushroom_garden" | "build_door" | "stockpile" | "deconstruct";
+
+const BUILD_TASK_TYPES = TASK_TYPES.filter(t => t.startsWith('build_'));
 
 const BUILD_WORK: Record<string, number> = {
   build_wall: WORK_BUILD_WALL,
@@ -196,7 +199,7 @@ export function useDesignation(opts: {
           .eq('target_y', coord.y)
           .eq('target_z', zLevel)
           .in('status', ['pending', 'claimed', 'in_progress'])
-          .like('task_type', 'build_%');
+          .in('task_type', BUILD_TASK_TYPES);
         if (error) {
           console.error('[designate] Failed to cancel build task:', error.message);
         }
