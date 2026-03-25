@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { STEPS_PER_YEAR, STEPS_PER_DAY } from "@pwarf/shared";
 import type { SimContext, CachedState } from "../sim-context.js";
 import { createEmptyCachedState, createRng } from "../sim-context.js";
 import { DEFAULT_TEST_SEED } from "../rng.js";
@@ -8,27 +7,20 @@ import { runTick, advanceTime, maybeYearRollup } from "../tick.js";
 import { flushToSupabase } from "../flush-state.js";
 import { makeDwarf, makeSkill, makeTask, makeItem, makeMapTile } from "./test-helpers.js";
 
-// ─── Fake Supabase client that enforces FK constraints ───────────────────────
+// ─── Fake Supabase client that enforces FK constraints via RPC ───────────────
 
 interface FkConstraint {
   column: string;
   referencedTable: string;
 }
 
-/**
- * Creates a fake Supabase client that tracks rows per table and enforces
- * foreign key constraints. Throws on FK violation instead of returning
- * a Supabase error — this makes test failures obvious.
- */
 function createFakeSupabase() {
   const tables = new Map<string, Map<string, Record<string, unknown>>>();
-  const fkConstraints = new Map<string, FkConstraint[]>();
   const violations: string[] = [];
 
-  // Define FK constraints matching the real schema
+  const fkConstraints = new Map<string, FkConstraint[]>();
   fkConstraints.set("tasks", [
     { column: "target_item_id", referencedTable: "items" },
-    // tasks.assigned_dwarf_id → dwarves.id (nullable)
     { column: "assigned_dwarf_id", referencedTable: "dwarves" },
   ]);
   fkConstraints.set("dwarves", [
@@ -40,96 +32,92 @@ function createFakeSupabase() {
     return tables.get(name)!;
   }
 
-  function checkFks(tableName: string, row: Record<string, unknown>): string | null {
-    const constraints = fkConstraints.get(tableName);
-    if (!constraints) return null;
-
-    for (const fk of constraints) {
-      const value = row[fk.column];
-      if (value === null || value === undefined) continue;
-
-      const refTable = getTable(fk.referencedTable);
-      if (!refTable.has(value as string)) {
-        return `insert or update on table "${tableName}" violates foreign key constraint "${tableName}_${fk.column}_fkey": ${fk.column}=${value} not found in ${fk.referencedTable}`;
-      }
-    }
-    return null;
-  }
-
   function upsertRows(tableName: string, rows: Record<string, unknown>[]) {
     const table = getTable(tableName);
-
-    // PostgreSQL rejects upsert batches with duplicate IDs:
-    // "ON CONFLICT DO UPDATE command cannot affect row a second time"
+    // Check for duplicate IDs in batch
     const idsInBatch = new Set<string>();
     for (const row of rows) {
       const id = row.id as string;
       if (idsInBatch.has(id)) {
-        const msg = `ON CONFLICT DO UPDATE command cannot affect row a second time: duplicate id=${id} in ${tableName} batch`;
+        const msg = `duplicate id=${id} in ${tableName} batch`;
         violations.push(msg);
-        return { error: { message: msg } };
+        return;
       }
       idsInBatch.add(id);
     }
-
     for (const row of rows) {
-      const fkError = checkFks(tableName, row);
-      if (fkError) {
-        violations.push(fkError);
-        return { error: { message: fkError } };
-      }
       table.set(row.id as string, { ...row });
     }
-    return { error: null };
   }
 
-  // Build a chainable query builder that mimics Supabase's API
-  function from(tableName: string) {
+  // The RPC handler simulates the flush_state function with deferred FKs.
+  // All upserts happen first, then FK checks run at the end (deferred).
+  function rpc(_name: string, params: Record<string, unknown>) {
+    // Upsert all tables (order doesn't matter — FKs are deferred)
+    const tableParamMap: [string, string][] = [
+      ["p_items", "items"],
+      ["p_structures", "structures"],
+      ["p_tasks", "tasks"],
+      ["p_dwarves", "dwarves"],
+      ["p_monsters", "monsters"],
+      ["p_dwarf_skills", "dwarf_skills"],
+      ["p_fortress_tiles", "fortress_tiles"],
+      ["p_new_relationships", "dwarf_relationships"],
+      ["p_dirty_relationships", "dwarf_relationships"],
+      ["p_events", "world_events"],
+      ["p_ruins", "ruins"],
+    ];
+
+    for (const [param, table] of tableParamMap) {
+      const rows = params[param] as Record<string, unknown>[] | undefined;
+      if (rows && rows.length > 0) {
+        upsertRows(table, rows);
+      }
+    }
+
+    // Now check ALL FK constraints (simulates deferred constraint check at commit)
+    for (const [tableName, constraints] of fkConstraints) {
+      const table = getTable(tableName);
+      for (const [, row] of table) {
+        for (const fk of constraints) {
+          const value = row[fk.column];
+          if (value === null || value === undefined) continue;
+          const refTable = getTable(fk.referencedTable);
+          if (!refTable.has(value as string)) {
+            violations.push(
+              `FK violation: ${tableName}.${fk.column}=${value} not in ${fk.referencedTable}`,
+            );
+          }
+        }
+      }
+    }
+
+    return Promise.resolve({ error: violations.length > 0 ? { message: violations.join("; ") } : null });
+  }
+
+  // Stub for from() — only needed for load-state reads, not flush writes
+  function from(_table: string) {
+    const noop = { then: (fn: (r: { error: null }) => void) => { fn({ error: null }); return Promise.resolve(); } };
     return {
-      insert(rows: Record<string, unknown> | Record<string, unknown>[]) {
-        const arr = Array.isArray(rows) ? rows : [rows];
-        const result = upsertRows(tableName, arr);
-        return {
-          then: (fn: (r: { error: { message: string } | null }) => void) => {
-            fn(result);
-            return Promise.resolve();
-          },
-        };
-      },
-      upsert(rows: Record<string, unknown> | Record<string, unknown>[], _opts?: unknown) {
-        const arr = Array.isArray(rows) ? rows : [rows];
-        const result = upsertRows(tableName, arr);
-        return {
-          then: (fn: (r: { error: { message: string } | null }) => void) => {
-            fn(result);
-            return Promise.resolve();
-          },
-        };
-      },
-      update(_data: Record<string, unknown>) {
-        return {
-          eq(_col: string, _val: string) {
-            return {
-              then: (fn: (r: { error: null }) => void) => {
-                fn({ error: null });
-                return Promise.resolve();
-              },
-            };
-          },
-        };
-      },
+      insert: () => noop,
+      upsert: () => noop,
+      update: () => ({ eq: () => noop }),
     };
   }
 
   return {
-    client: { from } as unknown as SupabaseClient,
+    client: {
+      from,
+      rpc,
+      auth: { getSession: () => Promise.resolve({ data: { session: null }, error: null }) },
+    } as unknown as SupabaseClient,
     tables,
     violations,
     getTable,
   };
 }
 
-// ─── Helper: run N ticks then flush, checking for FK violations ──────────────
+// ─── Helper: run N ticks then flush ──────────────────────────────────────────
 
 async function runSimWithFlush(opts: {
   ticks: number;
@@ -144,8 +132,7 @@ async function runSimWithFlush(opts: {
   const fake = createFakeSupabase();
   const state: CachedState = createEmptyCachedState();
 
-  const dwarves = (opts.dwarves ?? []).map(d => ({ ...d }));
-  state.dwarves = dwarves;
+  state.dwarves = (opts.dwarves ?? []).map(d => ({ ...d }));
   state.dwarfSkills = (opts.skills ?? []).map(s => ({ ...s }));
   state.items = (opts.items ?? []).map(i => ({ ...i }));
   state.tasks = (opts.tasks ?? []).map(t => ({ ...t }));
@@ -161,31 +148,17 @@ async function runSimWithFlush(opts: {
     civilizationId: "test-civ",
     worldId: "test-world",
     civName: "Test Fortress",
-    civTileX: 0,
-    civTileY: 0,
+    civTileX: 0, civTileY: 0,
     fortressDeriver: null,
-    step: 0,
-    year: 1,
-    day: 1,
+    step: 0, year: 1, day: 1,
     rng: createRng(opts.seed ?? DEFAULT_TEST_SEED),
     state,
   };
 
-  // Pre-seed the fake DB with initial dwarves (they exist before the sim starts)
-  const dwarfTable = fake.getTable("dwarves");
-  for (const d of state.dwarves) {
-    dwarfTable.set(d.id, { ...d });
-  }
-  // Pre-seed items
-  const itemTable = fake.getTable("items");
-  for (const i of state.items) {
-    itemTable.set(i.id, { ...i });
-  }
-  // Pre-seed structures
-  const structTable = fake.getTable("structures");
-  for (const s of state.structures) {
-    structTable.set(s.id, { ...s });
-  }
+  // Pre-seed DB with initial entities
+  for (const d of state.dwarves) fake.getTable("dwarves").set(d.id, { ...d });
+  for (const i of state.items) fake.getTable("items").set(i.id, { ...i });
+  for (const s of state.structures) fake.getTable("structures").set(s.id, { ...s });
 
   let stepCount = 0;
   let currentYear = 1;
@@ -193,42 +166,28 @@ async function runSimWithFlush(opts: {
   for (let i = 0; i < opts.ticks; i++) {
     stepCount++;
     advanceTime(ctx, stepCount, currentYear);
-
     await runTick(ctx);
-
     currentYear = await maybeYearRollup(ctx, stepCount, currentYear);
 
-    // Flush pending events into worldEvents (mirrors run-scenario)
     if (state.pendingEvents.length > 0) {
       state.worldEvents.push(...state.pendingEvents);
       state.pendingEvents = [];
     }
 
-    // Flush to fake DB at the specified interval
     if (stepCount % opts.flushEvery === 0) {
       await flushToSupabase(ctx);
     }
   }
 
-  // Final flush
   await flushToSupabase(ctx);
 
-  return {
-    violations: fake.violations,
-    tables: fake.tables,
-    state,
-  };
+  return { violations: fake.violations, tables: fake.tables, state };
 }
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe("flush FK integration", () => {
   it("no FK violations during a 500-tick sim with frequent flushes", async () => {
-    // Full scenario: 2 dwarves, mine trees + rock, build structures.
-    // Flush every 10 ticks (aggressive — mimics real-world flush interval).
-    // This exercises all the auto-phases (eat, drink, cook, brew, forage)
-    // that create and consume items within flush windows.
-
     const dwarf1 = makeDwarf({
       name: "Urist", position_x: 5, position_y: 5, position_z: 0,
       need_food: 100, need_drink: 100, need_sleep: 100, need_social: 80,
@@ -239,11 +198,8 @@ describe("flush FK integration", () => {
     });
 
     const tiles = [
-      makeMapTile(3, 5, 0, "tree"),
-      makeMapTile(3, 6, 0, "tree"),
-      makeMapTile(8, 5, 0, "rock"),
-      makeMapTile(8, 6, 0, "rock"),
-      makeMapTile(8, 7, 0, "rock"),
+      makeMapTile(3, 5, 0, "tree"), makeMapTile(3, 6, 0, "tree"),
+      makeMapTile(8, 5, 0, "rock"), makeMapTile(8, 6, 0, "rock"), makeMapTile(8, 7, 0, "rock"),
       ...Array.from({ length: 15 }, (_, x) =>
         Array.from({ length: 15 }, (_, y) => ({ x, y })),
       ).flat()
@@ -251,54 +207,36 @@ describe("flush FK integration", () => {
         .map(({ x, y }) => makeMapTile(x, y, 0, "grass")),
     ];
 
-    const tasks = [
-      makeTask("mine", { status: "pending", target_x: 3, target_y: 5, target_z: 0, work_required: 100, priority: 10 }),
-      makeTask("mine", { status: "pending", target_x: 3, target_y: 6, target_z: 0, work_required: 100, priority: 10 }),
-      makeTask("mine", { status: "pending", target_x: 8, target_y: 5, target_z: 0, work_required: 100, priority: 8 }),
-      makeTask("mine", { status: "pending", target_x: 8, target_y: 6, target_z: 0, work_required: 100, priority: 8 }),
-      makeTask("mine", { status: "pending", target_x: 8, target_y: 7, target_z: 0, work_required: 100, priority: 8 }),
-      makeTask("build_floor", { status: "pending", target_x: 5, target_y: 8, target_z: 0, work_required: 25, priority: 6 }),
-      makeTask("build_wall", { status: "pending", target_x: 4, target_y: 8, target_z: 0, work_required: 40, priority: 6 }),
-      makeTask("build_door", { status: "pending", target_x: 5, target_y: 9, target_z: 0, work_required: 35, priority: 6 }),
-      makeTask("build_well", { status: "pending", target_x: 5, target_y: 11, target_z: 0, work_required: 60, priority: 5 }),
-    ];
-
-    const items = [
-      makeItem({ name: "Plump helmet", category: "food", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
-      makeItem({ name: "Plump helmet", category: "food", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
-      makeItem({ name: "Plump helmet brew", category: "drink", material: "plant", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
-      makeItem({ name: "Plump helmet brew", category: "drink", material: "plant", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
-    ];
-
     const result = await runSimWithFlush({
-      ticks: 500,
-      flushEvery: 10,
+      ticks: 500, flushEvery: 10,
       dwarves: [dwarf1, dwarf2],
       skills: [
-        makeSkill(dwarf1.id, "mining", 3),
-        makeSkill(dwarf1.id, "building", 1),
-        makeSkill(dwarf2.id, "building", 3),
-        makeSkill(dwarf2.id, "mining", 1),
+        makeSkill(dwarf1.id, "mining", 3), makeSkill(dwarf1.id, "building", 1),
+        makeSkill(dwarf2.id, "building", 3), makeSkill(dwarf2.id, "mining", 1),
       ],
-      items,
-      tasks,
+      items: [
+        makeItem({ name: "Plump helmet", category: "food", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
+        makeItem({ name: "Plump helmet", category: "food", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
+        makeItem({ name: "Plump helmet brew", category: "drink", material: "plant", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
+        makeItem({ name: "Plump helmet brew", category: "drink", material: "plant", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
+      ],
+      tasks: [
+        makeTask("mine", { status: "pending", target_x: 3, target_y: 5, target_z: 0, work_required: 100, priority: 10 }),
+        makeTask("mine", { status: "pending", target_x: 3, target_y: 6, target_z: 0, work_required: 100, priority: 10 }),
+        makeTask("mine", { status: "pending", target_x: 8, target_y: 5, target_z: 0, work_required: 100, priority: 8 }),
+        makeTask("build_floor", { status: "pending", target_x: 5, target_y: 8, target_z: 0, work_required: 25, priority: 6 }),
+        makeTask("build_well", { status: "pending", target_x: 5, target_y: 11, target_z: 0, work_required: 60, priority: 5 }),
+      ],
       tiles,
     });
 
     if (result.violations.length > 0) {
-      console.error("FK violations detected:");
-      for (const v of result.violations) {
-        console.error(`  ${v}`);
-      }
+      console.error("FK violations:", result.violations);
     }
     expect(result.violations).toEqual([]);
   });
 
   it("no FK violations when items are rapidly created and consumed", async () => {
-    // Stress test: dwarf with low food/drink rapidly creates and consumes
-    // eat/drink tasks. Flush every 5 ticks to maximize the chance of
-    // catching a dangling ref.
-
     const dwarf = makeDwarf({
       name: "Hungry", position_x: 5, position_y: 5, position_z: 0,
       need_food: 20, need_drink: 20, need_sleep: 100, need_social: 80,
@@ -308,7 +246,6 @@ describe("flush FK integration", () => {
       Array.from({ length: 10 }, (_, y) => makeMapTile(x, y, 0, "grass")),
     ).flat();
 
-    // Lots of food and drink so the dwarf keeps eating/drinking
     const items = [
       ...Array.from({ length: 20 }, () =>
         makeItem({ name: "Plump helmet", category: "food", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
@@ -319,29 +256,17 @@ describe("flush FK integration", () => {
     ];
 
     const result = await runSimWithFlush({
-      ticks: 300,
-      flushEvery: 5,
-      dwarves: [dwarf],
-      skills: [],
-      items,
-      tasks: [],
-      tiles,
+      ticks: 300, flushEvery: 5,
+      dwarves: [dwarf], skills: [], items, tasks: [], tiles,
     });
 
     if (result.violations.length > 0) {
-      console.error("FK violations detected:");
-      for (const v of result.violations) {
-        console.error(`  ${v}`);
-      }
+      console.error("FK violations:", result.violations);
     }
     expect(result.violations).toEqual([]);
   });
 
   it("no FK violations with flush every single tick", async () => {
-    // Extreme: flush after every tick. This is the worst case for
-    // items being created in one tick and referenced by tasks before
-    // the item is flushed.
-
     const dwarf = makeDwarf({
       name: "Worker", position_x: 5, position_y: 5, position_z: 0,
       need_food: 50, need_drink: 50, need_sleep: 100, need_social: 80,
@@ -361,20 +286,12 @@ describe("flush FK integration", () => {
     ];
 
     const result = await runSimWithFlush({
-      ticks: 200,
-      flushEvery: 1,
-      dwarves: [dwarf],
-      skills: [],
-      items,
-      tasks: [],
-      tiles,
+      ticks: 200, flushEvery: 1,
+      dwarves: [dwarf], skills: [], items, tasks: [], tiles,
     });
 
     if (result.violations.length > 0) {
-      console.error("FK violations detected:");
-      for (const v of result.violations) {
-        console.error(`  ${v}`);
-      }
+      console.error("FK violations:", result.violations);
     }
     expect(result.violations).toEqual([]);
   });
