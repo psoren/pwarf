@@ -58,6 +58,20 @@ function createFakeSupabase() {
 
   function upsertRows(tableName: string, rows: Record<string, unknown>[]) {
     const table = getTable(tableName);
+
+    // PostgreSQL rejects upsert batches with duplicate IDs:
+    // "ON CONFLICT DO UPDATE command cannot affect row a second time"
+    const idsInBatch = new Set<string>();
+    for (const row of rows) {
+      const id = row.id as string;
+      if (idsInBatch.has(id)) {
+        const msg = `ON CONFLICT DO UPDATE command cannot affect row a second time: duplicate id=${id} in ${tableName} batch`;
+        violations.push(msg);
+        return { error: { message: msg } };
+      }
+      idsInBatch.add(id);
+    }
+
     for (const row of rows) {
       const fkError = checkFks(tableName, row);
       if (fkError) {
