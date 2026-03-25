@@ -1,0 +1,23 @@
+{
+  "id": "2026-03-25T07-31-03",
+  "timestamp": "2026-03-25T07:31:03.646Z",
+  "title": "Digest — Mar 25, 2026, 07:31 AM UTC",
+  "summary": "# pwarf Devlog Digest\n\n## Recent Improvements\n\n### Expedition Handling\n- The expedition query in `load-state.ts` now gracefully handles errors by returning an empty array if the relevant table is not found. This adjustment prevents the simulation from halting prematurely due to a 404 error.\n\n### Task Polling Optimization\n- The `pollNewTasks` and `pollStockpileTiles` functions have been modified to operate sequentially after the flush operation, instead of running in parallel. This change improves system performance by reusing cached data and reducing lock contention.\n\nThis round of updates enhances the robustness of the simulation while optimizing task processing for a smoother player experience.\n\n## Merged PRs\n- PR #637: fix: silence expeditions 404 + sequential polls (closes #636)\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 637,
+      "title": "fix: silence expeditions 404 + sequential polls (closes #636)",
+      "url": "https://github.com/psoren/pwarf/pull/637"
+    }
+  ],
+  "images": []
+}
