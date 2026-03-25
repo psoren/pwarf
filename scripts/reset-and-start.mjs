@@ -46,8 +46,9 @@ run("supabase db reset");
 // 4. Install deps (in case node_modules is stale)
 run("npm install");
 
-// 5. Build shared (sim and app depend on it)
+// 5. Build shared and sim (app depends on both)
 run("npm run build --workspace=shared");
+run("npm run build --workspace=sim");
 
 // 6. Start dev server
 console.log("\nStarting dev app...");
