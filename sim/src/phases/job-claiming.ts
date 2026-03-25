@@ -55,6 +55,14 @@ export async function jobClaiming(ctx: SimContext): Promise<void> {
         continue;
       }
 
+      // Haul tasks for held items can only be claimed by the holding dwarf
+      if (task.task_type === 'haul' && task.target_item_id) {
+        const haulItem = state.items.find(i => i.id === task.target_item_id);
+        if (haulItem && haulItem.held_by_dwarf_id !== null && haulItem.held_by_dwarf_id !== dwarf.id) {
+          continue;
+        }
+      }
+
       // Skip build tasks when resources are unavailable (include dwarf's held items)
       if (!hasResources(task.task_type, state.items, ctx.civilizationId, dwarf.id)) {
         continue;
