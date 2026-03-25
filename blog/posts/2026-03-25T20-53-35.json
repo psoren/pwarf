@@ -1,0 +1,55 @@
+{
+  "id": "2026-03-25T20-53-35",
+  "timestamp": "2026-03-25T20:53:35.252Z",
+  "title": "Digest — Mar 25, 2026, 08:53 PM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nExciting updates have been merged into the main branch since our last digest! Here’s a quick overview of the latest features and fixes including improvements to our workshop system, tile types, and gameplay behavior.\n\n## New Features\n\n### Workshop System\n- Introduced a new workshop system with three buildable structures: \n  - **Still (U)** for brewing\n  - **Kitchen (&)** for cooking\n  - **Forge (¤)** for crafting\n- Auto-brew and auto-cook functions now require these workshops, with ingredient sourcing limited to a 5-tile radius from the workshop.\n\n### New Tile Types\n- Added five new tile types to enhance the environment:\n  - Flowers\n  - Springs\n  - Crystals\n  - Glowing Moss\n  - Fungal Growth\n\n### Autonomous Dwarven Behavior\n- Dwarves can now wander, socialize, and rest on their own, providing a more lively colony experience.\n\n### Mining Enhancements\n- Fixed item drops for ore and gem tiles, ensuring the correct items such as Iron Ore and Rubies are produced instead of generic stone blocks.\n- New cave mushroom tile type has been added, creating more variety in the cave environment.\n\n## Bug Fixes\n- Resolved a migration conflict by renumbering duplicate migration files.\n- Fixed issues with migration ordering that previously hindered successful database resets.\n- Prevented crashes in haul assignment logic by ensuring proper checks against undefined values.\n  \n## Development Scripts\n- Enhanced the local development workflow with a new `npm run reset` command that effectively resets the local Supabase database and builds accordingly.\n\nThese updates are set to improve gameplay significantly. We can't wait for you to experience the enriched world of Pwarf!\n\n---\n\n## Merged PRs\n- 665: Workshop system, new tile types, and autonomous behavior\n- 675: Fix for duplicate migration numbers\n- 673: Fix migration ordering issues\n- 671: Fix for undefined guard in haul assignment \n- 669: Fix for mining drops and addition of cave mushrooms\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 665,
+      "title": "feat: workshops, 5 new tile types, and autonomous idle behavior",
+      "url": "https://github.com/psoren/pwarf/pull/665"
+    },
+    {
+      "number": 675,
+      "title": "fix: renumber duplicate migration 00027 (closes #674)",
+      "url": "https://github.com/psoren/pwarf/pull/675",
+      "cost": {
+        "amount": "$7.54",
+        "tokens": "11.2M tokens"
+      }
+    },
+    {
+      "number": 673,
+      "title": "fix: broken npm run reset — migration ordering + missing sim build",
+      "url": "https://github.com/psoren/pwarf/pull/673",
+      "cost": {
+        "amount": "$1.34",
+        "tokens": "1.6M tokens"
+      }
+    },
+    {
+      "number": 671,
+      "title": "fix: guard accepts_categories against undefined, add npm run reset",
+      "url": "https://github.com/psoren/pwarf/pull/671"
+    },
+    {
+      "number": 669,
+      "title": "feat: fix ore/gem mining drops, add cave mushrooms and rare artifacts",
+      "url": "https://github.com/psoren/pwarf/pull/669",
+      "cost": {
+        "amount": "$55.24",
+        "tokens": "75.3M tokens"
+      }
+    }
+  ],
+  "images": []
+}
