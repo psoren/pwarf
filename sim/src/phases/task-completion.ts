@@ -324,6 +324,8 @@ export function getMineProduct(tileType: string | null): {
       return { itemName: 'Stone block', itemMaterial: 'stone', itemWeight: 10, itemValue: 1 };
     case 'bush':
       return { itemName: null, itemMaterial: '', itemWeight: 0, itemValue: 0 };
+    case 'crystal':
+      return { itemName: 'Crystal shard', itemMaterial: 'crystal', itemWeight: 3, itemValue: 15 };
     default:
       return { itemName: 'Stone block', itemMaterial: 'stone', itemWeight: 10, itemValue: 1 };
   }
@@ -422,8 +424,23 @@ function completeFarmHarvest(task: Task, ctx: SimContext): void {
 export const FORAGE_FOOD_NAMES = ['Wild mushroom', 'Berries'] as const;
 
 function completeForage(dwarf: Dwarf, task: Task, ctx: SimContext): void {
-  const names = FORAGE_FOOD_NAMES;
-  const name = names[Math.floor(ctx.rng.random() * names.length)]!;
+  // Determine foraged item based on tile type
+  let name: string;
+  if (task.target_x !== null && task.target_y !== null && task.target_z !== null) {
+    const key = `${task.target_x},${task.target_y},${task.target_z}`;
+    const override = ctx.state.fortressTileOverrides.get(key);
+    const tileType = override?.tile_type
+      ?? ctx.fortressDeriver?.deriveTile(task.target_x, task.target_y, task.target_z).tileType;
+    if (tileType === 'fungal_growth') {
+      name = 'Cave mushroom';
+    } else {
+      const names = FORAGE_FOOD_NAMES;
+      name = names[Math.floor(ctx.rng.random() * names.length)]!;
+    }
+  } else {
+    const names = FORAGE_FOOD_NAMES;
+    name = names[Math.floor(ctx.rng.random() * names.length)]!;
+  }
   const food: Item = {
     id: ctx.rng.uuid(),
     name,

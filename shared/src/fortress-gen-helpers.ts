@@ -170,7 +170,7 @@ function buildCaveForEntrance(
   baseSeed: bigint,
   entranceX: number,
   entranceY: number,
-): { grid: boolean[]; materialNoises: NoiseFunction2D[] } {
+): { grid: boolean[]; materialNoises: NoiseFunction2D[]; floorNoise: NoiseFunction2D } {
   const seed = caveSeed(baseSeed, entranceX, entranceY);
   const rng = createAleaRng(seed);
   const noise = createNoise2D(rng);
@@ -189,7 +189,8 @@ function buildCaveForEntrance(
   }
 
   const materialNoises: NoiseFunction2D[] = CAVE_MATERIALS.map(() => createNoise2D(rng));
-  return { grid, materialNoises };
+  const floorNoise = createNoise2D(rng);
+  return { grid, materialNoises, floorNoise };
 }
 
 // ============================================================
@@ -263,19 +264,20 @@ export function getCaveSeed(worldSeed: bigint, civId: string, entranceX: number,
 
 interface MaterialDef {
   name: string;
-  kind: "ore" | "gem";
+  kind: "ore" | "gem" | "crystal";
   threshold: number;
   priority: number;
 }
 
 const CAVE_MATERIALS: MaterialDef[] = [
-  { name: "iron",   kind: "ore", threshold: 0.94, priority: 1 },
-  { name: "copper", kind: "ore", threshold: 0.94, priority: 2 },
-  { name: "tin",    kind: "ore", threshold: 0.95, priority: 3 },
-  { name: "gold",   kind: "ore", threshold: 0.97, priority: 5 },
-  { name: "silver", kind: "ore", threshold: 0.96, priority: 4 },
-  { name: "ruby",   kind: "gem", threshold: 0.97, priority: 7 },
-  { name: "sapphire", kind: "gem", threshold: 0.97, priority: 8 },
+  { name: "iron",     kind: "ore",     threshold: 0.94, priority: 1 },
+  { name: "copper",   kind: "ore",     threshold: 0.94, priority: 2 },
+  { name: "tin",      kind: "ore",     threshold: 0.95, priority: 3 },
+  { name: "gold",     kind: "ore",     threshold: 0.97, priority: 5 },
+  { name: "silver",   kind: "ore",     threshold: 0.96, priority: 4 },
+  { name: "ruby",     kind: "gem",     threshold: 0.97, priority: 7 },
+  { name: "sapphire", kind: "gem",     threshold: 0.97, priority: 8 },
+  { name: "crystal",  kind: "crystal", threshold: 0.96, priority: 6 },
 ];
 
 function checkCaveMaterial(
@@ -298,10 +300,10 @@ function checkCaveMaterial(
   }
 
   if (bestMatch) {
-    return {
-      tileType: bestMatch.kind === "gem" ? "gem" : "ore",
-      material: bestMatch.name,
-    };
+    const tileType = bestMatch.kind === "gem" ? "gem"
+      : bestMatch.kind === "crystal" ? "crystal"
+      : "ore";
+    return { tileType, material: bestMatch.name };
   }
   return null;
 }
@@ -416,9 +418,19 @@ export function deriveSurfaceTile(
     return { tileType: "bush", material: null };
   }
 
+  // Flowers — appear in grass regions with a different noise detail threshold
+  if (treeRegion < p.bushRegionMin && treeDetail > 0.85) {
+    return { tileType: "flower", material: null };
+  }
+
   const rockVal = (rockNoise(x * 0.05, y * 0.05) + 1) / 2;
   if (rockVal > p.rockThreshold) {
     return { tileType: "rock", material: "stone" };
+  }
+
+  // Spring — very rare natural water source
+  if (pondRegion > p.pondRegion + 0.1 && pondVal > p.pondDetail + 0.15) {
+    return { tileType: "spring", material: null };
   }
 
   return { tileType: p.base, material: p.baseMaterial };
@@ -456,7 +468,7 @@ export function createFortressDeriver(
     entrances.map(e => [e.z, e]),
   );
 
-  const caveCache = new Map<number, { grid: boolean[]; materialNoises: NoiseFunction2D[] }>();
+  const caveCache = new Map<number, { grid: boolean[]; materialNoises: NoiseFunction2D[]; floorNoise: NoiseFunction2D }>();
 
   function getCaveData(z: number) {
     const entrance = entranceByZ.get(z);
@@ -515,6 +527,14 @@ export function createFortressDeriver(
         }
 
         if (cave.grid[cy * CAVE_SIZE + cx]) {
+          // Floor variants: glowing_moss (~10%) and fungal_growth (~5%)
+          const floorVal = (cave.floorNoise(cx * 0.07, cy * 0.07) + 1) / 2;
+          if (floorVal > 0.90) {
+            return { tileType: "glowing_moss", material: null };
+          }
+          if (floorVal > 0.85) {
+            return { tileType: "fungal_growth", material: null };
+          }
           return { tileType: "cavern_floor", material: null };
         }
 

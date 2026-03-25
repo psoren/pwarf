@@ -186,6 +186,11 @@ export type FortressTileType =
   | 'ice'
   | 'mud'
   | 'cave_entrance'
+  | 'flower'
+  | 'spring'
+  | 'crystal'
+  | 'glowing_moss'
+  | 'fungal_growth'
   | 'empty';
 
 // ============================================================

@@ -35,6 +35,10 @@ const WALKABLE_TILES: ReadonlySet<FortressTileType> = new Set([
   'still',
   'kitchen',
   'forge',
+  'flower',
+  'spring',
+  'glowing_moss',
+  'fungal_growth',
 ]);
 
 /** Check if a tile type is walkable. */
