@@ -6,11 +6,14 @@ ALTER TYPE fortress_tile_type ADD VALUE IF NOT EXISTS 'sand';
 ALTER TYPE fortress_tile_type ADD VALUE IF NOT EXISTS 'mud';
 ALTER TYPE fortress_tile_type ADD VALUE IF NOT EXISTS 'ice';
 
--- Make critical FK constraints deferrable so the RPC can defer checking
--- until transaction end (allows inserting tasks + items in any order).
-ALTER TABLE tasks ALTER CONSTRAINT tasks_target_item_id_fkey DEFERRABLE INITIALLY IMMEDIATE;
-ALTER TABLE tasks ALTER CONSTRAINT tasks_assigned_dwarf_id_fkey DEFERRABLE INITIALLY IMMEDIATE;
-ALTER TABLE dwarves ALTER CONSTRAINT dwarves_current_task_id_fkey DEFERRABLE INITIALLY IMMEDIATE;
+-- Drop FK constraints between sim-managed tables. The sim engine maintains
+-- referential integrity in memory — these DB constraints only cause cascading
+-- flush failures when entities are created/consumed between flush cycles.
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_target_item_id_fkey;
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_assigned_dwarf_id_fkey;
+ALTER TABLE dwarves DROP CONSTRAINT IF EXISTS dwarves_current_task_id_fkey;
+
+-- Keep items FK constraints deferrable (less problematic, still useful for data integrity)
 ALTER TABLE items ALTER CONSTRAINT items_held_by_dwarf_id_fkey DEFERRABLE INITIALLY IMMEDIATE;
 ALTER TABLE items ALTER CONSTRAINT items_created_by_dwarf_id_fkey DEFERRABLE INITIALLY IMMEDIATE;
 

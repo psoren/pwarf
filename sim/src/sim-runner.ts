@@ -97,15 +97,17 @@ export class SimRunner {
     this.flushTimer = setInterval(() => {
       if (this.ctx) {
         const ctx = this.ctx;
-        void this.adapter.flush(ctx).then(() => {
-          // Stop the sim if the civilization has fallen
+        // Run flush → polls sequentially to avoid auth-lock contention.
+        // Polls reuse the cached auth token from the flush request.
+        void this.adapter.flush(ctx).then(async () => {
           if (ctx.state.civFallen) {
             console.log(`[sim] civilization ${ctx.civilizationId} has fallen — stopping sim`);
             void this.stop();
+            return;
           }
+          await this.pollNewTasks();
+          await this.pollStockpileTiles();
         });
-        void this.pollNewTasks();
-        void this.pollStockpileTiles();
       }
     }, SIM_FLUSH_INTERVAL_MS);
   }
