@@ -151,13 +151,13 @@ describe("building resource costs", () => {
     expect(stones).toHaveLength(1);
   });
 
-  it("does not consume items held by dwarves", () => {
+  it("consumes items held by the building dwarf", () => {
     const dwarf = makeDwarf();
     const ctx = makeContext({
       dwarves: [dwarf],
       skills: [makeSkill(dwarf.id, "building", 1)],
       items: [
-        // This stone is held by a dwarf — should not be consumed
+        // This stone is held by the building dwarf — should be consumed
         makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "civ-1", held_by_dwarf_id: dwarf.id }),
       ],
     });
@@ -175,9 +175,9 @@ describe("building resource costs", () => {
 
     completeTask(dwarf, task, ctx);
 
-    expect(task.status).toBe("pending");
-    // Stone should still be held
-    expect(ctx.state.items).toHaveLength(1);
+    // Dwarf should be able to use the stone it's carrying to build
+    expect(task.status).toBe("completed");
+    expect(ctx.state.items).toHaveLength(0);
   });
 
   it("BUILDING_COSTS defines costs for all build task types", () => {

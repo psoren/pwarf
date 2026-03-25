@@ -55,8 +55,8 @@ export async function jobClaiming(ctx: SimContext): Promise<void> {
         continue;
       }
 
-      // Skip build tasks when resources are unavailable
-      if (!hasResources(task.task_type, state.items, ctx.civilizationId)) {
+      // Skip build tasks when resources are unavailable (include dwarf's held items)
+      if (!hasResources(task.task_type, state.items, ctx.civilizationId, dwarf.id)) {
         continue;
       }
 

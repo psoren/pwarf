@@ -48,19 +48,19 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   switch (task.task_type) {
     case 'build_wall':
     case 'build_floor':
-      buildSuccess = completeBuild(task, ctx);
+      buildSuccess = completeBuild(task, ctx, dwarf.id);
       break;
     case 'build_bed':
-      buildSuccess = completeBuildBed(task, ctx);
+      buildSuccess = completeBuildBed(task, ctx, dwarf.id);
       break;
     case 'build_well':
-      buildSuccess = completeBuildStructure(task, ctx, 'well', 'well');
+      buildSuccess = completeBuildStructure(task, ctx, 'well', 'well', dwarf.id);
       break;
     case 'build_mushroom_garden':
-      buildSuccess = completeBuildStructure(task, ctx, 'mushroom_garden', 'mushroom_garden');
+      buildSuccess = completeBuildStructure(task, ctx, 'mushroom_garden', 'mushroom_garden', dwarf.id);
       break;
     case 'build_door':
-      buildSuccess = completeBuildStructure(task, ctx, 'door', 'door');
+      buildSuccess = completeBuildStructure(task, ctx, 'door', 'door', dwarf.id);
       break;
   }
 
@@ -315,13 +315,13 @@ export function getMineProduct(tileType: string | null): {
   }
 }
 
-function completeBuild(task: Task, ctx: SimContext): boolean {
+function completeBuild(task: Task, ctx: SimContext, builderId: string): boolean {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return false;
 
   const tileType = BUILD_TILE_MAP[task.task_type];
   if (!tileType) return false;
 
-  if (!consumeResources(task.task_type, ctx)) return false;
+  if (!consumeResources(task.task_type, ctx, builderId)) return false;
 
   upsertFortressTile(ctx, task.target_x, task.target_y, task.target_z, tileType, 'stone', false);
   return true;
@@ -480,10 +480,10 @@ function completeSleep(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   ctx.state.dirtyDwarfIds.add(dwarf.id);
 }
 
-function completeBuildBed(task: Task, ctx: SimContext): boolean {
+function completeBuildBed(task: Task, ctx: SimContext, builderId: string): boolean {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return false;
 
-  if (!consumeResources(task.task_type, ctx)) return false;
+  if (!consumeResources(task.task_type, ctx, builderId)) return false;
 
   const bed: Structure = {
     id: ctx.rng.uuid(),
@@ -518,10 +518,11 @@ function completeBuildStructure(
   ctx: SimContext,
   structureType: string,
   tileType: FortressTileType,
+  builderId?: string,
 ): boolean {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return false;
 
-  if (!consumeResources(task.task_type, ctx)) return false;
+  if (!consumeResources(task.task_type, ctx, builderId)) return false;
 
   const structure: Structure = {
     id: ctx.rng.uuid(),
