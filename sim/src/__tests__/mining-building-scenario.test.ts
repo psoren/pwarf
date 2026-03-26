@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
-import { makeDwarf, makeTask, makeSkill, makeItem, makeStructure } from "./test-helpers.js";
+import { makeDwarf, makeTask, makeSkill, makeItem, makeMapTile, makeStructure } from "./test-helpers.js";
 import {
   WORK_MINE_BASE,
   WORK_BUILD_WALL,
   WORK_BUILD_BED,
   WORK_BUILD_WELL,
+  createFortressDeriver,
 } from "@pwarf/shared";
 import type { FortressTile } from "@pwarf/shared";
 
@@ -37,17 +38,19 @@ function makeMinableTile(x: number, y: number, z: number): FortressTile {
   };
 }
 
+const fortressDeriver = createFortressDeriver(42n, "test-civ", "plains");
+
 describe("mining scenario", () => {
   it("idle dwarf picks up and completes a mine task", async () => {
-    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 256, position_y: 256, position_z: 0 });
     const miningSkill = makeSkill(dwarf.id, "mining", 1);
 
     // Place a stone tile adjacent to the dwarf and create a pending mine task
-    const stoneTile = makeMinableTile(11, 10, 0);
+    const stoneTile = makeMinableTile(257, 256, 0);
     const mineTask = makeTask("mine", {
       status: "pending",
-      target_x: 11,
-      target_y: 10,
+      target_x: 257,
+      target_y: 256,
       target_z: 0,
       work_required: WORK_MINE_BASE,
     });
@@ -57,6 +60,7 @@ describe("mining scenario", () => {
       dwarfSkills: [miningSkill],
       tasks: [mineTask],
       fortressTileOverrides: [stoneTile],
+      fortressDeriver,
       ticks: WORK_MINE_BASE + 20, // enough for walking + mining
     });
 
@@ -66,19 +70,19 @@ describe("mining scenario", () => {
 
     // Tile should be mined (changed to open_air)
     const minedTile = result.fortressTileOverrides.find(
-      t => t.x === 11 && t.y === 10 && t.z === 0,
+      t => t.x === 257 && t.y === 256 && t.z === 0,
     );
     expect(minedTile?.tile_type).toBe("grass"); // surface mining (z=0) produces grass
   });
 
   it("mining produces a raw material item", async () => {
-    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 256, position_y: 256, position_z: 0 });
     const miningSkill = makeSkill(dwarf.id, "mining", 1);
-    const stoneTile = makeMinableTile(11, 10, 0);
+    const stoneTile = makeMinableTile(257, 256, 0);
     const mineTask = makeTask("mine", {
       status: "pending",
-      target_x: 11,
-      target_y: 10,
+      target_x: 257,
+      target_y: 256,
       target_z: 0,
       work_required: WORK_MINE_BASE,
     });
@@ -88,6 +92,7 @@ describe("mining scenario", () => {
       dwarfSkills: [miningSkill],
       tasks: [mineTask],
       fortressTileOverrides: [stoneTile],
+      fortressDeriver,
       ticks: WORK_MINE_BASE + 20,
     });
 
@@ -98,12 +103,12 @@ describe("mining scenario", () => {
 
 describe("building scenario", () => {
   it("idle dwarf picks up and completes a build_wall task", async () => {
-    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 256, position_y: 256, position_z: 0 });
     const buildSkill = makeSkill(dwarf.id, "building", 1);
     const buildTask = makeTask("build_wall", {
       status: "pending",
-      target_x: 11,
-      target_y: 10,
+      target_x: 257,
+      target_y: 256,
       target_z: 0,
       work_required: WORK_BUILD_WALL,
     });
@@ -113,6 +118,7 @@ describe("building scenario", () => {
       dwarfSkills: [buildSkill],
       tasks: [buildTask],
       items: [stoneBlock()],
+      fortressDeriver,
       ticks: WORK_BUILD_WALL + 20,
     });
 
@@ -121,18 +127,18 @@ describe("building scenario", () => {
 
     // Should have placed a constructed_wall tile
     const wallTile = result.fortressTileOverrides.find(
-      t => t.x === 11 && t.y === 10 && t.z === 0,
+      t => t.x === 257 && t.y === 256 && t.z === 0,
     );
     expect(wallTile?.tile_type).toBe("constructed_wall");
   });
 
   it("idle dwarf builds a bed (creates structure)", async () => {
-    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 256, position_y: 256, position_z: 0 });
     const buildSkill = makeSkill(dwarf.id, "building", 1);
     const buildTask = makeTask("build_bed", {
       status: "pending",
-      target_x: 11,
-      target_y: 10,
+      target_x: 257,
+      target_y: 256,
       target_z: 0,
       work_required: WORK_BUILD_BED,
     });
@@ -142,6 +148,7 @@ describe("building scenario", () => {
       dwarfSkills: [buildSkill],
       tasks: [buildTask],
       items: [woodLog()],
+      fortressDeriver,
       ticks: WORK_BUILD_BED + 20,
     });
 
@@ -151,16 +158,16 @@ describe("building scenario", () => {
     const bed = result.structures.find(s => s.type === "bed");
     expect(bed).toBeDefined();
     expect(bed?.completion_pct).toBe(100);
-    expect(bed?.position_x).toBe(11);
+    expect(bed?.position_x).toBe(257);
   });
 
   it("idle dwarf builds a well (creates structure)", async () => {
-    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 256, position_y: 256, position_z: 0 });
     const buildSkill = makeSkill(dwarf.id, "building", 1);
     const buildTask = makeTask("build_well", {
       status: "pending",
-      target_x: 11,
-      target_y: 10,
+      target_x: 257,
+      target_y: 256,
       target_z: 0,
       work_required: WORK_BUILD_WELL,
     });
@@ -170,6 +177,7 @@ describe("building scenario", () => {
       dwarfSkills: [buildSkill],
       tasks: [buildTask],
       items: [stoneBlock(), stoneBlock()],
+      fortressDeriver,
       ticks: WORK_BUILD_WELL + 20,
     });
 

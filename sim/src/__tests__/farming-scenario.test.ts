@@ -5,7 +5,10 @@ import {
   WORK_FARM_TILL_BASE,
   WORK_FARM_PLANT_BASE,
   WORK_FARM_HARVEST_BASE,
+  createFortressDeriver,
 } from "@pwarf/shared";
+
+const fortressDeriver = createFortressDeriver(42n, "test-civ", "plains");
 
 /**
  * Farming pipeline scenario tests (issue #550)
@@ -17,13 +20,13 @@ import {
 
 describe("farming pipeline", () => {
   it("farm_till chains to farm_plant then farm_harvest", async () => {
-    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 256, position_y: 256, position_z: 0 });
     const farmSkill = makeSkill(dwarf.id, "farming", 1);
 
     const tillTask = makeTask("farm_till", {
       status: "pending",
-      target_x: 11,
-      target_y: 10,
+      target_x: 257,
+      target_y: 256,
       target_z: 0,
       work_required: WORK_FARM_TILL_BASE,
     });
@@ -34,6 +37,7 @@ describe("farming pipeline", () => {
       dwarves: [dwarf],
       dwarfSkills: [farmSkill],
       tasks: [tillTask],
+      fortressDeriver,
       ticks: totalWork + 300,
     });
 
@@ -51,14 +55,14 @@ describe("farming pipeline", () => {
   });
 
   it("farm_till converts grass tile to soil", async () => {
-    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 256, position_y: 256, position_z: 0 });
     const farmSkill = makeSkill(dwarf.id, "farming", 1);
-    const grassTile = makeMapTile(11, 10, 0, "grass");
+    const grassTile = makeMapTile(257, 256, 0, "grass");
 
     const tillTask = makeTask("farm_till", {
       status: "pending",
-      target_x: 11,
-      target_y: 10,
+      target_x: 257,
+      target_y: 256,
       target_z: 0,
       work_required: WORK_FARM_TILL_BASE,
     });
@@ -68,24 +72,25 @@ describe("farming pipeline", () => {
       dwarfSkills: [farmSkill],
       tasks: [tillTask],
       fortressTileOverrides: [grassTile],
+      fortressDeriver,
       ticks: WORK_FARM_TILL_BASE + 50,
     });
 
     const till = result.tasks.find(t => t.id === tillTask.id);
     expect(till?.status).toBe("completed");
 
-    const tile = result.fortressTileOverrides.find(t => t.x === 11 && t.y === 10 && t.z === 0);
+    const tile = result.fortressTileOverrides.find(t => t.x === 257 && t.y === 256 && t.z === 0);
     expect(tile?.tile_type).toBe("soil");
   });
 
   it("farm_harvest produces a food item", async () => {
-    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 256, position_y: 256, position_z: 0 });
     const farmSkill = makeSkill(dwarf.id, "farming", 1);
 
     const tillTask = makeTask("farm_till", {
       status: "pending",
-      target_x: 11,
-      target_y: 10,
+      target_x: 257,
+      target_y: 256,
       target_z: 0,
       work_required: WORK_FARM_TILL_BASE,
     });
@@ -95,6 +100,7 @@ describe("farming pipeline", () => {
       dwarves: [dwarf],
       dwarfSkills: [farmSkill],
       tasks: [tillTask],
+      fortressDeriver,
       ticks: totalWork + 50,
     });
 
@@ -104,14 +110,14 @@ describe("farming pipeline", () => {
   });
 
   it("multiple farm cycles produce multiple food items", async () => {
-    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 256, position_y: 256, position_z: 0 });
     const farmSkill = makeSkill(dwarf.id, "farming", 2);
 
     // Create 3 till tasks at different locations
     const tillTasks = [
-      makeTask("farm_till", { status: "pending", target_x: 11, target_y: 10, target_z: 0, work_required: WORK_FARM_TILL_BASE }),
-      makeTask("farm_till", { status: "pending", target_x: 12, target_y: 10, target_z: 0, work_required: WORK_FARM_TILL_BASE }),
-      makeTask("farm_till", { status: "pending", target_x: 13, target_y: 10, target_z: 0, work_required: WORK_FARM_TILL_BASE }),
+      makeTask("farm_till", { status: "pending", target_x: 257, target_y: 256, target_z: 0, work_required: WORK_FARM_TILL_BASE }),
+      makeTask("farm_till", { status: "pending", target_x: 258, target_y: 256, target_z: 0, work_required: WORK_FARM_TILL_BASE }),
+      makeTask("farm_till", { status: "pending", target_x: 259, target_y: 256, target_z: 0, work_required: WORK_FARM_TILL_BASE }),
     ];
 
     const totalWork = (WORK_FARM_TILL_BASE + WORK_FARM_PLANT_BASE + WORK_FARM_HARVEST_BASE) * 3;
@@ -119,6 +125,7 @@ describe("farming pipeline", () => {
       dwarves: [dwarf],
       dwarfSkills: [farmSkill],
       tasks: tillTasks,
+      fortressDeriver,
       ticks: totalWork + 300, // generous buffer for need interrupts
     });
 
@@ -127,13 +134,13 @@ describe("farming pipeline", () => {
   });
 
   it("farming awards XP to the farming skill", async () => {
-    const dwarf = makeDwarf({ position_x: 10, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 256, position_y: 256, position_z: 0 });
     const farmSkill = makeSkill(dwarf.id, "farming", 0, 0);
 
     const tillTask = makeTask("farm_till", {
       status: "pending",
-      target_x: 11,
-      target_y: 10,
+      target_x: 257,
+      target_y: 256,
       target_z: 0,
       work_required: WORK_FARM_TILL_BASE,
     });
@@ -143,6 +150,7 @@ describe("farming pipeline", () => {
       dwarves: [dwarf],
       dwarfSkills: [farmSkill],
       tasks: [tillTask],
+      fortressDeriver,
       ticks: totalWork + 50,
     });
 
