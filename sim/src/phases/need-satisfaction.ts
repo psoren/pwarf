@@ -180,9 +180,12 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
   const { state } = ctx;
 
   // Don't interrupt if already doing an autonomous task
+  // Don't interrupt haul tasks — the dwarf is carrying an item and the task
+  // is short. Interrupting causes an infinite loop where the dwarf never
+  // delivers because the task resets but the item stays held.
   if (dwarf.current_task_id) {
     const currentTask = getTaskById(state, dwarf.current_task_id);
-    if (currentTask && AUTONOMOUS_TASK_TYPES.has(currentTask.task_type)) {
+    if (currentTask && (AUTONOMOUS_TASK_TYPES.has(currentTask.task_type) || currentTask.task_type === 'haul')) {
       return;
     }
   }

@@ -418,7 +418,35 @@ describe("need satisfaction", () => {
     const food = makeItem({ category: "food", position_x: 2, position_y: 0, position_z: 0 });
     const ctx = makeContext({ dwarves: [dwarf], items: [food] });
 
-    // Give dwarf a haul task
+    // Give dwarf a mine task (non-haul, interruptible)
+    const mineTask = createTask(ctx, {
+      task_type: "mine",
+      target_x: 5,
+      target_y: 5,
+      target_z: 0,
+    });
+    mineTask.status = "in_progress";
+    mineTask.assigned_dwarf_id = dwarf.id;
+    dwarf.current_task_id = mineTask.id;
+
+    await needSatisfaction(ctx);
+
+    // Mine task should be returned to pending
+    expect(mineTask.status).toBe("pending");
+    expect(mineTask.assigned_dwarf_id).toBeNull();
+
+    // Eat task should be created and immediately claimed
+    const eatTasks = ctx.state.tasks.filter(t => t.task_type === "eat");
+    expect(eatTasks).toHaveLength(1);
+    expect(eatTasks[0].status).toBe("claimed");
+    expect(dwarf.current_task_id).toBe(eatTasks[0].id);
+  });
+
+  it("does not interrupt a haul task even when need is critical", async () => {
+    const dwarf = makeDwarf({ need_food: NEED_INTERRUPT_FOOD - 1, position_x: 0, position_y: 0, position_z: 0 });
+    const food = makeItem({ category: "food", position_x: 2, position_y: 0, position_z: 0 });
+    const ctx = makeContext({ dwarves: [dwarf], items: [food] });
+
     const haulTask = createTask(ctx, {
       task_type: "haul",
       target_x: 5,
@@ -431,15 +459,14 @@ describe("need satisfaction", () => {
 
     await needSatisfaction(ctx);
 
-    // Haul task should be returned to pending
-    expect(haulTask.status).toBe("pending");
-    expect(haulTask.assigned_dwarf_id).toBeNull();
+    // Haul task should NOT be interrupted
+    expect(haulTask.status).toBe("in_progress");
+    expect(haulTask.assigned_dwarf_id).toBe(dwarf.id);
+    expect(dwarf.current_task_id).toBe(haulTask.id);
 
-    // Eat task should be created and immediately claimed
+    // No eat task should be created
     const eatTasks = ctx.state.tasks.filter(t => t.task_type === "eat");
-    expect(eatTasks).toHaveLength(1);
-    expect(eatTasks[0].status).toBe("claimed");
-    expect(dwarf.current_task_id).toBe(eatTasks[0].id);
+    expect(eatTasks).toHaveLength(0);
   });
 
   it("does not interrupt an existing autonomous task", async () => {
