@@ -263,33 +263,6 @@ export interface Ruin {
   created_at: string;
 }
 
-export type ExpeditionStatus =
-  | 'traveling'
-  | 'active'
-  | 'looting'
-  | 'retreating'
-  | 'complete'
-  | 'failed';
-
-export interface Expedition {
-  id: string;
-  player_id: string;
-  ruin_id: string;
-  status: ExpeditionStatus;
-  dwarf_ids: string[];
-  started_at: string;
-  completed_at: string | null;
-  items_looted: string[];
-  dwarves_lost: number;
-  expedition_log: string | null;
-  civilization_id: string;
-  travel_ticks_remaining: number;
-  return_ticks_remaining: number;
-  destination_tile_x: number;
-  destination_tile_y: number;
-  party_strength: number;
-}
-
 export interface Dwarf {
   id: string;
   civilization_id: string;

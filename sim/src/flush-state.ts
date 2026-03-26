@@ -159,7 +159,6 @@ async function doFlush(ctx: SimContext): Promise<void> {
   state.dirtyDwarfSkillIds.clear();
   state.dirtyFortressTileKeys.clear();
   state.dirtyDwarfRelationshipIds.clear();
-  state.dirtyExpeditionIds.clear();
   state.dirtyRuinIds.clear();
   state.newTasks = [];
   state.newDwarfRelationships = [];
