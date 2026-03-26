@@ -840,6 +840,17 @@ export function completeScoutCave(dwarf: Dwarf, task: Task, ctx: SimContext): vo
   // This signals to the UI that the cave has been discovered
   upsertFortressTile(ctx, task.target_x, task.target_y, caveZ, 'cavern_floor', null, false);
 
+  // Mark the cave row as discovered (if caves table is loaded)
+  const cave = ctx.state.caves.find(
+    c => c.entrance_x === task.target_x && c.entrance_y === task.target_y,
+  );
+  if (cave) {
+    cave.discovered = true;
+    cave.discovered_by = dwarf.id;
+    cave.discovered_at = new Date().toISOString();
+    ctx.state.dirtyCaveIds.add(cave.id);
+  }
+
   // Fire discovery event
   const dwarfLabel = dwarfName(dwarf);
   ctx.state.pendingEvents.push({

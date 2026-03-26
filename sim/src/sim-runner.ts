@@ -1,5 +1,5 @@
 import { STEPS_PER_SECOND, STEPS_PER_YEAR, STEPS_PER_DAY, SIM_FLUSH_INTERVAL_MS, createFortressDeriver } from "@pwarf/shared";
-import type { Dwarf, DwarfSkill, Item, Structure, StockpileTile, Task, WorldEvent, FortressTile, Monster } from "@pwarf/shared";
+import type { Cave, Dwarf, DwarfSkill, Item, Structure, StockpileTile, Task, WorldEvent, FortressTile, Monster } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng } from "./rng.js";
@@ -17,6 +17,7 @@ export interface SimSnapshot {
    * can show tile changes immediately without waiting for the DB flush. */
   fortressTileOverrides: FortressTile[];
   monsters: Monster[];
+  caves: Cave[];
   year: number;
   civFallen: boolean;
 }
@@ -78,7 +79,14 @@ export class SimRunner {
         this.adapter.getCivInfo(civilizationId),
       ]);
       if (seed != null) {
-        fortressDeriver = createFortressDeriver(seed, civilizationId, terrain ?? 'plains');
+        // Pass loaded caves to use DB z-levels and names instead of index-based defaults
+        const knownCaves = cached.caves.map((c: Cave) => ({
+          entrance_x: c.entrance_x,
+          entrance_y: c.entrance_y,
+          z_level: c.z_level,
+          name: c.name,
+        }));
+        fortressDeriver = createFortressDeriver(seed, civilizationId, terrain ?? 'plains', knownCaves);
       }
       if (civInfo) {
         civName = civInfo.name;
@@ -245,6 +253,7 @@ export class SimRunner {
         events: this.ctx.state.worldEvents,
         fortressTileOverrides: [...this.ctx.state.fortressTileOverrides.values()],
         monsters: this.ctx.state.monsters,
+        caves: this.ctx.state.caves,
         year: this.currentYear,
         civFallen: this.ctx.state.civFallen,
       });
