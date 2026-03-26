@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import type { DwarfSkill, Item } from "@pwarf/shared";
 import { DWARF_CARRY_CAPACITY, AUTONOMOUS_TASK_TYPES, IDLE_TASK_TYPES } from "@pwarf/shared";
 import { supabase } from "../lib/supabase";
 import type { LiveDwarf, DwarfThought } from "../hooks/useDwarves";
 import type { ActiveTask } from "../hooks/useTasks";
 import { skillStars } from "../utils/skillStars";
+import { EntityModal } from "./EntityModal";
+import { needBar } from "./needBar";
 
 interface DwarfModalProps {
   dwarf: LiveDwarf;
@@ -32,37 +34,8 @@ function dwarfJobLabel(d: LiveDwarf, tasks?: ActiveTask[]): string {
   return `${label} (${pct}%)`;
 }
 
-function needBar(label: string, value: number, color: string) {
-  const pct = Math.round(value);
-  const barColor = value < 25 ? "var(--red, #f87171)" : color;
-  return (
-    <div className="flex items-center gap-1">
-      <span className="w-14 text-[var(--text)]">{label}</span>
-      <div className="flex-1 h-2 bg-[#333] rounded overflow-hidden">
-        <div
-          className="h-full rounded"
-          style={{ width: `${pct}%`, backgroundColor: barColor }}
-        />
-      </div>
-      <span className="w-8 text-right" style={{ color: barColor }}>{pct}</span>
-    </div>
-  );
-}
-
 export function DwarfModal({ dwarf, onClose, onGoTo, items = [], tasks }: DwarfModalProps) {
   const [skills, setSkills] = useState<DwarfSkill[]>([]);
-
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        e.stopPropagation();
-        onClose();
-      }
-    }
-    window.addEventListener("keydown", handleKey, true);
-    return () => window.removeEventListener("keydown", handleKey, true);
-  }, [onClose]);
 
   useEffect(() => {
     supabase
@@ -79,27 +52,10 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [], tasks }: DwarfM
   const carried = items.filter(i => i.held_by_dwarf_id === dwarf.id);
   const totalWeight = carried.reduce((sum, i) => sum + (i.weight ?? 0), 0);
 
-  return (
-    <div
-      className="absolute inset-0 z-50 flex items-center justify-center"
-      onClick={onClose}
-    >
-      <div
-        className="bg-[var(--bg-panel)] border border-[var(--amber)] p-4 min-w-[280px] max-w-[360px] text-xs"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-[var(--green)] font-bold text-sm">
-            {dwarf.name}{dwarf.surname ? ` ${dwarf.surname}` : ""}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-[var(--text)] hover:text-[var(--amber)] cursor-pointer"
-          >
-            [Esc]
-          </button>
-        </div>
+  const title = dwarf.name + (dwarf.surname ? ` ${dwarf.surname}` : "");
 
+  return (
+    <EntityModal title={title} onClose={onClose}>
         <div className="text-[var(--text)] mb-1 flex gap-3">
           <span>Status: <span className="text-[var(--green)]">{dwarfJobLabel(dwarf, tasks)}</span></span>
           {dwarf.age != null && (
@@ -205,7 +161,6 @@ export function DwarfModal({ dwarf, onClose, onGoTo, items = [], tasks }: DwarfM
             </ul>
           </div>
         )}
-      </div>
-    </div>
+    </EntityModal>
   );
 }
