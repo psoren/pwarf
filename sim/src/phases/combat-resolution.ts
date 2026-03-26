@@ -114,6 +114,7 @@ export async function combatResolution(ctx: SimContext): Promise<void> {
     const skillBonus = fightingSkill ? Math.floor(fightingSkill.level / 2) : 0;
     const dwarfDmg = rollDamage(rng, DWARF_ATTACK_BASE + skillBonus, COMBAT_DAMAGE_SPREAD);
     monster.health = Math.max(0, monster.health - dwarfDmg);
+    state.dirtyMonsterIds.add(monster.id);
 
     if (monster.health <= 0) {
       slayMonster(monster, target, ctx);
@@ -143,6 +144,7 @@ function slayMonster(monster: Monster, killer: Dwarf, ctx: SimContext): void {
   monster.slain_year = ctx.year;
   monster.slain_by_dwarf_id = killer.id;
   monster.slain_in_civ_id = ctx.civilizationId;
+  state.dirtyMonsterIds.add(monster.id);
 
   // Award XP to the killer — create/update fighting skill record
   const existing = state.dwarfSkills.find(
