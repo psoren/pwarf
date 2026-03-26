@@ -214,6 +214,10 @@ function combineSeed(worldSeed: bigint, civId: string): bigint {
 
 function pickCaveEntrances(
   entranceNoise: NoiseFunction2D,
+  treeNoise: NoiseFunction2D,
+  rockNoise: NoiseFunction2D,
+  pondNoise: NoiseFunction2D,
+  terrain: TerrainType,
 ): Array<{ x: number; y: number }> {
   const candidates: Array<{ x: number; y: number; val: number }> = [];
   const step = 32;
@@ -221,7 +225,9 @@ function pickCaveEntrances(
   for (let sy = step; sy < FORTRESS_SIZE - step; sy += step) {
     for (let sx = step; sx < FORTRESS_SIZE - step; sx += step) {
       const val = (entranceNoise(sx * 0.01, sy * 0.01) + 1) / 2;
-      if (val > 0.7) {
+      if (val > 0.6) {
+        const surface = deriveSurfaceTile(sx, sy, treeNoise, rockNoise, pondNoise, terrain);
+        if (surface.tileType === "pond" || surface.tileType === "water" || surface.tileType === "ice" || surface.tileType === "magma") continue;
         candidates.push({ x: sx, y: sy, val });
       }
     }
@@ -233,7 +239,7 @@ function pickCaveEntrances(
   const minDist = 80;
 
   for (const c of candidates) {
-    if (positions.length >= 5) break;
+    if (positions.length >= 8) break;
     const tooClose = positions.some(
       (p) => Math.abs(p.x - c.x) + Math.abs(p.y - c.y) < minDist,
     );
@@ -448,7 +454,7 @@ export function createFortressDeriver(
   const surfacePondNoise = createNoise2D(rng);
   CAVE_MATERIALS.forEach(() => createNoise2D(rng));
 
-  const entrancePositions = pickCaveEntrances(entranceNoise);
+  const entrancePositions = pickCaveEntrances(entranceNoise, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise, terrain);
 
   const entrances: CaveEntrance[] = entrancePositions.map((p, i) => ({
     x: p.x, y: p.y, z: -(i + 1),
