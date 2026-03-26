@@ -457,6 +457,8 @@ export default function App() {
 
   const handleConfirmScout = useCallback(async () => {
     if (!caveScoutModal || caveScoutModal.alreadyScouting || !world.civId) return;
+    // Optimistically mark as scouting to prevent duplicate clicks
+    setCaveScoutModal({ ...caveScoutModal, alreadyScouting: true });
     const { error } = await supabase.from('tasks').insert({
       civilization_id: world.civId,
       task_type: 'scout_cave',
