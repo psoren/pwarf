@@ -95,13 +95,17 @@ async function doFlush(ctx: SimContext): Promise<void> {
     ? state.ruins.filter((r) => state.dirtyRuinIds.has(r.id))
     : [];
 
+  const dirtyCaves = state.dirtyCaveIds.size > 0
+    ? state.caves.filter((c) => state.dirtyCaveIds.has(c.id))
+    : [];
+
   // Skip flush if nothing is dirty
   const hasDirty = dirtyItems.length > 0 || dirtyStructures.length > 0
     || allTasks.length > 0 || dirtyDwarves.length > 0
     || dirtyMonsters.length > 0 || dirtySkills.length > 0
     || dirtyTiles.length > 0 || newRelationships.length > 0
     || dirtyRelationships.length > 0 || events.length > 0
-    || dirtyRuins.length > 0
+    || dirtyRuins.length > 0 || dirtyCaves.length > 0
     || state.civFallen || state.civDirty;
 
   if (!hasDirty) return;
@@ -120,6 +124,7 @@ async function doFlush(ctx: SimContext): Promise<void> {
   const prevDirtyTileKeys = state.dirtyFortressTileKeys;
   const prevDirtyRelIds = state.dirtyDwarfRelationshipIds;
   const prevDirtyRuinIds = state.dirtyRuinIds;
+  const prevDirtyCaveIds = state.dirtyCaveIds;
   const prevNewTasks = state.newTasks;
   const prevNewRels = state.newDwarfRelationships;
   const prevEvents = state.pendingEvents;
@@ -134,6 +139,7 @@ async function doFlush(ctx: SimContext): Promise<void> {
   state.dirtyFortressTileKeys = new Set();
   state.dirtyDwarfRelationshipIds = new Set();
   state.dirtyRuinIds = new Set();
+  state.dirtyCaveIds = new Set();
   state.newTasks = [];
   state.newDwarfRelationships = [];
   state.pendingEvents = [];
@@ -176,6 +182,7 @@ async function doFlush(ctx: SimContext): Promise<void> {
     p_civ_wealth: state.civWealth ?? null,
     p_civ_dirty: state.civDirty,
     p_new_ruin: newRuin,
+    p_caves: dirtyCaves,
   });
 
   if (error) {
@@ -190,6 +197,7 @@ async function doFlush(ctx: SimContext): Promise<void> {
     for (const key of prevDirtyTileKeys) state.dirtyFortressTileKeys.add(key);
     for (const id of prevDirtyRelIds) state.dirtyDwarfRelationshipIds.add(id);
     for (const id of prevDirtyRuinIds) state.dirtyRuinIds.add(id);
+    for (const id of prevDirtyCaveIds) state.dirtyCaveIds.add(id);
     state.newTasks.push(...prevNewTasks);
     state.newDwarfRelationships.push(...prevNewRels);
     state.pendingEvents.push(...prevEvents);

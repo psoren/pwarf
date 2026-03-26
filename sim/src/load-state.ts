@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DwarfRelationship, Ruin, StockpileTile, Task, WorldEvent } from "@pwarf/shared";
+import type { Cave, DwarfRelationship, Ruin, StockpileTile, Task, WorldEvent } from "@pwarf/shared";
 import { WORLD_EVENTS_RECENT_LIMIT } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 
@@ -13,7 +13,7 @@ export async function loadStateFromSupabase(
   civilizationId: string,
   worldId: string,
 ): Promise<CachedState> {
-  const [dwarvesResult, itemsResult, structuresResult, monstersResult, tasksResult, skillsResult, stockpileResult, eventsResult, civResult, ruinsResult] =
+  const [dwarvesResult, itemsResult, structuresResult, monstersResult, tasksResult, skillsResult, stockpileResult, eventsResult, civResult, ruinsResult, cavesResult] =
     await Promise.all([
       supabase
         .from("dwarves")
@@ -61,6 +61,10 @@ export async function loadStateFromSupabase(
         .from("ruins")
         .select("*")
         .eq("world_id", worldId),
+      supabase
+        .from("caves")
+        .select("*")
+        .eq("civilization_id", civilizationId),
     ]);
 
   // Load relationships after dwarves — need alive dwarf IDs
@@ -140,5 +144,7 @@ export async function loadStateFromSupabase(
     activeCombatPairs: new Set(),
     ruins: (ruinsResult.data ?? []) as Ruin[],
     dirtyRuinIds: new Set(),
+    caves: (cavesResult.data ?? []) as Cave[],
+    dirtyCaveIds: new Set(),
   };
 }

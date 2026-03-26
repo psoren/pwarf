@@ -276,8 +276,20 @@ export default function App() {
     return map;
   }, [liveItems, zLevel]);
 
-  // Discovered cave locations for the Locations tab
+  // Discovered cave locations for the Locations tab — prefer caves table, fall back to tile overrides
   const discoveredLocations: DiscoveredLocation[] = useMemo(() => {
+    const caves = snapshot?.caves ?? [];
+    if (caves.length > 0) {
+      return caves
+        .filter(c => c.discovered)
+        .map(c => ({
+          name: c.name,
+          entranceX: c.entrance_x,
+          entranceY: c.entrance_y,
+          caveZ: c.z_level,
+        }));
+    }
+    // Fallback for civilizations created before caves table existed
     const deriver = getFortressTileResult.deriver;
     if (!deriver) return [];
     const overrides = snapshot?.fortressTileOverrides ?? [];
@@ -289,7 +301,7 @@ export default function App() {
         entranceY: e.y,
         caveZ: e.z,
       }));
-  }, [getFortressTileResult.deriver, snapshot?.fortressTileOverrides]);
+  }, [snapshot?.caves, getFortressTileResult.deriver, snapshot?.fortressTileOverrides]);
 
   // Selected fortress tile (for stockpile inspection)
   const [selectedFortressTile, setSelectedFortressTile] = useState<{ x: number; y: number } | null>(null);

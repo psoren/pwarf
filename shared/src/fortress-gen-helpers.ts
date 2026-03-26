@@ -438,10 +438,19 @@ export function deriveSurfaceTile(
 // Main deriver factory
 // ============================================================
 
+/** Known cave data from the database, used to override seed-derived z-levels and names. */
+export interface KnownCave {
+  entrance_x: number;
+  entrance_y: number;
+  z_level: number;
+  name: string;
+}
+
 export function createFortressDeriver(
   worldSeed: bigint,
   civId: string,
   terrain: TerrainType = "plains",
+  knownCaves?: readonly KnownCave[],
 ): FortressDeriver {
   const seed = combineSeed(worldSeed, civId);
   const rng = createAleaRng(seed);
@@ -456,9 +465,32 @@ export function createFortressDeriver(
 
   const entrancePositions = pickCaveEntrances(entranceNoise, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise, terrain);
 
-  const entrances: CaveEntrance[] = entrancePositions.map((p, i) => ({
-    x: p.x, y: p.y, z: -(i + 1),
-  }));
+  // When knownCaves are provided, use their z-levels instead of index-based assignment.
+  // Match by entrance position (x, y) to pair seed-derived positions with DB z-levels.
+  let entrances: CaveEntrance[];
+  const knownCaveNameByZ = new Map<number, string>();
+
+  if (knownCaves && knownCaves.length > 0) {
+    const knownByPos = new Map<string, KnownCave>(
+      knownCaves.map(c => [`${c.entrance_x},${c.entrance_y}`, c]),
+    );
+    entrances = entrancePositions
+      .map(p => {
+        const known = knownByPos.get(`${p.x},${p.y}`);
+        if (known) {
+          knownCaveNameByZ.set(known.z_level, known.name);
+          return { x: p.x, y: p.y, z: known.z_level };
+        }
+        // Fallback for entrances not yet in DB (shouldn't happen in normal flow)
+        return null;
+      })
+      .filter((e): e is CaveEntrance => e !== null);
+  } else {
+    entrances = entrancePositions.map((p, i) => ({
+      x: p.x, y: p.y, z: -(i + 1),
+    }));
+  }
+
   const entranceByPos = new Map<string, CaveEntrance>(
     entrances.map(e => [`${e.x},${e.y}`, e]),
   );
@@ -539,6 +571,8 @@ export function createFortressDeriver(
     },
 
     getCaveName(z: number): string | null {
+      const known = knownCaveNameByZ.get(z);
+      if (known) return known;
       const entrance = entranceByZ.get(z);
       if (!entrance) return null;
       return generateCaveName(caveSeed(seed, entrance.x, entrance.y));

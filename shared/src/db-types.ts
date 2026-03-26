@@ -439,3 +439,18 @@ export interface Task {
   created_at: string;
   completed_at: string | null;
 }
+
+export interface Cave {
+  id: string;
+  civilization_id: string;
+  entrance_x: number;
+  entrance_y: number;
+  z_level: number;
+  name: string;
+  discovered: boolean;
+  discovered_by: string | null;
+  discovered_at: string | null;
+  danger_level: number;
+  resource_type: string | null;
+  created_at: string;
+}

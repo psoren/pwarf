@@ -1,6 +1,13 @@
 import { supabase } from './supabase';
 import { pickUniqueNames, SURNAMES } from './dwarf-names';
-import { createWorldDeriver, FORTRESS_SIZE } from '@pwarf/shared';
+import {
+  createWorldDeriver,
+  createFortressDeriver,
+  generateCaveName,
+  getCaveSeed,
+  FORTRESS_SIZE,
+} from '@pwarf/shared';
+import type { TerrainType } from '@pwarf/shared';
 import { generateFortressName } from './civ-names';
 
 const FORTRESS_CENTER = Math.floor(FORTRESS_SIZE / 2);
@@ -246,5 +253,40 @@ export async function embark(worldId: string, tileX: number, tileY: number, worl
   const { error: bedTileError } = await supabase.from('fortress_tiles').insert(bedTiles);
   if (bedTileError) throw new Error(`Failed to place bed tiles: ${bedTileError.message}`);
 
+  // Pre-create cave rows with terrain-derived properties
+  const embarkTerrain = deriver.deriveTile(tileX, tileY).terrain as TerrainType;
+  const fortressDeriver = createFortressDeriver(worldSeed, civ.id, embarkTerrain);
+  const caveProps = TERRAIN_CAVE_PROPERTIES[embarkTerrain] ?? TERRAIN_CAVE_PROPERTIES.plains;
+
+  if (fortressDeriver.entrances.length > 0) {
+    const caveRows = fortressDeriver.entrances.map((entrance, i) => {
+      const nameSeed = getCaveSeed(worldSeed, civ.id, entrance.x, entrance.y);
+      return {
+        civilization_id: civ.id,
+        entrance_x: entrance.x,
+        entrance_y: entrance.y,
+        z_level: -(i + 1),
+        name: generateCaveName(nameSeed),
+        discovered: false,
+        danger_level: caveProps.danger_level,
+        resource_type: caveProps.resource_type,
+      };
+    });
+
+    const { error: caveError } = await supabase.from('caves').insert(caveRows);
+    if (caveError) throw new Error(`Failed to create caves: ${caveError.message}`);
+  }
+
   return { id: civ.id, name: civ.name as string };
 }
+
+/** Terrain-derived cave properties set at embark time. */
+const TERRAIN_CAVE_PROPERTIES: Record<string, { danger_level: number; resource_type: string | null }> = {
+  mountain: { danger_level: 40, resource_type: 'ore' },
+  forest:   { danger_level: 20, resource_type: 'mushroom' },
+  plains:   { danger_level: 10, resource_type: null },
+  desert:   { danger_level: 30, resource_type: null },
+  tundra:   { danger_level: 20, resource_type: null },
+  swamp:    { danger_level: 60, resource_type: 'mushroom' },
+  volcano:  { danger_level: 80, resource_type: 'gem' },
+};

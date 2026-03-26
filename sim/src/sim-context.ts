@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createRng, DEFAULT_TEST_SEED, type Rng } from "./rng.js";
 import type {
+  Cave,
   Dwarf,
   DwarfRelationship,
   DwarfSkill,
@@ -107,6 +108,10 @@ export interface CachedState {
   ruins: Ruin[];
   dirtyRuinIds: Set<string>;
 
+  /** Caves in this fortress. */
+  caves: Cave[];
+  dirtyCaveIds: Set<string>;
+
   /**
    * Tracks how many consecutive ticks each dwarf has been waiting due to
    * occupancy blocking. Keyed by dwarf ID. Cleared on successful movement.
@@ -163,6 +168,8 @@ export function createEmptyCachedState(): CachedState {
     activeCombatPairs: new Set(),
     ruins: [],
     dirtyRuinIds: new Set(),
+    caves: [],
+    dirtyCaveIds: new Set(),
   };
 }
 
