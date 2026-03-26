@@ -119,10 +119,10 @@ describe("cave scouting at long distance", () => {
     expect(marker?.tile_type).toBe("cavern_floor");
   });
 
-  it("dwarf reaches entrance 288 tiles away (entrance 4)", async () => {
-    const { entrance, config } = makeScoutScenario(4, 2000);
+  it("dwarf reaches entrance 288 tiles away (entrance 7)", async () => {
+    const { entrance, config } = makeScoutScenario(7, 2000);
 
-    // Entrance 4 at (384, 416) is 288 Manhattan from spawn
+    // Entrance 7 at (384, 416) is 288 Manhattan from spawn
     expect(Math.abs(entrance.x - 256) + Math.abs(entrance.y - 256)).toBeGreaterThanOrEqual(200);
 
     const result = await runScenario(config);
