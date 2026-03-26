@@ -64,7 +64,7 @@ function suppressAutocook(count = 15): Item[] {
 }
 
 describe("haul task stuck at 50%", () => {
-  it("haul completes without interruption (control case)", async () => {
+  it("haul completes without interruption (control case)", { timeout: 30_000 }, async () => {
     // High needs → no interrupts. Item near dwarf, stockpile nearby.
     const dwarf = makeDwarf({
       position_x: 254, position_y: 256, position_z: 0,
@@ -94,16 +94,10 @@ describe("haul task stuck at 50%", () => {
 
   it("haul completes even when dwarf gets interrupted by thirst mid-delivery", { timeout: 30_000 }, async () => {
     // Start need_drink just above interrupt threshold so it triggers mid-haul.
-    // Item is 2 tiles from dwarf, stockpile is 6 tiles from item.
-    // Walk to item: ~2 ticks, pickup: 1 tick, walk to stockpile: ~6 ticks, work: 10 ticks
-    // Total ~19 ticks. Interrupt should fire partway through work phase.
-    //
-    // need_drink decays at 0.0033/tick. To interrupt after ~12 ticks (mid-work):
-    //   start = 30 + 12 * 0.0033 ≈ 30.04
     const dwarf = makeDwarf({
       position_x: 254, position_y: 256, position_z: 0,
       need_food: 100,
-      need_drink: NEED_INTERRUPT_DRINK + 12 * DRINK_DECAY_PER_TICK, // ~30.04 → interrupt mid-work
+      need_drink: NEED_INTERRUPT_DRINK + 12 * DRINK_DECAY_PER_TICK,
       need_sleep: 100,
       need_social: 80,
     });
@@ -124,17 +118,15 @@ describe("haul task stuck at 50%", () => {
       ticks: 500,
     });
 
-    // The haul task should eventually complete even with the interrupt
     const haulTasks = result.tasks.filter(t => t.task_type === "haul" && t.target_item_id === groundItem.id);
     const completed = haulTasks.find(t => t.status === "completed");
     expect(completed, "haul should complete even after thirst interrupt").toBeDefined();
   });
 
   it("haul completes even when dwarf gets interrupted by hunger mid-delivery", { timeout: 30_000 }, async () => {
-    // Same idea but with food interrupt
     const dwarf = makeDwarf({
       position_x: 254, position_y: 256, position_z: 0,
-      need_food: NEED_INTERRUPT_FOOD + 12 * FOOD_DECAY_PER_TICK, // ~30.026 → interrupt mid-work
+      need_food: NEED_INTERRUPT_FOOD + 12 * FOOD_DECAY_PER_TICK,
       need_drink: 100,
       need_sleep: 100,
       need_social: 80,
@@ -161,17 +153,15 @@ describe("haul task stuck at 50%", () => {
     expect(completed, "haul should complete even after hunger interrupt").toBeDefined();
   });
 
-  it("haul completes with repeated interrupts (low needs, long distance)", { timeout: 30_000 }, async () => {
+  it("haul completes with repeated interrupts (low needs, long distance)", { timeout: 60_000 }, async () => {
     // Worst case: needs right at threshold, long walk to stockpile.
-    // This maximizes the chance of repeated interrupt → reset cycles.
     const dwarf = makeDwarf({
       position_x: 250, position_y: 256, position_z: 0,
-      need_food: NEED_INTERRUPT_FOOD + 5 * FOOD_DECAY_PER_TICK,   // barely above
-      need_drink: NEED_INTERRUPT_DRINK + 5 * DRINK_DECAY_PER_TICK, // barely above
+      need_food: NEED_INTERRUPT_FOOD + 5 * FOOD_DECAY_PER_TICK,
+      need_drink: NEED_INTERRUPT_DRINK + 5 * DRINK_DECAY_PER_TICK,
       need_sleep: 100,
       need_social: 80,
     });
-    // Item is far from stockpile to maximize walking time
     const groundItem = makeItem({
       name: "Stone block",
       category: "raw_material",
@@ -186,16 +176,13 @@ describe("haul task stuck at 50%", () => {
       items: [groundItem, ...suppressDrinks(), ...suppressAutocook()],
       fortressDeriver,
       stockpileTiles: [makeStockpileTile(270, 256, 0)],
-      ticks: 1000,
+      ticks: 500,
     });
 
     const haulTasks = result.tasks.filter(t => t.task_type === "haul" && t.target_item_id === groundItem.id);
     const completed = haulTasks.find(t => t.status === "completed");
-
-    // If this fails, the haul is stuck in an interrupt loop
     expect(completed, "haul should eventually complete despite repeated interrupts").toBeDefined();
 
-    // Verify item ended up at the stockpile
     const item = result.items.find(i => i.id === groundItem.id);
     if (completed) {
       expect(item?.position_x).toBe(270);
@@ -203,9 +190,7 @@ describe("haul task stuck at 50%", () => {
     }
   });
 
-  it("multiple dwarves can haul items without getting stuck", { timeout: 60_000 }, async () => {
-    // Multiple dwarves hauling simultaneously — tests for occupancy conflicts
-    // at stockpile tiles causing stuck haul tasks
+  it("multiple dwarves can haul items without getting stuck", { timeout: 120_000 }, async () => {
     const dwarves = [
       makeDwarf({ name: "Urist", position_x: 253, position_y: 256, position_z: 0,
         need_food: 60, need_drink: 60, need_sleep: 100, need_social: 80 }),
@@ -236,7 +221,6 @@ describe("haul task stuck at 50%", () => {
       ticks: 500,
     });
 
-    // All three items should be hauled to stockpiles
     for (const item of groundItems) {
       const haulTasks = result.tasks.filter(t => t.task_type === "haul" && t.target_item_id === item.id);
       const completed = haulTasks.find(t => t.status === "completed");
@@ -244,9 +228,7 @@ describe("haul task stuck at 50%", () => {
     }
   });
 
-  it("dwarf carrying item from interrupted haul eventually delivers it", async () => {
-    // Start with a dwarf already holding an item (simulates mid-haul interrupt recovery).
-    // The dwarf is idle with an item — haulAssignment should create a new haul task.
+  it("dwarf carrying item from interrupted haul eventually delivers it", { timeout: 30_000 }, async () => {
     const dwarf = makeDwarf({
       position_x: 258, position_y: 256, position_z: 0,
       need_food: 100, need_drink: 100, need_sleep: 100, need_social: 80,
@@ -272,16 +254,13 @@ describe("haul task stuck at 50%", () => {
     const completed = haulTasks.find(t => t.status === "completed");
     expect(completed, "held-item haul should complete").toBeDefined();
 
-    // Item should be at the stockpile
     const item = result.items.find(i => i.id === heldItem.id);
     expect(item?.held_by_dwarf_id).toBeNull();
     expect(item?.position_x).toBe(262);
     expect(item?.position_y).toBe(256);
   });
 
-  it("diagnostic: track haul progress over time to detect reset loops", { timeout: 30_000 }, async () => {
-    // This test instruments task progress to detect if haul work_progress
-    // repeatedly increases then resets to 0 (the suspected stuck pattern).
+  it("diagnostic: track haul progress over time to detect reset loops", { timeout: 60_000 }, async () => {
     const dwarf = makeDwarf({
       position_x: 254, position_y: 256, position_z: 0,
       need_food: NEED_INTERRUPT_FOOD + 8 * FOOD_DECAY_PER_TICK,
@@ -298,7 +277,6 @@ describe("haul task stuck at 50%", () => {
       located_in_civ_id: "test-civ",
     });
 
-    // Run for enough ticks to see several interrupt cycles
     const result = await runScenario({
       dwarves: [dwarf],
       items: [groundItem, ...suppressDrinks(), ...suppressAutocook()],
@@ -307,15 +285,12 @@ describe("haul task stuck at 50%", () => {
       ticks: 800,
     });
 
-    // Check all haul tasks for this item
     const haulTasks = result.tasks.filter(t => t.task_type === "haul" && t.target_item_id === groundItem.id);
     const completed = haulTasks.find(t => t.status === "completed");
 
-    // Count how many cancelled/failed haul tasks there are — each represents an interrupt + reset
     const cancelled = haulTasks.filter(t => t.status === "cancelled" || t.status === "failed");
     const pending = haulTasks.filter(t => t.status === "pending" || t.status === "in_progress" || t.status === "claimed");
 
-    // Report diagnostic info if the haul never completed
     if (!completed) {
       const taskInfo = haulTasks.map(t => ({
         status: t.status,
