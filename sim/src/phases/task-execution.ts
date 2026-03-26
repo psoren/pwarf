@@ -48,11 +48,14 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
       }
     : undefined;
 
-  // Build a set of occupied tiles so dwarves don't stack on each other
+  // Build a set of occupied tiles and a position-to-dwarf map for shove logic
   const occupiedTiles = new Set<string>();
+  const dwarfAtPos = new Map<string, Dwarf>();
   for (const d of state.dwarves) {
     if (d.status === 'alive') {
-      occupiedTiles.add(`${d.position_x},${d.position_y},${d.position_z}`);
+      const key = `${d.position_x},${d.position_y},${d.position_z}`;
+      occupiedTiles.add(key);
+      dwarfAtPos.set(key, d);
     }
   }
 
@@ -113,15 +116,33 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
                   ctx.state._previousPositions.set(dwarf.id, `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`);
                   const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
                   occupiedTiles.delete(prevKey);
+                  dwarfAtPos.delete(prevKey);
                   occupiedTiles.add(finalKey);
+                  dwarfAtPos.set(finalKey, dwarf);
                   dwarf.position_x = haulNext.x;
                   dwarf.position_y = haulNext.y;
                   dwarf.position_z = haulNext.z;
                   state.dirtyDwarfIds.add(dwarf.id);
                 }
               } else {
-                // Blocked by occupancy — track wait and fail after threshold
-                if (!incrementOccupancyWait(dwarf, ctx)) {
+                // All paths blocked — try shove, then swap, then wait
+                if (tryShoveBlocker(haulNext, haulStart, ctx, occupiedTiles, dwarfAtPos, zResolver)) {
+                  ctx.state._occupancyWaitTicks?.delete(dwarf.id);
+                  if (!ctx.state._previousPositions) ctx.state._previousPositions = new Map();
+                  ctx.state._previousPositions.set(dwarf.id, `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`);
+                  const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
+                  occupiedTiles.delete(prevKey);
+                  dwarfAtPos.delete(prevKey);
+                  const fk = `${haulNext.x},${haulNext.y},${haulNext.z}`;
+                  occupiedTiles.add(fk);
+                  dwarfAtPos.set(fk, dwarf);
+                  dwarf.position_x = haulNext.x;
+                  dwarf.position_y = haulNext.y;
+                  dwarf.position_z = haulNext.z;
+                  state.dirtyDwarfIds.add(dwarf.id);
+                } else if (trySwapWithBlocker(dwarf, haulNext, ctx, occupiedTiles, dwarfAtPos)) {
+                  // Swapped — dwarf already moved
+                } else if (!incrementOccupancyWait(dwarf, ctx)) {
                   failTask(dwarf, task, state);
                 }
               }
@@ -157,7 +178,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
       }
 
       if (!atSite) {
-        const moved = moveTowardTarget(dwarf, task, ctx, occupiedTiles, zResolver);
+        const moved = moveTowardTarget(dwarf, task, ctx, occupiedTiles, dwarfAtPos, zResolver);
         if (!moved) {
           failTask(dwarf, task, state);
         }
@@ -208,7 +229,7 @@ function isAdjacentToTarget(dwarf: Dwarf, task: Task): boolean {
   return (dx + dy) === 1;
 }
 
-function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTiles: Set<string>, zResolver?: ZResolver): boolean {
+function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTiles: Set<string>, dwarfAtPos: Map<string, Dwarf>, zResolver?: ZResolver): boolean {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return true;
 
   // Already at the task site — no movement needed
@@ -239,9 +260,15 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
       nextStep = altStep;
       usedAltPath = true;
     } else {
-      // All paths blocked by occupancy — track wait ticks and fail after threshold
-      // so the task gets released and can be reclaimed when the area clears.
-      return incrementOccupancyWait(dwarf, ctx);
+      // All paths blocked — try to shove the blocking dwarf aside, then swap
+      if (tryShoveBlocker(nextStep, start, ctx, occupiedTiles, dwarfAtPos, zResolver)) {
+        // Blocker moved — proceed with the original step
+      } else if (trySwapWithBlocker(dwarf, nextStep, ctx, occupiedTiles, dwarfAtPos)) {
+        // Swapped positions with idle blocker — dwarf is already at nextStep
+        return true;
+      } else {
+        return incrementOccupancyWait(dwarf, ctx);
+      }
     }
   }
 
@@ -264,7 +291,9 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
   // Update occupancy tracking
   const prevKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
   occupiedTiles.delete(prevKey);
+  dwarfAtPos.delete(prevKey);
   occupiedTiles.add(finalKey);
+  dwarfAtPos.set(finalKey, dwarf);
 
   dwarf.position_x = nextStep.x;
   dwarf.position_y = nextStep.y;
@@ -319,6 +348,110 @@ export function getTileHardness(tileType: string | null): number {
     case 'cavern_wall': return HARDNESS_IGNITE; // 1.5 — slow
     default:           return HARDNESS_STONE;   // 1.0 — rock, open_air, etc.
   }
+}
+
+/**
+ * Atomically swap a task-bearing dwarf with an idle blocker.
+ * Used when shove fails (e.g. dead-end corridor where the blocker has nowhere to go).
+ */
+function trySwapWithBlocker(
+  requester: Dwarf,
+  blockerPos: { x: number; y: number; z: number },
+  ctx: SimContext,
+  occupiedTiles: Set<string>,
+  dwarfAtPos: Map<string, Dwarf>,
+): boolean {
+  const blockerKey = `${blockerPos.x},${blockerPos.y},${blockerPos.z}`;
+  const blocker = dwarfAtPos.get(blockerKey);
+  if (!blocker || blocker.status !== 'alive') return false;
+  if (blocker.current_task_id !== null) return false;
+
+  const requesterKey = `${requester.position_x},${requester.position_y},${requester.position_z}`;
+
+  blocker.position_x = requester.position_x;
+  blocker.position_y = requester.position_y;
+  blocker.position_z = requester.position_z;
+
+  requester.position_x = blockerPos.x;
+  requester.position_y = blockerPos.y;
+  requester.position_z = blockerPos.z;
+
+  dwarfAtPos.set(requesterKey, blocker);
+  dwarfAtPos.set(blockerKey, requester);
+
+  ctx.state.dirtyDwarfIds.add(blocker.id);
+  ctx.state.dirtyDwarfIds.add(requester.id);
+
+  ctx.state._occupancyWaitTicks?.delete(requester.id);
+  if (!ctx.state._previousPositions) ctx.state._previousPositions = new Map();
+  ctx.state._previousPositions.set(requester.id, requesterKey);
+
+  return true;
+}
+
+/** Max recursive depth for shoving chains of idle dwarves. */
+const MAX_SHOVE_DEPTH = 5;
+
+/**
+ * Try to shove an idle blocking dwarf out of the way so a task-bearing dwarf can pass.
+ * Recursively shoves chains of idle dwarves (depth-limited).
+ * Only shoves idle dwarves (no current task) — busy dwarves keep their position.
+ */
+function tryShoveBlocker(
+  blockerPos: { x: number; y: number; z: number },
+  requesterPos: { x: number; y: number; z: number },
+  ctx: SimContext,
+  occupiedTiles: Set<string>,
+  dwarfAtPos: Map<string, Dwarf>,
+  zResolver?: ZResolver,
+  depth = 0,
+): boolean {
+  if (depth >= MAX_SHOVE_DEPTH) return false;
+
+  const blockerKey = `${blockerPos.x},${blockerPos.y},${blockerPos.z}`;
+  const blocker = dwarfAtPos.get(blockerKey);
+  if (!blocker || blocker.status !== 'alive') return false;
+  if (blocker.current_task_id !== null) return false;
+
+  const getTile = buildTileLookup(ctx);
+  const neighbors = getNeighbors(blockerPos, getTile, zResolver);
+  const requesterKey = `${requesterPos.x},${requesterPos.y},${requesterPos.z}`;
+
+  for (const neighbor of neighbors) {
+    const key = `${neighbor.x},${neighbor.y},${neighbor.z}`;
+    if (key === requesterKey) continue;
+    if (occupiedTiles.has(key)) continue;
+
+    occupiedTiles.delete(blockerKey);
+    dwarfAtPos.delete(blockerKey);
+    occupiedTiles.add(key);
+    dwarfAtPos.set(key, blocker);
+    blocker.position_x = neighbor.x;
+    blocker.position_y = neighbor.y;
+    blocker.position_z = neighbor.z;
+    ctx.state.dirtyDwarfIds.add(blocker.id);
+    return true;
+  }
+
+  for (const neighbor of neighbors) {
+    const key = `${neighbor.x},${neighbor.y},${neighbor.z}`;
+    if (key === requesterKey) continue;
+    if (!occupiedTiles.has(key)) continue;
+
+    if (tryShoveBlocker(neighbor, blockerPos, ctx, occupiedTiles, dwarfAtPos, zResolver, depth + 1)) {
+      occupiedTiles.delete(blockerKey);
+      dwarfAtPos.delete(blockerKey);
+      occupiedTiles.add(key);
+      dwarfAtPos.set(key, blocker);
+      blocker.position_x = neighbor.x;
+      blocker.position_y = neighbor.y;
+      blocker.position_z = neighbor.z;
+      ctx.state.dirtyDwarfIds.add(blocker.id);
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /** Increment the occupancy wait counter for a dwarf. Returns false (= fail task) when threshold is reached. */
