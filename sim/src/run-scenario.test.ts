@@ -11,7 +11,6 @@ function woodLog() {
 import {
   FOOD_DECAY_PER_TICK,
   NEED_INTERRUPT_FOOD,
-  STEPS_PER_YEAR,
   WORK_BUILD_WALL,
   WORK_BUILD_FLOOR,
   WORK_BUILD_BED,
@@ -29,8 +28,8 @@ describe("runScenario", () => {
     expect(result.year).toBe(1);
   });
 
-  it("advances year after STEPS_PER_YEAR ticks", async () => {
-    const result = await runScenario({ dwarves: [makeDwarf()], ticks: STEPS_PER_YEAR });
+  it("advances year after stepsPerYear ticks", async () => {
+    const result = await runScenario({ dwarves: [makeDwarf()], ticks: 200, stepsPerYear: 200, stepsPerDay: 10 });
     expect(result.year).toBe(2);
   });
 
