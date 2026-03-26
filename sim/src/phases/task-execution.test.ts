@@ -573,12 +573,10 @@ describe("taskExecution", () => {
 
       await taskExecution(ctx);
 
-      // The dwarf should NOT have moved back to (0,0) — should stay at (1,0)
-      expect(dwarf.position_x).toBe(1);
+      // The idle blocker should be shoved to (3,0) and the dwarf proceeds to (2,0)
+      expect(blocker.position_x).toBe(3);
+      expect(dwarf.position_x).toBe(2);
       expect(dwarf.position_y).toBe(0);
-
-      // Occupancy wait counter should have incremented
-      expect(ctx.state._occupancyWaitTicks?.get(dwarf.id)).toBe(1);
     });
 
     it("records previous position on successful movement", async () => {
