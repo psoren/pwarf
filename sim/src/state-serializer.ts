@@ -53,12 +53,20 @@ export interface TileSnapshot {
   tile_type: string;
 }
 
+export interface ActionLogEntry {
+  tick: number;
+  category: string;
+  description: string;
+  details?: Record<string, unknown>;
+}
+
 export interface StateSnapshot {
   summary: Summary;
   dwarves: DwarfSnapshot[];
   tasks: TaskSnapshot[];
   tiles: TileSnapshot[];
   recent_events: Array<{ tick: number; text: string }>;
+  action_log: ActionLogEntry[];
 }
 
 function needLabel(value: number, name: string): string {
@@ -120,6 +128,8 @@ function buildAlerts(dwarves: Dwarf[]): string[] {
   return alerts;
 }
 
+const ACTION_LOG_CAP = 200;
+
 /** Serialize sim context into an LLM-friendly JSON snapshot. */
 export function serializeState(ctx: SimContext, tasksCompleted = 0): StateSnapshot {
   const { state, step, year, day } = ctx;
@@ -170,6 +180,15 @@ export function serializeState(ctx: SimContext, tasksCompleted = 0): StateSnapsh
     tile_type: t.tile_type,
   }));
 
+  const actionLog: ActionLogEntry[] = state.worldEvents
+    .slice(-ACTION_LOG_CAP)
+    .map(e => ({
+      tick: e.year,
+      category: e.category,
+      description: e.description,
+      ...(Object.keys(e.event_data).length > 0 ? { details: e.event_data } : {}),
+    }));
+
   return {
     summary: {
       tick: step,
@@ -185,5 +204,6 @@ export function serializeState(ctx: SimContext, tasksCompleted = 0): StateSnapsh
     tasks: taskSnapshots,
     tiles: tileSnapshots,
     recent_events: recentEvents,
+    action_log: actionLog,
   };
 }
