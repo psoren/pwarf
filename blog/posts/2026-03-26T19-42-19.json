@@ -1,0 +1,32 @@
+{
+  "id": "2026-03-26T19-42-19",
+  "timestamp": "2026-03-26T19:42:19.904Z",
+  "title": "Digest — Mar 26, 2026, 07:42 PM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nWe're excited to share some recent updates in the Pwarf development. \n\n## Bug Fixes\n- **Zombie Task Duplicates**: A race condition in the task system has been resolved. Previously, `flushToSupabase` could clear all dirty tracking, causing changes during async operations to be lost. We now swap dirty sets before flushing, preventing stale tasks from reappearing as duplicates. \n\n## Code Cleanup\n- **Removal of Expedition System**: We've decided to remove the entire expedition system from the game for now, as it was essentially dead code without any supporting UI or navigation systems. This will streamline our codebase and allow us to focus on more essential features. It can be reintroduced when we have the necessary infrastructure in place.\n\nThank you for your continued support, and as always, we appreciate your feedback!\n\n## Merged PRs\n- #706\n- #704\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 706,
+      "title": "fix: swap dirty sets before flush RPC to prevent zombie task duplicates",
+      "url": "https://github.com/psoren/pwarf/pull/706"
+    },
+    {
+      "number": 704,
+      "title": "chore: remove expedition system (premature dead code)",
+      "url": "https://github.com/psoren/pwarf/pull/704",
+      "cost": {
+        "amount": "$1.31",
+        "tokens": "1.2M tokens"
+      }
+    }
+  ],
+  "images": []
+}
