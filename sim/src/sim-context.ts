@@ -205,6 +205,11 @@ export interface SimContext {
 
   /** Mutable cached world state, loaded at start and patched each tick. */
   state: CachedState;
+
+  /** Override for STEPS_PER_YEAR — used in tests to speed up year rollups. */
+  stepsPerYear?: number;
+  /** Override for STEPS_PER_DAY — used in tests to speed up day progression. */
+  stepsPerDay?: number;
 }
 
 /** Creates a SimContext with a default test seed. Used in tests. */

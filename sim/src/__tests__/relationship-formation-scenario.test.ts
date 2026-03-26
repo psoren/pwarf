@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
 import { makeRealisticScenario } from "./test-helpers.js";
-import { STEPS_PER_YEAR } from "@pwarf/shared";
 
 /**
  * Relationship Formation scenario tests.
@@ -12,7 +11,13 @@ import { STEPS_PER_YEAR } from "@pwarf/shared";
  *
  * Uses makeRealisticScenario with the fortress deriver so pathfinding,
  * movement, and tile lookup all exercise the full BFS + simplex pipeline.
+ *
+ * Uses a small stepsPerYear override so the year rollup fires after ~20
+ * ticks instead of 36,000, keeping the test fast.
  */
+
+const FAST_YEAR = 20;
+const FAST_DAY = 5;
 
 describe("relationship formation", () => {
   it("forms acquaintances after the first yearly rollup", async () => {
@@ -23,7 +28,9 @@ describe("relationship formation", () => {
       drinkCount: 200,
     });
 
-    config.ticks = STEPS_PER_YEAR + 1;
+    config.stepsPerYear = FAST_YEAR;
+    config.stepsPerDay = FAST_DAY;
+    config.ticks = FAST_YEAR + 1;
 
     const result = await runScenario(config);
 
@@ -57,5 +64,5 @@ describe("relationship formation", () => {
         e.description.includes("ends"),
     );
     expect(yearEndEvents.length).toBeGreaterThanOrEqual(1);
-  }, 600_000);
+  }, 60_000);
 });

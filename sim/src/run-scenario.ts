@@ -23,6 +23,10 @@ export interface ScenarioConfig {
   fortressDeriver?: FortressDeriver;
   ticks: number;
   seed?: number;
+  /** Override STEPS_PER_YEAR for faster year rollups in tests. */
+  stepsPerYear?: number;
+  /** Override STEPS_PER_DAY for faster day progression in tests. */
+  stepsPerDay?: number;
 }
 
 /** Full final state returned after a scenario run — suitable for test assertions. */
@@ -94,6 +98,8 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     day: 1,
     rng: createRng(seed),
     state,
+    stepsPerYear: config.stepsPerYear,
+    stepsPerDay: config.stepsPerDay,
   };
 
   // Accumulate all events fired across the run

@@ -44,7 +44,9 @@ export async function runTick(ctx: SimContext): Promise<void> {
 
 /** Advance day/year counters on a SimContext for the given step number. */
 export function advanceTime(ctx: SimContext, step: number, currentYear: number): void {
-  const day = Math.floor((step % STEPS_PER_YEAR) / STEPS_PER_DAY) + 1;
+  const spy = ctx.stepsPerYear ?? STEPS_PER_YEAR;
+  const spd = ctx.stepsPerDay ?? STEPS_PER_DAY;
+  const day = Math.floor((step % spy) / spd) + 1;
   ctx.step = step;
   ctx.day = day;
   ctx.year = currentYear;
@@ -52,7 +54,8 @@ export function advanceTime(ctx: SimContext, step: number, currentYear: number):
 
 /** Run yearly rollup if the step lands on a year boundary, updating ctx. Returns the new year. */
 export async function maybeYearRollup(ctx: SimContext, step: number, currentYear: number): Promise<number> {
-  if (step % STEPS_PER_YEAR === 0) {
+  const spy = ctx.stepsPerYear ?? STEPS_PER_YEAR;
+  if (step % spy === 0) {
     const newYear = currentYear + 1;
     ctx.year = newYear;
     ctx.day = 1;
