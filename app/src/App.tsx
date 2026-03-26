@@ -32,6 +32,7 @@ import { useSoundtrack } from "./hooks/useSoundtrack";
 import { SURFACE_Z, CAVE_OFFSET, CAVE_SIZE, BUILDING_COSTS, WORK_SCOUT_CAVE } from "@pwarf/shared";
 import type { Item } from "@pwarf/shared";
 import type { LiveDwarf } from "./hooks/useDwarves";
+import type { DiscoveredLocation } from "./components/RightPanel";
 
 export default function App() {
   const { session, user, loading, signIn, signUp, signInAsGuest, signOut } = useAuth();
@@ -274,6 +275,21 @@ export default function App() {
     return map;
   }, [liveItems, zLevel]);
 
+  // Discovered cave locations for the Locations tab
+  const discoveredLocations: DiscoveredLocation[] = useMemo(() => {
+    const deriver = getFortressTileResult.deriver;
+    if (!deriver) return [];
+    const overrides = snapshot?.fortressTileOverrides ?? [];
+    return deriver.entrances
+      .filter(e => overrides.some(t => t.z === e.z))
+      .map(e => ({
+        name: deriver.getCaveName(e.z) ?? 'Unknown Cave',
+        entranceX: e.x,
+        entranceY: e.y,
+        caveZ: e.z,
+      }));
+  }, [getFortressTileResult.deriver, snapshot?.fortressTileOverrides]);
+
   // Selected fortress tile (for stockpile inspection)
   const [selectedFortressTile, setSelectedFortressTile] = useState<{ x: number; y: number } | null>(null);
 
@@ -407,6 +423,16 @@ export default function App() {
   const handleGoToDwarf = useCallback((dwarf: LiveDwarf) => {
     setFollowedDwarfId(dwarf.id);
   }, []);
+
+  const handleGoToLocation = useCallback((loc: DiscoveredLocation) => {
+    setFollowedDwarfId(null);
+    setZLevel(loc.caveZ);
+    const center = CAVE_OFFSET + Math.floor(CAVE_SIZE / 2);
+    viewport.setOffset(
+      center - Math.floor(vpCols / 2),
+      center - Math.floor(vpRows / 2),
+    );
+  }, [viewport, vpCols, vpRows]);
 
   // Cave scout modal state
   const [caveScoutModal, setCaveScoutModal] = useState<{
@@ -721,6 +747,8 @@ export default function App() {
           events={events}
           mode={world.mode}
           publishedRuins={publishedRuins}
+          locations={discoveredLocations}
+          onLocationClick={handleGoToLocation}
         />
       </div>
 

@@ -2,15 +2,24 @@ import { useState, useEffect, useRef } from "react";
 import type { LiveEvent } from "../hooks/useEvents";
 import type { Ruin } from "@pwarf/shared";
 
+export interface DiscoveredLocation {
+  name: string;
+  entranceX: number;
+  entranceY: number;
+  caveZ: number;
+}
+
 interface RightPanelProps {
   collapsed: boolean;
   onToggle: () => void;
   events: LiveEvent[];
   mode: "world" | "fortress";
   publishedRuins?: Ruin[];
+  locations?: DiscoveredLocation[];
+  onLocationClick?: (loc: DiscoveredLocation) => void;
 }
 
-type FortressTab = "Log" | "Legends";
+type FortressTab = "Log" | "Legends" | "Locations";
 type WorldTab = "Log" | "Legends" | "Graveyard";
 type Tab = FortressTab | WorldTab;
 
@@ -88,8 +97,8 @@ export function causeLabel(cause: string): string {
   }
 }
 
-export default function RightPanel({ collapsed, onToggle, events, mode, publishedRuins = [] }: RightPanelProps) {
-  const tabs: Tab[] = mode === "world" ? ["Log", "Legends", "Graveyard"] : ["Log", "Legends"];
+export default function RightPanel({ collapsed, onToggle, events, mode, publishedRuins = [], locations = [], onLocationClick }: RightPanelProps) {
+  const tabs: Tab[] = mode === "world" ? ["Log", "Legends", "Graveyard"] : ["Log", "Legends", "Locations"];
   const [tab, setTab] = useState<Tab>("Log");
   const logRef = useRef<HTMLDivElement>(null);
   const prevCountRef = useRef(0);
@@ -174,6 +183,25 @@ export default function RightPanel({ collapsed, onToggle, events, mode, publishe
                     </div>
                   ))}
                 </div>
+              )
+            ) : tab === "Locations" ? (
+              locations.length === 0 ? (
+                <p className="text-[var(--text)] opacity-50 italic">No locations discovered.</p>
+              ) : (
+                <ul className="space-y-0.5">
+                  {locations.map((loc) => (
+                    <li key={loc.caveZ}>
+                      <button
+                        onClick={() => onLocationClick?.(loc)}
+                        className="text-left w-full cursor-pointer hover:bg-[var(--bg-hover)] px-1 py-0.5 rounded"
+                        style={{ color: 'var(--green)' }}
+                      >
+                        <span className="mr-1">*</span>
+                        {loc.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )
             ) : (
               /* Graveyard tab */
