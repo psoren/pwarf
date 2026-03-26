@@ -106,6 +106,39 @@ async function doFlush(ctx: SimContext): Promise<void> {
 
   if (!hasDirty) return;
 
+  // ── Swap dirty sets before the async RPC ──────────────────────────────
+  // Ticks continue running during the RPC call below. By swapping the
+  // dirty sets for fresh empty ones NOW, any entities dirtied during the
+  // await window will land in the new sets and survive for the next flush.
+  // On RPC failure, the old IDs are merged back into the live sets.
+  const prevDirtyDwarfIds = state.dirtyDwarfIds;
+  const prevDirtyItemIds = state.dirtyItemIds;
+  const prevDirtyStructureIds = state.dirtyStructureIds;
+  const prevDirtyMonsterIds = state.dirtyMonsterIds;
+  const prevDirtyTaskIds = state.dirtyTaskIds;
+  const prevDirtySkillIds = state.dirtyDwarfSkillIds;
+  const prevDirtyTileKeys = state.dirtyFortressTileKeys;
+  const prevDirtyRelIds = state.dirtyDwarfRelationshipIds;
+  const prevDirtyRuinIds = state.dirtyRuinIds;
+  const prevNewTasks = state.newTasks;
+  const prevNewRels = state.newDwarfRelationships;
+  const prevEvents = state.pendingEvents;
+  const prevCivDirty = state.civDirty;
+
+  state.dirtyDwarfIds = new Set();
+  state.dirtyItemIds = new Set();
+  state.dirtyStructureIds = new Set();
+  state.dirtyMonsterIds = new Set();
+  state.dirtyTaskIds = new Set();
+  state.dirtyDwarfSkillIds = new Set();
+  state.dirtyFortressTileKeys = new Set();
+  state.dirtyDwarfRelationshipIds = new Set();
+  state.dirtyRuinIds = new Set();
+  state.newTasks = [];
+  state.newDwarfRelationships = [];
+  state.pendingEvents = [];
+  state.civDirty = false;
+
   // ── Single RPC call ─────────────────────────────────────────────────────
 
   // Build ruin payload for civ-fall
@@ -147,23 +180,26 @@ async function doFlush(ctx: SimContext): Promise<void> {
 
   if (error) {
     console.warn(`[flush] rpc flush_state failed: ${error.message}`);
-    return; // Don't clear dirty tracking on failure — retry next cycle
+    // Merge the pre-swap dirty IDs back so they're retried next cycle.
+    for (const id of prevDirtyDwarfIds) state.dirtyDwarfIds.add(id);
+    for (const id of prevDirtyItemIds) state.dirtyItemIds.add(id);
+    for (const id of prevDirtyStructureIds) state.dirtyStructureIds.add(id);
+    for (const id of prevDirtyMonsterIds) state.dirtyMonsterIds.add(id);
+    for (const id of prevDirtyTaskIds) state.dirtyTaskIds.add(id);
+    for (const id of prevDirtySkillIds) state.dirtyDwarfSkillIds.add(id);
+    for (const key of prevDirtyTileKeys) state.dirtyFortressTileKeys.add(key);
+    for (const id of prevDirtyRelIds) state.dirtyDwarfRelationshipIds.add(id);
+    for (const id of prevDirtyRuinIds) state.dirtyRuinIds.add(id);
+    state.newTasks.push(...prevNewTasks);
+    state.newDwarfRelationships.push(...prevNewRels);
+    state.pendingEvents.push(...prevEvents);
+    state.civDirty = state.civDirty || prevCivDirty;
+    return;
   }
 
-  // Clear dirty tracking after successful flush
-  state.dirtyDwarfIds.clear();
-  state.dirtyItemIds.clear();
-  state.dirtyStructureIds.clear();
-  state.dirtyMonsterIds.clear();
-  state.dirtyTaskIds.clear();
-  state.dirtyDwarfSkillIds.clear();
-  state.dirtyFortressTileKeys.clear();
-  state.dirtyDwarfRelationshipIds.clear();
-  state.dirtyRuinIds.clear();
-  state.newTasks = [];
-  state.newDwarfRelationships = [];
-  state.pendingEvents = [];
-  state.civDirty = false;
+  // No clearing needed here — dirty sets were swapped for fresh empties
+  // before the RPC. Any modifications during the await landed in the new
+  // sets and will be picked up by the next flush cycle.
 }
 
 /**
