@@ -1,0 +1,41 @@
+{
+  "id": "2026-03-26T22-51-46",
+  "timestamp": "2026-03-26T22:51:46.836Z",
+  "title": "Digest — Mar 26, 2026, 10:51 PM UTC",
+  "summary": "# pwarf Devlog Digest\n\n## New Features\n- **Cave System Improvements**: We’ve added a new `caves` database table that tracks cave discoveries more effectively. This allows us to retain essential properties, such as `danger_level` and `resource_type`, derived from terrain without relying on tile overrides. Caves will now be marked as discovered when fully explored.\n\n## Testing Enhancements\n- **Action Log Verification**: We conducted thorough headless playtests to test the `action_log` field. Running scenarios like starvation and overcrowding confirmed that the action log is functioning correctly, with entries being accurately recorded.\n\n## Documentation Updates\n- **Food and Water System Design**: A design document has been added to provide insights into the upcoming changes regarding our food and water supply systems. This will transition to a player-managed approach, detailing plans to replace auto-forage, auto-brew, and auto-cook mechanics.\n\n## Merged PRs\n- #724\n- #721\n- #727\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 724,
+      "title": "test: headless playtest verifying action log (closes #723)",
+      "url": "https://github.com/psoren/pwarf/pull/724",
+      "cost": {
+        "amount": "$0.74",
+        "tokens": "762k tokens"
+      }
+    },
+    {
+      "number": 721,
+      "title": "feat: add caves database table with terrain-derived properties",
+      "url": "https://github.com/psoren/pwarf/pull/721",
+      "cost": {
+        "amount": "$12.67",
+        "tokens": "20.2M tokens"
+      }
+    },
+    {
+      "number": 727,
+      "title": "docs: add design doc for finite food & water supply",
+      "url": "https://github.com/psoren/pwarf/pull/727"
+    }
+  ],
+  "images": []
+}
