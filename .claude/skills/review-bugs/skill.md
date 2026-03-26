@@ -25,6 +25,7 @@ Use `mcp__supabase__execute_sql` to query recent unreviewed bug reports:
 ```sql
 SELECT id, title, description, game_state, created_at
 FROM bug_reports
+WHERE reviewed_at IS NULL
 ORDER BY created_at DESC
 LIMIT 10;
 ```
@@ -66,11 +67,24 @@ npm run build --workspace=shared --workspace=sim && npm test --workspace=sim -- 
 For each bug report, classify it as one of:
 - **REPRODUCED** — the scenario test demonstrates the bug (test fails as expected)
 - **ALREADY FIXED** — the bug appears to be fixed in the current code (test passes, meaning the buggy behavior no longer occurs)
+- **WORKING AS INTENDED** — the game state looks healthy and the reported behavior is not a bug
 - **CANNOT REPRODUCE** — couldn't set up a scenario that triggers the reported behavior
 - **INSUFFICIENT INFO** — the game state snapshot doesn't contain enough information to understand the bug
 - **DUPLICATE** — matches a known/recently-fixed issue
 
-**Step 5: Clean up and report.**
+**Step 5: Mark each bug report as reviewed.**
+
+After classifying a bug report, mark it as reviewed in the database so it won't appear in future runs:
+
+```sql
+UPDATE bug_reports
+SET reviewed_at = now(), classification = '<CLASSIFICATION>'
+WHERE id = '<bug-report-id>';
+```
+
+Replace `<CLASSIFICATION>` with the classification from Step 4 (e.g. `ALREADY FIXED`, `WORKING AS INTENDED`, etc.).
+
+**Step 6: Clean up and report.**
 
 Delete the temporary test file when done:
 ```bash
@@ -86,7 +100,7 @@ Write a summary report with this structure for each bug report:
 - **Submitted:** <date>
 - **Player description:** <what they said>
 - **State analysis:** <what the game state reveals>
-- **Classification:** REPRODUCED | ALREADY FIXED | CANNOT REPRODUCE | INSUFFICIENT INFO | DUPLICATE
+- **Classification:** REPRODUCED | ALREADY FIXED | WORKING AS INTENDED | CANNOT REPRODUCE | INSUFFICIENT INFO | DUPLICATE
 - **Reproduction details:** <what the scenario test showed>
 - **Suggested action:** <file an issue / already fixed in commit X / needs investigation>
 ```
