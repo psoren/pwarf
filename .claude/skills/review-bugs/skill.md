@@ -32,7 +32,41 @@ LIMIT 10;
 
 If no bug reports exist, report that and stop.
 
-**Step 2: For each bug report, analyze the game state.**
+**Step 2: Reconstruct the world and fortress terrain.**
+
+Terrain is procedurally generated from the world seed and civ ID. To reproduce bugs accurately (especially pathfinding/movement bugs), you **must** reconstruct the exact fortress terrain.
+
+For each bug report, extract the `civilization_id` from the game state, then query the database:
+
+```sql
+SELECT
+  c.id AS civ_id,
+  c.world_id,
+  c.tile_x,
+  c.tile_y,
+  w.seed AS world_seed
+FROM civilizations c
+JOIN worlds w ON w.id = c.world_id
+WHERE c.id = '<civilization_id from game_state>';
+```
+
+Then derive the terrain type using the world deriver:
+
+```typescript
+import { createWorldDeriver, createFortressDeriver } from "@pwarf/shared";
+
+const wd = createWorldDeriver(BigInt(worldSeed));
+const worldTile = wd.deriveTile(tile_x, tile_y);
+// worldTile.terrain is the biome (e.g. "forest", "plains", "desert")
+
+const fd = createFortressDeriver(BigInt(worldSeed), civId, worldTile.terrain);
+// fd.entrances — cave entrance positions
+// fd.deriveTile(x, y, z) — exact tile at any position
+```
+
+Include this deriver as `fortressDeriver` in the ScenarioConfig so pathfinding uses the real terrain (ponds, trees, rocks) instead of defaulting to open_air. This is critical — bugs that involve dwarves failing to reach distant targets are often caused by terrain obstacles (e.g. pond regions blocking A* pathfinding).
+
+**Step 3: Analyze the game state.**
 
 Read these files to understand the sim systems:
 - `sim/src/run-scenario.ts` — how to write scenario tests and the ScenarioConfig shape
@@ -45,13 +79,16 @@ For each bug report:
 2. Examine the `game_state` JSONB snapshot — look at dwarf statuses, pending tasks, items, etc.
 3. Identify what looks wrong: stuck dwarves, unfulfilled tasks, unexpected deaths, missing items, etc.
 4. Check if the bug matches any recently fixed issues by reading recent git history: `git log --oneline -20`
+5. If the bug involves movement/pathfinding, sample tiles along the path using the fortress deriver to check for unwalkable terrain (ponds, water, magma)
 
-**Step 3: Attempt to reproduce each bug.**
+**Step 4: Attempt to reproduce each bug.**
 
 For each bug report, write a minimal scenario test that tries to reproduce the issue. Create the test file at `sim/src/__tests__/bug-repro-temp.test.ts`.
 
 The test should:
-- Set up the game state from the bug report snapshot (dwarves, tasks, items, structures, tiles)
+- Reconstruct the fortress deriver from the world seed + civ ID + terrain type (see Step 2)
+- Pass the deriver as `fortressDeriver` in the ScenarioConfig
+- Set up dwarves, tasks, items, and structures from the bug report snapshot
 - Run for enough ticks to see if the bug manifests
 - Assert on the specific behavior the player reported as broken
 
@@ -62,7 +99,7 @@ Run the test:
 npm run build --workspace=shared --workspace=sim && npm test --workspace=sim -- --run src/__tests__/bug-repro-temp.test.ts
 ```
 
-**Step 4: Classify each bug report.**
+**Step 5: Classify each bug report.**
 
 For each bug report, classify it as one of:
 - **REPRODUCED** — the scenario test demonstrates the bug (test fails as expected)
@@ -72,7 +109,7 @@ For each bug report, classify it as one of:
 - **INSUFFICIENT INFO** — the game state snapshot doesn't contain enough information to understand the bug
 - **DUPLICATE** — matches a known/recently-fixed issue
 
-**Step 5: Mark each bug report as reviewed.**
+**Step 6: Mark each bug report as reviewed.**
 
 After classifying a bug report, mark it as reviewed in the database so it won't appear in future runs:
 
@@ -84,7 +121,7 @@ WHERE id = '<bug-report-id>';
 
 Replace `<CLASSIFICATION>` with the classification from Step 4 (e.g. `ALREADY FIXED`, `WORKING AS INTENDED`, etc.).
 
-**Step 6: Clean up and report.**
+**Step 7: Clean up and report.**
 
 Delete the temporary test file when done:
 ```bash
