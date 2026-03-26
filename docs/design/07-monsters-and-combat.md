@@ -1,5 +1,8 @@
 # Monsters & Combat System
 
+> **Status:** Partial
+> **Last verified:** 2026-03-25
+
 ## Monster Types
 
 12 monster types, each with different threat profiles:

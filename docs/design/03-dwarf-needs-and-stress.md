@@ -1,5 +1,8 @@
 # Dwarf Needs & Stress System
 
+> **Status:** Implemented
+> **Last verified:** 2026-03-25
+
 ## Overview
 
 Every dwarf has six need meters and a stress level. Needs decay over time, stress rises when needs are unmet, and tantrums trigger when stress exceeds a threshold. This is the core behavioral driver — everything a dwarf does flows from their needs.
@@ -19,11 +22,13 @@ Each need is an integer from 0 (critical) to 100 (fully satisfied):
 
 ### Decay Mechanics
 
-Needs decay every sim tick (Phase 1: `needs-decay`). Decay amounts should vary:
-- **Drink** decays fastest (~0.05/tick → runs out in ~2000 ticks ≈ 3.3 min)
-- **Food** decays slightly slower (~0.04/tick)
-- **Sleep** moderate (~0.03/tick)
-- **Social/Purpose/Beauty** very slow (~0.01/tick → takes ~5000 ticks ≈ 8 min to fully deplete)
+Needs decay every sim tick (Phase 1: `needs-decay`). Decay rates per tick:
+- **Drink**: 0.0033/tick (runs out from 80 in ~24,242 ticks, ~40 real min)
+- **Food**: 0.0022/tick (runs out from 80 in ~36,364 ticks, ~60 real min)
+- **Sleep**: 0.0022/tick
+- **Social**: 0.0014/tick
+- **Purpose**: 0.0011/tick
+- **Beauty**: 0.0008/tick (slowest — takes ~100,000 ticks to fully deplete from 80)
 
 These rates are tunable and should be constants, not hardcoded.
 
@@ -63,9 +68,9 @@ When `stress_level >= 80` (the `STRESS_TANTRUM_THRESHOLD` constant), the dwarf m
 ### Tantrum Effects
 
 Tantrums are not instant — they play out over multiple ticks:
-- **Mild (stress 80–89)**: Dwarf throws items, refuses to work for ~50 ticks
-- **Moderate (stress 90–95)**: Dwarf destroys nearby items, may punch another dwarf
-- **Severe (stress 96–100)**: Dwarf goes berserk — attacks others indiscriminately until subdued or killed
+- **Mild (stress 80–89)**: Dwarf throws items, refuses to work for ~1800 ticks (~1 in-game day)
+- **Moderate (stress 90–95)**: Dwarf destroys nearby items, may punch another dwarf. Lasts ~3600 ticks (~2 in-game days)
+- **Severe (stress 96–100)**: Dwarf goes berserk — attacks others indiscriminately until subdued or killed. Lasts ~7200 ticks (~4 in-game days)
 
 ### Tantrum Spirals
 

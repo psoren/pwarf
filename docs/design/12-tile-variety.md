@@ -1,5 +1,8 @@
 # 12 — Tile Variety and Points of Interest
 
+> **Status:** Design only
+> **Last verified:** 2026-03-25
+
 ## Problem
 
 The fortress map feels empty and repetitive. The surface is mostly base terrain (grass/sand/mud) with scattered trees, rocks, bushes, and ponds. Underground caves are cavern_floor and cavern_wall with occasional ore/gem. There's nothing to discover, interact with, or build around. The map doesn't reward exploration or create interesting decisions about where to build.

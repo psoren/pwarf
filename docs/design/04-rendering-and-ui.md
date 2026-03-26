@@ -1,5 +1,8 @@
 # Rendering & UI System
 
+> **Status:** Implemented
+> **Last verified:** 2026-03-25
+
 ## Overview
 
 The frontend is a React + TypeScript app that renders an ASCII character grid to an HTML5 canvas. It is purely a viewer — zero simulation logic. All game state comes from Supabase Realtime subscriptions.

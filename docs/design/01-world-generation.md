@@ -1,5 +1,8 @@
 # World Generation
 
+> **Status:** Implemented
+> **Last verified:** 2026-03-25
+
 ## Overview
 
 The game uses a **two-tier world generation** system:

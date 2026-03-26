@@ -4,13 +4,26 @@ This document explains how dwarves decide what to do each simulation tick.
 
 ## Overview
 
-Every simulation tick runs these phases in order:
+Every simulation tick runs 18 phases in order (see `sim/src/tick.ts`). The decision-relevant phases are:
 
 1. **needsDecay** — all needs (food, drink, sleep, etc.) tick down
 2. **taskExecution** — dwarves with a task make progress on it
-3. **needsSatisfaction** — dwarves check if a completed eat/drink/sleep task restored needs
-4. **idleWandering** — dwarves with no task are given a wander task
-5. **jobClaiming** — idle dwarves claim the highest-scoring pending task
+3. **needSatisfaction** — creates autonomous eat/drink/sleep tasks when needs fall below interrupt thresholds
+4. **stressUpdate** — recalculates stress from unmet needs and memories
+5. **tantrumCheck** — dwarves with stress >= 80 may enter tantrum
+6. **tantrumActions** — executes tantrum effects (item destruction, attacks)
+7. **monsterSpawning** — spawns new monsters based on fortress wealth
+8. **monsterPathfinding** — monsters advance toward targets
+9. **combatResolution** — resolves fights between monsters and dwarves
+10. **expeditionTick** — advances expedition progress
+11. **haulAssignment** — creates haul tasks for loose items
+12. **taskRecovery** — recovers stuck/failed tasks
+13. **autoCookPhase** — auto-creates cook tasks when food is low
+14. **autoBrew** — auto-creates brew tasks when drinks are low
+15. **autoForage** — auto-creates forage tasks when food is scarce
+16. **jobClaiming** — idle dwarves claim the highest-scoring pending task
+17. **eventFiring** — writes notable events to the database
+18. **thoughtGeneration** — creates dwarf thoughts and memories
 
 ---
 
