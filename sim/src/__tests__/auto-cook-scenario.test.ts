@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
-import { makeRealisticScenario, makeItem, makeMapTile } from "./test-helpers.js";
+import { makeRealisticScenario, makeItem } from "./test-helpers.js";
 import { MIN_COOK_STOCK } from "@pwarf/shared";
 
 /**
@@ -41,14 +41,6 @@ describe("auto-cook scenario", () => {
       ...config.items!.filter(i => i.category === "drink"),
     ];
 
-    // Add some grass tiles around the dwarf area for pathfinding
-    const tiles: ReturnType<typeof makeMapTile>[] = [];
-    for (let x = 254; x <= 262; x++) {
-      for (let y = 254; y <= 262; y++) {
-        tiles.push(makeMapTile(x, y, 0, "grass"));
-      }
-    }
-    config.fortressTileOverrides = tiles;
     config.ticks = 500;
 
     const result = await runScenario(config);

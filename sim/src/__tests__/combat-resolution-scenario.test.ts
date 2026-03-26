@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
-import { makeRealisticScenario, makeMonster, makeMapTile } from "./test-helpers.js";
+import { makeRealisticScenario, makeMonster } from "./test-helpers.js";
 
 /**
  * Combat Resolution scenario tests
@@ -10,16 +10,6 @@ import { makeRealisticScenario, makeMonster, makeMapTile } from "./test-helpers.
  * - monster_slain event fires and fighting XP is awarded
  * - A strong monster can kill a dwarf, producing a death event
  */
-
-function combatAreaTiles() {
-  const tiles: ReturnType<typeof makeMapTile>[] = [];
-  for (let x = 253; x <= 262; x++) {
-    for (let y = 253; y <= 262; y++) {
-      tiles.push(makeMapTile(x, y, 0, "grass"));
-    }
-  }
-  return tiles;
-}
 
 describe("combat resolution scenario", () => {
   it("weak monster is slain and monster_slain event fires with XP awarded", async () => {
@@ -42,7 +32,6 @@ describe("combat resolution scenario", () => {
     });
 
     config.monsters = [weakMonster];
-    config.fortressTileOverrides = combatAreaTiles();
     config.ticks = 300;
 
     const result = await runScenario(config);
@@ -87,7 +76,6 @@ describe("combat resolution scenario", () => {
     });
 
     config.monsters = [strongMonster];
-    config.fortressTileOverrides = combatAreaTiles();
     config.ticks = 300;
 
     const result = await runScenario(config);
