@@ -1,0 +1,65 @@
+{
+  "id": "2026-03-26T20-19-01",
+  "timestamp": "2026-03-26T20:19:01.798Z",
+  "title": "Digest — Mar 26, 2026, 08:19 PM UTC",
+  "summary": "# Pwarf Development Digest\n\nHello, fellow Pwarf enthusiasts! We’ve made some exciting updates since our last digest. Here’s a quick rundown of what’s new:\n\n## Bug Fixes\n- **Cave Adjustments**: Caves will no longer spawn in water-like tiles, ensuring safer explorations! We also increased the maximum number of caves for more adventurous expeditions.\n- **Monster State Management**: Ensured that monsters are properly marked as \"dirty\" so their states are flushed to the database correctly, preventing database constraint violations.\n- **Idle Dwarf Movement**: Implemented new mechanics that allow idle dwarves in narrow corridors to push or swap positions to prevent potential deadlocks during tasks.\n\n## New Features\n- **Review Tracking for Bugs**: We've added a review tracking system for bug reports, allowing better management and classification of issues.\n- **Interactive Monsters**: You can now inspect any entity on the map using the new `MonsterModal`. This feature lets players view detailed information about each monster.\n- **Configurable Tick Rates**: For a smoother experience, the simulation time steps (STEPS_PER_YEAR and STEPS_PER_DAY) are now configurable in scenarios.\n- **Locations Tab**: A new **Locations** tab in the RightPanel provides a list of discovered caves, allowing for quick navigation to new adventures!\n\nThese changes enhance gameplay and streamline your Pwarf experience. Keep building your legendary fortress!\n\n## Merged PRs\n- #720\n- #717\n- #713\n- #715\n- #708\n- #712\n- #711\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 720,
+      "title": "fix: prevent caves from spawning in water and increase cave count",
+      "url": "https://github.com/psoren/pwarf/pull/720"
+    },
+    {
+      "number": 717,
+      "title": "feat: add review tracking to bug reports (closes #716)",
+      "url": "https://github.com/psoren/pwarf/pull/717"
+    },
+    {
+      "number": 713,
+      "title": "fix: mark monsters dirty so they flush to DB (closes #710)",
+      "url": "https://github.com/psoren/pwarf/pull/713",
+      "cost": {
+        "amount": "$0.84",
+        "tokens": "741k tokens"
+      }
+    },
+    {
+      "number": 715,
+      "title": "fix: shove/swap idle dwarves in narrow corridors to prevent deadlock (closes #714)",
+      "url": "https://github.com/psoren/pwarf/pull/715"
+    },
+    {
+      "number": 708,
+      "title": "feat: clickable monsters — inspect any entity on the map (closes #597)",
+      "url": "https://github.com/psoren/pwarf/pull/708",
+      "cost": {
+        "amount": "$11.96",
+        "tokens": "18.2M tokens"
+      }
+    },
+    {
+      "number": 712,
+      "title": "feat: make STEPS_PER_YEAR/STEPS_PER_DAY configurable in scenarios",
+      "url": "https://github.com/psoren/pwarf/pull/712"
+    },
+    {
+      "number": 711,
+      "title": "feat: add Locations tab to RightPanel for discovered caves",
+      "url": "https://github.com/psoren/pwarf/pull/711",
+      "cost": {
+        "amount": "$0.92",
+        "tokens": "523k tokens"
+      }
+    }
+  ],
+  "images": []
+}
