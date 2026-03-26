@@ -7,7 +7,7 @@ import {
   TANTRUM_DURATION_MODERATE,
   TANTRUM_DURATION_SEVERE,
 } from "@pwarf/shared";
-import type { SimContext } from "../sim-context.js";
+import { getTaskById, type SimContext } from "../sim-context.js";
 
 /**
  * Tantrum Check Phase
@@ -41,7 +41,7 @@ export async function tantrumCheck(ctx: SimContext): Promise<void> {
 
         // Cancel current task so they can't work while tantrumming
         if (dwarf.current_task_id !== null) {
-          const task = state.tasks.find(t => t.id === dwarf.current_task_id);
+          const task = getTaskById(state, dwarf.current_task_id);
           if (task && task.status !== 'completed' && task.status !== 'cancelled') {
             task.status = 'cancelled';
             state.dirtyTaskIds.add(task.id);

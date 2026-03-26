@@ -1,6 +1,6 @@
 import { AUTONOMOUS_TASK_TYPES } from "@pwarf/shared";
 import type { Dwarf, WorldEvent } from "@pwarf/shared";
-import type { SimContext } from "./sim-context.js";
+import { getTaskById, type SimContext } from "./sim-context.js";
 
 export interface NeedLabel {
   label: string;
@@ -82,7 +82,7 @@ function stressLabel(stress: number): string {
 function dwarfActivity(dwarf: Dwarf, ctx: SimContext): string {
   if (dwarf.is_in_tantrum) return "tantrum";
   if (dwarf.current_task_id) {
-    const task = ctx.state.tasks.find(t => t.id === dwarf.current_task_id);
+    const task = getTaskById(ctx.state, dwarf.current_task_id);
     if (task) {
       const loc = task.target_x != null
         ? ` at (${task.target_x}, ${task.target_y}, ${task.target_z})`

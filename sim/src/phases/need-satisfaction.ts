@@ -15,7 +15,7 @@ import {
   AUTONOMOUS_TASK_TYPES,
 } from "@pwarf/shared";
 import type { Dwarf, Item, TaskType, Structure } from "@pwarf/shared";
-import type { SimContext } from "../sim-context.js";
+import { getTaskById, type SimContext } from "../sim-context.js";
 import { createTask } from "../task-helpers.js";
 
 /**
@@ -181,7 +181,7 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
 
   // Don't interrupt if already doing an autonomous task
   if (dwarf.current_task_id) {
-    const currentTask = state.tasks.find(t => t.id === dwarf.current_task_id);
+    const currentTask = getTaskById(state, dwarf.current_task_id);
     if (currentTask && AUTONOMOUS_TASK_TYPES.has(currentTask.task_type)) {
       return;
     }
@@ -230,7 +230,7 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
 
   // Drop current task now that we know we can satisfy the need
   if (dwarf.current_task_id) {
-    const currentTask = state.tasks.find(t => t.id === dwarf.current_task_id);
+    const currentTask = getTaskById(state, dwarf.current_task_id);
     if (currentTask && currentTask.status !== 'completed' && currentTask.status !== 'failed' && currentTask.status !== 'cancelled') {
       currentTask.status = 'pending';
       currentTask.assigned_dwarf_id = null;

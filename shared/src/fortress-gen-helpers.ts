@@ -475,6 +475,51 @@ export function createFortressDeriver(
 
   const profile = getProfile(terrain);
 
+  /** Permanent tile derivation cache — deriveTile is pure so results never change. */
+  const tileCache = new Map<string, DerivedFortressTile>();
+
+  function deriveTileUncached(x: number, y: number, z: number): DerivedFortressTile {
+    if (z === SURFACE_Z) {
+      if (entranceByPos.has(`${x},${y}`)) {
+        return { tileType: "cave_entrance", material: null };
+      }
+
+      const center = Math.floor(FORTRESS_SIZE / 2);
+      const nearCenter = Math.abs(x - center) <= 3 && Math.abs(y - center) <= 3;
+      if (nearCenter) {
+        return { tileType: profile.base, material: profile.baseMaterial };
+      }
+
+      return deriveSurfaceTile(x, y, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise, terrain);
+    }
+
+    if (z < 0) {
+      const cave = getCaveData(z);
+      if (!cave) return { tileType: "empty", material: null };
+
+      const cx = x - CAVE_OFFSET;
+      const cy = y - CAVE_OFFSET;
+      if (cx < 0 || cx >= CAVE_SIZE || cy < 0 || cy >= CAVE_SIZE) {
+        return { tileType: "cavern_wall", material: null };
+      }
+
+      if (cave.grid[cy * CAVE_SIZE + cx]) {
+        const mushroomVal = (cave.mushroomNoise(cx * 0.06, cy * 0.06) + 1) / 2;
+        if (mushroomVal > CAVE_MUSHROOM_THRESHOLD) {
+          return { tileType: "cave_mushroom", material: "mushroom" };
+        }
+        return { tileType: "cavern_floor", material: null };
+      }
+
+      const mat = checkCaveMaterial(cx, cy, cave.materialNoises);
+      if (mat) return mat;
+
+      return { tileType: "cavern_wall", material: null };
+    }
+
+    return { tileType: "empty", material: null };
+  }
+
   return {
     baseTileType: profile.base,
     entrances,
@@ -494,46 +539,12 @@ export function createFortressDeriver(
     },
 
     deriveTile(x: number, y: number, z: number): DerivedFortressTile {
-      if (z === SURFACE_Z) {
-        if (entranceByPos.has(`${x},${y}`)) {
-          return { tileType: "cave_entrance", material: null };
-        }
-
-        const center = Math.floor(FORTRESS_SIZE / 2);
-        const nearCenter = Math.abs(x - center) <= 3 && Math.abs(y - center) <= 3;
-        if (nearCenter) {
-          return { tileType: profile.base, material: profile.baseMaterial };
-        }
-
-        return deriveSurfaceTile(x, y, surfaceTreeNoise, surfaceRockNoise, surfacePondNoise, terrain);
-      }
-
-      if (z < 0) {
-        const cave = getCaveData(z);
-        if (!cave) return { tileType: "empty", material: null };
-
-        const cx = x - CAVE_OFFSET;
-        const cy = y - CAVE_OFFSET;
-        if (cx < 0 || cx >= CAVE_SIZE || cy < 0 || cy >= CAVE_SIZE) {
-          return { tileType: "cavern_wall", material: null };
-        }
-
-        if (cave.grid[cy * CAVE_SIZE + cx]) {
-          // Check for mushroom patches on cave floor tiles
-          const mushroomVal = (cave.mushroomNoise(cx * 0.06, cy * 0.06) + 1) / 2;
-          if (mushroomVal > CAVE_MUSHROOM_THRESHOLD) {
-            return { tileType: "cave_mushroom", material: "mushroom" };
-          }
-          return { tileType: "cavern_floor", material: null };
-        }
-
-        const mat = checkCaveMaterial(cx, cy, cave.materialNoises);
-        if (mat) return mat;
-
-        return { tileType: "cavern_wall", material: null };
-      }
-
-      return { tileType: "empty", material: null };
+      const key = `${x},${y},${z}`;
+      const cached = tileCache.get(key);
+      if (cached) return cached;
+      const result = deriveTileUncached(x, y, z);
+      tileCache.set(key, result);
+      return result;
     },
   };
 }

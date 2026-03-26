@@ -1,6 +1,6 @@
 import type { ItemCategory, ItemQuality } from "@pwarf/shared";
 import { calculateTravelTicks } from "@pwarf/shared";
-import type { SimContext } from "../sim-context.js";
+import { getTaskById, type SimContext } from "../sim-context.js";
 import { resolveExpedition } from "../expedition-resolution.js";
 
 /**
@@ -46,7 +46,7 @@ export function expeditionTick(ctx: SimContext): void {
             dwarf.died_year = ctx.year;
             dwarf.cause_of_death = 'expedition';
             if (dwarf.current_task_id) {
-              const task = state.tasks.find(t => t.id === dwarf.current_task_id);
+              const task = getTaskById(state, dwarf.current_task_id);
               if (task) task.status = 'pending';
               dwarf.current_task_id = null;
             }
@@ -94,7 +94,7 @@ export function expeditionTick(ctx: SimContext): void {
             dwarf.position_y = 256;
             dwarf.position_z = 0;
             if (dwarf.current_task_id) {
-              const task = state.tasks.find(t => t.id === dwarf.current_task_id);
+              const task = getTaskById(state, dwarf.current_task_id);
               if (task) task.status = 'pending';
               dwarf.current_task_id = null;
             }

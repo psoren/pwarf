@@ -66,6 +66,9 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
   state.expeditions = config.expeditions ? config.expeditions.map(e => ({ ...e })) : [];
   state.ruins = config.ruins ? config.ruins.map(r => ({ ...r })) : [];
   state.tasks = config.tasks ? config.tasks.map(t => ({ ...t })) : [];
+  // Rebuild task index after bulk assignment
+  state.taskById.clear();
+  for (const t of state.tasks) state.taskById.set(t.id, t);
   if (config.fortressTileOverrides) {
     for (const tile of config.fortressTileOverrides) {
       state.fortressTileOverrides.set(`${tile.x},${tile.y},${tile.z}`, { ...tile });

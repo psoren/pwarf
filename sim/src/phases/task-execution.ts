@@ -11,7 +11,7 @@ import {
   CONSCIENTIOUSNESS_WORK_MULTIPLIER,
 } from "@pwarf/shared";
 import type { Dwarf, Task } from "@pwarf/shared";
-import type { SimContext } from "../sim-context.js";
+import { getTaskById, type SimContext } from "../sim-context.js";
 import { getDwarfSkillLevel, getRequiredSkill } from "../task-helpers.js";
 import { bfsNextStep, getNeighbors, type ZResolver } from "../pathfinding.js";
 import { buildTileLookup } from "../tile-lookup.js";
@@ -60,7 +60,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
     if (dwarf.status !== 'alive') continue;
     if (dwarf.current_task_id === null) continue;
 
-    const task = state.tasks.find(t => t.id === dwarf.current_task_id);
+    const task = getTaskById(state, dwarf.current_task_id);
     if (!task) {
       dwarf.current_task_id = null;
       state.dirtyDwarfIds.add(dwarf.id);

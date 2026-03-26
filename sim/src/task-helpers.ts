@@ -102,6 +102,7 @@ export function createTask(
   };
 
   ctx.state.tasks.push(task);
+  ctx.state.taskById.set(task.id, task);
   ctx.state.newTasks.push(task);
   return task;
 }
