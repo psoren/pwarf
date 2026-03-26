@@ -8,16 +8,26 @@ Monorepo with three workspaces: **app/** (React/Vite), **sim/** (simulation engi
 
 ## Sim Engine
 
-The sim runs a **tick loop at 10 Hz** (100ms per tick). Each tick executes ~12 phases in order:
+The sim runs a **tick loop at 10 Hz** (100ms per tick). Each tick executes 18 phases in order:
 
 1. Needs decay (food, drink, sleep drain per tick)
 2. Task execution (dwarves move to tasks, do work)
 3. Need satisfaction (eat/drink/sleep if critical)
-4. Stress update, tantrum check
-5. Monster pathfinding, combat
-6. Construction progress
-7. Idle wandering, job claiming
-8. Event firing, thought generation
+4. Stress update
+5. Tantrum check
+6. Tantrum actions
+7. Monster spawning
+8. Monster pathfinding
+9. Combat resolution
+10. Expedition tick
+11. Haul assignment
+12. Task recovery
+13. Auto-cook
+14. Auto-brew
+15. Auto-forage
+16. Job claiming (assign idle dwarves to tasks)
+17. Event firing
+18. Thought generation
 
 All state lives in a **`CachedState` object in memory** with dirty-tracking sets (`dirtyDwarfIds`, `dirtyTaskIds`, etc.). Phases mutate this directly.
 
@@ -29,7 +39,7 @@ Key files:
 ## State Persistence (Flush/Load)
 
 - **Load** (`sim/src/load-state.ts`): On start, parallel-fetches dwarves, items, structures, monsters, tasks, and skills from Supabase into `CachedState`.
-- **Flush** (`sim/src/flush-state.ts`): Every **15 seconds**, upserts only dirty entities to Supabase, inserts pending events, polls for new player-created tasks, then clears dirty sets.
+- **Flush** (`sim/src/flush-state.ts`): Every **2 seconds** (`SIM_FLUSH_INTERVAL_MS = 2000`), upserts only dirty entities to Supabase, inserts pending events, polls for new player-created tasks, then clears dirty sets.
 
 The sim is the source of truth while running; the DB is the durable store.
 
@@ -51,7 +61,7 @@ When a player designates an area (e.g., "mine here"):
 
 1. **Optimistic UI** — blueprints show immediately
 2. **Insert to DB** — tasks written directly to Supabase `tasks` table
-3. **Sim polls** — next flush cycle (<=15s), sim picks up new pending tasks
+3. **Sim polls** — next flush cycle (<=2s), sim picks up new pending tasks
 4. **Job claiming phase** — dwarves score and claim tasks
 5. **Task execution** — dwarf pathfinds, does work, completes it
 6. **Flush** — results (mined tiles, moved items) written back to DB
@@ -79,7 +89,7 @@ Sim tick loop (10 Hz, in-memory)
   -> Phases mutate CachedState
   -> Dirty-track changed entities
 
-Every 15s: Flush
+Every 2s: Flush
   -> Upsert dirty entities to Supabase
   -> Poll for new player tasks
   -> Clear dirty sets
@@ -95,8 +105,8 @@ Frontend polling (2-3s intervals)
 | Constant | Value | Notes |
 |---|---|---|
 | `STEPS_PER_SECOND` | 10 | Tick rate |
-| `STEPS_PER_YEAR` | 18,000 | ~30 real-time minutes per in-game year |
-| `SIM_FLUSH_INTERVAL_MS` | 15,000 | How often dirty state writes to DB |
+| `STEPS_PER_YEAR` | 36,000 | ~1 real-time hour per in-game year |
+| `SIM_FLUSH_INTERVAL_MS` | 2,000 | How often dirty state writes to DB |
 | `POLL_DWARVES_MS` | 2,000 | Frontend polling interval |
 | `POLL_TASKS_MS` | 2,000 | Frontend polling interval |
 | `POLL_EVENTS_MS` | 3,000 | Frontend polling interval |

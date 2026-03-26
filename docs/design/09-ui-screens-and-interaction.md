@@ -1,5 +1,8 @@
 # UI Screens & Interaction Design
 
+> **Status:** Partial
+> **Last verified:** 2026-03-25
+
 ## Overview
 
 This document describes the player-facing UI: what the player sees, how screens flow together, and how they interact with the game. For technical rendering details (canvas, grid snapping, DPR), see `04-rendering-and-ui.md`.

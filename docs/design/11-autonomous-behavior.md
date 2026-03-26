@@ -1,5 +1,8 @@
 # 11 — Autonomous Dwarf Behavior
 
+> **Status:** Design only
+> **Last verified:** 2026-03-25
+
 ## Problem
 
 When dwarves have no player-designated tasks and no urgent needs, they stand still doing nothing. The fortress feels dead. Cooking, brewing, and foraging happen automatically via hidden auto-systems, but the player has no visibility into or control over them. Dwarves should feel alive — doing useful things, socializing, and expressing their personalities.

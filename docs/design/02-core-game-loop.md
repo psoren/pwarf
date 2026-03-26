@@ -1,5 +1,8 @@
 # Core Game Loop (Simulation Engine)
 
+> **Status:** Implemented
+> **Last verified:** 2026-03-25
+
 ## Overview
 
 The simulation runs as a headless Node.js process on the server — completely separate from the React frontend. It has zero browser dependencies. One `SimRunner` instance drives one civilization's simulation in real time.
@@ -11,6 +14,7 @@ sim/src/
 ├── index.ts           Entry point (reads env, creates Supabase client, starts runner)
 ├── sim-runner.ts      Main loop: start/stop/tick, calls phases in order
 ├── sim-context.ts     SimContext interface (shared state threaded through phases)
+├── tick.ts            Phase ordering: runTick, advanceTime, maybeYearRollup
 └── phases/
     ├── index.ts              Barrel export
     ├── needs-decay.ts        Phase 1: decrement dwarf needs
@@ -18,12 +22,20 @@ sim/src/
     ├── need-satisfaction.ts  Phase 3: consume food/drink/beds
     ├── stress-update.ts      Phase 4: recalculate stress
     ├── tantrum-check.ts      Phase 5: trigger tantrums
-    ├── monster-pathfinding.ts Phase 6: move monsters
-    ├── combat-resolution.ts  Phase 7: resolve fights
-    ├── construction-progress.ts Phase 8: advance builds
-    ├── job-claiming.ts       Phase 9: assign idle dwarves
-    ├── event-firing.ts       Phase 10: write events to DB
-    └── yearly-rollup.ts      Phase 11: annual updates (every 18,000 steps)
+    ├── tantrum-actions.ts    Phase 6: execute tantrum effects
+    ├── monster-spawning.ts   Phase 7: spawn new monsters
+    ├── monster-pathfinding.ts Phase 8: move monsters
+    ├── combat-resolution.ts  Phase 9: resolve fights
+    ├── expedition-tick.ts    Phase 10: advance expeditions
+    ├── haul-assignment.ts    Phase 11: assign haul tasks
+    ├── task-recovery.ts      Phase 12: recover stuck tasks
+    ├── auto-cook.ts          Phase 13: auto-create cook tasks
+    ├── auto-brew.ts          Phase 14: auto-create brew tasks
+    ├── auto-forage.ts        Phase 15: auto-create forage tasks
+    ├── job-claiming.ts       Phase 16: assign idle dwarves
+    ├── event-firing.ts       Phase 17: write events to DB
+    ├── thought-generation.ts Phase 18: generate dwarf thoughts
+    └── yearly-rollup.ts      Annual updates (every 36,000 steps)
 ```
 
 ## Tick Rate & Timing
@@ -33,15 +45,15 @@ All timing constants live in `shared/src/constants.ts`:
 | Constant            | Value  | Meaning                                |
 |--------------------|--------|----------------------------------------|
 | `STEPS_PER_SECOND` | 10     | Ticks per real-time second             |
-| `STEPS_PER_YEAR`   | 18,000 | Ticks per in-game year (30 real min)   |
-| `STEPS_PER_DAY`    | 49     | Ticks per in-game day (~5 real sec)    |
+| `STEPS_PER_YEAR`   | 36,000 | Ticks per in-game year (1 real hour)   |
+| `STEPS_PER_DAY`    | 1,800  | Ticks per in-game day (~3 real min)    |
 
 Derived timings:
 - **Tick interval**: 100ms (1000 / STEPS_PER_SECOND)
-- **1 in-game day** ≈ 5 real seconds
-- **1 in-game year** = 30 real minutes
-- **Dwarf lifespan (~80 years)** ≈ 40 real hours
-- **Average fortress run (20–40 years)** ≈ 10–20 real hours
+- **1 in-game day** ≈ 3 real minutes
+- **1 in-game year** = 1 real hour
+- **Dwarf lifespan (~80 years)** ≈ 80 real hours
+- **Average fortress run (20–40 years)** ≈ 20–40 real hours
 
 ## SimRunner Lifecycle
 
@@ -53,7 +65,7 @@ Derived timings:
 ### `tick()`
 Each tick:
 1. Increments `stepCount` and `currentDay`
-2. Runs all 10 standard phases in deterministic order
+2. Runs all 18 standard phases in deterministic order
 3. If `stepCount % STEPS_PER_YEAR === 0`: increments year, resets day, runs `yearlyRollup`
 
 ### `stop()`
@@ -101,23 +113,39 @@ The phases run in a strict, deterministic order every tick. This ordering matter
 
 2. **Task Execution** — Each dwarf with an assigned job advances it by one work step. Handles pathfinding progress, material hauling, skill-based speed modifiers. Completes jobs when progress hits 100%.
 
-3. **Need Satisfaction** — Dwarves near need-satisfying sources (food stockpile, drink barrel, bed, meeting hall) consume the resource and refill the corresponding need.
+3. **Need Satisfaction** — Dwarves near need-satisfying sources (food stockpile, drink barrel, bed, meeting hall) consume the resource and refill the corresponding need. Creates autonomous eat/drink/sleep tasks when needs fall below interrupt thresholds.
 
 4. **Stress Update** — Recalculates stress from: unmet needs (low food = stress), recent negative memories (witnessed death, slept outside), personality traits (high neuroticism = more stress from same stimuli). Positive memories and fulfilled needs reduce stress.
 
-5. **Tantrum Check** — Dwarves with `stress_level >= STRESS_TANTRUM_THRESHOLD` (80) may enter tantrum. Tantrum severity scales with stress. Effects: destroy nearby items, attack other dwarves, go berserk. Can cascade ("tantrum spiral").
+5. **Tantrum Check** — Dwarves with `stress_level >= STRESS_TANTRUM_THRESHOLD` (80) may enter tantrum. Tantrum severity scales with stress. Can cascade ("tantrum spiral").
 
-6. **Monster Pathfinding** — Active monsters advance one tile toward their target. Behavior determines target selection: `aggressive` → nearest dwarf, `sieging` → fortress entrance, `territorial` → patrol lair area, `hunting` → weakest visible dwarf.
+6. **Tantrum Actions** — Executes tantrum effects: destroy nearby items, attack other dwarves, go berserk. Duration varies by severity (1800–7200 ticks).
 
-7. **Combat Resolution** — Checks for tile overlap between monsters and dwarves (or military squads). Resolves using attack/defense stats, equipment quality, skill levels, and dice rolls. Applies damage to health, generates wound descriptions, awards combat XP.
+7. **Monster Spawning** — Spawns new monsters based on fortress wealth, population, and current year. Higher wealth attracts more dangerous creatures.
 
-8. **Construction Progress** — Active build jobs advance one step. Checks that required materials are available and a builder is assigned. Marks structures as complete at 100%. Incomplete builds without builders stall.
+8. **Monster Pathfinding** — Active monsters advance one tile toward their target. Behavior determines target selection: `aggressive` → nearest dwarf, `sieging` → fortress entrance, `territorial` → patrol lair area, `hunting` → weakest visible dwarf.
 
-9. **Job Claiming** — Finds idle dwarves (no current task) and matches them to unclaimed work orders. Matching considers: enabled labors, skill level, proximity to job site, job priority.
+9. **Combat Resolution** — Checks for tile overlap between monsters and dwarves (or military squads). Resolves using attack/defense stats, equipment quality, skill levels, and dice rolls. Applies damage to health, generates wound descriptions, awards combat XP.
 
-10. **Event Firing** — Collects all notable events from this tick and writes them to `world_events` in Supabase. Events include births, deaths, completions, artifact creation, sieges, discoveries.
+10. **Expedition Tick** — Advances expedition progress for dwarves exploring ruins. Handles travel, exploration events, loot discovery, and return.
 
-### Yearly Rollup (every 18,000 steps)
+11. **Haul Assignment** — Creates haul tasks for loose items on the ground that should be moved to stockpiles.
+
+12. **Task Recovery** — Detects and recovers stuck tasks (e.g., blocked paths, missing materials). Resets failed tasks to pending or cancels invalid ones.
+
+13. **Auto-Cook** — Checks food stock levels and auto-creates cook tasks when supplies are low and raw ingredients are available.
+
+14. **Auto-Brew** — Checks drink stock levels and auto-creates brew tasks when supplies are low and brewable plants are available.
+
+15. **Auto-Forage** — Auto-creates forage tasks when food is scarce and forageable tiles exist nearby.
+
+16. **Job Claiming** — Finds idle dwarves (no current task) and matches them to unclaimed work orders. Matching considers: enabled labors, skill level, proximity to job site, job priority.
+
+17. **Event Firing** — Collects all notable events from this tick and writes them to `world_events` in Supabase. Events include births, deaths, completions, artifact creation, sieges, discoveries.
+
+18. **Thought Generation** — Creates dwarf thoughts and memories based on recent events, surroundings, and need states. These feed into the stress system and activity log.
+
+### Yearly Rollup (every 36,000 steps)
 
 Runs after the standard phases on the tick where `step % STEPS_PER_YEAR === 0`:
 
@@ -222,7 +250,7 @@ async function flushToSupabase(ctx: SimContext) {
 
 ### Data Loss Window
 
-With 1-second batching, a server crash loses at most **1 second** (10 ticks) of progress. This is acceptable — the player won't notice 1 second of lost simulation time, and the previous write-every-tick design was solving a problem that didn't need solving at the cost of massive write amplification.
+With 1-second batching (`WRITE_INTERVAL = 1000ms`) for in-memory snapshots and 2-second DB flushing (`SIM_FLUSH_INTERVAL_MS = 2000ms`), a server crash loses at most **2 seconds** (20 ticks) of progress. This is acceptable — the player won't notice 2 seconds of lost simulation time, and the previous write-every-tick design was solving a problem that didn't need solving at the cost of massive write amplification.
 
 ### Frontend Update Rate
 

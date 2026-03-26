@@ -1,5 +1,8 @@
 # Dwarf Task Dispatch
 
+> **Status:** Implemented
+> **Last verified:** 2026-03-25
+
 ## Overview
 
 This document specifies how dwarves receive, claim, execute, and complete tasks — the system that connects player intent (dig designations, farm plots) to dwarf behavior. Without this, dwarves exist and get hungry but never do anything about it.
@@ -59,7 +62,7 @@ These are the only task types needed for the core game loop:
 | `farm_harvest` | Crop reaches maturity | Dwarf with `farming` skill | 30 base | Food item created at plot |
 | `eat` | Dwarf need_food < threshold | Self only (autonomous) | 10 (quick action) | Food item consumed, need_food += restore amount |
 | `drink` | Dwarf need_drink < threshold | Self only (autonomous) | 10 | Drink item consumed, need_drink += restore amount |
-| `sleep` | Dwarf need_sleep < threshold | Self only (autonomous) | 50 (takes a while) | need_sleep fully restored |
+| `sleep` | Dwarf need_sleep < threshold | Self only (autonomous) | 600 (~8 in-game hours) | need_sleep restored by 60 |
 
 ### Material Hardness Modifiers (Mining)
 
@@ -176,9 +179,9 @@ for each dwarf with status='alive' and current_task_id != null:
 | `farm_till` | Mark tile as tilled (tile property). Award farming XP. |
 | `farm_plant` | Consume seed item. Set crop growth timer on tile. Award farming XP. |
 | `farm_harvest` | Create food `Item` at tile position. Reset tile for next planting. Award farming XP. |
-| `eat` | Remove food item from stockpile. Restore `need_food` by item's restore amount (40 for basic food). |
-| `drink` | Remove drink item from stockpile. Restore `need_drink` by item's restore amount (50 for basic drink). |
-| `sleep` | Restore `need_sleep` to 100. If sleeping in a bed: no stress. If sleeping on the floor: +5 stress. |
+| `eat` | Remove food item from stockpile. Restore `need_food` by `FOOD_RESTORE_AMOUNT` (60). |
+| `drink` | Remove drink item from stockpile. Restore `need_drink` by `DRINK_RESTORE_AMOUNT` (70). |
+| `sleep` | Restore `need_sleep` by `SLEEP_RESTORE_AMOUNT` (60). If sleeping in a bed: no stress. If sleeping on the floor: +5 stress. |
 
 ### XP Awards
 
@@ -229,8 +232,8 @@ Dwarves interrupt work to survive. This is what makes them feel alive rather tha
 
 | Need | Interrupt Threshold | Behavior |
 |------|-------------------|----------|
-| `need_food` | < 25 | Drop task, create `eat` task targeting nearest food item |
-| `need_drink` | < 25 | Drop task, create `drink` task targeting nearest drink item |
+| `need_food` | < 30 | Drop task, create `eat` task targeting nearest food item |
+| `need_drink` | < 30 | Drop task, create `drink` task targeting nearest drink item |
 | `need_sleep` | < 20 | Drop task, create `sleep` task targeting nearest bed (or current tile if no bed) |
 
 These thresholds are constants in `shared/src/constants.ts`.
@@ -301,8 +304,8 @@ At 10 ticks/second, a dwarf with zero food climbs from 0 to tantrum threshold (8
 ## Death
 
 A dwarf dies when:
-- `need_food` reaches 0 and stays there for `STARVATION_TICKS` (490 ticks = ~10 in-game days)
-- `need_drink` reaches 0 and stays there for `DEHYDRATION_TICKS` (245 ticks = ~5 in-game days)
+- `need_food` reaches 0 and stays there for `STARVATION_TICKS` (18,000 ticks = ~10 in-game days)
+- `need_drink` reaches 0 and stays there for `DEHYDRATION_TICKS` (9,000 ticks = ~5 in-game days)
 - `health` reaches 0 (combat, not in Phase 0)
 
 Death is handled in the task-execution phase:
@@ -376,7 +379,7 @@ All 7 dwarves spawn at the fortress center on the surface (z=0). The exact start
 | Plump helmet seed | raw_material | 10 | For first farm |
 | Stone pickaxe | tool | 2 | Mining (not consumed, just required) |
 
-With 30 food and 7 dwarves eating, food lasts about 15 in-game days (~75 real seconds). Drink lasts about 10 days (~50 real seconds). The player must have farming going before supplies run out.
+With 30 food and 7 dwarves eating, food lasts many in-game days (~38 real minutes per dwarf before the food need hits the interrupt threshold). Drink runs out faster due to the higher decay rate. The player must have farming going before supplies run out.
 
 ---
 

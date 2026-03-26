@@ -1,5 +1,8 @@
 # Data Flow & Persistence
 
+> **Status:** Implemented
+> **Last verified:** 2026-03-25
+
 ## Overview
 
 The architecture enforces a strict separation: the sim engine writes state to Supabase, and the frontend reads it via Supabase Realtime subscriptions. There is no direct communication between sim and frontend.
@@ -92,7 +95,7 @@ If the sim process crashes and restarts:
 2. Determine the last step from the most recent world event or civilization `updated_at`
 3. Resume the tick loop from that point
 
-Since state is flushed every 1 second, recovery loses at most 10 ticks — imperceptible to the player.
+Since state is flushed every 2 seconds (`SIM_FLUSH_INTERVAL_MS = 2000`), recovery loses at most 20 ticks — imperceptible to the player.
 
 ## Shared Types
 

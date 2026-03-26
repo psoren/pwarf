@@ -1,5 +1,8 @@
 # Event System
 
+> **Status:** Implemented
+> **Last verified:** 2026-03-25
+
 ## Overview
 
 Events are the narrative backbone of the game. Every notable thing that happens in the world is recorded as a `world_event` in the database and as a typed `SimEvent` flowing through the sim. Events feed the activity log, the legends screen, ruin histories, and dwarf memories.

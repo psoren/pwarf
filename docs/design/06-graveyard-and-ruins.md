@@ -1,5 +1,8 @@
 # Graveyard & Ruins System
 
+> **Status:** Partial
+> **Last verified:** 2026-03-25
+
 ## Overview
 
 When a fortress falls, it becomes a ruin. Ruins can be published to a global graveyard that all players can browse, explore, and loot. This is the only multiplayer interaction — through the ruins left behind by real people.

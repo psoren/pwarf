@@ -61,6 +61,7 @@ When changing a public API that both `sim/` and `app/` use (e.g. `SimRunner` con
 
 ## Workflow
 
+- **Never commit directly to `main`.** All changes go through pull requests. Create a feature branch, push it, open a PR, and merge via GitHub. No exceptions.
 - **`main` has force-push protection enabled.** Never `git push --force` to main. Force-pushing feature branches after a rebase is fine.
 - **Always `git pull` on main before starting new work.** Create worktrees off the latest main to avoid missing recently merged changes.
 - **Every code change must be made in a worktree, never in the main checkout.** Multiple Claude Code sessions sharing the same working directory will silently overwrite each other's changes. Always use `isolation: "worktree"` for agents or `git worktree add` manually. The main checkout should only be used for read-only operations (browsing, `git log`, etc.).
@@ -120,6 +121,23 @@ Follow these when writing or modifying code to keep the codebase clean:
 ### Sim tick loop
 
 All sim phase ordering lives in `sim/src/tick.ts` (`runTick`, `advanceTime`, `maybeYearRollup`). Runners (`sim-runner.ts`, `headless-runner.ts`, `run-scenario.ts`, `step-mode.ts`) import from `tick.ts` — never duplicate the phase call list. When adding a new phase, add it once in `tick.ts`.
+
+### Design docs
+
+Design docs live in `docs/design/`. **Every new sim system or major update to an existing system must include a corresponding design doc update in the same PR.**
+
+- **New system** (new phase, new mechanic, new entity type): Create a new `docs/design/NN-system-name.md` with a status banner, overview, and key mechanics. Number it sequentially.
+- **Major update** (reworked phase, changed constants, new interactions): Update the existing design doc to reflect the changes. Fix any constants, phase lists, or examples that are now wrong.
+- **Bug fix or minor tuning**: No doc update needed unless the doc explicitly states the old (now wrong) value.
+
+Every design doc must have a status banner at the top:
+
+```markdown
+> **Status:** Implemented | Partial | Design only
+> **Last verified:** YYYY-MM-DD
+```
+
+Run `/docs-audit` periodically to catch drift between docs and code.
 
 ### Types and constants
 

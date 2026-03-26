@@ -1,5 +1,8 @@
 # 13 — Workshop System
 
+> **Status:** Design only
+> **Last verified:** 2026-03-25
+
 ## Problem
 
 Crafting tasks (brew, cook, smith) happen anywhere — there's no physical structure requirement. This removes spatial gameplay, hauling logistics, and placement decisions. In Dwarf Fortress, workshop placement and stockpile proximity are the core optimization puzzle. We have none of that.
