@@ -1,0 +1,33 @@
+{
+  "id": "2026-03-26T18-39-47",
+  "timestamp": "2026-03-26T18:39:47.077Z",
+  "title": "Digest — Mar 26, 2026, 06:39 PM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nExciting updates have made their way into the main branch! Here’s a quick look at what's new.\n\n## Design Documentation\n- New design documents have been added to enhance your understanding of various game systems:\n  - **Dwarf Inner Life**: This document outlines the memory system, relationship formation (from acquaintance to spouse), thought generation, and their impact on tantrum spirals.\n  - **Hauling and Stockpiles**: Detailed documentation on the two-phase haul assignment process has been introduced, providing clarity on how dwarves manage stockpiling.\n\n## New Features\n- Introducing the `/review-bugs` skill! This powerful tool allows the character Claude Code to:\n  - Fetch and analyze player bug reports from our Supabase database.\n  - Attempt to reproduce bugs through scenario tests and classify them accordingly, streamlining our bug-triaging process.\n\n## Pathfinding Improvements\n- We’ve replaced the previous BFS pathfinding algorithm with A* for long-distance tasks, which significantly improves efficiency:\n  - A* utilizes a Manhattan distance heuristic, drastically reducing the number of nodes explored in lengthy paths.\n  - The safety limit for node exploration has been increased to better handle complex terrain.\n  - Hybrid pathfinding combines BFS for short tasks and A* for longer ones, optimizing performance.\n\nStay tuned for more updates as we continue to expand and enhance the world of Pwarf!\n\n## Merged PRs\n- #687\n- #702\n- #698\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 687,
+      "title": "docs: add design docs for undocumented sim systems",
+      "url": "https://github.com/psoren/pwarf/pull/687"
+    },
+    {
+      "number": 702,
+      "title": "feat: add /review-bugs skill for triaging player bug reports",
+      "url": "https://github.com/psoren/pwarf/pull/702"
+    },
+    {
+      "number": 698,
+      "title": "fix: replace BFS with A* pathfinding for long-distance tasks",
+      "url": "https://github.com/psoren/pwarf/pull/698"
+    }
+  ],
+  "images": []
+}
