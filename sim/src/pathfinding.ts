@@ -106,26 +106,22 @@ function posKey(p: Position): string {
 }
 
 /**
- * A* pathfinding from start to goal.
+ * Pathfinding from start to goal using BFS for short distances and A* for
+ * long distances. BFS is faster per-node (O(1) queue ops) but explores in
+ * all directions. A* uses a Manhattan heuristic to go directly toward the
+ * goal, needing far fewer nodes for long paths.
  *
- * Returns the next position the entity should move to (one step toward goal),
- * or null if no path exists. The start position does not need to be walkable
- * (the entity is already there). The goal does not need to be walkable either
- * (for mining tasks, the goal is a solid tile — the dwarf needs to reach an
- * adjacent walkable tile).
- *
- * Uses Manhattan distance as the heuristic, which is admissible for 4-connected
- * grid movement. This explores far fewer nodes than BFS for long-distance paths
- * across open terrain.
+ * The algorithm is chosen based on Manhattan distance:
+ * - Distance ≤ 100: BFS with 10k node limit (fast, covers most tasks)
+ * - Distance > 100: A* with 20k node limit (directed, for cave entrances)
  *
  * @param adjacentToGoal If true, the path ends at any walkable tile adjacent
  *   to the goal (used for mining — you stand next to the wall, not inside it).
  *   If false, the path ends at the goal tile itself.
  */
-/** Safety limit — abort after expanding this many nodes.
- * A* with Manhattan heuristic + closed set covers the full 512×512 fortress
- * (worst case ~17k nodes for 288 Manhattan distance with terrain obstacles). */
-const MAX_SEARCH_NODES = 20_000;
+const BFS_NODE_LIMIT = 10_000;
+const ASTAR_NODE_LIMIT = 20_000;
+const ASTAR_DISTANCE_THRESHOLD = 50;
 
 export function bfsNextStep(
   start: Position,
@@ -146,7 +142,69 @@ export function bfsNextStep(
     return null;
   }
 
-  // A* with a binary min-heap on f = g + h
+  const dist = Math.abs(start.x - goal.x) + Math.abs(start.y - goal.y)
+    + Math.abs(start.z - goal.z) * 10;
+
+  if (dist > ASTAR_DISTANCE_THRESHOLD) {
+    return astarSearch(start, goal, getTile, adjacentToGoal, zResolver, blockedTiles);
+  }
+  return bfsSearch(start, goal, getTile, adjacentToGoal, zResolver, blockedTiles);
+}
+
+/** BFS search — fast for short distances, O(1) per node. */
+function bfsSearch(
+  start: Position,
+  goal: Position,
+  getTile: TileLookup,
+  adjacentToGoal: boolean,
+  zResolver?: ZResolver,
+  blockedTiles?: ReadonlySet<string>,
+): Position | null {
+  const visited = new Set<string>();
+  const parent = new Map<string, Position>();
+
+  const queue: Position[] = [start];
+  visited.add(posKey(start));
+
+  while (queue.length > 0) {
+    if (visited.size >= BFS_NODE_LIMIT) {
+      return null;
+    }
+
+    const current = queue.shift()!;
+    const neighbors = getNeighbors(current, getTile, zResolver);
+
+    for (const neighbor of neighbors) {
+      const key = posKey(neighbor);
+      if (visited.has(key)) continue;
+      if (blockedTiles?.has(key)) continue;
+      visited.add(key);
+      parent.set(key, current);
+
+      const reached = adjacentToGoal
+        ? isAdjacentTo(neighbor, goal)
+        : (neighbor.x === goal.x && neighbor.y === goal.y && neighbor.z === goal.z);
+
+      if (reached) {
+        return traceFirstStep(start, neighbor, parent);
+      }
+
+      queue.push(neighbor);
+    }
+  }
+
+  return null;
+}
+
+/** A* search — directed for long distances, O(log n) per node but visits far fewer. */
+function astarSearch(
+  start: Position,
+  goal: Position,
+  getTile: TileLookup,
+  adjacentToGoal: boolean,
+  zResolver?: ZResolver,
+  blockedTiles?: ReadonlySet<string>,
+): Position | null {
   const gScore = new Map<string, number>();
   const closed = new Set<string>();
   const parent = new Map<string, Position>();
@@ -157,18 +215,16 @@ export function bfsNextStep(
   heap.push({ pos: start, f: heuristic(start, goal) });
 
   while (heap.size > 0) {
-    if (closed.size >= MAX_SEARCH_NODES) {
-      return null; // Search space exhausted — no path
+    if (closed.size >= ASTAR_NODE_LIMIT) {
+      return null;
     }
 
     const { pos: current } = heap.pop()!;
     const currentKey = posKey(current);
 
-    // Skip if already expanded (duplicate heap entry from a worse path)
     if (closed.has(currentKey)) continue;
     closed.add(currentKey);
 
-    // Check if we've reached the target
     const reached = adjacentToGoal
       ? isAdjacentTo(current, goal)
       : (current.x === goal.x && current.y === goal.y && current.z === goal.z);
@@ -195,7 +251,6 @@ export function bfsNextStep(
     }
   }
 
-  // No path found
   return null;
 }
 

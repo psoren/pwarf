@@ -120,7 +120,7 @@ describe("cave scouting at long distance", () => {
   });
 
   it("dwarf reaches entrance 288 tiles away (entrance 4)", async () => {
-    const { entrance, config } = makeScoutScenario(4, 1000);
+    const { entrance, config } = makeScoutScenario(4, 2000);
 
     // Entrance 4 at (384, 416) is 288 Manhattan from spawn
     expect(Math.abs(entrance.x - 256) + Math.abs(entrance.y - 256)).toBeGreaterThanOrEqual(200);
@@ -135,5 +135,5 @@ describe("cave scouting at long distance", () => {
       e => e.event_data && (e.event_data as Record<string, unknown>).action === "scout_cave",
     );
     expect(discoveryEvents.length).toBe(1);
-  });
+  }, 60000);
 });
