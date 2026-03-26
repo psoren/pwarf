@@ -1,0 +1,23 @@
+{
+  "id": "2026-03-26T21-23-58",
+  "timestamp": "2026-03-26T21:23:58.299Z",
+  "title": "Digest — Mar 26, 2026, 09:23 PM UTC",
+  "summary": "# Pwarf Devlog\n\n## Headless Playtesting Improvements\nWe've made significant enhancements to our headless playtesting capabilities. The core updates include:\n\n- **Event Management**: Now, any `pendingEvents` will be flushed to `worldEvents` during each tick in the `headless-runner.ts`, ensuring that no events are lost silently.\n- **AI Action Logging**: We've introduced a new `ActionLogEntry` interface along with an `action_log` field in the `StateSnapshot` within `state-serializer.ts`. This log captures the last 200 actions taken by AI, providing valuable insights during testing.\n\nThese updates will enhance the debugging process and give us a clearer view of AI behaviors during playtests, making it easier to optimize and refine their decision-making processes.\n\n## Merged PRs\n- #722: Headless playtest reports AI actions taken\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 722,
+      "title": "feat: headless playtest reports AI actions taken",
+      "url": "https://github.com/psoren/pwarf/pull/722"
+    }
+  ],
+  "images": []
+}
