@@ -11,7 +11,6 @@ import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
 import { makeDwarf, makeItem } from "./test-helpers.js";
 import {
-  WORK_HAUL,
   DRINK_DECAY_PER_TICK,
   FOOD_DECAY_PER_TICK,
   NEED_INTERRUPT_DRINK,
