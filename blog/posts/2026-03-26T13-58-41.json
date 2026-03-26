@@ -1,0 +1,32 @@
+{
+  "id": "2026-03-26T13-58-41",
+  "timestamp": "2026-03-26T13:58:41.963Z",
+  "title": "Digest — Mar 26, 2026, 01:58 PM UTC",
+  "summary": "# pwarf Devlog\n\nWe've been busy making pwarf even better! Check out the latest updates:\n\n## New Features\n\n- **In-Game Bug Reporting**: \n  - A new **Bug** button has been added to the toolbar, allowing players to easily report issues.\n  - When a bug is reported, the game automatically captures the full simulation state, including details about dwarves, skills, tasks, items, structures, tiles, stockpiles, and monsters. This information is stored as JSONB for effective troubleshooting.\n  - All reports are now saved in a new `bug_reports` database for better tracking and response.\n\n## Test Suite Improvements\n\n- **Redundant Tests Removed**: \n  - Three scenario tests have been removed to streamline our testing process. \n  - This includes:\n    - `build-structures.test.ts` (now covered by `building-and-hauling-scenario.test.ts`)\n    - `cave-scenario.test.ts` (now covered by `cave-explore-scenario.test.ts`)\n    - `mining-building-scenario.test.ts` (now covered by existing tests)\n\nWe’re excited about these enhancements and the ongoing improvements to your gameplay experience in pwarf!\n\n## Merged PRs\n- #697 \n- #699\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 697,
+      "title": "feat: in-game bug report with state snapshot for test generation",
+      "url": "https://github.com/psoren/pwarf/pull/697"
+    },
+    {
+      "number": 699,
+      "title": "Remove 3 redundant scenario tests",
+      "url": "https://github.com/psoren/pwarf/pull/699",
+      "cost": {
+        "amount": "$0.36",
+        "tokens": "184k tokens"
+      }
+    }
+  ],
+  "images": []
+}
