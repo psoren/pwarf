@@ -4,7 +4,7 @@ import { makeDwarf, makeTask, makeSkill } from "./test-helpers.js";
 import { createFortressDeriver, WORK_SCOUT_CAVE } from "@pwarf/shared";
 
 /**
- * Cave exploration scenario tests — more complex than cave-scenario.test.ts.
+ * Cave exploration scenario tests.
  *
  * Tests:
  * - Two scout_cave tasks at the same entrance both complete
