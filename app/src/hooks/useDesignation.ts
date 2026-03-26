@@ -42,6 +42,8 @@ const DECONSTRUCTIBLE: ReadonlySet<string> = new Set([
 const FARMABLE: ReadonlySet<string> = new Set([
   'grass',
   'soil',
+  'mud',
+  'sand',
 ]);
 
 export function useDesignation(opts: {
@@ -115,7 +117,7 @@ export function useDesignation(opts: {
     }
 
     const mineable: string[] = ['stone', 'ore', 'gem', 'soil', 'cavern_wall', 'tree', 'rock', 'bush'];
-    const buildable: string[] = ['open_air', 'grass', 'constructed_floor', 'cavern_floor'];
+    const buildable: string[] = ['open_air', 'grass', 'constructed_floor', 'cavern_floor', 'mud', 'sand'];
     const isMine = designationMode === 'mine';
     const isDeconstruct = designationMode === 'deconstruct';
     const isFarm = designationMode === 'farm_till';
