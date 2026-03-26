@@ -1,0 +1,27 @@
+{
+  "id": "2026-03-26T15-12-23",
+  "timestamp": "2026-03-26T15:12:23.585Z",
+  "title": "Digest — Mar 26, 2026, 03:12 PM UTC",
+  "summary": "# pwarf Devlog Digest\n\nWe've made some significant improvements in the latest updates! Here’s what’s new:\n\n## Task Management Enhancements\n\n- **Haul Task Fix:** We resolved an issue where haul tasks were caught in an endless loop due to need-satisfaction interruptions. Now, haul tasks will not be interrupted, ensuring that items remain with the dwarf until the task is fully completed.\n- **Testing Improvements:** To support this fix, we've increased timeouts for haul scenario tests and updated the task-dispatch tests to align with the new non-interrupt behavior of haul tasks.\n\nThese changes should help streamline gameplay and improve the efficiency of your dwarves as they go about their hauling duties!\n\n## Merged PRs\n- PR #694\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 694,
+      "title": "fix: prevent haul tasks from being interrupted by needs (closes #693)",
+      "url": "https://github.com/psoren/pwarf/pull/694",
+      "cost": {
+        "amount": "$8.16",
+        "tokens": "10.7M tokens"
+      }
+    }
+  ],
+  "images": []
+}
