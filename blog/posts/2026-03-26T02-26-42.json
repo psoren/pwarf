@@ -1,0 +1,37 @@
+{
+  "id": "2026-03-26T02-26-42",
+  "timestamp": "2026-03-26T02:26:42.313Z",
+  "title": "Digest — Mar 26, 2026, 02:26 AM UTC",
+  "summary": "# Pwarf Development Digest\n\nWe're excited to share the latest updates and enhancements in our colony sim game, pwarf! Here's what we've been working on:\n\n## Gameplay Improvements\n- **Buildability of Tiles**: We've updated the game to allow players to place build tasks on **mud** and **sand** tiles. These tiles are now part of the buildable array and are also included in the **FARMABLE** set, enabling farm plots to be designated on them. This change addresses issues with swamp and desert biomes being unplayable.\n\n- **Hauling Efficiency**: To enhance the flow of tasks, dwarves will now automatically step off stockpile tiles after completing a haul. This fix prevents them from getting stuck on occupied tiles and improves overall task efficiency.\n\n## Documentation Updates\n- **Design Document Audit**: Our design documents have undergone a thorough audit. We've corrected timing constants to reflect accurate gameplay metrics, updated phase lists to include all 18 phases, and revised the data-flow documentation to align with these changes. This ensures better clarity and consistency for developers and players alike.\n\nWe appreciate your support as we continue to improve pwarf. Happy building!\n\n## Merged PRs\n- PR #690\n- PR #685\n- PR #684\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 690,
+      "title": "fix: mud and sand tiles should be buildable (closes #583)",
+      "url": "https://github.com/psoren/pwarf/pull/690",
+      "cost": {
+        "amount": "$0.74",
+        "tokens": "687k tokens"
+      }
+    },
+    {
+      "number": 685,
+      "title": "docs: audit and fix all outdated design docs",
+      "url": "https://github.com/psoren/pwarf/pull/685"
+    },
+    {
+      "number": 684,
+      "title": "fix: nudge dwarves off stockpile tiles after haul (closes #682)",
+      "url": "https://github.com/psoren/pwarf/pull/684"
+    }
+  ],
+  "images": []
+}
