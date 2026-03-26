@@ -27,7 +27,6 @@ describe("CachedState contract", () => {
     expect(state.dwarfSkills).toEqual([]);
     expect(state.dwarfRelationships).toEqual([]);
     expect(state.worldEvents).toEqual([]);
-    expect(state.expeditions).toEqual([]);
     expect(state.ruins).toEqual([]);
   });
 
@@ -40,7 +39,6 @@ describe("CachedState contract", () => {
     expect(state.dirtyDwarfSkillIds.size).toBe(0);
     expect(state.dirtyFortressTileKeys.size).toBe(0);
     expect(state.dirtyDwarfRelationshipIds.size).toBe(0);
-    expect(state.dirtyExpeditionIds.size).toBe(0);
     expect(state.dirtyRuinIds.size).toBe(0);
   });
 

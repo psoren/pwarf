@@ -15,7 +15,6 @@ import {
   makeSkill,
   makeMapTile,
   makeStructure,
-  makeExpedition,
   makeRuin,
   makeMonster,
 } from "./test-helpers.js";
@@ -77,7 +76,6 @@ function assertItemsValid(result: Awaited<ReturnType<typeof runScenario>>): void
     // Holder must be alive
     if (hasHolder) {
       const holder = result.dwarves.find((d) => d.id === item.held_by_dwarf_id);
-      // The holder might not be in our result if they're an expedition dwarf who returned —
       // only fail if we can positively identify them as dead.
       if (holder) {
         expect(holder.status, `Dead dwarf ${holder.name} is holding item "${item.name}"`).toBe(
@@ -952,83 +950,8 @@ describe("Task completion side effects", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section 5: Expedition + fortress interaction
 // ─────────────────────────────────────────────────────────────────────────────
-
-describe("Expedition + fortress interaction", () => {
-  it("test-23: expedition returns to an empty fortress (all fortress dwarves dead)", async () => {
-    // WHY: expedition returns surviving dwarves to position (256,256). If all fortress
-    // dwarves died while the expedition was gone, civFallen=true. Does the expedition
-    // return phase check civFallen? If not, returning dwarves appear in a "fallen" civ —
-    // no crash but potentially inconsistent state.
-    const expeditionDwarf = makeDwarf({ name: "Explorer", status: "alive" });
-    const fortressDwarf = makeDwarf({
-      name: "HomeBase",
-      need_food: 0,
-      need_drink: 0,
-      status: "alive",
-    });
-
-    const ruin = makeRuin({ id: "ruin-test" });
-    const expedition = makeExpedition({
-      ruin_id: ruin.id,
-      dwarf_ids: [expeditionDwarf.id],
-      travel_ticks_remaining: 2,
-      status: "traveling",
-    });
-
-    const result = await runScenario({
-      dwarves: [expeditionDwarf, fortressDwarf],
-      expeditions: [expedition],
-      ruins: [ruin],
-      ticks: 20000,
-    });
-
-    // Should not crash
-    assertNeedsValid(result.dwarves);
-    assertNoDeadDwarfWithTask(result);
-    // The expedition should have completed
-    const completedExpedition = result.expeditions.find((e) => e.id === expedition.id);
-    expect(completedExpedition?.status).toBe("complete");
-  });
-
-  it("test-24: expedition dwarf with current_task_id — cleared on return", async () => {
-    // WHY: expeditionTick returns survivors and clears current_task_id (task.status='pending',
-    // dwarf.current_task_id=null). But the expedition dwarf had a task assigned to them.
-    // This task gets reset to pending — could be re-claimed immediately in same tick.
-    const expeditionDwarf = makeDwarf({ name: "Adventurer" });
-    const orphanTask = makeTask("mine", {
-      civilization_id: "civ-1",
-      status: "in_progress",
-      assigned_dwarf_id: expeditionDwarf.id,
-      work_required: 100000,
-    });
-    expeditionDwarf.current_task_id = orphanTask.id;
-
-    const ruin = makeRuin({ id: "ruin-2" });
-    const expedition = makeExpedition({
-      ruin_id: ruin.id,
-      dwarf_ids: [expeditionDwarf.id],
-      travel_ticks_remaining: 2,
-      return_ticks_remaining: 0,
-      status: "traveling",
-    });
-
-    const result = await runScenario({
-      dwarves: [expeditionDwarf],
-      tasks: [orphanTask],
-      expeditions: [expedition],
-      ruins: [ruin],
-      ticks: 200,
-    });
-
-    assertNeedsValid(result.dwarves);
-    assertNoDeadDwarfWithTask(result);
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Section 6: Mathematical edge cases
+// Section 5: Mathematical edge cases
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("Mathematical edge cases", () => {

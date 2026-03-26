@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Dwarf, DwarfRelationship, DwarfSkill, Expedition, FortressDeriver, FortressTile, Item, Ruin, StockpileTile, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
+import type { Dwarf, DwarfRelationship, DwarfSkill, FortressDeriver, FortressTile, Item, Ruin, StockpileTile, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext, CachedState } from "./sim-context.js";
 import { createEmptyCachedState, createRng } from "./sim-context.js";
 import { DEFAULT_TEST_SEED } from "./rng.js";
@@ -13,7 +13,6 @@ export interface ScenarioConfig {
   items?: Item[];
   structures?: Structure[];
   monsters?: Monster[];
-  expeditions?: Expedition[];
   ruins?: Ruin[];
   tasks?: Task[];
   /** Pre-placed fortress tiles — bypasses the fortress deriver for controlled map fixtures. */
@@ -38,8 +37,6 @@ export interface ScenarioResult {
   events: WorldEvent[];
   /** All tasks at end of run. */
   tasks: Task[];
-  /** Active and completed expeditions at end of run. */
-  expeditions: Expedition[];
   /** Total ticks executed. */
   ticks: number;
   /** Final in-game year. */
@@ -69,7 +66,6 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
   state.items = config.items ? config.items.map(i => ({ ...i })) : [];
   state.structures = config.structures ? config.structures.map(s => ({ ...s })) : [];
   state.monsters = config.monsters ? config.monsters.map(m => ({ ...m })) : [];
-  state.expeditions = config.expeditions ? config.expeditions.map(e => ({ ...e })) : [];
   state.ruins = config.ruins ? config.ruins.map(r => ({ ...r })) : [];
   state.tasks = config.tasks ? config.tasks.map(t => ({ ...t })) : [];
   // Rebuild task index after bulk assignment
@@ -126,7 +122,6 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     structures: state.structures,
     events: allEvents,
     tasks: state.tasks,
-    expeditions: state.expeditions,
     ticks: stepCount,
     year: currentYear,
     fortressTileOverrides: [...state.fortressTileOverrides.values()],

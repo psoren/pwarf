@@ -19,7 +19,6 @@ import {
   autoBrew,
   autoForage,
   taskRecovery,
-  expeditionTick,
 } from "./phases/index.js";
 
 /** Run all sim phases for one tick in deterministic order. */
@@ -33,7 +32,6 @@ export async function runTick(ctx: SimContext): Promise<void> {
   await monsterSpawning(ctx);
   await monsterPathfinding(ctx);
   await combatResolution(ctx);
-  expeditionTick(ctx);
   await haulAssignment(ctx);
   taskRecovery(ctx);
   await autoCookPhase(ctx);

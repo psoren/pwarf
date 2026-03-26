@@ -1,4 +1,4 @@
-import type { Dwarf, DwarfRelationship, DwarfSkill, Expedition, ExpeditionStatus, FortressTile, FortressTileType, RelationshipType, Ruin, StockpileTile, Task, TaskType, Item, Structure, Monster } from "@pwarf/shared";
+import type { Dwarf, DwarfRelationship, DwarfSkill, FortressTile, FortressTileType, RelationshipType, Ruin, StockpileTile, Task, TaskType, Item, Structure, Monster } from "@pwarf/shared";
 import { SKILL_NAMES, createFortressDeriver } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createTestContext } from "../sim-context.js";
@@ -191,28 +191,6 @@ export function makeMonster(overrides?: Partial<Monster>): Monster {
     slain_in_civ_id: null,
     slain_in_ruin_id: null,
     created_at: new Date().toISOString(),
-    ...overrides,
-  };
-}
-
-export function makeExpedition(overrides?: Partial<Expedition>): Expedition {
-  return {
-    id: _factoryRng.uuid(),
-    player_id: "player-1",
-    ruin_id: "ruin-1",
-    status: "traveling" as ExpeditionStatus,
-    dwarf_ids: [],
-    started_at: new Date().toISOString(),
-    completed_at: null,
-    items_looted: [],
-    dwarves_lost: 0,
-    expedition_log: null,
-    civilization_id: "civ-1",
-    travel_ticks_remaining: 100,
-    return_ticks_remaining: 0,
-    destination_tile_x: 10,
-    destination_tile_y: 10,
-    party_strength: 3,
     ...overrides,
   };
 }

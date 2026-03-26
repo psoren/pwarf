@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DwarfRelationship, Expedition, Ruin, StockpileTile, Task, WorldEvent } from "@pwarf/shared";
+import type { DwarfRelationship, Ruin, StockpileTile, Task, WorldEvent } from "@pwarf/shared";
 import { WORLD_EVENTS_RECENT_LIMIT } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 
@@ -13,7 +13,7 @@ export async function loadStateFromSupabase(
   civilizationId: string,
   worldId: string,
 ): Promise<CachedState> {
-  const [dwarvesResult, itemsResult, structuresResult, monstersResult, tasksResult, skillsResult, stockpileResult, eventsResult, civResult, expeditionsResult, ruinsResult] =
+  const [dwarvesResult, itemsResult, structuresResult, monstersResult, tasksResult, skillsResult, stockpileResult, eventsResult, civResult, ruinsResult] =
     await Promise.all([
       supabase
         .from("dwarves")
@@ -57,11 +57,6 @@ export async function loadStateFromSupabase(
         .select("population,wealth")
         .eq("id", civilizationId)
         .single(),
-      supabase
-        .from("expeditions")
-        .select("*")
-        .eq("civilization_id", civilizationId)
-        .not("status", "in", "(complete,lost)"),
       supabase
         .from("ruins")
         .select("*")
@@ -143,10 +138,7 @@ export async function loadStateFromSupabase(
     civFallenCause: 'unknown',
     civPeakPopulation: (civResult.data as { population: number } | null)?.population ?? 0,
     activeCombatPairs: new Set(),
-    expeditions: (expeditionsResult.data ?? []) as Expedition[],
-    dirtyExpeditionIds: new Set(),
     ruins: (ruinsResult.data ?? []) as Ruin[],
     dirtyRuinIds: new Set(),
-    _pendingExpeditionLoot: new Map(),
   };
 }

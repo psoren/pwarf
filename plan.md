@@ -200,7 +200,7 @@
 
 **Goal**: Fallen fortresses become ruins. Players can browse other players' ruins.
 
-**Status: Partially complete** (fortress death + epitaph, no expeditions)
+**Status: Partially complete** (fortress death + epitaph)
 
 ### D6.1 — Fortress Death
 - [x] **D6.1-1**: Detect fortress fall (civFallen flag when all dwarves dead)
@@ -209,11 +209,7 @@
 ### D6.2 — Graveyard Browser
 - [x] **D6.2-1**: Published ruins query via usePublishedRuins()
 
-### D6.3 — Expeditions
-- [ ] **D6.3-1**: Select dwarves, launch expedition to a ruin
-- [ ] **D6.3-2**: Resolve dangers, return with loot or casualties
-
-### D6.4 — Ruin Decay
+### D6.3 — Ruin Decay
 - [ ] **D6.4-1**: Yearly wealth reduction
 - [ ] **D6.4-2**: Monster occupation of abandoned ruins
 
@@ -260,11 +256,10 @@
 
 ### High-priority gaps
 1. **Military UI** (D5.4) — squads, patrol orders, combat commands
-2. **Expeditions** (D6.3) — the multiplayer ruins gameplay loop
-3. **Sound effects** (D7.4) — foundation is built, content sounds needed
+2. **Sound effects** (D7.4) — foundation is built, content sounds needed
 
 ### Nice-to-have
-4. **Visual effects** (D7.5) — particles, animations, screen effects
-5. **Ruin decay** (D6.4) — ruins become more dangerous over time
-6. **Display options** (D7.3) — tile size, font customization
+3. **Visual effects** (D7.5) — particles, animations, screen effects
+4. **Ruin decay** (D6.3) — ruins become more dangerous over time
+5. **Display options** (D7.3) — tile size, font customization
 7. **Terrain variety** — rivers, elevation, biome transitions (see `docs/brainstorm/terrain-variety.md`)
