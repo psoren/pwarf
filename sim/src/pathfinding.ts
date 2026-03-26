@@ -106,7 +106,7 @@ function posKey(p: Position): string {
 }
 
 /**
- * BFS pathfinding from start to goal.
+ * A* pathfinding from start to goal.
  *
  * Returns the next position the entity should move to (one step toward goal),
  * or null if no path exists. The start position does not need to be walkable
@@ -114,12 +114,16 @@ function posKey(p: Position): string {
  * (for mining tasks, the goal is a solid tile — the dwarf needs to reach an
  * adjacent walkable tile).
  *
+ * Uses Manhattan distance as the heuristic, which is admissible for 4-connected
+ * grid movement. This explores far fewer nodes than BFS for long-distance paths
+ * across open terrain.
+ *
  * @param adjacentToGoal If true, the path ends at any walkable tile adjacent
  *   to the goal (used for mining — you stand next to the wall, not inside it).
  *   If false, the path ends at the goal tile itself.
  */
-/** Safety limit — abort BFS after visiting this many nodes. */
-const MAX_BFS_NODES = 10_000;
+/** Safety limit — abort after visiting this many nodes. */
+const MAX_SEARCH_NODES = 50_000;
 
 export function bfsNextStep(
   start: Position,
@@ -140,43 +144,112 @@ export function bfsNextStep(
     return null;
   }
 
-  const visited = new Set<string>();
+  // A* with a binary min-heap on f = g + h
+  const gScore = new Map<string, number>();
   const parent = new Map<string, Position>();
+  const startKey = posKey(start);
+  gScore.set(startKey, 0);
 
-  const queue: Position[] = [start];
-  visited.add(posKey(start));
+  const heap = new MinHeap();
+  heap.push({ pos: start, f: heuristic(start, goal) });
 
-  while (queue.length > 0) {
-    if (visited.size >= MAX_BFS_NODES) {
+  let visited = 0;
+
+  while (heap.size > 0) {
+    if (visited >= MAX_SEARCH_NODES) {
       return null; // Search space exhausted — no path
     }
 
-    const current = queue.shift()!;
+    const { pos: current } = heap.pop()!;
+    const currentKey = posKey(current);
+    visited++;
+
+    // Check if we've reached the target
+    const reached = adjacentToGoal
+      ? isAdjacentTo(current, goal)
+      : (current.x === goal.x && current.y === goal.y && current.z === goal.z);
+
+    if (reached && visited > 1) {
+      return traceFirstStep(start, current, parent);
+    }
+
+    const currentG = gScore.get(currentKey)!;
     const neighbors = getNeighbors(current, getTile, zResolver);
 
     for (const neighbor of neighbors) {
       const key = posKey(neighbor);
-      if (visited.has(key)) continue;
       if (blockedTiles?.has(key)) continue;
-      visited.add(key);
+
+      const tentativeG = currentG + 1;
+      const prevG = gScore.get(key);
+      if (prevG !== undefined && tentativeG >= prevG) continue;
+
+      gScore.set(key, tentativeG);
       parent.set(key, current);
-
-      // Check if we've reached the target
-      const reached = adjacentToGoal
-        ? isAdjacentTo(neighbor, goal)
-        : (neighbor.x === goal.x && neighbor.y === goal.y && neighbor.z === goal.z);
-
-      if (reached) {
-        // Trace back to find the first step
-        return traceFirstStep(start, neighbor, parent);
-      }
-
-      queue.push(neighbor);
+      heap.push({ pos: neighbor, f: tentativeG + heuristic(neighbor, goal) });
     }
   }
 
   // No path found
   return null;
+}
+
+/** Manhattan distance heuristic (admissible for 4-connected grid). */
+function heuristic(a: Position, b: Position): number {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z) * 10;
+}
+
+// ---- Binary min-heap for A* open set ----
+
+interface HeapEntry {
+  pos: Position;
+  f: number;
+}
+
+class MinHeap {
+  private data: HeapEntry[] = [];
+
+  get size(): number { return this.data.length; }
+
+  push(entry: HeapEntry): void {
+    this.data.push(entry);
+    this._bubbleUp(this.data.length - 1);
+  }
+
+  pop(): HeapEntry | undefined {
+    const top = this.data[0];
+    const last = this.data.pop();
+    if (this.data.length > 0 && last) {
+      this.data[0] = last;
+      this._sinkDown(0);
+    }
+    return top;
+  }
+
+  private _bubbleUp(i: number): void {
+    const d = this.data;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (d[p]!.f <= d[i]!.f) break;
+      [d[p], d[i]] = [d[i]!, d[p]!];
+      i = p;
+    }
+  }
+
+  private _sinkDown(i: number): void {
+    const d = this.data;
+    const n = d.length;
+    while (true) {
+      let smallest = i;
+      const l = 2 * i + 1;
+      const r = 2 * i + 2;
+      if (l < n && d[l]!.f < d[smallest]!.f) smallest = l;
+      if (r < n && d[r]!.f < d[smallest]!.f) smallest = r;
+      if (smallest === i) break;
+      [d[i], d[smallest]] = [d[smallest]!, d[i]!];
+      i = smallest;
+    }
+  }
 }
 
 /** Check if two positions are adjacent (Manhattan distance 1, same z-level). */
