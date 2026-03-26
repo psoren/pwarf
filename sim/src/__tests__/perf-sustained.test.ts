@@ -65,7 +65,10 @@ describe("sustained activity performance", () => {
     for (let x = 250; x < 260; x++) {
       for (let y = 262; y < 265; y++) {
         state.stockpileTiles.set(`${x},${y},0`, {
+          id: `sp-${x}-${y}`,
+          civilization_id: "test-civ",
           x, y, z: 0, priority: 1, accepts_categories: null,
+          created_at: new Date().toISOString(),
         });
       }
     }
