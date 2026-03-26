@@ -1,7 +1,9 @@
-import type { Dwarf, DwarfRelationship, DwarfSkill, Expedition, ExpeditionStatus, FortressTile, FortressTileType, RelationshipType, Ruin, Task, TaskType, Item, Structure, Monster } from "@pwarf/shared";
+import type { Dwarf, DwarfRelationship, DwarfSkill, Expedition, ExpeditionStatus, FortressTile, FortressTileType, RelationshipType, Ruin, StockpileTile, Task, TaskType, Item, Structure, Monster } from "@pwarf/shared";
+import { SKILL_NAMES, createFortressDeriver } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createTestContext } from "../sim-context.js";
 import { createRng, DEFAULT_TEST_SEED } from "../rng.js";
+import type { ScenarioConfig } from "../run-scenario.js";
 
 // Shared RNG for generating IDs in test factories — uses fixed seed for reproducibility
 const _factoryRng = createRng(DEFAULT_TEST_SEED);
@@ -250,4 +252,116 @@ export function makeContext(opts?: {
   structures?: Structure[];
 }, seed?: number): SimContext {
   return createTestContext(opts, seed);
+}
+
+/**
+ * Create a realistic scenario config with multiple dwarves, stocked food/drink,
+ * beds, a well, stockpile tiles, and a fortress deriver. Designed to suppress
+ * autonomous survival distractions so tests can focus on the feature under test.
+ */
+export function makeRealisticScenario(overrides?: Partial<ScenarioConfig> & {
+  dwarfCount?: number;
+  foodCount?: number;
+  drinkCount?: number;
+}): ScenarioConfig {
+  const { dwarfCount = 3, foodCount = 20, drinkCount = 20, ...scenarioOverrides } = overrides ?? {};
+
+  const fortressDeriver = createFortressDeriver(42n, "test-civ", "plains");
+
+  // Create dwarves at staggered positions near fortress center
+  const dwarves: Dwarf[] = [];
+  const dwarfSkills: DwarfSkill[] = [];
+  for (let i = 0; i < dwarfCount; i++) {
+    const dwarf = makeDwarf({
+      civilization_id: "test-civ",
+      position_x: 256 + (i % 3),
+      position_y: 256 + Math.floor(i / 3),
+      position_z: 0,
+      need_food: 100,
+      need_drink: 100,
+      need_sleep: 100,
+      need_social: 80,
+    });
+    dwarves.push(dwarf);
+    for (const skill of SKILL_NAMES) {
+      dwarfSkills.push(makeSkill(dwarf.id, skill, 2));
+    }
+  }
+
+  // Food items
+  const items: Item[] = [];
+  for (let i = 0; i < foodCount; i++) {
+    items.push(makeItem({
+      name: "Plump helmet",
+      category: "food",
+      material: "plant",
+      located_in_civ_id: "test-civ",
+      position_x: 258,
+      position_y: 258,
+      position_z: 0,
+    }));
+  }
+  // Drink items
+  for (let i = 0; i < drinkCount; i++) {
+    items.push(makeItem({
+      name: "Dwarven ale",
+      category: "drink",
+      material: "plant",
+      located_in_civ_id: "test-civ",
+      position_x: 258,
+      position_y: 258,
+      position_z: 0,
+    }));
+  }
+
+  // 3x3 stockpile grid at (250-252, 262-264, 0)
+  const stockpileTiles: StockpileTile[] = [];
+  for (let sx = 250; sx <= 252; sx++) {
+    for (let sy = 262; sy <= 264; sy++) {
+      stockpileTiles.push({
+        id: _factoryRng.uuid(),
+        civilization_id: "test-civ",
+        x: sx,
+        y: sy,
+        z: 0,
+        priority: 1,
+        accepts_categories: null,
+        created_at: new Date().toISOString(),
+      });
+    }
+  }
+
+  // 7 beds
+  const structures: Structure[] = [];
+  for (let i = 0; i < 7; i++) {
+    structures.push(makeStructure({
+      civilization_id: "test-civ",
+      type: "bed",
+      completion_pct: 100,
+      position_x: 254 + i,
+      position_y: 260,
+      position_z: 0,
+    }));
+  }
+  // 1 well
+  structures.push(makeStructure({
+    civilization_id: "test-civ",
+    type: "well",
+    completion_pct: 100,
+    position_x: 260,
+    position_y: 258,
+    position_z: 0,
+  }));
+
+  return {
+    dwarves,
+    dwarfSkills,
+    items,
+    structures,
+    stockpileTiles,
+    fortressDeriver,
+    ticks: 500,
+    seed: 42,
+    ...scenarioOverrides,
+  };
 }
