@@ -5,7 +5,7 @@ import { createRng } from "./rng.js";
 import { runTick, advanceTime, maybeYearRollup } from "./tick.js";
 import { SCENARIOS, buildScenarioState, buildEatDrinkTasks } from "./scenarios.js";
 import { serializeState } from "./state-serializer.js";
-import type { StateSnapshot } from "./state-serializer.js";
+import type { StateSnapshot, ActionLogEntry } from "./state-serializer.js";
 import type { ScenarioDefinition } from "./scenarios.js";
 import type { CachedState } from "./sim-context.js";
 
@@ -29,6 +29,8 @@ export interface HeadlessRunResult {
   tasksCompleted: number;
   /** Total ticks executed. */
   ticks: number;
+  /** Chronological log of AI actions/events that occurred during the run. */
+  actionLog: ActionLogEntry[];
 }
 
 /**
@@ -92,6 +94,12 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
 
     currentYear = await maybeYearRollup(ctx, stepCount, currentYear);
 
+    // Flush pendingEvents → worldEvents (mirrors what run-scenario does)
+    if (state.pendingEvents.length > 0) {
+      state.worldEvents.push(...state.pendingEvents);
+      state.pendingEvents = [];
+    }
+
     if (snapshotEvery > 0 && stepCount % snapshotEvery === 0) {
       snapshots.push(serializeState(ctx, tasksCompleted));
     }
@@ -99,5 +107,12 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
 
   const finalSnapshot = serializeState(ctx, tasksCompleted);
 
-  return { finalSnapshot, snapshots, tasksCompleted, ticks: stepCount };
+  const actionLog: ActionLogEntry[] = state.worldEvents.map(e => ({
+    tick: e.year,
+    category: e.category,
+    description: e.description,
+    ...(Object.keys(e.event_data).length > 0 ? { details: e.event_data } : {}),
+  }));
+
+  return { finalSnapshot, snapshots, tasksCompleted, ticks: stepCount, actionLog };
 }

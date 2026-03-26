@@ -25,6 +25,10 @@ node scripts/playtest-all.mjs --pretty
 
 This runs: `starvation`, `idle-fortress`, `long-run-stability`, `overcrowding`
 
+### Action timeline
+
+The headless run result includes an `actionLog` field — a chronological list of all AI actions and world events that occurred during the run. Each entry has `tick`, `category`, `description`, and optional `details`. The `action_log` field is also available in every `StateSnapshot` (capped to the last 200 entries). Use this to understand *what happened* during the run, not just the final state.
+
 ### Phase 2: Interactive investigation
 
 If batch results show issues, use step mode to investigate:
