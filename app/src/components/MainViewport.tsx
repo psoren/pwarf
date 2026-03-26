@@ -30,6 +30,8 @@ interface MainViewportProps {
   onTileClick?: (x: number, y: number) => void;
   /** Click handler for clicking a dwarf on the map */
   onDwarfClick?: (x: number, y: number) => void;
+  /** Click handler for clicking a monster on the map */
+  onMonsterClick?: (x: number, y: number) => void;
   /** Selected world tile position */
   selectedTile?: { x: number; y: number } | null;
   /** Stockpile tile positions keyed by "x,y,z" */
@@ -83,6 +85,7 @@ export default function MainViewport({
   onCancelArea,
   onTileClick,
   onDwarfClick,
+  onMonsterClick,
   selectedTile,
   stockpileTiles,
   groundItems,
@@ -447,6 +450,8 @@ export default function MainViewport({
         const cursorKey = `${cursorX},${cursorY}`;
         if (onDwarfClick && dwarfPositions?.has(cursorKey)) {
           onDwarfClick(cursorX, cursorY);
+        } else if (onMonsterClick && monsterPositions?.has(cursorKey)) {
+          onMonsterClick(cursorX, cursorY);
         } else if (onTileClick) {
           onTileClick(cursorX, cursorY);
         }
@@ -461,7 +466,7 @@ export default function MainViewport({
         onDragEnd();
       }
     },
-    [onDragEnd, onDesignateArea, onCancelArea, onTileClick, onDwarfClick, dwarfPositions, isDesignating, selStart, selEnd, cursorX, cursorY],
+    [onDragEnd, onDesignateArea, onCancelArea, onTileClick, onDwarfClick, onMonsterClick, dwarfPositions, monsterPositions, isDesignating, selStart, selEnd, cursorX, cursorY],
   );
 
   return (

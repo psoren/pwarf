@@ -22,6 +22,7 @@ import { usePublishedRuins } from "./hooks/usePublishedRuins";
 import BuildMenu, { BUILD_OPTIONS } from "./components/BuildMenu";
 import TaskPriorities from "./components/TaskPriorities";
 import { DwarfModal } from "./components/DwarfModal";
+import { MonsterModal } from "./components/MonsterModal";
 import { InventoryModal } from "./components/InventoryModal";
 import { CaveScoutModal } from "./components/CaveScoutModal";
 import { BugReportModal } from "./components/BugReportModal";
@@ -30,7 +31,7 @@ import { TutorialOverlay } from "./components/TutorialOverlay";
 import { useTutorial } from "./hooks/useTutorial";
 import { useSoundtrack } from "./hooks/useSoundtrack";
 import { SURFACE_Z, CAVE_OFFSET, CAVE_SIZE, BUILDING_COSTS, WORK_SCOUT_CAVE } from "@pwarf/shared";
-import type { Item } from "@pwarf/shared";
+import type { Item, Monster } from "@pwarf/shared";
 import type { LiveDwarf } from "./hooks/useDwarves";
 import type { DiscoveredLocation } from "./components/RightPanel";
 
@@ -504,6 +505,11 @@ export default function App() {
   const [modalDwarfId, setModalDwarfId] = useState<string | null>(null);
   const modalDwarf = modalDwarfId ? liveDwarves.find(d => d.id === modalDwarfId) ?? null : null;
 
+  // Monster info modal
+  const [modalMonsterId, setModalMonsterId] = useState<string | null>(null);
+  const liveMonsters = useMemo(() => snapshot?.monsters ?? [], [snapshot]);
+  const modalMonster = modalMonsterId ? liveMonsters.find(m => m.id === modalMonsterId) ?? null : null;
+
   // Inventory modal
   const [inventoryOpen, setInventoryOpen] = useState(false);
 
@@ -520,6 +526,23 @@ export default function App() {
       setFollowedDwarfId(dwarf.id);
     }
   }, [liveDwarves, zLevel]);
+
+  const handleMonsterClick = useCallback((x: number, y: number) => {
+    const monster = liveMonsters.find(m => m.current_tile_x === x && m.current_tile_y === y && m.status === 'active');
+    if (monster) {
+      setModalMonsterId(monster.id);
+    }
+  }, [liveMonsters]);
+
+  const handleGoToMonster = useCallback((monster: Monster) => {
+    if (monster.current_tile_x !== null && monster.current_tile_y !== null) {
+      setFollowedDwarfId(null);
+      viewport.setOffset(
+        monster.current_tile_x - Math.floor(vpCols / 2),
+        monster.current_tile_y - Math.floor(vpRows / 2),
+      );
+    }
+  }, [viewport, vpCols, vpRows]);
 
   // Keyboard shortcuts for build menu items when the menu is open
   useEffect(() => {
@@ -695,6 +718,7 @@ export default function App() {
               ? handleFortressTileClick
               : undefined}
           onDwarfClick={world.mode === "fortress" ? handleDwarfClick : undefined}
+          onMonsterClick={world.mode === "fortress" ? handleMonsterClick : undefined}
           selectedTile={world.mode === "world" ? selectedWorldTile : undefined}
           stockpileTiles={world.mode === "fortress" ? stockpileTiles : undefined}
           groundItems={world.mode === "fortress" ? groundItems : undefined}
@@ -711,6 +735,14 @@ export default function App() {
             onGoTo={handleGoToDwarf}
             items={liveItems}
             tasks={liveTasks}
+          />
+        )}
+
+        {modalMonster && (
+          <MonsterModal
+            monster={modalMonster}
+            onClose={() => setModalMonsterId(null)}
+            onGoTo={handleGoToMonster}
           />
         )}
 
