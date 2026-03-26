@@ -20,11 +20,12 @@ interface ToolbarProps {
   dwarves?: LiveDwarf[];
   onTutorial?: () => void;
   onInventory?: () => void;
+  onBugReport?: () => void;
   soundMuted?: boolean;
   onToggleMute?: () => void;
 }
 
-export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0, dwarves = [], onTutorial, onInventory, soundMuted = false, onToggleMute }: ToolbarProps) {
+export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isPaused = false, speed = 1, onSetSpeed, population = 0, year = 1, civName, items = [], wealth = 0, dwarves = [], onTutorial, onInventory, onBugReport, soundMuted = false, onToggleMute }: ToolbarProps) {
   const alert = mode === "fortress" ? deriveAlert(dwarves) : null;
 
   return (
@@ -96,6 +97,15 @@ export default function Toolbar({ mode, onSignOut, onRestart, onTogglePause, isP
             title={soundMuted ? "Unmute soundtrack" : "Mute soundtrack"}
           >
             {soundMuted ? "Muted" : "Sound"}
+          </button>
+        )}
+        {onBugReport && (
+          <button
+            onClick={onBugReport}
+            className="px-2 py-0.5 border border-[var(--border)] text-[var(--text)] hover:text-[var(--red,#f87171)] hover:border-[var(--red,#f87171)] cursor-pointer"
+            title="Report a bug"
+          >
+            Bug
           </button>
         )}
         {onRestart && (
