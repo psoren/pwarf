@@ -29,6 +29,8 @@ import { dwarfName } from "../dwarf-utils.js";
 import { createTask } from "../task-helpers.js";
 import { consumeResources } from "../resource-check.js";
 import { generateArtifactName, randomArtifactQuality } from "../artifact-names.js";
+import { getNeighbors } from "../pathfinding.js";
+import { buildTileLookup } from "../tile-lookup.js";
 
 /** Chance of finding a rare artifact when mining a gem tile. */
 export const ARTIFACT_CHANCE_GEM = 0.05;
@@ -426,6 +428,44 @@ function completeHaul(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   item.position_z = task.target_z;
   item.located_in_civ_id = ctx.civilizationId;
   ctx.state.dirtyItemIds.add(item.id);
+
+  // Nudge dwarf off the stockpile tile so they don't block other haulers.
+  const posKey = `${dwarf.position_x},${dwarf.position_y},${dwarf.position_z}`;
+  if (ctx.state.stockpileTiles.has(posKey)) {
+    nudgeOffStockpile(dwarf, ctx);
+  }
+}
+
+/**
+ * Move a dwarf one step off a stockpile tile to the nearest non-stockpile
+ * walkable neighbor. If all neighbors are stockpile tiles or blocked, the
+ * dwarf stays put (acceptable fallback — job-claiming will move them soon).
+ */
+function nudgeOffStockpile(dwarf: Dwarf, ctx: SimContext): void {
+  const { state } = ctx;
+  const getTile = buildTileLookup(ctx);
+  const neighbors = getNeighbors(
+    { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z },
+    getTile,
+  );
+
+  // Prefer non-stockpile tiles; fall back to any walkable neighbor
+  for (const neighbor of neighbors) {
+    const key = `${neighbor.x},${neighbor.y},${neighbor.z}`;
+    if (state.stockpileTiles.has(key)) continue;
+    // Check occupancy — don't stack on another dwarf
+    const occupied = state.dwarves.some(
+      d => d.status === 'alive' && d.id !== dwarf.id
+        && d.position_x === neighbor.x && d.position_y === neighbor.y && d.position_z === neighbor.z,
+    );
+    if (occupied) continue;
+
+    dwarf.position_x = neighbor.x;
+    dwarf.position_y = neighbor.y;
+    dwarf.position_z = neighbor.z;
+    state.dirtyDwarfIds.add(dwarf.id);
+    return;
+  }
 }
 
 function completeFarmHarvest(task: Task, ctx: SimContext): void {
