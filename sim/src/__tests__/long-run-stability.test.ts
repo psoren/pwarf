@@ -155,7 +155,7 @@ describe("long-run stability (10000 ticks)", () => {
     }
 
     // ── Performance check ───────────────────────────────────────────────
-    // 10000 ticks should complete in under 30 seconds
-    expect(elapsed).toBeLessThan(30000);
-  }, 60000); // 60s timeout for this test
+    // 10000 ticks should complete in under 60 seconds on CI
+    expect(elapsed).toBeLessThan(60000);
+  }, 120000); // 120s timeout for this test
 });

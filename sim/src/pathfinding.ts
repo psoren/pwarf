@@ -122,8 +122,10 @@ function posKey(p: Position): string {
  *   to the goal (used for mining — you stand next to the wall, not inside it).
  *   If false, the path ends at the goal tile itself.
  */
-/** Safety limit — abort after visiting this many nodes. */
-const MAX_SEARCH_NODES = 50_000;
+/** Safety limit — abort after expanding this many nodes.
+ * A* with Manhattan heuristic + closed set covers the full 512×512 fortress
+ * (worst case ~17k nodes for 288 Manhattan distance with terrain obstacles). */
+const MAX_SEARCH_NODES = 20_000;
 
 export function bfsNextStep(
   start: Position,
@@ -146,6 +148,7 @@ export function bfsNextStep(
 
   // A* with a binary min-heap on f = g + h
   const gScore = new Map<string, number>();
+  const closed = new Set<string>();
   const parent = new Map<string, Position>();
   const startKey = posKey(start);
   gScore.set(startKey, 0);
@@ -153,23 +156,24 @@ export function bfsNextStep(
   const heap = new MinHeap();
   heap.push({ pos: start, f: heuristic(start, goal) });
 
-  let visited = 0;
-
   while (heap.size > 0) {
-    if (visited >= MAX_SEARCH_NODES) {
+    if (closed.size >= MAX_SEARCH_NODES) {
       return null; // Search space exhausted — no path
     }
 
     const { pos: current } = heap.pop()!;
     const currentKey = posKey(current);
-    visited++;
+
+    // Skip if already expanded (duplicate heap entry from a worse path)
+    if (closed.has(currentKey)) continue;
+    closed.add(currentKey);
 
     // Check if we've reached the target
     const reached = adjacentToGoal
       ? isAdjacentTo(current, goal)
       : (current.x === goal.x && current.y === goal.y && current.z === goal.z);
 
-    if (reached && visited > 1) {
+    if (reached && closed.size > 1) {
       return traceFirstStep(start, current, parent);
     }
 
@@ -178,6 +182,7 @@ export function bfsNextStep(
 
     for (const neighbor of neighbors) {
       const key = posKey(neighbor);
+      if (closed.has(key)) continue;
       if (blockedTiles?.has(key)) continue;
 
       const tentativeG = currentG + 1;
