@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
-import { makeDwarf, makeSkill, makeItem, makeMapTile, makeMonster } from "./test-helpers.js";
+import { makeDwarf, makeSkill, makeItem, makeMonster } from "./test-helpers.js";
+import { createFortressDeriver } from "@pwarf/shared";
+
+const fortressDeriver = createFortressDeriver(42n, "test-civ", "plains");
 
 /**
  * Monster spawning and combat resolution end-to-end scenario tests.
@@ -17,8 +20,8 @@ function drinkItem() {
     name: "Dwarven ale",
     category: "drink",
     located_in_civ_id: "test-civ",
-    position_x: 98,
-    position_y: 98,
+    position_x: 258,
+    position_y: 258,
     position_z: 0,
   });
 }
@@ -28,21 +31,10 @@ function foodItem() {
     name: "Plump helmet",
     category: "food",
     located_in_civ_id: "test-civ",
-    position_x: 98,
-    position_y: 98,
+    position_x: 258,
+    position_y: 258,
     position_z: 0,
   });
-}
-
-// Grass tiles around the combat area to allow pathfinding
-function combatAreaTiles() {
-  const tiles = [];
-  for (let x = 97; x <= 106; x++) {
-    for (let y = 97; y <= 106; y++) {
-      tiles.push(makeMapTile(x, y, 0, "grass"));
-    }
-  }
-  return tiles;
 }
 
 describe("monster combat scenario", () => {
@@ -50,8 +42,8 @@ describe("monster combat scenario", () => {
     const dwarf1 = makeDwarf({
       id: "d-fighter-1",
       civilization_id: "test-civ",
-      position_x: 100,
-      position_y: 100,
+      position_x: 256,
+      position_y: 256,
       position_z: 0,
       need_food: 100,
       need_drink: 100,
@@ -61,8 +53,8 @@ describe("monster combat scenario", () => {
     const dwarf2 = makeDwarf({
       id: "d-fighter-2",
       civilization_id: "test-civ",
-      position_x: 100,
-      position_y: 101,
+      position_x: 256,
+      position_y: 257,
       position_z: 0,
       need_food: 100,
       need_drink: 100,
@@ -75,17 +67,17 @@ describe("monster combat scenario", () => {
       makeSkill(dwarf2.id, "fighting", 3),
     ];
 
-    // Low health monster at (102,100) — close enough for the monster to greedy-step into the dwarves
+    // Low health monster at (258,256) — close enough for the monster to greedy-step into the dwarves
     const monster = makeMonster({
       id: "weak-monster-1",
       status: "active",
       behavior: "aggressive",
       health: 5, // very low health — will be slain quickly
       threat_level: 10,
-      current_tile_x: 102,
-      current_tile_y: 100,
-      lair_tile_x: 102,
-      lair_tile_y: 100,
+      current_tile_x: 258,
+      current_tile_y: 256,
+      lair_tile_x: 258,
+      lair_tile_y: 256,
     });
 
     const drinks = Array.from({ length: 15 }, () => drinkItem());
@@ -96,7 +88,7 @@ describe("monster combat scenario", () => {
       dwarfSkills: skills,
       monsters: [monster],
       items: [...drinks, ...foods],
-      fortressTileOverrides: combatAreaTiles(),
+      fortressDeriver,
       ticks: 200,
       seed: 42,
     });
@@ -116,8 +108,8 @@ describe("monster combat scenario", () => {
     const dwarf = makeDwarf({
       id: "d-hero",
       civilization_id: "test-civ",
-      position_x: 100,
-      position_y: 100,
+      position_x: 256,
+      position_y: 256,
       position_z: 0,
       need_food: 100,
       need_drink: 100,
@@ -133,10 +125,10 @@ describe("monster combat scenario", () => {
       behavior: "aggressive",
       health: 1, // will die in first combat tick
       threat_level: 5,
-      current_tile_x: 101,
-      current_tile_y: 100,
-      lair_tile_x: 101,
-      lair_tile_y: 100,
+      current_tile_x: 257,
+      current_tile_y: 256,
+      lair_tile_x: 257,
+      lair_tile_y: 256,
     });
 
     const drinks = Array.from({ length: 15 }, () => drinkItem());
@@ -147,7 +139,7 @@ describe("monster combat scenario", () => {
       dwarfSkills: skills,
       monsters: [monster],
       items: [...drinks, ...foods],
-      fortressTileOverrides: combatAreaTiles(),
+      fortressDeriver,
       ticks: 50,
       seed: 42,
     });
@@ -163,8 +155,8 @@ describe("monster combat scenario", () => {
     const dwarf = makeDwarf({
       id: "d-xp-test",
       civilization_id: "test-civ",
-      position_x: 100,
-      position_y: 100,
+      position_x: 256,
+      position_y: 256,
       position_z: 0,
       need_food: 100,
       need_drink: 100,
@@ -179,10 +171,10 @@ describe("monster combat scenario", () => {
       behavior: "aggressive",
       health: 1,
       threat_level: 5,
-      current_tile_x: 100,
-      current_tile_y: 100, // already on same tile as dwarf
-      lair_tile_x: 100,
-      lair_tile_y: 100,
+      current_tile_x: 256,
+      current_tile_y: 256, // already on same tile as dwarf
+      lair_tile_x: 256,
+      lair_tile_y: 256,
     });
 
     const drinks = Array.from({ length: 15 }, () => drinkItem());
@@ -193,7 +185,7 @@ describe("monster combat scenario", () => {
       dwarfSkills: [], // no pre-existing skills
       monsters: [monster],
       items: [...drinks, ...foods],
-      fortressTileOverrides: combatAreaTiles(),
+      fortressDeriver,
       ticks: 10,
       seed: 42,
     });
@@ -207,8 +199,8 @@ describe("monster combat scenario", () => {
     const dwarf = makeDwarf({
       id: "d-safe",
       civilization_id: "test-civ",
-      position_x: 100,
-      position_y: 100,
+      position_x: 256,
+      position_y: 256,
       position_z: 0,
       need_food: 100,
       need_drink: 100,
@@ -222,10 +214,10 @@ describe("monster combat scenario", () => {
       behavior: "neutral",
       health: 50,
       threat_level: 30,
-      current_tile_x: 101,
-      current_tile_y: 100,
-      lair_tile_x: 101,
-      lair_tile_y: 100,
+      current_tile_x: 257,
+      current_tile_y: 256,
+      lair_tile_x: 257,
+      lair_tile_y: 256,
     });
 
     const drinks = Array.from({ length: 15 }, () => drinkItem());
@@ -235,7 +227,7 @@ describe("monster combat scenario", () => {
       dwarves: [dwarf],
       monsters: [neutralMonster],
       items: [...drinks, ...foods],
-      fortressTileOverrides: combatAreaTiles(),
+      fortressDeriver,
       ticks: 100,
       seed: 42,
     });

@@ -7,8 +7,9 @@ import {
   WORK_BUILD_BED,
   WORK_BUILD_WELL,
   WORK_BUILD_MUSHROOM_GARDEN,
+  createFortressDeriver,
 } from "@pwarf/shared";
-import type { FortressTile, StockpileTile } from "@pwarf/shared";
+import type { StockpileTile } from "@pwarf/shared";
 
 function stoneBlock() {
   return makeItem({ name: "Stone block", category: "raw_material", material: "stone", located_in_civ_id: "test-civ", held_by_dwarf_id: null });
@@ -17,18 +18,7 @@ function woodLog() {
   return makeItem({ name: "Wood log", category: "raw_material", material: "wood", located_in_civ_id: "test-civ", held_by_dwarf_id: null });
 }
 
-function grassTile(x: number, y: number, z: number): FortressTile {
-  return {
-    id: `grass-${x}-${y}-${z}`,
-    civilization_id: "civ-1",
-    x, y, z,
-    tile_type: "grass",
-    material: null,
-    is_revealed: true,
-    is_mined: false,
-    created_at: new Date().toISOString(),
-  };
-}
+const fortressDeriver = createFortressDeriver(42n, "test-civ", "plains");
 
 function makeStockpileTile(x: number, y: number, z: number): StockpileTile {
   return {
@@ -43,72 +33,66 @@ function makeStockpileTile(x: number, y: number, z: number): StockpileTile {
 
 describe("building scenarios", () => {
   it("dwarf completes build_wall task", async () => {
-    const dwarf = makeDwarf({ position_x: 9, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 255, position_y: 256, position_z: 0 });
     const buildSkill = makeSkill(dwarf.id, "building", 1);
     const task = makeTask("build_wall", {
       status: "pending",
-      target_x: 10, target_y: 10, target_z: 0,
+      target_x: 256, target_y: 256, target_z: 0,
       work_required: WORK_BUILD_WALL,
     });
-
-    const tiles = [grassTile(9, 10, 0), grassTile(10, 10, 0)];
 
     const result = await runScenario({
       dwarves: [dwarf],
       dwarfSkills: [buildSkill],
       tasks: [task],
       items: [stoneBlock()],
-      fortressTileOverrides: tiles,
+      fortressDeriver,
       ticks: 200,
     });
 
     expect(result.tasks.find(t => t.id === task.id)?.status).toBe("completed");
-    const wallTile = result.fortressTileOverrides.find(t => t.x === 10 && t.y === 10 && t.z === 0);
+    const wallTile = result.fortressTileOverrides.find(t => t.x === 256 && t.y === 256 && t.z === 0);
     expect(wallTile?.tile_type).toBe("constructed_wall");
   });
 
   it("dwarf completes build_floor task", async () => {
-    const dwarf = makeDwarf({ position_x: 9, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 255, position_y: 256, position_z: 0 });
     const buildSkill = makeSkill(dwarf.id, "building", 1);
     const task = makeTask("build_floor", {
       status: "pending",
-      target_x: 10, target_y: 10, target_z: 0,
+      target_x: 256, target_y: 256, target_z: 0,
       work_required: WORK_BUILD_FLOOR,
     });
-
-    const tiles = [grassTile(9, 10, 0), grassTile(10, 10, 0)];
 
     const result = await runScenario({
       dwarves: [dwarf],
       dwarfSkills: [buildSkill],
       tasks: [task],
       items: [stoneBlock()],
-      fortressTileOverrides: tiles,
+      fortressDeriver,
       ticks: 200,
     });
 
     expect(result.tasks.find(t => t.id === task.id)?.status).toBe("completed");
-    const floorTile = result.fortressTileOverrides.find(t => t.x === 10 && t.y === 10 && t.z === 0);
+    const floorTile = result.fortressTileOverrides.find(t => t.x === 256 && t.y === 256 && t.z === 0);
     expect(floorTile?.tile_type).toBe("constructed_floor");
   });
 
   it("dwarf completes build_bed task", async () => {
-    const dwarf = makeDwarf({ position_x: 9, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 255, position_y: 256, position_z: 0 });
     const buildSkill = makeSkill(dwarf.id, "building", 1);
     const task = makeTask("build_bed", {
       status: "pending",
-      target_x: 10, target_y: 10, target_z: 0,
+      target_x: 256, target_y: 256, target_z: 0,
       work_required: WORK_BUILD_BED,
     });
-
-    const tiles = [grassTile(9, 10, 0), grassTile(10, 10, 0)];
 
     const result = await runScenario({
       dwarves: [dwarf],
       dwarfSkills: [buildSkill],
       tasks: [task],
       items: [woodLog()],
-      fortressTileOverrides: tiles,
+      fortressDeriver,
       ticks: 200,
     });
 
@@ -119,22 +103,20 @@ describe("building scenarios", () => {
   });
 
   it("dwarf completes build_well task", async () => {
-    const dwarf = makeDwarf({ position_x: 9, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 255, position_y: 256, position_z: 0 });
     const buildSkill = makeSkill(dwarf.id, "building", 1);
     const task = makeTask("build_well", {
       status: "pending",
-      target_x: 10, target_y: 10, target_z: 0,
+      target_x: 256, target_y: 256, target_z: 0,
       work_required: WORK_BUILD_WELL,
     });
-
-    const tiles = [grassTile(9, 10, 0), grassTile(10, 10, 0)];
 
     const result = await runScenario({
       dwarves: [dwarf],
       dwarfSkills: [buildSkill],
       tasks: [task],
       items: [stoneBlock(), stoneBlock()],
-      fortressTileOverrides: tiles,
+      fortressDeriver,
       ticks: 200,
     });
 
@@ -145,22 +127,20 @@ describe("building scenarios", () => {
   });
 
   it("dwarf completes build_mushroom_garden task", async () => {
-    const dwarf = makeDwarf({ position_x: 9, position_y: 10, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 255, position_y: 256, position_z: 0 });
     const buildSkill = makeSkill(dwarf.id, "building", 1);
     const task = makeTask("build_mushroom_garden", {
       status: "pending",
-      target_x: 10, target_y: 10, target_z: 0,
+      target_x: 256, target_y: 256, target_z: 0,
       work_required: WORK_BUILD_MUSHROOM_GARDEN,
     });
-
-    const tiles = [grassTile(9, 10, 0), grassTile(10, 10, 0)];
 
     const result = await runScenario({
       dwarves: [dwarf],
       dwarfSkills: [buildSkill],
       tasks: [task],
       items: [woodLog()],
-      fortressTileOverrides: tiles,
+      fortressDeriver,
       ticks: 200,
     });
 
@@ -173,25 +153,19 @@ describe("building scenarios", () => {
 
 describe("stockpile hauling scenarios", () => {
   it("idle dwarf picks up ground item and hauls to stockpile", async () => {
-    const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 254, position_y: 256, position_z: 0 });
     const groundItem = makeItem({
-      position_x: 7, position_y: 5, position_z: 0,
+      position_x: 256, position_y: 256, position_z: 0,
       held_by_dwarf_id: null,
       category: "raw_material",
       located_in_civ_id: "test-civ",
     });
 
-    // Grass tiles from x=3..15 for pathfinding
-    const tiles: FortressTile[] = [];
-    for (let x = 3; x <= 15; x++) {
-      tiles.push(grassTile(x, 5, 0));
-    }
-
     const result = await runScenario({
       dwarves: [dwarf],
       items: [groundItem],
-      fortressTileOverrides: tiles,
-      stockpileTiles: [makeStockpileTile(12, 5, 0)],
+      fortressDeriver,
+      stockpileTiles: [makeStockpileTile(262, 256, 0)],
       ticks: 500,
     });
 
@@ -199,29 +173,24 @@ describe("stockpile hauling scenarios", () => {
     expect(haulTasks.length).toBeGreaterThanOrEqual(1);
     const completed = haulTasks.find(t => t.status === "completed");
     expect(completed).toBeDefined();
-    expect(completed?.target_x).toBe(12);
-    expect(completed?.target_y).toBe(5);
+    expect(completed?.target_x).toBe(262);
+    expect(completed?.target_y).toBe(256);
   });
 
   it("does not create duplicate haul tasks", async () => {
-    const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 254, position_y: 256, position_z: 0 });
     const groundItem = makeItem({
-      position_x: 7, position_y: 5, position_z: 0,
+      position_x: 256, position_y: 256, position_z: 0,
       held_by_dwarf_id: null,
       category: "raw_material",
       located_in_civ_id: "test-civ",
     });
 
-    const tiles: FortressTile[] = [];
-    for (let x = 3; x <= 15; x++) {
-      tiles.push(grassTile(x, 5, 0));
-    }
-
     const result = await runScenario({
       dwarves: [dwarf],
       items: [groundItem],
-      fortressTileOverrides: tiles,
-      stockpileTiles: [makeStockpileTile(12, 5, 0)],
+      fortressDeriver,
+      stockpileTiles: [makeStockpileTile(262, 256, 0)],
       ticks: 50,
     });
 
@@ -234,24 +203,19 @@ describe("stockpile hauling scenarios", () => {
   });
 
   it("skips items already on a stockpile tile", async () => {
-    const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
+    const dwarf = makeDwarf({ position_x: 254, position_y: 256, position_z: 0 });
     const itemOnPile = makeItem({
-      position_x: 12, position_y: 5, position_z: 0,
+      position_x: 262, position_y: 256, position_z: 0,
       held_by_dwarf_id: null,
       category: "raw_material",
       located_in_civ_id: "test-civ",
     });
 
-    const tiles: FortressTile[] = [];
-    for (let x = 3; x <= 15; x++) {
-      tiles.push(grassTile(x, 5, 0));
-    }
-
     const result = await runScenario({
       dwarves: [dwarf],
       items: [itemOnPile],
-      fortressTileOverrides: tiles,
-      stockpileTiles: [makeStockpileTile(12, 5, 0)],
+      fortressDeriver,
+      stockpileTiles: [makeStockpileTile(262, 256, 0)],
       ticks: 20,
     });
 

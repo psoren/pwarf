@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Dwarf, DwarfSkill, Expedition, FortressDeriver, FortressTile, Item, Ruin, StockpileTile, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
+import type { Dwarf, DwarfRelationship, DwarfSkill, Expedition, FortressDeriver, FortressTile, Item, Ruin, StockpileTile, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext, CachedState } from "./sim-context.js";
 import { createEmptyCachedState, createRng } from "./sim-context.js";
 import { DEFAULT_TEST_SEED } from "./rng.js";
@@ -46,6 +46,12 @@ export interface ScenarioResult {
   year: number;
   /** All fortress tile overrides (mined/built tiles) at end of run. */
   fortressTileOverrides: FortressTile[];
+  /** Final dwarf skill records. */
+  dwarfSkills: DwarfSkill[];
+  /** Final dwarf relationship records. */
+  dwarfRelationships: DwarfRelationship[];
+  /** Final monster state. */
+  monsters: Monster[];
 }
 
 /**
@@ -121,5 +127,8 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     ticks: stepCount,
     year: currentYear,
     fortressTileOverrides: [...state.fortressTileOverrides.values()],
+    dwarfSkills: state.dwarfSkills,
+    dwarfRelationships: state.dwarfRelationships,
+    monsters: state.monsters,
   };
 }

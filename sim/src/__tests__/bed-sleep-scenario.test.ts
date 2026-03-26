@@ -5,7 +5,10 @@ import {
   NEED_INTERRUPT_SLEEP,
   WORK_SLEEP,
   FLOOR_SLEEP_STRESS,
+  createFortressDeriver,
 } from "@pwarf/shared";
+
+const fortressDeriver = createFortressDeriver(42n, "test-civ", "plains");
 
 /**
  * Bed assignment and sleep quality scenario tests.
@@ -22,8 +25,8 @@ function drinkItem() {
     name: "Dwarven ale",
     category: "drink",
     located_in_civ_id: "test-civ",
-    position_x: 3,
-    position_y: 3,
+    position_x: 258,
+    position_y: 258,
     position_z: 0,
   });
 }
@@ -33,20 +36,10 @@ function foodItem() {
     name: "Plump helmet",
     category: "food",
     located_in_civ_id: "test-civ",
-    position_x: 3,
-    position_y: 3,
+    position_x: 258,
+    position_y: 258,
     position_z: 0,
   });
-}
-
-function grassTiles() {
-  const tiles = [];
-  for (let x = 0; x <= 12; x++) {
-    for (let y = 0; y <= 12; y++) {
-      tiles.push(makeMapTile(x, y, 0, "grass"));
-    }
-  }
-  return tiles;
 }
 
 describe("bed sleep scenario", () => {
@@ -54,8 +47,8 @@ describe("bed sleep scenario", () => {
     const dwarf = makeDwarf({
       id: "d1",
       civilization_id: "test-civ",
-      position_x: 5,
-      position_y: 5,
+      position_x: 256,
+      position_y: 256,
       position_z: 0,
       need_sleep: 15, // below NEED_INTERRUPT_SLEEP (20) — triggers sleep
       need_food: 100,
@@ -66,12 +59,12 @@ describe("bed sleep scenario", () => {
       civilization_id: "test-civ",
       type: "bed",
       completion_pct: 100,
-      position_x: 8,
-      position_y: 5,
+      position_x: 259,
+      position_y: 256,
       position_z: 0,
     });
 
-    const bedTile = makeMapTile(8, 5, 0, "bed");
+    const bedTile = makeMapTile(259, 256, 0, "bed");
 
     const skills = [
       makeSkill(dwarf.id, "mining", 1),
@@ -87,7 +80,8 @@ describe("bed sleep scenario", () => {
       dwarfSkills: skills,
       items: [...drinks, ...foods],
       structures: [bed],
-      fortressTileOverrides: [...grassTiles(), bedTile],
+      fortressTileOverrides: [bedTile],
+      fortressDeriver,
       ticks: WORK_SLEEP + 200,
       seed: 42,
     });
@@ -113,8 +107,8 @@ describe("bed sleep scenario", () => {
     const dwarf = makeDwarf({
       id: "d-floor",
       civilization_id: "test-civ",
-      position_x: 5,
-      position_y: 5,
+      position_x: 256,
+      position_y: 256,
       position_z: 0,
       need_sleep: 15,
       need_food: 100,
@@ -129,7 +123,7 @@ describe("bed sleep scenario", () => {
       dwarves: [dwarf],
       items: [...drinks, ...foods],
       structures: [], // no bed — floor sleep
-      fortressTileOverrides: grassTiles(),
+      fortressDeriver,
       ticks: WORK_SLEEP + 100,
       seed: 42,
     });
@@ -149,8 +143,8 @@ describe("bed sleep scenario", () => {
     const dwarf = makeDwarf({
       id: "d2",
       civilization_id: "test-civ",
-      position_x: 5,
-      position_y: 5,
+      position_x: 256,
+      position_y: 256,
       position_z: 0,
       need_sleep: 15,
       need_food: 100,
@@ -162,13 +156,13 @@ describe("bed sleep scenario", () => {
       civilization_id: "test-civ",
       type: "bed",
       completion_pct: 100,
-      position_x: 7,
-      position_y: 5,
+      position_x: 258,
+      position_y: 256,
       position_z: 0,
       occupied_by_dwarf_id: null,
     });
 
-    const bedTile = makeMapTile(7, 5, 0, "bed");
+    const bedTile = makeMapTile(258, 256, 0, "bed");
     const drinks = Array.from({ length: 15 }, () => drinkItem());
     const foods = Array.from({ length: 15 }, () => foodItem());
 
@@ -176,7 +170,8 @@ describe("bed sleep scenario", () => {
       dwarves: [dwarf],
       items: [...drinks, ...foods],
       structures: [bed],
-      fortressTileOverrides: [...grassTiles(), bedTile],
+      fortressTileOverrides: [bedTile],
+      fortressDeriver,
       ticks: WORK_SLEEP + 200,
       seed: 42,
     });
@@ -197,8 +192,8 @@ describe("bed sleep scenario", () => {
     const dwarf1 = makeDwarf({
       id: "dwarf-bed-1",
       civilization_id: "test-civ",
-      position_x: 5,
-      position_y: 5,
+      position_x: 256,
+      position_y: 256,
       position_z: 0,
       need_sleep: 15,
       need_food: 100,
@@ -207,8 +202,8 @@ describe("bed sleep scenario", () => {
     const dwarf2 = makeDwarf({
       id: "dwarf-bed-2",
       civilization_id: "test-civ",
-      position_x: 5,
-      position_y: 7,
+      position_x: 256,
+      position_y: 258,
       position_z: 0,
       need_sleep: 15,
       need_food: 100,
@@ -219,13 +214,13 @@ describe("bed sleep scenario", () => {
       civilization_id: "test-civ",
       type: "bed",
       completion_pct: 100,
-      position_x: 8,
-      position_y: 5,
+      position_x: 259,
+      position_y: 256,
       position_z: 0,
       occupied_by_dwarf_id: null,
     });
 
-    const bedTile = makeMapTile(8, 5, 0, "bed");
+    const bedTile = makeMapTile(259, 256, 0, "bed");
     const drinks = Array.from({ length: 15 }, () => drinkItem());
     const foods = Array.from({ length: 15 }, () => foodItem());
 
@@ -233,7 +228,8 @@ describe("bed sleep scenario", () => {
       dwarves: [dwarf1, dwarf2],
       items: [...drinks, ...foods],
       structures: [bed],
-      fortressTileOverrides: [...grassTiles(), bedTile],
+      fortressTileOverrides: [bedTile],
+      fortressDeriver,
       ticks: WORK_SLEEP + 300,
       seed: 42,
     });
