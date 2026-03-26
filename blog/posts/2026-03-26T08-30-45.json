@@ -1,0 +1,32 @@
+{
+  "id": "2026-03-26T08-30-45",
+  "timestamp": "2026-03-26T08:30:45.410Z",
+  "title": "Digest — Mar 26, 2026, 08:30 AM UTC",
+  "summary": "# Pwarf Devlog Digest\n\n## Performance Enhancements\nWe're excited to announce significant improvements in our game's performance:\n- **Tile Derivation Cache**: Implemented a permanent tile derivation cache within `createFortressDeriver()`. This enhancement reduces the number of simplex noise calls by approximately 140K per tick during BFS pathfinding, resulting in smoother gameplay.\n- **Task Indexing**: Introduced a `taskById: Map<string, Task>` for constant time (O(1)) task lookups, replacing the previous O(n) linear scan. This allows for faster management of tasks per dwarf.\n- **Task Pruning**: Added a feature to prune terminal tasks after database flushes, further optimizing task management.\n\n## Scenario Testing Improvements\nThe testing framework experienced a major upgrade with new features and additional tests:\n- **Realistic Scenario Development**: Extended the `ScenarioResult` to include `dwarfSkills`, `dwarfRelationships`, and `monsters`. This enhancement adds a new `makeRealisticScenario()` helper, streamlining our test setup and reducing boilerplate code by around 30 lines per test.\n- **Migration of Tests**: Successfully migrated 8 existing scenario tests to use the fortress deriver, moving away from manually crafted `makeMapTile()` grids. This not only modernizes our testing approach but also adds 8 new phase scenario tests that had previously gone untested.\n\nThese changes prepare our game for a more robust simulation experience and help ensure high quality as we expand.\n\n## Merged PRs\n- #688\n- #691\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 688,
+      "title": "perf: tile cache + task index + task pruning (closes #681)",
+      "url": "https://github.com/psoren/pwarf/pull/688"
+    },
+    {
+      "number": 691,
+      "title": "feat: migrate scenario tests to fortress deriver + add 8 new phase tests (closes #689)",
+      "url": "https://github.com/psoren/pwarf/pull/691",
+      "cost": {
+        "amount": "$3.69",
+        "tokens": "4.0M tokens"
+      }
+    }
+  ],
+  "images": []
+}
