@@ -11,7 +11,7 @@ The sim engine runs at 10 ticks/second (`STEPS_PER_SECOND = 10`). Profiling with
 - **7.4x degradation** over time
 - `taskExecution` phase consumed **81% of CPU**
 
-Root causes: uncached BFS pathfinding through simplex noise, unbounded task array growth, and O(n) linear lookups by task ID.
+Root causes: uncached pathfinding through simplex noise, unbounded task array growth, and O(n) linear lookups by task ID.
 
 ## Fix 1: Tile Derivation Cache
 
@@ -36,7 +36,7 @@ deriveTile(x, y, z)
 
 ### Impact
 
-BFS pathfinding visits up to `MAX_BFS_NODES = 10,000` nodes per call. With 7 dwarves making ~2 BFS calls each per tick, that's ~140,000 `deriveTile` calls per tick. After the first BFS explores an area, subsequent searches in the same region hit the cache with >90% hit rate, eliminating almost all noise computation.
+Pathfinding visits up to 10,000 nodes (BFS, distance ≤50) or 20,000 nodes (A*, distance >50) per call. With 7 dwarves making ~2 pathfinding calls each per tick, that's up to ~140,000 `deriveTile` calls per tick. After the first search explores an area, subsequent searches in the same region hit the cache with >90% hit rate, eliminating almost all noise computation.
 
 ## Fix 2: Task ID Index
 

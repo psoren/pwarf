@@ -106,20 +106,22 @@ function posKey(p: Position): string {
 }
 
 /**
- * BFS pathfinding from start to goal.
+ * Pathfinding from start to goal using BFS for short distances and A* for
+ * long distances. BFS is faster per-node (O(1) queue ops) but explores in
+ * all directions. A* uses a Manhattan heuristic to go directly toward the
+ * goal, needing far fewer nodes for long paths.
  *
- * Returns the next position the entity should move to (one step toward goal),
- * or null if no path exists. The start position does not need to be walkable
- * (the entity is already there). The goal does not need to be walkable either
- * (for mining tasks, the goal is a solid tile — the dwarf needs to reach an
- * adjacent walkable tile).
+ * The algorithm is chosen based on Manhattan distance:
+ * - Distance ≤ 100: BFS with 10k node limit (fast, covers most tasks)
+ * - Distance > 100: A* with 20k node limit (directed, for cave entrances)
  *
  * @param adjacentToGoal If true, the path ends at any walkable tile adjacent
  *   to the goal (used for mining — you stand next to the wall, not inside it).
  *   If false, the path ends at the goal tile itself.
  */
-/** Safety limit — abort BFS after visiting this many nodes. */
-const MAX_BFS_NODES = 10_000;
+const BFS_NODE_LIMIT = 10_000;
+const ASTAR_NODE_LIMIT = 20_000;
+const ASTAR_DISTANCE_THRESHOLD = 50;
 
 export function bfsNextStep(
   start: Position,
@@ -140,6 +142,24 @@ export function bfsNextStep(
     return null;
   }
 
+  const dist = Math.abs(start.x - goal.x) + Math.abs(start.y - goal.y)
+    + Math.abs(start.z - goal.z) * 10;
+
+  if (dist > ASTAR_DISTANCE_THRESHOLD) {
+    return astarSearch(start, goal, getTile, adjacentToGoal, zResolver, blockedTiles);
+  }
+  return bfsSearch(start, goal, getTile, adjacentToGoal, zResolver, blockedTiles);
+}
+
+/** BFS search — fast for short distances, O(1) per node. */
+function bfsSearch(
+  start: Position,
+  goal: Position,
+  getTile: TileLookup,
+  adjacentToGoal: boolean,
+  zResolver?: ZResolver,
+  blockedTiles?: ReadonlySet<string>,
+): Position | null {
   const visited = new Set<string>();
   const parent = new Map<string, Position>();
 
@@ -147,8 +167,8 @@ export function bfsNextStep(
   visited.add(posKey(start));
 
   while (queue.length > 0) {
-    if (visited.size >= MAX_BFS_NODES) {
-      return null; // Search space exhausted — no path
+    if (visited.size >= BFS_NODE_LIMIT) {
+      return null;
     }
 
     const current = queue.shift()!;
@@ -161,13 +181,11 @@ export function bfsNextStep(
       visited.add(key);
       parent.set(key, current);
 
-      // Check if we've reached the target
       const reached = adjacentToGoal
         ? isAdjacentTo(neighbor, goal)
         : (neighbor.x === goal.x && neighbor.y === goal.y && neighbor.z === goal.z);
 
       if (reached) {
-        // Trace back to find the first step
         return traceFirstStep(start, neighbor, parent);
       }
 
@@ -175,8 +193,123 @@ export function bfsNextStep(
     }
   }
 
-  // No path found
   return null;
+}
+
+/** A* search — directed for long distances, O(log n) per node but visits far fewer. */
+function astarSearch(
+  start: Position,
+  goal: Position,
+  getTile: TileLookup,
+  adjacentToGoal: boolean,
+  zResolver?: ZResolver,
+  blockedTiles?: ReadonlySet<string>,
+): Position | null {
+  const gScore = new Map<string, number>();
+  const closed = new Set<string>();
+  const parent = new Map<string, Position>();
+  const startKey = posKey(start);
+  gScore.set(startKey, 0);
+
+  const heap = new MinHeap();
+  heap.push({ pos: start, f: heuristic(start, goal) });
+
+  while (heap.size > 0) {
+    if (closed.size >= ASTAR_NODE_LIMIT) {
+      return null;
+    }
+
+    const { pos: current } = heap.pop()!;
+    const currentKey = posKey(current);
+
+    if (closed.has(currentKey)) continue;
+    closed.add(currentKey);
+
+    const reached = adjacentToGoal
+      ? isAdjacentTo(current, goal)
+      : (current.x === goal.x && current.y === goal.y && current.z === goal.z);
+
+    if (reached && closed.size > 1) {
+      return traceFirstStep(start, current, parent);
+    }
+
+    const currentG = gScore.get(currentKey)!;
+    const neighbors = getNeighbors(current, getTile, zResolver);
+
+    for (const neighbor of neighbors) {
+      const key = posKey(neighbor);
+      if (closed.has(key)) continue;
+      if (blockedTiles?.has(key)) continue;
+
+      const tentativeG = currentG + 1;
+      const prevG = gScore.get(key);
+      if (prevG !== undefined && tentativeG >= prevG) continue;
+
+      gScore.set(key, tentativeG);
+      parent.set(key, current);
+      heap.push({ pos: neighbor, f: tentativeG + heuristic(neighbor, goal) });
+    }
+  }
+
+  return null;
+}
+
+/** Manhattan distance heuristic (admissible for 4-connected grid). */
+function heuristic(a: Position, b: Position): number {
+  return Math.abs(a.x - b.x) + Math.abs(a.y - b.y) + Math.abs(a.z - b.z) * 10;
+}
+
+// ---- Binary min-heap for A* open set ----
+
+interface HeapEntry {
+  pos: Position;
+  f: number;
+}
+
+class MinHeap {
+  private data: HeapEntry[] = [];
+
+  get size(): number { return this.data.length; }
+
+  push(entry: HeapEntry): void {
+    this.data.push(entry);
+    this._bubbleUp(this.data.length - 1);
+  }
+
+  pop(): HeapEntry | undefined {
+    const top = this.data[0];
+    const last = this.data.pop();
+    if (this.data.length > 0 && last) {
+      this.data[0] = last;
+      this._sinkDown(0);
+    }
+    return top;
+  }
+
+  private _bubbleUp(i: number): void {
+    const d = this.data;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (d[p]!.f <= d[i]!.f) break;
+      [d[p], d[i]] = [d[i]!, d[p]!];
+      i = p;
+    }
+  }
+
+  private _sinkDown(i: number): void {
+    const d = this.data;
+    const n = d.length;
+    while (true) {
+      let smallest = i;
+      const l = 2 * i + 1;
+      const r = 2 * i + 2;
+      if (l < n && d[l]!.f < d[smallest]!.f) smallest = l;
+      if (r < n && d[r]!.f < d[smallest]!.f) smallest = r;
+      if (smallest === i) break;
+      [d[i], d[smallest]] = [d[smallest]!, d[i]!];
+      i = smallest;
+    }
+  }
 }
 
 /** Check if two positions are adjacent (Manhattan distance 1, same z-level). */

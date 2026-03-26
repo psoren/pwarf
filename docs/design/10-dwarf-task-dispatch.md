@@ -198,9 +198,11 @@ for each dwarf with status='alive' and current_task_id != null:
 
 ## Pathfinding
 
-### BFS on the Fortress Grid
+### Hybrid BFS / A* on the Fortress Grid
 
-Phase 0 uses breadth-first search on the 2D fortress grid. No A*, no flow fields — just BFS. With 7–30 dwarves on the revealed portion of a 512×512 map, this is fine.
+Pathfinding uses a hybrid approach based on Manhattan distance to the goal:
+- **Distance ≤ 50**: BFS with 10k node limit — O(1) queue ops, fast for common tasks (mining, building, hauling near the fortress center).
+- **Distance > 50**: A* with Manhattan heuristic and 20k node limit — directed search that reaches cave entrances up to 288 tiles away with ~17k node expansions (vs ~41k for BFS).
 
 ### Walkable Tiles
 
@@ -220,7 +222,7 @@ Stairs connect z-levels. A stair_up at (x, y, z) connects to a stair_down or sta
 
 ### Path Caching
 
-No caching in Phase 0. BFS runs fresh each tick. If profiling shows this is a bottleneck (unlikely with <30 dwarves), we can add a path cache keyed on (start, goal) that invalidates when tiles change.
+No caching. Pathfinding runs fresh each tick. The hybrid BFS/A* approach keeps per-tick cost low for short-range tasks while enabling long-distance cave scouting without a cache.
 
 ---
 
@@ -410,4 +412,4 @@ These build on the task system but are explicitly out of scope:
 - **Hauling optimization** — zone-based stockpile priority, dedicated hauler assignments
 - **Task priorities UI** — player adjusts priorities per task type
 - **Skill-based task preferences** — dwarves prefer tasks matching their best skills
-- **Path caching / flow fields** — optimization if BFS becomes a bottleneck
+- **Path caching / flow fields** — optimization if pathfinding becomes a bottleneck
