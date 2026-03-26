@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { DwarfRelationship, Expedition, Ruin, StockpileTile, WorldEvent } from "@pwarf/shared";
+import type { DwarfRelationship, Expedition, Ruin, StockpileTile, Task, WorldEvent } from "@pwarf/shared";
 import { WORLD_EVENTS_RECENT_LIMIT } from "@pwarf/shared";
 import type { CachedState } from "./sim-context.js";
 
@@ -114,6 +114,7 @@ export async function loadStateFromSupabase(
     structures: structuresResult.data ?? [],
     monsters: monstersResult.data ?? [],
     tasks: tasksResult.data ?? [],
+    taskById: new Map((tasksResult.data ?? []).map((t) => [t.id, t])) as Map<string, Task>,
     dwarfSkills: dwarfSkills as never[],
     dwarfRelationships,
     worldEvents: (eventsResult.data ?? []) as WorldEvent[],

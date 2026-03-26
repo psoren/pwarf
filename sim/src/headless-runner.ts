@@ -50,6 +50,8 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
     state = buildScenarioState(scenarioDef);
     // Pre-populate eat/drink tasks so dwarves know where food/drink is
     state.tasks.push(...buildEatDrinkTasks(state));
+    // Rebuild task index after bulk push
+    for (const t of state.tasks) state.taskById.set(t.id, t);
   } else if (opts.initialState) {
     state = opts.initialState;
   } else {

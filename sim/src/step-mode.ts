@@ -1,8 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AUTONOMOUS_TASK_TYPES } from "@pwarf/shared";
-import type { TaskType } from "@pwarf/shared";
-import type { SimContext } from "./sim-context.js";
-import { createEmptyCachedState } from "./sim-context.js";
+import type { Task, TaskType } from "@pwarf/shared";
+import { createEmptyCachedState, getTaskById, type SimContext } from "./sim-context.js";
 import { createRng } from "./rng.js";
 import { runTick, advanceTime, maybeYearRollup } from "./tick.js";
 import { SCENARIOS, buildScenarioState, buildEatDrinkTasks } from "./scenarios.js";
@@ -132,7 +131,7 @@ export async function dispatchCommand(
     case "designate": {
       const { type, x, y, z } = cmd;
       const taskId = makeTaskId();
-      session.ctx.state.tasks.push({
+      const task: Task = {
         id: taskId,
         civilization_id: session.ctx.civilizationId,
         task_type: type,
@@ -147,12 +146,14 @@ export async function dispatchCommand(
         work_required: 100,
         created_at: new Date().toISOString(),
         completed_at: null,
-      });
+      };
+      session.ctx.state.tasks.push(task);
+      session.ctx.state.taskById.set(task.id, task);
       return { ok: true, task_id: taskId };
     }
 
     case "cancel": {
-      const task = session.ctx.state.tasks.find(t => t.id === cmd.taskId);
+      const task = getTaskById(session.ctx.state, cmd.taskId);
       if (!task) {
         return { ok: false, error: `Task ${cmd.taskId} not found` };
       }

@@ -1,6 +1,6 @@
 import { STARVATION_TICKS, DEHYDRATION_TICKS, WITNESS_DEATH_STRESS, WITNESS_DEATH_RADIUS } from "@pwarf/shared";
 import type { Dwarf } from "@pwarf/shared";
-import type { CachedState, SimContext } from "../sim-context.js";
+import { getTaskById, type CachedState, type SimContext } from "../sim-context.js";
 import { createGriefFriendMemories, createGriefSpouseMemories, createWitnessDeathMemories } from "../dwarf-memory.js";
 
 /**
@@ -58,7 +58,7 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
 
   // Fail any task assigned to this dwarf
   if (dwarf.current_task_id) {
-    const task = state.tasks.find(t => t.id === dwarf.current_task_id);
+    const task = getTaskById(state, dwarf.current_task_id);
     if (task) {
       task.status = 'failed';
       task.assigned_dwarf_id = null;

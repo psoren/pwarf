@@ -25,6 +25,8 @@ export interface CachedState {
   structures: Structure[];
   monsters: Monster[];
   tasks: Task[];
+  /** Index for O(1) task lookup by ID. Kept in sync with the tasks array. */
+  taskById: Map<string, Task>;
   dwarfSkills: DwarfSkill[];
   dwarfRelationships: DwarfRelationship[];
   worldEvents: WorldEvent[];
@@ -143,6 +145,7 @@ export function createEmptyCachedState(): CachedState {
     structures: [],
     monsters: [],
     tasks: [],
+    taskById: new Map(),
     dwarfSkills: [],
     dwarfRelationships: [],
     worldEvents: [],
@@ -237,6 +240,8 @@ export function createTestContext(
   state.tasks = opts?.tasks ?? [];
   state.items = opts?.items ?? [];
   state.structures = opts?.structures ?? [];
+  // Rebuild task index from provided tasks
+  for (const t of state.tasks) state.taskById.set(t.id, t);
 
   return {
     supabase: null as unknown as SupabaseClient,
@@ -252,6 +257,21 @@ export function createTestContext(
     rng: createRng(seed),
     state,
   };
+}
+
+/**
+ * O(1) task lookup by ID, with fallback to array scan.
+ * If the Map misses but the task exists in the array, syncs the Map.
+ * This handles cases where tasks are assigned directly to state.tasks
+ * without updating the index (common in tests).
+ */
+export function getTaskById(state: CachedState, id: string): Task | undefined {
+  const cached = state.taskById.get(id);
+  if (cached) return cached;
+  // Fallback: linear scan + sync
+  const found = state.tasks.find(t => t.id === id);
+  if (found) state.taskById.set(found.id, found);
+  return found;
 }
 
 export { createRng, DEFAULT_TEST_SEED };

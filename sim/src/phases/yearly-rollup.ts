@@ -9,7 +9,7 @@ import {
   CARAVAN_FOOD_COUNT,
 } from "@pwarf/shared";
 import type { Item } from "@pwarf/shared";
-import type { SimContext } from "../sim-context.js";
+import { getTaskById, type SimContext } from "../sim-context.js";
 import { dwarfName } from "../dwarf-utils.js";
 import { createImmigrantDwarf } from "../dwarf-factory.js";
 import { applyWitnessStress } from "./deprivation.js";
@@ -52,7 +52,7 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
         createGriefSpouseMemories(dwarf, state, year);
 
         if (dwarf.current_task_id) {
-          const task = state.tasks.find(t => t.id === dwarf.current_task_id);
+          const task = getTaskById(state, dwarf.current_task_id);
           if (task && task.status !== 'completed' && task.status !== 'cancelled') {
             task.status = 'cancelled';
             state.dirtyTaskIds.add(task.id);

@@ -169,6 +169,7 @@ export class SimRunner {
     const newTasks = await this.adapter.pollNewTasks(civilizationId, existingIds);
     for (const task of newTasks) {
       state.tasks.push(task);
+      state.taskById.set(task.id, task);
     }
   }
 
