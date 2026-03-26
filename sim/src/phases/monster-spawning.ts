@@ -70,6 +70,7 @@ export async function monsterSpawning(ctx: SimContext): Promise<void> {
   };
 
   state.monsters.push(monster);
+  state.dirtyMonsterIds.add(monster.id);
 
   state.pendingEvents.push({
     id: rng.uuid(),

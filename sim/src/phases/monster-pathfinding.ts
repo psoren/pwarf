@@ -44,6 +44,7 @@ export async function monsterPathfinding(ctx: SimContext): Promise<void> {
 
     monster.current_tile_x = newX;
     monster.current_tile_y = newY;
+    state.dirtyMonsterIds.add(monster.id);
   }
 }
 
