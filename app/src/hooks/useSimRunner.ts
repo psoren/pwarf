@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { SimRunner, SupabaseStateAdapter } from '@pwarf/sim';
-import type { SimSnapshot } from '@pwarf/sim';
+import type { SimSnapshot, BugReportSnapshot } from '@pwarf/sim';
 import { supabase } from '../lib/supabase';
 
-export type { SimSnapshot };
+export type { SimSnapshot, BugReportSnapshot };
 
 export function useSimRunner(civId: string | null, worldId: string | null) {
   const runnerRef = useRef<SimRunner | null>(null);

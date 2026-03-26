@@ -24,6 +24,7 @@ import TaskPriorities from "./components/TaskPriorities";
 import { DwarfModal } from "./components/DwarfModal";
 import { InventoryModal } from "./components/InventoryModal";
 import { CaveScoutModal } from "./components/CaveScoutModal";
+import { BugReportModal } from "./components/BugReportModal";
 import { EpitaphScreen } from "./components/EpitaphScreen";
 import { TutorialOverlay } from "./components/TutorialOverlay";
 import { useTutorial } from "./hooks/useTutorial";
@@ -64,7 +65,7 @@ export default function App() {
   });
 
   // Sim runner — provides live in-memory state
-  const { snapshot, isPaused, togglePause, speed, setSpeed } = useSimRunner(world.civId, world.worldId);
+  const { runnerRef, snapshot, isPaused, togglePause, speed, setSpeed } = useSimRunner(world.civId, world.worldId);
 
   const getFortressTileResult = useFortressTiles({
     civId: world.civId,
@@ -480,6 +481,12 @@ export default function App() {
   // Inventory modal
   const [inventoryOpen, setInventoryOpen] = useState(false);
 
+  // Bug report modal
+  const [bugReportOpen, setBugReportOpen] = useState(false);
+  const getBugReportSnapshot = useCallback(() => {
+    return runnerRef.current?.getBugReportSnapshot() ?? null;
+  }, [runnerRef]);
+
   const handleDwarfClick = useCallback((x: number, y: number) => {
     const dwarf = liveDwarves.find(d => d.position_x === x && d.position_y === y && d.position_z === zLevel);
     if (dwarf) {
@@ -584,6 +591,7 @@ export default function App() {
         dwarves={liveDwarves}
         onTutorial={tutorial.start}
         onInventory={world.civId ? () => setInventoryOpen(true) : undefined}
+        onBugReport={world.civId ? () => setBugReportOpen(true) : undefined}
         soundMuted={soundMuted}
         onToggleMute={toggleMute}
       />
@@ -694,6 +702,16 @@ export default function App() {
             items={liveItems}
             dwarves={liveDwarves}
             onClose={() => setInventoryOpen(false)}
+          />
+        )}
+
+        {bugReportOpen && world.civId && world.worldId && user && (
+          <BugReportModal
+            onClose={() => setBugReportOpen(false)}
+            getSnapshot={getBugReportSnapshot}
+            civId={world.civId}
+            worldId={world.worldId}
+            playerId={user.id}
           />
         )}
 

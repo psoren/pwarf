@@ -1,5 +1,5 @@
 import { STEPS_PER_SECOND, STEPS_PER_YEAR, STEPS_PER_DAY, SIM_FLUSH_INTERVAL_MS, createFortressDeriver } from "@pwarf/shared";
-import type { Dwarf, Item, Task, WorldEvent, FortressTile, Monster } from "@pwarf/shared";
+import type { Dwarf, DwarfSkill, Item, Structure, StockpileTile, Task, WorldEvent, FortressTile, Monster } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng } from "./rng.js";
@@ -19,6 +19,21 @@ export interface SimSnapshot {
   monsters: Monster[];
   year: number;
   civFallen: boolean;
+}
+
+/** Full state snapshot for bug reports — includes everything needed to reconstruct a ScenarioConfig. */
+export interface BugReportSnapshot {
+  dwarves: Dwarf[];
+  dwarfSkills: DwarfSkill[];
+  items: Item[];
+  structures: Structure[];
+  tasks: Task[];
+  fortressTileOverrides: FortressTile[];
+  stockpileTiles: StockpileTile[];
+  monsters: Monster[];
+  events: WorldEvent[];
+  year: number;
+  step: number;
 }
 
 /**
@@ -160,6 +175,25 @@ export class SimRunner {
     }
 
     console.log(`[sim] stopped at step ${this.stepCount}`);
+  }
+
+  /** Capture full sim state for a bug report. Returns null if the sim isn't running. */
+  getBugReportSnapshot(): BugReportSnapshot | null {
+    if (!this.ctx) return null;
+    const { state } = this.ctx;
+    return {
+      dwarves: state.dwarves.map(d => ({ ...d })),
+      dwarfSkills: state.dwarfSkills.map(s => ({ ...s })),
+      items: state.items.map(i => ({ ...i })),
+      structures: state.structures.map(s => ({ ...s })),
+      tasks: state.tasks.map(t => ({ ...t })),
+      fortressTileOverrides: [...state.fortressTileOverrides.values()].map(t => ({ ...t })),
+      stockpileTiles: [...state.stockpileTiles.values()].map(t => ({ ...t })),
+      monsters: state.monsters.map(m => ({ ...m })),
+      events: state.worldEvents.map(e => ({ ...e })),
+      year: this.currentYear,
+      step: this.stepCount,
+    };
   }
 
   private async pollNewTasks(): Promise<void> {
