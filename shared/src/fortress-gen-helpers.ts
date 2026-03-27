@@ -543,13 +543,8 @@ export function createFortressDeriver(
       const cave = getCaveData(z);
       if (!cave) return { tileType: "empty", material: null };
 
-      // Center the cave grid on the entrance position, not the fortress center.
-      // Each entrance has its own 128×128 cave grid centered on (entrance.x, entrance.y).
-      const entrance = entranceByZ.get(z);
-      if (!entrance) return { tileType: "empty", material: null };
-      const halfCave = Math.floor(CAVE_SIZE / 2);
-      const cx = x - (entrance.x - halfCave);
-      const cy = y - (entrance.y - halfCave);
+      const cx = x - CAVE_OFFSET;
+      const cy = y - CAVE_OFFSET;
       if (cx < 0 || cx >= CAVE_SIZE || cy < 0 || cy >= CAVE_SIZE) {
         return { tileType: "cavern_wall", material: null };
       }

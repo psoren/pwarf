@@ -66,10 +66,10 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
           year,
           category: 'death',
           civilization_id: civilizationId,
-          ruin_id: null,
+    
           dwarf_id: dwarf.id,
           item_id: null,
-          faction_id: null,
+    
           monster_id: null,
           description: `${dwarfName(dwarf)} has died of old age at ${dwarf.age}.`,
           event_data: { cause: 'old_age', age: dwarf.age },
@@ -102,10 +102,10 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
       year,
       category: 'migration',
       civilization_id: civilizationId,
-      ruin_id: null,
+
       dwarf_id: null,
       item_id: null,
-      faction_id: null,
+
       monster_id: null,
       description: `${count} new ${noun} arrived at the fortress: ${names}.`,
       event_data: { count, names: immigrants.map(d => dwarfName(d)) },
@@ -157,7 +157,7 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
         created_year: year,
         held_by_dwarf_id: null,
         located_in_civ_id: civilizationId,
-        located_in_ruin_id: null,
+
         position_x: center,
         position_y: center,
         position_z: 0,
@@ -183,7 +183,7 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
         created_year: year,
         held_by_dwarf_id: null,
         located_in_civ_id: civilizationId,
-        located_in_ruin_id: null,
+
         position_x: center,
         position_y: center,
         position_z: 0,
@@ -212,7 +212,7 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
         created_year: year,
         held_by_dwarf_id: null,
         located_in_civ_id: civilizationId,
-        located_in_ruin_id: null,
+
         position_x: center,
         position_y: center,
         position_z: 0,
@@ -234,10 +234,10 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
       year,
       category: 'trade_caravan_arrival',
       civilization_id: civilizationId,
-      ruin_id: null,
+
       dwarf_id: null,
       item_id: null,
-      faction_id: null,
+
       monster_id: null,
       description: 'A trade caravan has arrived from Mountainhome!',
       event_data: { type: 'trade_caravan_arrival', item_count: caravanItems.length },
@@ -265,10 +265,10 @@ export async function yearlyRollup(ctx: SimContext): Promise<void> {
     year,
     category: 'discovery',
     civilization_id: civilizationId,
-    ruin_id: null,
+
     dwarf_id: null,
     item_id: null,
-    faction_id: null,
+
     monster_id: null,
     description: `Year ${year} ends. Population: ${population} dwarves. ${deathClause}${migrantClause}`,
     event_data: { type: 'year_rollup', population, deaths: deathsThisYear, migrants: migrantsThisYear },

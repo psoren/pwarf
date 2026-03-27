@@ -91,10 +91,6 @@ async function doFlush(ctx: SimContext): Promise<void> {
       return true;
     });
 
-  const dirtyRuins = state.dirtyRuinIds.size > 0
-    ? state.ruins.filter((r) => state.dirtyRuinIds.has(r.id))
-    : [];
-
   const dirtyCaves = state.dirtyCaveIds.size > 0
     ? state.caves.filter((c) => state.dirtyCaveIds.has(c.id))
     : [];
@@ -105,7 +101,7 @@ async function doFlush(ctx: SimContext): Promise<void> {
     || dirtyMonsters.length > 0 || dirtySkills.length > 0
     || dirtyTiles.length > 0 || newRelationships.length > 0
     || dirtyRelationships.length > 0 || events.length > 0
-    || dirtyRuins.length > 0 || dirtyCaves.length > 0
+    || dirtyCaves.length > 0
     || state.civFallen || state.civDirty;
 
   if (!hasDirty) return;
@@ -123,7 +119,6 @@ async function doFlush(ctx: SimContext): Promise<void> {
   const prevDirtySkillIds = state.dirtyDwarfSkillIds;
   const prevDirtyTileKeys = state.dirtyFortressTileKeys;
   const prevDirtyRelIds = state.dirtyDwarfRelationshipIds;
-  const prevDirtyRuinIds = state.dirtyRuinIds;
   const prevDirtyCaveIds = state.dirtyCaveIds;
   const prevNewTasks = state.newTasks;
   const prevNewRels = state.newDwarfRelationships;
@@ -138,7 +133,6 @@ async function doFlush(ctx: SimContext): Promise<void> {
   state.dirtyDwarfSkillIds = new Set();
   state.dirtyFortressTileKeys = new Set();
   state.dirtyDwarfRelationshipIds = new Set();
-  state.dirtyRuinIds = new Set();
   state.dirtyCaveIds = new Set();
   state.newTasks = [];
   state.newDwarfRelationships = [];
@@ -146,21 +140,6 @@ async function doFlush(ctx: SimContext): Promise<void> {
   state.civDirty = false;
 
   // ── Single RPC call ─────────────────────────────────────────────────────
-
-  // Build ruin payload for civ-fall
-  let newRuin: Record<string, unknown> | null = null;
-  if (state.civFallen) {
-    newRuin = {
-      civilization_id: ctx.civilizationId,
-      world_id: ctx.worldId,
-      name: ctx.civName,
-      tile_x: ctx.civTileX,
-      tile_y: ctx.civTileY,
-      fallen_year: ctx.year,
-      cause_of_death: state.civFallenCause,
-      peak_population: state.civPeakPopulation,
-    };
-  }
 
   const { error } = await supabase.rpc('flush_state', {
     p_items: dirtyItems,
@@ -173,7 +152,6 @@ async function doFlush(ctx: SimContext): Promise<void> {
     p_new_relationships: newRelationships,
     p_dirty_relationships: dirtyRelationships,
     p_events: events,
-    p_ruins: dirtyRuins,
     p_civ_id: ctx.civilizationId,
     p_civ_fallen: state.civFallen,
     p_civ_fallen_year: state.civFallen ? ctx.year : null,
@@ -181,7 +159,6 @@ async function doFlush(ctx: SimContext): Promise<void> {
     p_civ_population: state.civPopulation ?? null,
     p_civ_wealth: state.civWealth ?? null,
     p_civ_dirty: state.civDirty,
-    p_new_ruin: newRuin,
     p_caves: dirtyCaves,
   });
 
@@ -196,7 +173,6 @@ async function doFlush(ctx: SimContext): Promise<void> {
     for (const id of prevDirtySkillIds) state.dirtyDwarfSkillIds.add(id);
     for (const key of prevDirtyTileKeys) state.dirtyFortressTileKeys.add(key);
     for (const id of prevDirtyRelIds) state.dirtyDwarfRelationshipIds.add(id);
-    for (const id of prevDirtyRuinIds) state.dirtyRuinIds.add(id);
     for (const id of prevDirtyCaveIds) state.dirtyCaveIds.add(id);
     state.newTasks.push(...prevNewTasks);
     state.newDwarfRelationships.push(...prevNewRels);

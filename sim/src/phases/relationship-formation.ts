@@ -87,10 +87,10 @@ export function relationshipFormationPhase(ctx: SimContext): void {
           year,
           category: "marriage",
           civilization_id: civilizationId,
-          ruin_id: null,
+
           dwarf_id: dA.id,
           item_id: null,
-          faction_id: null,
+
           monster_id: null,
           description: `${dA.name} and ${dB.name} have been married.`,
           event_data: { dwarf_a_id: dA.id, dwarf_b_id: dB.id },

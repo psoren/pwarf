@@ -114,10 +114,10 @@ export function killDwarf(dwarf: Dwarf, cause: string, ctx: SimContext): void {
       year: ctx.year,
       category: 'fortress_fallen',
       civilization_id: ctx.civilizationId,
-      ruin_id: null,
+
       dwarf_id: null,
       item_id: null,
-      faction_id: null,
+
       monster_id: null,
       description: `The last dwarf has perished. The fortress has fallen.`,
       event_data: { cause },

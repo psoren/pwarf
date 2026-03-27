@@ -63,10 +63,10 @@ function checkCriticalNeed(
       year: ctx.year,
       category: 'discovery',
       civilization_id: ctx.civilizationId,
-      ruin_id: null,
+
       dwarf_id: dwarf.id,
       item_id: null,
-      faction_id: null,
+
       monster_id: null,
       description: `${dwarfName(dwarf)} ${NEED_MESSAGE[needType]}.`,
       event_data: { need: needType, value: currentValue },

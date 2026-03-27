@@ -27,7 +27,6 @@ describe("CachedState contract", () => {
     expect(state.dwarfSkills).toEqual([]);
     expect(state.dwarfRelationships).toEqual([]);
     expect(state.worldEvents).toEqual([]);
-    expect(state.ruins).toEqual([]);
   });
 
   it("has all dirty tracking sets initialized empty", () => {
@@ -39,7 +38,6 @@ describe("CachedState contract", () => {
     expect(state.dirtyDwarfSkillIds.size).toBe(0);
     expect(state.dirtyFortressTileKeys.size).toBe(0);
     expect(state.dirtyDwarfRelationshipIds.size).toBe(0);
-    expect(state.dirtyRuinIds.size).toBe(0);
   });
 
   it("has all staging arrays initialized empty", () => {
@@ -88,7 +86,7 @@ describe("CachedState contract", () => {
     const requiredItemFields = [
       'id', 'name', 'category', 'quality', 'material', 'weight', 'value',
       'is_artifact', 'created_by_dwarf_id', 'created_in_civ_id', 'created_year',
-      'held_by_dwarf_id', 'located_in_civ_id', 'located_in_ruin_id',
+      'held_by_dwarf_id', 'located_in_civ_id',
       'position_x', 'position_y', 'position_z',
     ];
 

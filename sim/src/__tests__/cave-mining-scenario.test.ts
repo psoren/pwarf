@@ -4,7 +4,6 @@ import { makeDwarf, makeTask, makeSkill } from "./test-helpers.js";
 import {
   createFortressDeriver,
   WORK_MINE_BASE,
-  CAVE_SIZE,
   type FortressTile,
 } from "@pwarf/shared";
 
@@ -20,9 +19,8 @@ describe("cave mining scenario", () => {
     // Find an ore tile in this cave by probing the deriver
     let oreX = -1, oreY = -1;
     let oreMaterial = "";
-    const halfCave = Math.floor(CAVE_SIZE / 2);
-    for (let x = entrance.x - halfCave; x < entrance.x + halfCave && oreX < 0; x++) {
-      for (let y = entrance.y - halfCave; y < entrance.y + halfCave && oreX < 0; y++) {
+    for (let x = 192; x < 320 && oreX < 0; x++) {
+      for (let y = 192; y < 320 && oreX < 0; y++) {
         const tile = deriver.deriveTile(x, y, caveZ);
         if (tile.tileType === "ore" && tile.material) {
           oreX = x;
@@ -101,9 +99,8 @@ describe("cave mining scenario", () => {
     let gemMaterial = "";
     for (const entrance of deriver.entrances) {
       const z = deriver.getZForEntrance(entrance.x, entrance.y)!;
-      const halfCave = Math.floor(CAVE_SIZE / 2);
-    for (let x = entrance.x - halfCave; x < entrance.x + halfCave && gemX < 0; x++) {
-        for (let y = entrance.y - halfCave; y < entrance.y + halfCave && gemX < 0; y++) {
+      for (let x = 192; x < 320 && gemX < 0; x++) {
+        for (let y = 192; y < 320 && gemX < 0; y++) {
           const tile = deriver.deriveTile(x, y, z);
           if (tile.tileType === "gem" && tile.material) {
             gemX = x;
@@ -182,9 +179,8 @@ describe("cave mining scenario", () => {
 
     // Find a cavern_floor tile to place our override on
     let floorX = -1, floorY = -1;
-    const halfCave = Math.floor(CAVE_SIZE / 2);
-    for (let x = entrance.x - halfCave; x < entrance.x + halfCave && floorX < 0; x++) {
-      for (let y = entrance.y - halfCave; y < entrance.y + halfCave && floorX < 0; y++) {
+    for (let x = 192; x < 320 && floorX < 0; x++) {
+      for (let y = 192; y < 320 && floorX < 0; y++) {
         const tile = deriver.deriveTile(x, y, caveZ);
         if (tile.tileType === "cavern_floor") {
           floorX = x;
@@ -262,9 +258,8 @@ describe("cave mining scenario", () => {
 
     // Find a cave_mushroom tile
     let mushX = -1, mushY = -1;
-    const halfCave = Math.floor(CAVE_SIZE / 2);
-    for (let x = entrance.x - halfCave; x < entrance.x + halfCave && mushX < 0; x++) {
-      for (let y = entrance.y - halfCave; y < entrance.y + halfCave && mushX < 0; y++) {
+    for (let x = 192; x < 320 && mushX < 0; x++) {
+      for (let y = 192; y < 320 && mushX < 0; y++) {
         const tile = deriver.deriveTile(x, y, caveZ);
         if (tile.tileType === "cave_mushroom") {
           mushX = x;
@@ -334,9 +329,8 @@ describe("cave mining scenario", () => {
     const caveZ = deriver.getZForEntrance(entrance.x, entrance.y)!;
 
     let mushroomCount = 0;
-    const halfCave = Math.floor(CAVE_SIZE / 2);
-    for (let x = entrance.x - halfCave; x < entrance.x + halfCave; x++) {
-      for (let y = entrance.y - halfCave; y < entrance.y + halfCave; y++) {
+    for (let x = 192; x < 320; x++) {
+      for (let y = 192; y < 320; y++) {
         const tile = deriver.deriveTile(x, y, caveZ);
         if (tile.tileType === "cave_mushroom") mushroomCount++;
       }

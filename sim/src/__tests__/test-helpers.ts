@@ -1,4 +1,4 @@
-import type { Dwarf, DwarfRelationship, DwarfSkill, FortressTile, FortressTileType, RelationshipType, Ruin, StockpileTile, Task, TaskType, Item, Structure, Monster } from "@pwarf/shared";
+import type { Dwarf, DwarfRelationship, DwarfSkill, FortressTile, FortressTileType, RelationshipType, StockpileTile, Task, TaskType, Item, Structure, Monster } from "@pwarf/shared";
 import { SKILL_NAMES, createFortressDeriver } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
 import { createTestContext } from "../sim-context.js";
@@ -70,7 +70,6 @@ export function makeItem(overrides?: Partial<Item>): Item {
     created_year: 1,
     held_by_dwarf_id: null,
     located_in_civ_id: "civ-1",
-    located_in_ruin_id: null,
     position_x: null,
     position_y: null,
     position_z: null,
@@ -136,7 +135,6 @@ export function makeStructure(overrides?: Partial<Structure>): Structure {
     type: "bed",
     completion_pct: 100,
     built_year: 1,
-    ruin_id: null,
     quality: "standard",
     notes: null,
     position_x: 0,
@@ -189,34 +187,6 @@ export function makeMonster(overrides?: Partial<Monster>): Monster {
     slain_year: null,
     slain_by_dwarf_id: null,
     slain_in_civ_id: null,
-    slain_in_ruin_id: null,
-    created_at: new Date().toISOString(),
-    ...overrides,
-  };
-}
-
-export function makeRuin(overrides?: Partial<Ruin>): Ruin {
-  return {
-    id: _factoryRng.uuid(),
-    civilization_id: "ancient-civ-1",
-    world_id: "world-1",
-    name: "The Fallen Hall",
-    tile_x: 10,
-    tile_y: 10,
-    fallen_year: -100,
-    cause_of_death: "unknown",
-    original_wealth: 5000,
-    remaining_wealth: 5000,
-    peak_population: 20,
-    danger_level: 30,
-    is_contaminated: false,
-    contamination_type: null,
-    ghost_count: 0,
-    is_trapped: false,
-    resident_monster_id: null,
-    snapshot: null,
-    snapshot_url: null,
-    is_published: false,
     created_at: new Date().toISOString(),
     ...overrides,
   };

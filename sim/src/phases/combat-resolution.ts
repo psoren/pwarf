@@ -53,10 +53,10 @@ export async function combatResolution(ctx: SimContext): Promise<void> {
           year: ctx.year,
           category: 'monster_siege',
           civilization_id: ctx.civilizationId,
-          ruin_id: null,
+
           dwarf_id: null,
           item_id: null,
-          faction_id: null,
+
           monster_id: monster.id,
           description: `The ${monster.name} begins attacking the fortress!`,
           event_data: {
@@ -76,10 +76,10 @@ export async function combatResolution(ctx: SimContext): Promise<void> {
         year: ctx.year,
         category: 'battle',
         civilization_id: ctx.civilizationId,
-        ruin_id: null,
+
         dwarf_id: target.id,
         item_id: null,
-        faction_id: null,
+
         monster_id: monster.id,
         description: `${target.name} fought the ${monster.name}!`,
         event_data: {
@@ -173,10 +173,10 @@ function slayMonster(monster: Monster, killer: Dwarf, ctx: SimContext): void {
     year: ctx.year,
     category: 'monster_slain',
     civilization_id: ctx.civilizationId,
-    ruin_id: null,
+
     dwarf_id: killer.id,
     item_id: null,
-    faction_id: null,
+
     monster_id: monster.id,
     description: `${killer.name} ${killer.surname} slew the ${monster.name}!`,
     event_data: {
