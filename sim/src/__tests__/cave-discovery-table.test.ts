@@ -7,6 +7,7 @@ import {
   getCaveSeed,
   WORK_SCOUT_CAVE,
   WORK_MINE_BASE,
+  CAVE_SIZE,
 } from "@pwarf/shared";
 import type { Cave } from "@pwarf/shared";
 
@@ -114,8 +115,9 @@ describe("caves table integration", () => {
     // Find an ore tile in this cave
     let oreX = -1, oreY = -1;
     let oreMaterial = "";
-    for (let x = 192; x < 320 && oreX < 0; x++) {
-      for (let y = 192; y < 320 && oreX < 0; y++) {
+    const halfCave = Math.floor(CAVE_SIZE / 2);
+    for (let x = entrance.x - halfCave; x < entrance.x + halfCave && oreX < 0; x++) {
+      for (let y = entrance.y - halfCave; y < entrance.y + halfCave && oreX < 0; y++) {
         const tile = deriver.deriveTile(x, y, caveZ);
         if (tile.tileType === "ore" && tile.material) {
           oreX = x;
