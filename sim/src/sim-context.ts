@@ -120,6 +120,14 @@ export interface CachedState {
   dirtyCaveIds: Set<string>;
 
   /**
+   * Cooldown for pathfinding failures. When a full-path search fails, the
+   * dwarf skips expensive re-computation for PATHFAIL_COOLDOWN_TICKS.
+   * Key: "${dwarfId}:${taskId}", value: step number when cooldown expires.
+   * In-memory only; not persisted.
+   */
+  pathFailCooldown: Map<string, number>;
+
+  /**
    * Tracks how many consecutive ticks each dwarf has been waiting due to
    * occupancy blocking. Keyed by dwarf ID. Cleared on successful movement.
    * In-memory only; not persisted.
@@ -167,6 +175,7 @@ export function createEmptyCachedState(): CachedState {
     tantrumTicks: new Map(),
     strangeMoodDwarfIds: new Set(),
     pathCache: new Map(),
+    pathFailCooldown: new Map(),
     warnedNeedIds: new Map(),
     civPopulation: 0,
     civWealth: 0,
