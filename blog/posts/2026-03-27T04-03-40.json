@@ -1,0 +1,28 @@
+{
+  "id": "2026-03-27T04-03-40",
+  "timestamp": "2026-03-27T04:03:40.203Z",
+  "title": "Digest — Mar 27, 2026, 04:03 AM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nWe have exciting updates and performance improvements in the latest release! Here’s what we've recently merged into the main branch:\n\n## Performance Improvements\n- **Cave Mining Optimization**:\n  - Implemented **path caching** to compute full paths only once per task. Now, steps are efficiently retrieved each tick, enhancing performance, especially with complex calculations involving up to 20k nodes.\n  - Introduced **numeric position keys** in the `posKey()` function, which now uses integers instead of string templates. This change boosts map operations by around 40%, significantly improving lookups with over 600k checks per tick.\n\n## Stability Enhancements\n- **Tile Cache Management**:\n  - A new helper function, `overridesEqual()`, enables comparisons of database poll results with previous states. This optimization allows us to skip unnecessary updates to tile data, preventing cache thrashing. As a result, we maintain a steady Map reference and avoid the costly re-derivation of around 5000 visible tiles on each poll cycle.\n\nThese changes are part of our ongoing effort to enhance gameplay performance and stability, ensuring a smoother and more enjoyable gaming experience.\n\n## Merged PRs\n- #732\n- #730\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 732,
+      "title": "perf: fix cave mining slowdown with path caching + numeric keys (closes #731)",
+      "url": "https://github.com/psoren/pwarf/pull/732"
+    },
+    {
+      "number": 730,
+      "title": "fix: prevent tile cache thrashing on DB poll (closes #729)",
+      "url": "https://github.com/psoren/pwarf/pull/730"
+    }
+  ],
+  "images": []
+}
