@@ -41,6 +41,15 @@ describe("scout_cave task completion", () => {
     expect(markerTile).toBeDefined();
     expect(markerTile!.tile_type).toBe("cavern_floor");
 
+    // A cave_entrance tile must be written at z=0 so pathfinding can
+    // transition from the surface to the cave z-level. Without this,
+    // any existing tile override at z=0 shadows the deriver's cave_entrance,
+    // making underground mining unreachable (#731).
+    const entranceKey = `${entrance.x},${entrance.y},0`;
+    const entranceTile = ctx.state.fortressTileOverrides.get(entranceKey);
+    expect(entranceTile).toBeDefined();
+    expect(entranceTile!.tile_type).toBe("cave_entrance");
+
     // A discovery event should be fired with the cave name
     const discoveryEvents = ctx.state.pendingEvents.filter(
       e => e.event_data && (e.event_data as Record<string, unknown>).action === "scout_cave",
