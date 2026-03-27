@@ -1,0 +1,43 @@
+{
+  "id": "2026-03-27T05-47-38",
+  "timestamp": "2026-03-27T05:47:38.256Z",
+  "title": "Digest — Mar 27, 2026, 05:47 AM UTC",
+  "summary": "# Pwarf Devlog - Recent Changes\n\nHello, Pwarf community! We've made some important fixes and improvements to enhance your gaming experience. Here’s a summary of what's new since our last digest:\n\n## Cave System Updates\n- **Cave Grid Centering**: We fixed the alignment issue where cave grids were centered on the fortress instead of the cave entrance, ensuring proper cave mining functionality.\n- **Cave Entrance Initialization**: We've corrected the cave entrance tile placement to ensure it appears at the correct level when scouting completes, addressing slowdowns in cave mining.\n- **Auth Lock Update**: Replaced the Supabase auth lock to prevent orphaned navigator lock warnings, which helps improve game loading times.\n\n## Pathfinding Enhancements\n- **Pathfinding Optimization**: A hotfix was implemented to eliminate double pathfinding for unreachable targets. This reduces the computational load on each dwarf, enhancing overall performance.\n\nWe hope these updates improve your gameplay. As always, thank you for your continued support and feedback!\n\n## Merged PRs\n- #738\n- #737\n- #736\n- #735\n- #734\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 738,
+      "title": "fix: center cave grids on entrance position, not fortress center",
+      "url": "https://github.com/psoren/pwarf/pull/738"
+    },
+    {
+      "number": 737,
+      "title": "fix: correct LockFunc generic type signature",
+      "url": "https://github.com/psoren/pwarf/pull/737"
+    },
+    {
+      "number": 736,
+      "title": "fix: bypass auth navigator locks + test cave_entrance at z=0",
+      "url": "https://github.com/psoren/pwarf/pull/736"
+    },
+    {
+      "number": 735,
+      "title": "fix: place cave_entrance tile at z=0 when scouting completes",
+      "url": "https://github.com/psoren/pwarf/pull/735"
+    },
+    {
+      "number": 734,
+      "title": "fix: eliminate double pathfinding for unreachable targets",
+      "url": "https://github.com/psoren/pwarf/pull/734"
+    }
+  ],
+  "images": []
+}
