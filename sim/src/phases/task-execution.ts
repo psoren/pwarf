@@ -262,22 +262,25 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
   }
 
   if (nextStep === null) {
-    // Compute full path and cache it (only when no occupancy issues)
+    // Compute full path and cache it
     const fullPath = findFullPath(start, goal, getTile, needsAdjacent, zResolver);
-    if (fullPath !== null && fullPath.length > 0) {
-      const firstStep = fullPath[0];
-      if (!occupiedTiles.has(`${firstStep.x},${firstStep.y},${firstStep.z}`)) {
-        nextStep = fullPath.shift()!;
-        ctx.state.pathCache.set(dwarf.id, { taskId: task.id, goalKey, steps: fullPath });
-      }
-      // If first step is occupied, fall through to bfsNextStep with occupancy handling
+    if (fullPath === null) {
+      // No path exists within node limit — don't waste time with bfsNextStep
+      return false;
     }
-  }
-
-  if (nextStep === null) {
-    // Single-step fallback — handles occupancy via the existing logic below
-    nextStep = bfsNextStep(start, goal, getTile, needsAdjacent, zResolver);
-    if (nextStep === null) return false;
+    if (fullPath.length === 0) {
+      // Already at goal (adjacent)
+      return true;
+    }
+    const firstStep = fullPath[0];
+    if (!occupiedTiles.has(`${firstStep.x},${firstStep.y},${firstStep.z}`)) {
+      nextStep = fullPath.shift()!;
+      ctx.state.pathCache.set(dwarf.id, { taskId: task.id, goalKey, steps: fullPath });
+    } else {
+      // First step is occupied — use single-step search with occupancy handling
+      nextStep = bfsNextStep(start, goal, getTile, needsAdjacent, zResolver);
+      if (nextStep === null) return false;
+    }
   }
 
   // If the next step is occupied, retry BFS routing around occupied tiles.
