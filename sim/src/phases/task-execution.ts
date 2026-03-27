@@ -262,10 +262,45 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
   }
 
   if (nextStep === null) {
-    // Compute full path and cache it
-    const fullPath = findFullPath(start, goal, getTile, needsAdjacent, zResolver);
+    // Compute full path and cache it.
+    // For cross-z paths (surface → underground), use two-stage pathfinding:
+    // 1) surface to cave entrance, 2) entrance to target in cave.
+    // Single-stage A* often fails because the heuristic doesn't account for
+    // the mandatory waypoint (entrance) and exhausts the node limit.
+    let fullPath: ReturnType<typeof findFullPath> = null;
+
+    if (start.z !== goal.z && zResolver) {
+      const entrance = zResolver.getEntranceForZ(goal.z);
+      if (entrance) {
+        if (start.z === 0) {
+          // Stage 1: surface to entrance
+          const surfacePath = findFullPath(start, { x: entrance.x, y: entrance.y, z: 0 }, getTile, false, zResolver);
+          if (surfacePath !== null) {
+            // Stage 2: entrance at cave z to target
+            const caveStart = { x: entrance.x, y: entrance.y, z: goal.z };
+            const cavePath = findFullPath(caveStart, goal, getTile, needsAdjacent, zResolver);
+            if (cavePath !== null) {
+              // Combine: surface path + z-transition step + cave path
+              fullPath = [...surfacePath, { x: entrance.x, y: entrance.y, z: goal.z }, ...cavePath];
+            }
+          }
+        } else {
+          // Underground to surface: reverse — cave to entrance, then surface
+          const cavePath = findFullPath(start, { x: entrance.x, y: entrance.y, z: start.z }, getTile, false, zResolver);
+          if (cavePath !== null) {
+            const surfacePath = findFullPath({ x: entrance.x, y: entrance.y, z: 0 }, goal, getTile, needsAdjacent, zResolver);
+            if (surfacePath !== null) {
+              fullPath = [...cavePath, { x: entrance.x, y: entrance.y, z: 0 }, ...surfacePath];
+            }
+          }
+        }
+      }
+    } else {
+      fullPath = findFullPath(start, goal, getTile, needsAdjacent, zResolver);
+    }
+
     if (fullPath === null) {
-      // No path exists within node limit — don't waste time with bfsNextStep
+      // No path exists within node limit
       return false;
     }
     if (fullPath.length === 0) {
