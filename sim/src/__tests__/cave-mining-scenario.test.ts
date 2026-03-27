@@ -4,6 +4,7 @@ import { makeDwarf, makeTask, makeSkill } from "./test-helpers.js";
 import {
   createFortressDeriver,
   WORK_MINE_BASE,
+  CAVE_SIZE,
   type FortressTile,
 } from "@pwarf/shared";
 
@@ -19,8 +20,9 @@ describe("cave mining scenario", () => {
     // Find an ore tile in this cave by probing the deriver
     let oreX = -1, oreY = -1;
     let oreMaterial = "";
-    for (let x = 192; x < 320 && oreX < 0; x++) {
-      for (let y = 192; y < 320 && oreX < 0; y++) {
+    const halfCave = Math.floor(CAVE_SIZE / 2);
+    for (let x = entrance.x - halfCave; x < entrance.x + halfCave && oreX < 0; x++) {
+      for (let y = entrance.y - halfCave; y < entrance.y + halfCave && oreX < 0; y++) {
         const tile = deriver.deriveTile(x, y, caveZ);
         if (tile.tileType === "ore" && tile.material) {
           oreX = x;
@@ -99,8 +101,9 @@ describe("cave mining scenario", () => {
     let gemMaterial = "";
     for (const entrance of deriver.entrances) {
       const z = deriver.getZForEntrance(entrance.x, entrance.y)!;
-      for (let x = 192; x < 320 && gemX < 0; x++) {
-        for (let y = 192; y < 320 && gemX < 0; y++) {
+      const halfCave = Math.floor(CAVE_SIZE / 2);
+    for (let x = entrance.x - halfCave; x < entrance.x + halfCave && gemX < 0; x++) {
+        for (let y = entrance.y - halfCave; y < entrance.y + halfCave && gemX < 0; y++) {
           const tile = deriver.deriveTile(x, y, z);
           if (tile.tileType === "gem" && tile.material) {
             gemX = x;
@@ -179,8 +182,9 @@ describe("cave mining scenario", () => {
 
     // Find a cavern_floor tile to place our override on
     let floorX = -1, floorY = -1;
-    for (let x = 192; x < 320 && floorX < 0; x++) {
-      for (let y = 192; y < 320 && floorX < 0; y++) {
+    const halfCave = Math.floor(CAVE_SIZE / 2);
+    for (let x = entrance.x - halfCave; x < entrance.x + halfCave && floorX < 0; x++) {
+      for (let y = entrance.y - halfCave; y < entrance.y + halfCave && floorX < 0; y++) {
         const tile = deriver.deriveTile(x, y, caveZ);
         if (tile.tileType === "cavern_floor") {
           floorX = x;
@@ -258,8 +262,9 @@ describe("cave mining scenario", () => {
 
     // Find a cave_mushroom tile
     let mushX = -1, mushY = -1;
-    for (let x = 192; x < 320 && mushX < 0; x++) {
-      for (let y = 192; y < 320 && mushX < 0; y++) {
+    const halfCave = Math.floor(CAVE_SIZE / 2);
+    for (let x = entrance.x - halfCave; x < entrance.x + halfCave && mushX < 0; x++) {
+      for (let y = entrance.y - halfCave; y < entrance.y + halfCave && mushX < 0; y++) {
         const tile = deriver.deriveTile(x, y, caveZ);
         if (tile.tileType === "cave_mushroom") {
           mushX = x;
@@ -329,8 +334,9 @@ describe("cave mining scenario", () => {
     const caveZ = deriver.getZForEntrance(entrance.x, entrance.y)!;
 
     let mushroomCount = 0;
-    for (let x = 192; x < 320; x++) {
-      for (let y = 192; y < 320; y++) {
+    const halfCave = Math.floor(CAVE_SIZE / 2);
+    for (let x = entrance.x - halfCave; x < entrance.x + halfCave; x++) {
+      for (let y = entrance.y - halfCave; y < entrance.y + halfCave; y++) {
         const tile = deriver.deriveTile(x, y, caveZ);
         if (tile.tileType === "cave_mushroom") mushroomCount++;
       }
@@ -341,4 +347,92 @@ describe("cave mining scenario", () => {
     // But not dominate (should be significantly less than total floor tiles)
     expect(mushroomCount).toBeLessThan(5000);
   });
+
+  it("dwarves scout cave, walk underground, and mine walls end-to-end", async () => {
+    const deriver = createFortressDeriver(SEED, CIV_ID);
+    const entrance = deriver.entrances[0]!;
+    const caveZ = deriver.getZForEntrance(entrance.x, entrance.y)!;
+
+    // 3 dwarves near the entrance
+    const dwarves = Array.from({ length: 3 }, (_, i) =>
+      makeDwarf({
+        civilization_id: CIV_ID,
+        name: `Miner${i}`,
+        position_x: entrance.x + i,
+        position_y: entrance.y,
+        position_z: 0,
+        need_food: 100, need_drink: 100, need_sleep: 100,
+      }),
+    );
+    const skills = dwarves.flatMap(d => [
+      makeSkill(d.id, "mining", 3),
+      makeSkill(d.id, "building", 1),
+      makeSkill(d.id, "farming", 1),
+      makeSkill(d.id, "fighting", 1),
+    ]);
+
+    // Phase 1: Scout
+    const scoutTask = makeTask("scout_cave", {
+      civilization_id: CIV_ID, status: "pending",
+      target_x: entrance.x, target_y: entrance.y, target_z: 0,
+      work_progress: 0, work_required: WORK_MINE_BASE,
+    });
+
+    const scoutResult = await runScenario({
+      dwarves, dwarfSkills: skills, fortressDeriver: deriver,
+      tasks: [scoutTask], ticks: 200, seed: 42,
+    });
+
+    const scout = scoutResult.tasks.find(t => t.task_type === "scout_cave");
+    expect(scout?.status).toBe("completed");
+
+    // cave_entrance must exist at z=0
+    const eTile = scoutResult.fortressTileOverrides.find(
+      t => t.x === entrance.x && t.y === entrance.y && t.z === 0,
+    );
+    expect(eTile?.tile_type).toBe("cave_entrance");
+
+    // Phase 2: Find mineable walls and create tasks
+    const deltas = [[1, 0], [-1, 0], [0, 1], [0, -1]] as const;
+    const targets: Array<{ x: number; y: number }> = [];
+    for (let dx = -15; dx <= 15 && targets.length < 5; dx++) {
+      for (let dy = -15; dy <= 15 && targets.length < 5; dy++) {
+        const tx = entrance.x + dx, ty = entrance.y + dy;
+        if (tx === entrance.x && ty === entrance.y) continue;
+        const tile = deriver.deriveTile(tx, ty, caveZ);
+        if (tile.tileType !== "cavern_wall") continue;
+        const hasFloor = deltas.some(([ddx, ddy]) => {
+          const n = deriver.deriveTile(tx + ddx, ty + ddy, caveZ);
+          return n.tileType === "cavern_floor" || n.tileType === "cave_mushroom";
+        });
+        if (hasFloor) targets.push({ x: tx, y: ty });
+      }
+    }
+    expect(targets.length).toBeGreaterThan(0);
+
+    const mineTasks = targets.map(t => makeTask("mine", {
+      civilization_id: CIV_ID, status: "pending", priority: 5,
+      target_x: t.x, target_y: t.y, target_z: caveZ,
+      work_progress: 0, work_required: WORK_MINE_BASE,
+    }));
+
+    // Phase 3: Mine — dwarves must pathfind underground and complete tasks
+    const mineResult = await runScenario({
+      dwarves: scoutResult.dwarves,
+      dwarfSkills: scoutResult.dwarfSkills,
+      items: scoutResult.items,
+      structures: scoutResult.structures,
+      fortressDeriver: deriver,
+      fortressTileOverrides: scoutResult.fortressTileOverrides,
+      tasks: [...scoutResult.tasks, ...mineTasks],
+      ticks: 500, seed: 99,
+    });
+
+    const completed = mineResult.tasks.filter(
+      t => t.task_type === "mine" && t.target_z === caveZ && t.status === "completed",
+    );
+    console.log(`E2E cave mining: ${completed.length}/${targets.length} tasks completed`);
+    expect(completed.length).toBeGreaterThan(0);
+    expect(mineResult.dwarves.filter(d => d.status === "alive").length).toBe(3);
+  }, 60_000);
 });

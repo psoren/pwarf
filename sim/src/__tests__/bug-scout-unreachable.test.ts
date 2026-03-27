@@ -131,18 +131,17 @@ describe("bug: scout cave unreachable due to pond-heavy terrain", () => {
     expect(pondCount).toBeGreaterThan(50);
   });
 
-  it("dwarf fails to reach distant cave entrance through pond-heavy forest", async () => {
-    const { config } = makeBugReproScenario(1000);
+  it("dwarf reaches distant cave entrance despite pond-heavy forest", async () => {
+    const { config } = makeBugReproScenario(2000);
 
     const result = await runScenario(config);
 
     const task = result.tasks.find(t => t.task_type === "scout_cave");
     expect(task).toBeDefined();
 
-    // BUG: the dwarf never completes (or even makes progress on) the scout task
-    // because A* exhausts its 20k node limit navigating around pond regions.
-    // The task stays claimed with 0 work progress.
-    expect(task!.status).not.toBe("completed");
-    expect(task!.work_progress).toBe(0);
+    // With path caching, the dwarf should eventually reach the entrance
+    // even through pond-heavy terrain (the path is computed once and cached).
+    // Previously this was unreachable due to A* node limit per tick.
+    expect(task!.status).toBe("completed");
   }, 180_000);
 });
