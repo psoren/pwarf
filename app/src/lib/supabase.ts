@@ -8,6 +8,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
     // Bypass navigator.locks to avoid orphaned lock warnings.
     // Safe for single-tab usage — no cross-tab session sync needed.
-    lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<unknown>) => fn(),
+    lock: async <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>) => fn(),
   },
 });
