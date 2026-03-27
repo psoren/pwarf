@@ -101,8 +101,11 @@ export function getNeighbors(pos: Position, getTile: TileLookup, zResolver?: ZRe
   return neighbors;
 }
 
-function posKey(p: Position): string {
-  return `${p.x},${p.y},${p.z}`;
+/** Numeric position key for fast Set/Map lookups — avoids string allocation.
+ * Encodes (x, y, z) into a single integer: (z+20)*512*512 + y*512 + x.
+ * Valid for x,y ∈ [0,512) and z ∈ [-20, 1). */
+export function posKey(p: Position): number {
+  return (p.z + 20) * 262144 + p.y * 512 + p.x; // 262144 = 512*512
 }
 
 /**
@@ -160,8 +163,8 @@ function bfsSearch(
   zResolver?: ZResolver,
   blockedTiles?: ReadonlySet<string>,
 ): Position | null {
-  const visited = new Set<string>();
-  const parent = new Map<string, Position>();
+  const visited = new Set<number>();
+  const parent = new Map<number, Position>();
 
   const queue: Position[] = [start];
   visited.add(posKey(start));
@@ -177,7 +180,7 @@ function bfsSearch(
     for (const neighbor of neighbors) {
       const key = posKey(neighbor);
       if (visited.has(key)) continue;
-      if (blockedTiles?.has(key)) continue;
+      if (blockedTiles?.has(`${neighbor.x},${neighbor.y},${neighbor.z}`)) continue;
       visited.add(key);
       parent.set(key, current);
 
@@ -205,9 +208,9 @@ function astarSearch(
   zResolver?: ZResolver,
   blockedTiles?: ReadonlySet<string>,
 ): Position | null {
-  const gScore = new Map<string, number>();
-  const closed = new Set<string>();
-  const parent = new Map<string, Position>();
+  const gScore = new Map<number, number>();
+  const closed = new Set<number>();
+  const parent = new Map<number, Position>();
   const startKey = posKey(start);
   gScore.set(startKey, 0);
 
@@ -239,7 +242,7 @@ function astarSearch(
     for (const neighbor of neighbors) {
       const key = posKey(neighbor);
       if (closed.has(key)) continue;
-      if (blockedTiles?.has(key)) continue;
+      if (blockedTiles?.has(`${neighbor.x},${neighbor.y},${neighbor.z}`)) continue;
 
       const tentativeG = currentG + 1;
       const prevG = gScore.get(key);
@@ -321,7 +324,7 @@ function isAdjacentTo(a: Position, b: Position): boolean {
 }
 
 /** Trace parent chain back to find the first step from start. */
-function traceFirstStep(start: Position, end: Position, parent: Map<string, Position>): Position {
+function traceFirstStep(start: Position, end: Position, parent: Map<number, Position>): Position {
   let current = end;
   let prev = parent.get(posKey(current));
 
@@ -331,6 +334,105 @@ function traceFirstStep(start: Position, end: Position, parent: Map<string, Posi
   }
 
   return current;
+}
+
+/** Trace parent chain to build full path from start to end (excludes start). */
+function traceFullPath(start: Position, end: Position, parent: Map<number, Position>): Position[] {
+  const path: Position[] = [];
+  let current = end;
+  while (!(current.x === start.x && current.y === start.y && current.z === start.z)) {
+    path.push(current);
+    const prev = parent.get(posKey(current));
+    if (!prev) break;
+    current = prev;
+  }
+  path.reverse();
+  return path;
+}
+
+/** Find the full path from start to goal. Returns the path (excluding start),
+ * or null if no path found. Used for path caching. */
+export function findFullPath(
+  start: Position,
+  goal: Position,
+  getTile: TileLookup,
+  adjacentToGoal = false,
+  zResolver?: ZResolver,
+): Position[] | null {
+  if (start.x === goal.x && start.y === goal.y && start.z === goal.z) return [];
+  if (adjacentToGoal && isAdjacentTo(start, goal)) return [];
+
+  const dist = Math.abs(start.x - goal.x) + Math.abs(start.y - goal.y)
+    + Math.abs(start.z - goal.z) * 10;
+
+  if (dist > ASTAR_DISTANCE_THRESHOLD) {
+    return astarFullPath(start, goal, getTile, adjacentToGoal, zResolver);
+  }
+  return bfsFullPath(start, goal, getTile, adjacentToGoal, zResolver);
+}
+
+function bfsFullPath(
+  start: Position, goal: Position, getTile: TileLookup,
+  adjacentToGoal: boolean, zResolver?: ZResolver,
+): Position[] | null {
+  const visited = new Set<number>();
+  const parent = new Map<number, Position>();
+  const queue: Position[] = [start];
+  visited.add(posKey(start));
+
+  while (queue.length > 0) {
+    if (visited.size >= BFS_NODE_LIMIT) return null;
+    const current = queue.shift()!;
+    for (const neighbor of getNeighbors(current, getTile, zResolver)) {
+      const key = posKey(neighbor);
+      if (visited.has(key)) continue;
+      visited.add(key);
+      parent.set(key, current);
+      const reached = adjacentToGoal
+        ? isAdjacentTo(neighbor, goal)
+        : (neighbor.x === goal.x && neighbor.y === goal.y && neighbor.z === goal.z);
+      if (reached) return traceFullPath(start, neighbor, parent);
+      queue.push(neighbor);
+    }
+  }
+  return null;
+}
+
+function astarFullPath(
+  start: Position, goal: Position, getTile: TileLookup,
+  adjacentToGoal: boolean, zResolver?: ZResolver,
+): Position[] | null {
+  const gScore = new Map<number, number>();
+  const closed = new Set<number>();
+  const parent = new Map<number, Position>();
+  const startKey = posKey(start);
+  gScore.set(startKey, 0);
+  const heap = new MinHeap();
+  heap.push({ pos: start, f: heuristic(start, goal) });
+
+  while (heap.size > 0) {
+    if (closed.size >= ASTAR_NODE_LIMIT) return null;
+    const { pos: current } = heap.pop()!;
+    const currentKey = posKey(current);
+    if (closed.has(currentKey)) continue;
+    closed.add(currentKey);
+    const reached = adjacentToGoal
+      ? isAdjacentTo(current, goal)
+      : (current.x === goal.x && current.y === goal.y && current.z === goal.z);
+    if (reached && closed.size > 1) return traceFullPath(start, current, parent);
+    const currentG = gScore.get(currentKey)!;
+    for (const neighbor of getNeighbors(current, getTile, zResolver)) {
+      const key = posKey(neighbor);
+      if (closed.has(key)) continue;
+      const tentativeG = currentG + 1;
+      const prevG = gScore.get(key);
+      if (prevG !== undefined && tentativeG >= prevG) continue;
+      gScore.set(key, tentativeG);
+      parent.set(key, current);
+      heap.push({ pos: neighbor, f: tentativeG + heuristic(neighbor, goal) });
+    }
+  }
+  return null;
 }
 
 /** Manhattan distance between two positions (ignoring z for simplicity). */
