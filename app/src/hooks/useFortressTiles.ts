@@ -35,6 +35,8 @@ interface UseFortressTilesOptions {
 
 const CACHE_MAX = 20_000;
 
+import { overridesEqual } from './tile-override-helpers';
+
 export function useFortressTiles({
   civId,
   worldSeed,
@@ -136,7 +138,10 @@ export function useFortressTiles({
       for (const tile of data) {
         newOverrides.set(`${tile.x},${tile.y}`, tile as Partial<FortressTile>);
       }
-      setDbOverrides(newOverrides);
+      // Only update state if overrides actually changed — avoids clearing the tile cache
+      setDbOverrides((prev) =>
+        overridesEqual(prev, newOverrides) ? prev : newOverrides,
+      );
     }
   }, [civId, zLevel]); // stable — no offset/viewport deps
 
