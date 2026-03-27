@@ -146,6 +146,50 @@ export function useDesignation(opts: {
     // Deconstruct mode: collect pending build tasks to cancel immediately (#512)
     const cancelBuildCoords: Array<{ x: number; y: number }> = [];
 
+    // For mine designations, collect all candidate tiles first then flood-fill
+    // from tiles adjacent to existing walkable space. This allows designating
+    // solid blocks — inner tiles are reachable once outer tiles are mined.
+    let mineReachable: Set<string> | null = null;
+    if (isMine) {
+      const candidates = new Set<string>();
+      for (let y = y1; y <= y2; y++) {
+        for (let x = x1; x <= x2; x++) {
+          if (designatedTiles.has(`${x},${y}`)) continue;
+          const tile = getFortressTile(x, y);
+          if (!tile || !mineable.includes(tile.tileType)) continue;
+          candidates.add(`${x},${y}`);
+        }
+      }
+      // Flood-fill: seed with candidates that have at least one walkable neighbor
+      mineReachable = new Set<string>();
+      const queue: string[] = [];
+      for (const key of candidates) {
+        const [cx, cy] = key.split(',').map(Number);
+        const hasWalkableNeighbor = [
+          getFortressTile(cx - 1, cy),
+          getFortressTile(cx + 1, cy),
+          getFortressTile(cx, cy - 1),
+          getFortressTile(cx, cy + 1),
+        ].some(n => n && WALKABLE_ADJACENT_TILES.has(n.tileType));
+        if (hasWalkableNeighbor) {
+          mineReachable.add(key);
+          queue.push(key);
+        }
+      }
+      // Expand: a candidate is reachable if it neighbors a reachable candidate
+      while (queue.length > 0) {
+        const key = queue.pop()!;
+        const [cx, cy] = key.split(',').map(Number);
+        for (const [nx, ny] of [[cx-1,cy],[cx+1,cy],[cx,cy-1],[cx,cy+1]]) {
+          const nk = `${nx},${ny}`;
+          if (candidates.has(nk) && !mineReachable.has(nk)) {
+            mineReachable.add(nk);
+            queue.push(nk);
+          }
+        }
+      }
+    }
+
     for (let y = y1; y <= y2; y++) {
       for (let x = x1; x <= x2; x++) {
         if (designatedTiles.has(`${x},${y}`)) {
@@ -163,18 +207,7 @@ export function useDesignation(opts: {
         if (!tile) continue;
 
         if (isMine) {
-          if (!mineable.includes(tile.tileType)) continue;
-          // Skip tiles with no walkable neighbor — they are unreachable
-          const hasWalkableNeighbor = [
-            getFortressTile(x - 1, y),
-            getFortressTile(x + 1, y),
-            getFortressTile(x, y - 1),
-            getFortressTile(x, y + 1),
-          ].some(n => n && WALKABLE_ADJACENT_TILES.has(n.tileType));
-          if (!hasWalkableNeighbor) {
-            console.warn(`[designate] Skipping unreachable mine tile at (${x}, ${y})`);
-            continue;
-          }
+          if (!mineReachable!.has(`${x},${y}`)) continue;
         } else if (isDeconstruct) {
           if (!DECONSTRUCTIBLE.has(tile.tileType)) continue;
         } else if (isFarm) {

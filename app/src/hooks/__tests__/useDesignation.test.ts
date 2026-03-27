@@ -167,6 +167,45 @@ describe("useDesignation", () => {
       );
     });
 
+    it("includes inner tiles reachable through other batch tiles (flood-fill)", async () => {
+      setupInsertChain();
+      // 3x3 block of stone at (3,3)-(5,5), with open_air at (2,4) providing
+      // the only walkable edge. Inner tile (4,4) has no direct walkable
+      // neighbor but is reachable through the batch.
+      const getFortressTile = (x: number, y: number): FortressViewTile | null => {
+        if (x === 2 && y === 4) return { tileType: "open_air", material: null, x, y, z: 0, isRevealed: false, isMined: false };
+        if (x >= 3 && x <= 5 && y >= 3 && y <= 5) return { tileType: "stone", material: null, x, y, z: 0, isRevealed: false, isMined: false };
+        return { tileType: "cavern_wall", material: null, x, y, z: 0, isRevealed: false, isMined: false };
+      };
+      const { result } = makeHook({ getFortressTile });
+
+      act(() => { result.current.toggleMine(); });
+      await act(async () => { await result.current.handleDesignateArea(3, 3, 5, 5); });
+
+      const insertedTasks = mockInsert.mock.calls[0]?.[0] as Array<{ target_x: number; target_y: number }>;
+      expect(insertedTasks).toBeDefined();
+      // All 9 tiles should be included — inner tiles are reachable via flood-fill
+      expect(insertedTasks).toHaveLength(9);
+      // Verify the inner tile (4,4) is present
+      expect(insertedTasks).toContainEqual(expect.objectContaining({ target_x: 4, target_y: 4 }));
+    });
+
+    it("skips isolated mine tiles with no walkable path", async () => {
+      setupInsertChain();
+      // Single stone tile at (5,5) surrounded by cavern_wall on all sides
+      const getFortressTile = (x: number, y: number): FortressViewTile | null => {
+        if (x === 5 && y === 5) return { tileType: "stone", material: null, x, y, z: 0, isRevealed: false, isMined: false };
+        return { tileType: "cavern_wall", material: null, x, y, z: 0, isRevealed: false, isMined: false };
+      };
+      const { result } = makeHook({ getFortressTile });
+
+      act(() => { result.current.toggleMine(); });
+      await act(async () => { await result.current.handleDesignateArea(5, 5, 5, 5); });
+
+      // No tasks should be created — the tile is unreachable
+      expect(mockInsert).not.toHaveBeenCalled();
+    });
+
     it("does nothing when designation mode is none", async () => {
       setupInsertChain();
       const { result } = makeHook();
