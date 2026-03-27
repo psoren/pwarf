@@ -358,6 +358,7 @@ describe("task execution", () => {
       getZForEntrance() { return null; },
       getEntranceForZ() { return null; },
       getCaveName() { return null; },
+      warmCaveCache() {},
       deriveTile(_x: number, _y: number, z: number) {
         if (z === 0) return { tileType: "open_air" as FortressTileType, material: null };
         return { tileType: "stone" as FortressTileType, material: "granite" };

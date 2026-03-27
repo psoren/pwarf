@@ -80,7 +80,7 @@ export interface CachedState {
 
   /** Cached pathfinding results per dwarf. Keyed by dwarf ID, stores the
    * remaining path steps. Invalidated when the dwarf's task changes. */
-  pathCache: Map<string, { taskId: string; goalKey: number; steps: Position[] }>;
+  pathCache: Map<string, { taskId: string; goalKey: number; steps: Array<{ x: number; y: number; z: number }> }>;
 
   /** Cached civilization population, updated each yearly rollup. */
   civPopulation: number;
