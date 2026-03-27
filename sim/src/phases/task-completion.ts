@@ -841,6 +841,12 @@ export function completeScoutCave(dwarf: Dwarf, task: Task, ctx: SimContext): vo
   // pay the cost of cellular automata + noise generation synchronously.
   deriver.warmCaveCache(caveZ);
 
+  // Write a cave_entrance tile on the surface so pathfinding can transition
+  // from z=0 to the cave z-level. Without this, any tile override at z=0
+  // (e.g. open_air from nearby building) shadows the deriver's cave_entrance,
+  // making the cave unreachable and causing expensive A* searches every tick.
+  upsertFortressTile(ctx, task.target_x, task.target_y, 0, 'cave_entrance', null, false);
+
   // Write a marker tile at the entrance position in the cave z-level
   // This signals to the UI that the cave has been discovered
   upsertFortressTile(ctx, task.target_x, task.target_y, caveZ, 'cavern_floor', null, false);
