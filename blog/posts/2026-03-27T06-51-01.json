@@ -1,0 +1,23 @@
+{
+  "id": "2026-03-27T06-51-01",
+  "timestamp": "2026-03-27T06:51:01.807Z",
+  "title": "Digest — Mar 27, 2026, 06:51 AM UTC",
+  "summary": "# Pwarf Devlog\n\n## Major Features\n- **Two-stage Pathfinding for Mining**: We've implemented a new two-stage pathfinding system for cross-z underground mining. This improves navigation by correctly routing through mandatory cave entrances, preventing A* from wasting nodes exploring unnecessary surface tiles. This adjustment will enhance the efficiency of your dwarves when mining underground.\n\n## Fixes and Improvements\n- **Cave Entrance Placement**: The cave entrance tile is now properly placed at z=0 once scouting is complete, ensuring that the pathfinding system can correctly identify entry points.\n- **Auth Navigator Improvements**: Adjustments have been made to bypass authentication navigator locks, enhancing overall system fluidity.\n- **Lock Function Type Signature**: The type signature for `LockFunc` has been corrected to enhance compatibility and functionality across the system.\n\nWe hope these improvements make your experience in Pwarf even more enjoyable!\n\n## Merged PRs\n- PR #739\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 739,
+      "title": "feat: two-stage pathfinding for cross-z underground mining",
+      "url": "https://github.com/psoren/pwarf/pull/739"
+    }
+  ],
+  "images": []
+}
