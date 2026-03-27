@@ -17,6 +17,13 @@ export function useSimRunner(civId: string | null, worldId: string | null) {
   const pendingFrame = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
 
   const handleTick = useCallback((snap: SimSnapshot) => {
+    // Surface debug entries in the browser console
+    if (snap.debugEntries.length > 0) {
+      for (const entry of snap.debugEntries) {
+        console.warn(`[sim-debug] [${entry.category}] step=${entry.step}: ${entry.message}`, entry.data ?? '');
+      }
+    }
+
     const now = performance.now();
     if (now - lastEmit.current >= 100) {
       lastEmit.current = now;
@@ -61,6 +68,15 @@ export function useSimRunner(civId: string | null, worldId: string | null) {
     const runner = new SimRunner(adapter);
     runner.onTick = handleTick;
     runnerRef.current = runner;
+
+    // Expose debug toggle on window for easy console access:
+    //   window.simDebug(true)  — enable
+    //   window.simDebug(false) — disable
+    (window as unknown as Record<string, unknown>).simDebug = (enabled: boolean) => {
+      runner.setDebug(enabled);
+      console.log(`[sim-debug] ${enabled ? 'enabled' : 'disabled'}`);
+    };
+
     runner.start(civId, worldId).catch((err: unknown) => {
       console.error('[sim] failed to start:', err);
     });
@@ -71,6 +87,7 @@ export function useSimRunner(civId: string | null, worldId: string | null) {
         cancelAnimationFrame(pendingFrame.current);
         pendingFrame.current = null;
       }
+      delete (window as unknown as Record<string, unknown>).simDebug;
       runner.stop().catch((err: unknown) => {
         console.error('[sim] failed to stop:', err);
       });

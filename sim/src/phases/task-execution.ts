@@ -18,6 +18,7 @@ import { buildTileLookup } from "../tile-lookup.js";
 import { canPickUp, pickUpItem } from "../inventory.js";
 import { handleDeprivationDeaths } from "./deprivation.js";
 import { completeTask } from "./task-completion.js";
+import { debugPathfindingFailure, debugTaskFailure } from "../debug.js";
 
 /** Task types where the dwarf stands adjacent to (not on) the target tile. */
 const ADJACENT_TASK_TYPES: ReadonlySet<string> = new Set(['mine', 'build_wall', 'deconstruct']);
@@ -88,7 +89,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
             if (canPickUp(dwarf.id, haulItem, state.items)) {
               pickUpItem(dwarf, haulItem, state);
             } else {
-              failTask(dwarf, task, state);
+              failTask(dwarf, task, ctx, 'cannot pick up haul item');
             }
           } else {
             const getTile = buildTileLookup(ctx);
@@ -108,7 +109,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
                 const haulPrevPos = ctx.state._previousPositions?.get(dwarf.id);
                 if (haulUsedAlt && haulPrevPos && haulPrevPos === finalKey) {
                   if (!incrementOccupancyWait(dwarf, ctx)) {
-                    failTask(dwarf, task, state);
+                    failTask(dwarf, task, ctx, 'haul occupancy timeout (oscillation)');
                   }
                 } else {
                   ctx.state._occupancyWaitTicks?.delete(dwarf.id);
@@ -143,17 +144,21 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
                 } else if (trySwapWithBlocker(dwarf, haulNext, ctx, occupiedTiles, dwarfAtPos)) {
                   // Swapped — dwarf already moved
                 } else if (!incrementOccupancyWait(dwarf, ctx)) {
-                  failTask(dwarf, task, state);
+                  failTask(dwarf, task, ctx, 'haul occupancy timeout (blocked)');
                 }
               }
             } else {
-              failTask(dwarf, task, state);
+              debugPathfindingFailure(ctx.debug, dwarf.name,
+                { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z },
+                { x: haulItem.position_x!, y: haulItem.position_y!, z: haulItem.position_z! },
+                task.task_type);
+              failTask(dwarf, task, ctx, 'haul pathfinding failed');
             }
           }
           continue;
         }
         if (haulItem.held_by_dwarf_id !== null) {
-          failTask(dwarf, task, state);
+          failTask(dwarf, task, ctx, 'haul item held by another dwarf');
           continue;
         }
       }
@@ -172,7 +177,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
         && dwarf.position_x === task.target_x && dwarf.position_y === task.target_y && dwarf.position_z === task.target_z) {
         const stepped = stepOffTarget(dwarf, task, ctx, occupiedTiles, zResolver);
         if (!stepped) {
-          failTask(dwarf, task, state);
+          failTask(dwarf, task, ctx, 'cannot step off adjacent target (all neighbors blocked)');
         }
         continue;
       }
@@ -180,7 +185,11 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
       if (!atSite) {
         const moved = moveTowardTarget(dwarf, task, ctx, occupiedTiles, dwarfAtPos, zResolver);
         if (!moved) {
-          failTask(dwarf, task, state);
+          debugPathfindingFailure(ctx.debug, dwarf.name,
+            { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z },
+            { x: task.target_x!, y: task.target_y!, z: task.target_z! },
+            task.task_type);
+          failTask(dwarf, task, ctx, 'pathfinding failed');
         }
         continue;
       }
@@ -543,7 +552,8 @@ const NO_REQUEUE_TASK_TYPES: ReadonlySet<string> = new Set([
   'haul', 'eat', 'drink', 'sleep',
 ]);
 
-function failTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {
+function failTask(dwarf: Dwarf, task: Task, ctx: SimContext, reason = 'unknown'): void {
+  const { state } = ctx;
   // Self-generated tasks (haul, eat, drink, sleep) get cancelled — their
   // respective phases will recreate them if still needed. This prevents the
   // fail→pending→reclaim→fail loop that kept haul tasks stuck at 0%.
@@ -554,4 +564,6 @@ function failTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {
 
   dwarf.current_task_id = null;
   state.dirtyDwarfIds.add(dwarf.id);
+
+  debugTaskFailure(ctx.debug, dwarf.name, task.id, task.task_type, reason);
 }

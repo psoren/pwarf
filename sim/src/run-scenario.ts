@@ -4,6 +4,7 @@ import type { SimContext, CachedState } from "./sim-context.js";
 import { createEmptyCachedState, createRng } from "./sim-context.js";
 import { DEFAULT_TEST_SEED } from "./rng.js";
 import { runTick, advanceTime, maybeYearRollup } from "./tick.js";
+import { DebugLogger, type DebugEntry } from "./debug.js";
 
 /** Input configuration for a scenario run. */
 export interface ScenarioConfig {
@@ -29,6 +30,8 @@ export interface ScenarioConfig {
   stepsPerYear?: number;
   /** Override STEPS_PER_DAY for faster day progression in tests. */
   stepsPerDay?: number;
+  /** Enable debug logging — when true, ScenarioResult.debugEntries will be populated. */
+  debug?: boolean;
 }
 
 /** Full final state returned after a scenario run — suitable for test assertions. */
@@ -57,6 +60,8 @@ export interface ScenarioResult {
   monsters: Monster[];
   /** Final cave state. */
   caves: Cave[];
+  /** Debug log entries (empty when debug mode is off). */
+  debugEntries: DebugEntry[];
 }
 
 /**
@@ -105,6 +110,7 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     state,
     stepsPerYear: config.stepsPerYear,
     stepsPerDay: config.stepsPerDay,
+    debug: config.debug ? new DebugLogger() : undefined,
   };
 
   // Accumulate all events fired across the run
@@ -140,5 +146,6 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     dwarfRelationships: state.dwarfRelationships,
     monsters: state.monsters,
     caves: state.caves,
+    debugEntries: ctx.debug ? ctx.debug.entries : [],
   };
 }

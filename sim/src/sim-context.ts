@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createRng, DEFAULT_TEST_SEED, type Rng } from "./rng.js";
+import type { DebugLogger } from "./debug.js";
 import type {
   Cave,
   Dwarf,
@@ -226,6 +227,9 @@ export interface SimContext {
   stepsPerYear?: number;
   /** Override for STEPS_PER_DAY — used in tests to speed up day progression. */
   stepsPerDay?: number;
+
+  /** Optional debug logger — when set, phases emit structured debug entries. */
+  debug?: DebugLogger;
 }
 
 /** Creates a SimContext with a default test seed. Used in tests. */
