@@ -90,10 +90,28 @@ export function useFortressTiles({
     snapshotMapRef.current = next;
   }
 
-  // Clear entire cache when underlying data sources change (deriver, DB, z-level)
+  // Clear entire cache when deriver or z-level changes (structural change).
+  // DB overrides use selective eviction below instead of a full cache nuke.
   useEffect(() => {
     cacheRef.current.clear();
-  }, [deriver, dbOverrides, zLevel]);
+  }, [deriver, zLevel]);
+
+  // Selective eviction for DB overrides — only evict tiles that actually changed
+  const prevDbOverridesRef = useRef<Map<string, Partial<FortressTile>>>(new Map());
+  if (dbOverrides !== prevDbOverridesRef.current) {
+    for (const [key, tile] of dbOverrides) {
+      const prev = prevDbOverridesRef.current.get(key);
+      if (!prev || prev.tile_type !== tile.tile_type || prev.is_mined !== tile.is_mined || prev.material !== tile.material) {
+        cacheRef.current.delete(key);
+      }
+    }
+    for (const key of prevDbOverridesRef.current.keys()) {
+      if (!dbOverrides.has(key)) {
+        cacheRef.current.delete(key);
+      }
+    }
+    prevDbOverridesRef.current = dbOverrides;
+  }
 
   // Use refs for offset/viewport so fetchOverrides stays stable
   const offsetRef = useRef({ x: offsetX, y: offsetY });

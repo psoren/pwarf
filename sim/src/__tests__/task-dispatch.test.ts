@@ -315,6 +315,7 @@ describe("task execution", () => {
       getZForEntrance() { return null; },
       getEntranceForZ() { return null; },
       getCaveName() { return null; },
+      warmCaveCache() {},
       deriveTile() {
         return { tileType: "open_air" as FortressTileType, material: null };
       },

@@ -53,6 +53,9 @@ export interface CachedState {
   /** Fortress tile overrides created by mining/building. Keyed by "x,y,z". */
   fortressTileOverrides: Map<string, FortressTile>;
   dirtyFortressTileKeys: Set<string>;
+  /** Incremented when fortressTileOverrides is mutated — used by sim-runner to
+   * avoid rebuilding the snapshot array when tiles haven't changed. */
+  fortressTileOverridesVersion: number;
 
   /** Tracks ticks at zero need for starvation/dehydration death. */
   zeroFoodTicks: Map<string, number>;
@@ -74,6 +77,10 @@ export interface CachedState {
    * In-memory only; not persisted across sim restarts.
    */
   strangeMoodDwarfIds: Set<string>;
+
+  /** Cached pathfinding results per dwarf. Keyed by dwarf ID, stores the
+   * remaining path steps. Invalidated when the dwarf's task changes. */
+  pathCache: Map<string, { taskId: string; goalKey: number; steps: Position[] }>;
 
   /** Cached civilization population, updated each yearly rollup. */
   civPopulation: number;
@@ -154,10 +161,12 @@ export function createEmptyCachedState(): CachedState {
     stockpileTiles: new Map(),
     fortressTileOverrides: new Map(),
     dirtyFortressTileKeys: new Set(),
+    fortressTileOverridesVersion: 0,
     zeroFoodTicks: new Map(),
     zeroDrinkTicks: new Map(),
     tantrumTicks: new Map(),
     strangeMoodDwarfIds: new Set(),
+    pathCache: new Map(),
     warnedNeedIds: new Map(),
     civPopulation: 0,
     civWealth: 0,

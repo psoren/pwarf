@@ -413,6 +413,7 @@ function upsertFortressTile(
   }
 
   ctx.state.dirtyFortressTileKeys.add(key);
+  ctx.state.fortressTileOverridesVersion++;
 }
 
 function completeHaul(dwarf: Dwarf, task: Task, ctx: SimContext): void {
@@ -835,6 +836,10 @@ export function completeScoutCave(dwarf: Dwarf, task: Task, ctx: SimContext): vo
   if (caveZ === null) return;
 
   const caveName = deriver.getCaveName(caveZ) ?? 'an unknown cave';
+
+  // Pre-warm the cave grid cache so the first pathfinding tick doesn't
+  // pay the cost of cellular automata + noise generation synchronously.
+  deriver.warmCaveCache(caveZ);
 
   // Write a marker tile at the entrance position in the cave z-level
   // This signals to the UI that the cave has been discovered

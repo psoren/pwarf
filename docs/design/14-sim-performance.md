@@ -1,5 +1,5 @@
 > **Status:** Implemented
-> **Last verified:** 2026-03-25
+> **Last verified:** 2026-03-26
 
 # 14 — Sim Performance Optimizations
 
@@ -97,6 +97,26 @@ Pruning runs at the **start** of `doFlush()`, before collecting dirty entities. 
 
 Without pruning, `state.tasks` grows unboundedly (~3 autonomous tasks per dwarf per ~30 ticks). With 7 dwarves over 3000 ticks, that's ~700+ accumulated tasks. After pruning, the array stays near the count of active tasks (~10-30).
 
+## Fix 4 — Cave mining performance (path caching + numeric keys)
+
+Underground mining was extremely slow (~83ms/tick vs ~1ms/tick for surface mining) because:
+
+1. **Pathfinding recomputed from scratch every tick.** A* with 20k node limit × 5 dwarves × ~6 tile lookups per node = ~600k Map lookups per tick.
+2. **String key allocation.** `posKey()` created a template string `${x},${y},${z}` per node, and the tile derivation cache used string keys. Hundreds of thousands of string allocations per tick.
+3. **Snapshot array rebuilt every tick.** `SimRunner.tick()` spread `fortressTileOverrides.values()` into a new array every tick, even when tiles hadn't changed.
+
+### Fixes
+
+- **Path caching** (`pathCache` on `CachedState`): When a dwarf pathfinds to a task target, the full path is cached keyed by dwarf ID. Subsequent ticks pop the next step from the cache instead of recomputing A*. The cache is invalidated when tiles change, the next step is occupied, or the task changes.
+- **Numeric position keys** (`posKey` returns `(z+20)*262144 + y*512 + x`): Replaces string template keys in BFS/A* visited sets, parent maps, and the fortress deriver's tile cache. ~40% faster Map operations.
+- **Cave pre-warming** (`warmCaveCache(z)`): Called during `completeScoutCave` so the expensive cellular automata + noise generation happens at scout completion, not during the first pathfinding tick.
+- **Stable snapshot array** (`fortressTileOverridesVersion`): The tile override array is only rebuilt when tiles actually change, preventing unnecessary React re-renders on the app side.
+- **Selective DB cache eviction**: App-side tile cache uses targeted eviction (only changed tiles) instead of clearing all 20k entries on every DB poll.
+
+### Impact
+
+Cave mining dropped from **83ms/tick** to **~1ms/tick** (warm) with 5 dwarves and 15 mine tasks. 60/62 tasks complete within 1000 ticks (vs 0 before).
+
 ## Key files
 
 | File | Change |
@@ -108,3 +128,7 @@ Without pruning, `state.tasks` grows unboundedly (~3 autonomous tasks per dwarf 
 | `sim/src/phases/task-execution.ts` | Uses `getTaskById()` |
 | `sim/src/phases/need-satisfaction.ts` | Uses `getTaskById()` |
 | `sim/src/tile-lookup.ts` | Unchanged — benefits from cache transparently |
+| `sim/src/pathfinding.ts` | Numeric `posKey()`, `findFullPath()` for path caching |
+| `sim/src/phases/task-execution.ts` | Path cache integration in `moveTowardTarget()` |
+| `sim/src/sim-runner.ts` | Stable tile override snapshot (version tracking) |
+| `app/src/hooks/useFortressTiles.ts` | Selective DB override eviction |

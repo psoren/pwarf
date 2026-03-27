@@ -13,7 +13,7 @@ import {
 import type { Dwarf, Task } from "@pwarf/shared";
 import { getTaskById, type SimContext } from "../sim-context.js";
 import { getDwarfSkillLevel, getRequiredSkill } from "../task-helpers.js";
-import { bfsNextStep, getNeighbors, type ZResolver } from "../pathfinding.js";
+import { bfsNextStep, findFullPath, posKey, getNeighbors, type ZResolver } from "../pathfinding.js";
 import { buildTileLookup } from "../tile-lookup.js";
 import { canPickUp, pickUpItem } from "../inventory.js";
 import { handleDeprivationDeaths } from "./deprivation.js";
@@ -243,11 +243,41 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
 
   const start = { x: dwarf.position_x, y: dwarf.position_y, z: dwarf.position_z };
   const goal = { x: task.target_x, y: task.target_y, z: task.target_z };
+  const goalKey = posKey(goal);
 
-  let nextStep = bfsNextStep(start, goal, getTile, needsAdjacent, zResolver);
+  // Try to use cached path — avoids expensive A*/BFS every tick
+  let nextStep: ReturnType<typeof bfsNextStep> = null;
+  const cached = ctx.state.pathCache.get(dwarf.id);
+  if (cached && cached.taskId === task.id && cached.goalKey === goalKey && cached.steps.length > 0) {
+    const next = cached.steps[0];
+    const nextTile = getTile(next.x, next.y, next.z);
+    const nextOccupied = occupiedTiles.has(`${next.x},${next.y},${next.z}`);
+    // Verify the next step is still walkable and not occupied
+    if (!nextOccupied && nextTile !== null && nextTile !== 'cavern_wall' && nextTile !== 'empty') {
+      nextStep = cached.steps.shift()!;
+    } else {
+      // Path invalidated — fall through to single-step search which handles occupancy
+      ctx.state.pathCache.delete(dwarf.id);
+    }
+  }
 
   if (nextStep === null) {
-    return false; // No path found
+    // Compute full path and cache it (only when no occupancy issues)
+    const fullPath = findFullPath(start, goal, getTile, needsAdjacent, zResolver);
+    if (fullPath !== null && fullPath.length > 0) {
+      const firstStep = fullPath[0];
+      if (!occupiedTiles.has(`${firstStep.x},${firstStep.y},${firstStep.z}`)) {
+        nextStep = fullPath.shift()!;
+        ctx.state.pathCache.set(dwarf.id, { taskId: task.id, goalKey, steps: fullPath });
+      }
+      // If first step is occupied, fall through to bfsNextStep with occupancy handling
+    }
+  }
+
+  if (nextStep === null) {
+    // Single-step fallback — handles occupancy via the existing logic below
+    nextStep = bfsNextStep(start, goal, getTile, needsAdjacent, zResolver);
+    if (nextStep === null) return false;
   }
 
   // If the next step is occupied, retry BFS routing around occupied tiles.

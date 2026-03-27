@@ -58,6 +58,10 @@ export class SimRunner {
   isPaused = false;
   speedMultiplier = 1;
 
+  /** Cached tile override array — only rebuilt when version changes. */
+  private _lastTileVersion = -1;
+  private _cachedTileOverrides: FortressTile[] = [];
+
   constructor(adapter: StateAdapter) {
     this.adapter = adapter;
   }
@@ -246,16 +250,21 @@ export class SimRunner {
     }
 
     if (this.onTick) {
+      const state = this.ctx.state;
+      if (state.fortressTileOverridesVersion !== this._lastTileVersion) {
+        this._cachedTileOverrides = [...state.fortressTileOverrides.values()];
+        this._lastTileVersion = state.fortressTileOverridesVersion;
+      }
       this.onTick({
-        dwarves: this.ctx.state.dwarves,
-        items: this.ctx.state.items,
-        tasks: [...this.ctx.state.tasks],
-        events: this.ctx.state.worldEvents,
-        fortressTileOverrides: [...this.ctx.state.fortressTileOverrides.values()],
-        monsters: this.ctx.state.monsters,
-        caves: this.ctx.state.caves,
+        dwarves: state.dwarves,
+        items: state.items,
+        tasks: [...state.tasks],
+        events: state.worldEvents,
+        fortressTileOverrides: this._cachedTileOverrides,
+        monsters: state.monsters,
+        caves: state.caves,
         year: this.currentYear,
-        civFallen: this.ctx.state.civFallen,
+        civFallen: state.civFallen,
       });
     }
   }

@@ -41,6 +41,9 @@ export interface FortressDeriver {
   getZForEntrance(x: number, y: number): number | null;
   getEntranceForZ(z: number): CaveEntrance | null;
   getCaveName(z: number): string | null;
+  /** Pre-generate and cache the cave grid for a z-level. Call after scouting to
+   * avoid expensive generation during the first pathfinding tick. */
+  warmCaveCache(z: number): void;
 }
 
 // ============================================================
@@ -513,8 +516,13 @@ export function createFortressDeriver(
 
   const profile = getProfile(terrain);
 
-  /** Permanent tile derivation cache — deriveTile is pure so results never change. */
-  const tileCache = new Map<string, DerivedFortressTile>();
+  /** Permanent tile derivation cache — deriveTile is pure so results never change.
+   * Uses numeric keys for fast lookups: (z+20)*512*512 + y*512 + x */
+  const tileCache = new Map<number, DerivedFortressTile>();
+
+  function tileCacheKey(x: number, y: number, z: number): number {
+    return (z + 20) * FORTRESS_SIZE * FORTRESS_SIZE + y * FORTRESS_SIZE + x;
+  }
 
   function deriveTileUncached(x: number, y: number, z: number): DerivedFortressTile {
     if (z === SURFACE_Z) {
@@ -579,12 +587,16 @@ export function createFortressDeriver(
     },
 
     deriveTile(x: number, y: number, z: number): DerivedFortressTile {
-      const key = `${x},${y},${z}`;
+      const key = tileCacheKey(x, y, z);
       const cached = tileCache.get(key);
       if (cached) return cached;
       const result = deriveTileUncached(x, y, z);
       tileCache.set(key, result);
       return result;
+    },
+
+    warmCaveCache(z: number): void {
+      getCaveData(z);
     },
   };
 }
