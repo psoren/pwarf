@@ -14,9 +14,12 @@ import { createAleaRng } from "./world-gen-helpers.js";
 const SEED = 42n;
 const CIV_ID = "test-civ-001";
 
-/** Sample range inside the cave grid (centered at CAVE_OFFSET). */
-const CAVE_X0 = CAVE_OFFSET + 10;
-const CAVE_X1 = CAVE_OFFSET + 30;
+/** Helper to get cave sample range centered on first entrance. */
+function getCaveRange(deriver: ReturnType<typeof createFortressDeriver>) {
+  const e = deriver.entrances[0]!;
+  const half = Math.floor(CAVE_SIZE / 2);
+  return { x0: e.x - half + 10, x1: e.x - half + 30, y0: e.y - half + 10, y1: e.y - half + 30 };
+}
 
 describe("createFortressDeriver", () => {
   it("same seed + civId produces identical tiles", () => {
@@ -42,11 +45,14 @@ describe("createFortressDeriver", () => {
     const z1 = d1.entrances[0]?.z ?? CAVE_Z;
     const z2 = d2.entrances[0]?.z ?? CAVE_Z;
 
+    // Compare cave-relative coordinates (each cave centered on its entrance)
+    const e1 = d1.entrances[0]!;
+    const e2 = d2.entrances[0]!;
     let differences = 0;
-    for (let x = CAVE_X0; x < CAVE_X1; x++) {
-      for (let y = CAVE_X0; y < CAVE_X1; y++) {
-        const t1 = d1.deriveTile(x, y, z1);
-        const t2 = d2.deriveTile(x, y, z2);
+    for (let dx = 10; dx < 30; dx++) {
+      for (let dy = 10; dy < 30; dy++) {
+        const t1 = d1.deriveTile(e1.x + dx, e1.y + dy, z1);
+        const t2 = d2.deriveTile(e2.x + dx, e2.y + dy, z2);
         if (t1.tileType !== t2.tileType || t1.material !== t2.material) {
           differences++;
         }
@@ -60,12 +66,14 @@ describe("createFortressDeriver", () => {
     const d2 = createFortressDeriver(SEED, "civ-beta");
     const z1 = d1.entrances[0]?.z ?? CAVE_Z;
     const z2 = d2.entrances[0]?.z ?? CAVE_Z;
+    const e1 = d1.entrances[0]!;
+    const e2 = d2.entrances[0]!;
 
     let differences = 0;
-    for (let x = CAVE_X0; x < CAVE_X1; x++) {
-      for (let y = CAVE_X0; y < CAVE_X1; y++) {
-        const t1 = d1.deriveTile(x, y, z1);
-        const t2 = d2.deriveTile(x, y, z2);
+    for (let dx = 10; dx < 30; dx++) {
+      for (let dy = 10; dy < 30; dy++) {
+        const t1 = d1.deriveTile(e1.x + dx, e1.y + dy, z1);
+        const t2 = d2.deriveTile(e2.x + dx, e2.y + dy, z2);
         if (t1.tileType !== t2.tileType || t1.material !== t2.material) {
           differences++;
         }
@@ -104,8 +112,10 @@ describe("createFortressDeriver", () => {
     expect(d.entrances.length).toBeGreaterThan(0);
     const z = d.entrances[0].z;
     const tileTypes = new Set<string>();
-    for (let x = CAVE_OFFSET; x < CAVE_OFFSET + CAVE_SIZE; x += 3) {
-      for (let y = CAVE_OFFSET; y < CAVE_OFFSET + CAVE_SIZE; y += 3) {
+    const e = d.entrances[0];
+    const half = Math.floor(CAVE_SIZE / 2);
+    for (let x = e.x - half; x < e.x + half; x += 3) {
+      for (let y = e.y - half; y < e.y + half; y += 3) {
         const tile = d.deriveTile(x, y, z);
         tileTypes.add(tile.tileType);
       }
@@ -139,9 +149,8 @@ describe("createFortressDeriver", () => {
       const surface = d.deriveTile(entrance.x, entrance.y, SURFACE_Z);
       expect(surface.tileType).toBe("cave_entrance");
 
-      // The cave center (128/2 = 64 tiles in, offset by CAVE_OFFSET) should be cavern_floor
-      const caveCenter = CAVE_OFFSET + Math.floor(CAVE_SIZE / 2);
-      const center = d.deriveTile(caveCenter, caveCenter, entrance.z);
+      // The cave center is now at the entrance position (grid centered on entrance)
+      const center = d.deriveTile(entrance.x, entrance.y, entrance.z);
       expect(center.tileType).toBe("cavern_floor");
 
       // getZForEntrance returns the correct z
@@ -153,8 +162,10 @@ describe("createFortressDeriver", () => {
   it("ore/gem tiles in caves have non-null material", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
     const z = d.entrances[0]?.z ?? CAVE_Z;
-    for (let x = CAVE_OFFSET; x < CAVE_OFFSET + CAVE_SIZE; x += 2) {
-      for (let y = CAVE_OFFSET; y < CAVE_OFFSET + CAVE_SIZE; y += 2) {
+    const e = d.entrances[0]!;
+    const half = Math.floor(CAVE_SIZE / 2);
+    for (let x = e.x - half; x < e.x + half; x += 2) {
+      for (let y = e.y - half; y < e.y + half; y += 2) {
         const tile = d.deriveTile(x, y, z);
         if (tile.tileType === "ore" || tile.tileType === "gem") {
           expect(tile.material).not.toBeNull();
@@ -201,10 +212,11 @@ describe("createFortressDeriver", () => {
     // Both derivers have the same seed+civId, so same entrances and caves
     const z = forestD.entrances[0]?.z ?? CAVE_Z;
 
-    for (let x = CAVE_X0; x < CAVE_X1; x++) {
-      for (let y = CAVE_X0; y < CAVE_X1; y++) {
-        const t1 = forestD.deriveTile(x, y, z);
-        const t2 = desertD.deriveTile(x, y, z);
+    const e = forestD.entrances[0]!;
+    for (let dx = 10; dx < 30; dx++) {
+      for (let dy = 10; dy < 30; dy++) {
+        const t1 = forestD.deriveTile(e.x + dx, e.y + dy, z);
+        const t2 = desertD.deriveTile(e.x + dx, e.y + dy, z);
         expect(t1.tileType).toBe(t2.tileType);
         expect(t1.material).toBe(t2.material);
       }
