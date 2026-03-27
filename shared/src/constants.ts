@@ -332,6 +332,13 @@ export const SKILL_TIER_NAMES: readonly string[] = [
 ];
 
 // ============================================================
+// Task failure tracking
+// ============================================================
+
+/** Max times a player-designated task can fail before being auto-cancelled. */
+export const MAX_TASK_FAILURES = 3;
+
+// ============================================================
 // Task dispatch
 // ============================================================
 

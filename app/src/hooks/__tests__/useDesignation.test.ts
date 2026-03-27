@@ -50,11 +50,14 @@ const { useDesignation } = await import("../useDesignation");
 
 function makeHook(overrides: Partial<Parameters<typeof useDesignation>[0]> = {}) {
   const designatedTiles = new Map<string, string>();
-  const getFortressTile = (): FortressViewTile | null => ({
-    tileType: "stone",
+  // Return stone for odd-y tiles and open_air for even-y tiles so the
+  // walkable-adjacency check passes for mine designations (every stone
+  // tile has an open_air neighbor one row away).
+  const getFortressTile = (x: number, y: number): FortressViewTile | null => ({
+    tileType: y % 2 === 0 ? "open_air" : "stone",
     material: null,
-    x: 0,
-    y: 0,
+    x,
+    y,
     z: 0,
     isRevealed: false,
     isMined: false,
@@ -246,7 +249,7 @@ describe("useDesignation", () => {
       const empty1 = new Map<string, string>();
       const { result, rerender } = renderHook(
         (props: Parameters<typeof useDesignation>[0]) => useDesignation(props),
-        { initialProps: { civId: "civ-1", zLevel: 0, getFortressTile: () => ({ tileType: "stone", material: null, x: 2, y: 3, z: 0, isRevealed: false, isMined: false }), designatedTiles: empty1, addOptimistic: () => {} } },
+        { initialProps: { civId: "civ-1", zLevel: 0, getFortressTile: (_x: number, y: number) => ({ tileType: y % 2 === 0 ? "open_air" as const : "stone" as const, material: null, x: _x, y, z: 0, isRevealed: false, isMined: false }), designatedTiles: empty1, addOptimistic: () => {} } },
       );
 
       act(() => { result.current.toggleMine(); });
@@ -258,14 +261,14 @@ describe("useDesignation", () => {
 
       // Sim tick: new reference, key still absent — optimistic tile must survive
       const empty2 = new Map<string, string>();
-      rerender({ civId: "civ-1", zLevel: 0, getFortressTile: () => ({ tileType: "stone", material: null, x: 2, y: 3, z: 0, isRevealed: false, isMined: false }), designatedTiles: empty2, addOptimistic: () => {} });
+      rerender({ civId: "civ-1", zLevel: 0, getFortressTile: (_x: number, y: number) => ({ tileType: y % 2 === 0 ? "open_air" as const : "stone" as const, material: null, x: _x, y, z: 0, isRevealed: false, isMined: false }), designatedTiles: empty2, addOptimistic: () => {} });
 
       expect(result.current.optimisticTiles.has("2,3")).toBe(true);
     });
 
     it("removes optimistic tile once its key appears in designatedTiles", async () => {
       setupInsertChain();
-      const getFortressTile = () => ({ tileType: "stone" as const, material: null, x: 2, y: 3, z: 0, isRevealed: false, isMined: false });
+      const getFortressTile = (_x: number, y: number) => ({ tileType: y % 2 === 0 ? "open_air" as const : "stone" as const, material: null, x: _x, y, z: 0, isRevealed: false, isMined: false });
       const { result, rerender } = renderHook(
         (props: Parameters<typeof useDesignation>[0]) => useDesignation(props),
         { initialProps: { civId: "civ-1", zLevel: 0, getFortressTile, designatedTiles: new Map<string, string>(), addOptimistic: () => {} } },
@@ -291,7 +294,7 @@ describe("useDesignation", () => {
   describe("optimistic tiles z-level filtering (fix #513)", () => {
     it("does not show surface optimistic tiles when viewing caves", async () => {
       setupInsertChain();
-      const getFortressTile = () => ({ tileType: "stone" as const, material: null, x: 2, y: 3, z: 0, isRevealed: false, isMined: false });
+      const getFortressTile = (_x: number, y: number) => ({ tileType: y % 2 === 0 ? "open_air" as const : "stone" as const, material: null, x: _x, y, z: 0, isRevealed: false, isMined: false });
       const { result, rerender } = renderHook(
         (props: Parameters<typeof useDesignation>[0]) => useDesignation(props),
         { initialProps: { civId: "civ-1", zLevel: 0, getFortressTile, designatedTiles: new Map<string, string>(), addOptimistic: () => {} } },
@@ -315,7 +318,7 @@ describe("useDesignation", () => {
 
     it("shows optimistic tile again when switching back to original z-level", async () => {
       setupInsertChain();
-      const getFortressTile = () => ({ tileType: "stone" as const, material: null, x: 2, y: 3, z: 0, isRevealed: false, isMined: false });
+      const getFortressTile = (_x: number, y: number) => ({ tileType: y % 2 === 0 ? "open_air" as const : "stone" as const, material: null, x: _x, y, z: 0, isRevealed: false, isMined: false });
       const { result, rerender } = renderHook(
         (props: Parameters<typeof useDesignation>[0]) => useDesignation(props),
         { initialProps: { civId: "civ-1", zLevel: 0, getFortressTile, designatedTiles: new Map<string, string>(), addOptimistic: () => {} } },

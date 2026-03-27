@@ -38,6 +38,13 @@ const DECONSTRUCTIBLE: ReadonlySet<string> = new Set([
   'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden', 'door',
 ]);
 
+/** Tile types considered walkable for mine-adjacency validation. */
+const WALKABLE_ADJACENT_TILES: ReadonlySet<string> = new Set([
+  'constructed_floor', 'cavern_floor', 'open_air', 'soil', 'well',
+  'mushroom_garden', 'grass', 'sand', 'mud', 'ice', 'cave_entrance',
+  'tree', 'bush', 'rock', 'bed', 'door', 'cave_mushroom',
+]);
+
 /** Tile types that can be designated as farm plots. */
 const FARMABLE: ReadonlySet<string> = new Set([
   'grass',
@@ -157,6 +164,17 @@ export function useDesignation(opts: {
 
         if (isMine) {
           if (!mineable.includes(tile.tileType)) continue;
+          // Skip tiles with no walkable neighbor — they are unreachable
+          const hasWalkableNeighbor = [
+            getFortressTile(x - 1, y),
+            getFortressTile(x + 1, y),
+            getFortressTile(x, y - 1),
+            getFortressTile(x, y + 1),
+          ].some(n => n && WALKABLE_ADJACENT_TILES.has(n.tileType));
+          if (!hasWalkableNeighbor) {
+            console.warn(`[designate] Skipping unreachable mine tile at (${x}, ${y})`);
+            continue;
+          }
         } else if (isDeconstruct) {
           if (!DECONSTRUCTIBLE.has(tile.tileType)) continue;
         } else if (isFarm) {

@@ -195,7 +195,7 @@ describe("Pathfinding nightmares", () => {
     // Task should have been released (failed/pending) since dwarf can't reach it
     const taskAfter = result.tasks.find(t => t.id === task.id);
     if (taskAfter && taskAfter.status !== "completed") {
-      expect(["pending", "failed", "claimed"]).toContain(taskAfter.status);
+      expect(["pending", "failed", "claimed", "cancelled"]).toContain(taskAfter.status);
     }
   });
 

@@ -9,6 +9,7 @@ import {
   HARDNESS_GEM,
   HARDNESS_CAVE_MUSHROOM,
   CONSCIENTIOUSNESS_WORK_MULTIPLIER,
+  MAX_TASK_FAILURES,
 } from "@pwarf/shared";
 import type { Dwarf, Task } from "@pwarf/shared";
 import { getTaskById, type SimContext } from "../sim-context.js";
@@ -544,10 +545,22 @@ const NO_REQUEUE_TASK_TYPES: ReadonlySet<string> = new Set([
 ]);
 
 function failTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {
-  // Self-generated tasks (haul, eat, drink, sleep) get cancelled — their
-  // respective phases will recreate them if still needed. This prevents the
-  // fail→pending→reclaim→fail loop that kept haul tasks stuck at 0%.
-  task.status = NO_REQUEUE_TASK_TYPES.has(task.task_type) ? 'cancelled' : 'pending';
+  // Self-generated tasks get cancelled — their respective phases will recreate them
+  if (NO_REQUEUE_TASK_TYPES.has(task.task_type)) {
+    task.status = 'cancelled';
+  } else {
+    // Track failure count for player-designated tasks
+    if (!state._taskFailureCounts) state._taskFailureCounts = new Map();
+    const count = (state._taskFailureCounts.get(task.id) ?? 0) + 1;
+    state._taskFailureCounts.set(task.id, count);
+
+    if (count >= MAX_TASK_FAILURES) {
+      task.status = 'cancelled';
+      state._taskFailureCounts.delete(task.id);
+    } else {
+      task.status = 'pending';
+    }
+  }
   task.assigned_dwarf_id = null;
   task.work_progress = 0;
   state.dirtyTaskIds.add(task.id);
