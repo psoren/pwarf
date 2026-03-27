@@ -353,13 +353,13 @@ describe("cave mining scenario", () => {
     const entrance = deriver.entrances[0]!;
     const caveZ = deriver.getZForEntrance(entrance.x, entrance.y)!;
 
-    // 3 dwarves near the entrance
+    // 3 dwarves at fortress center — tests real-world long-distance pathfinding
     const dwarves = Array.from({ length: 3 }, (_, i) =>
       makeDwarf({
         civilization_id: CIV_ID,
         name: `Miner${i}`,
-        position_x: entrance.x + i,
-        position_y: entrance.y,
+        position_x: 256 + i,
+        position_y: 256,
         position_z: 0,
         need_food: 100, need_drink: 100, need_sleep: 100,
       }),
@@ -380,7 +380,7 @@ describe("cave mining scenario", () => {
 
     const scoutResult = await runScenario({
       dwarves, dwarfSkills: skills, fortressDeriver: deriver,
-      tasks: [scoutTask], ticks: 200, seed: 42,
+      tasks: [scoutTask], ticks: 500, seed: 42,
     });
 
     const scout = scoutResult.tasks.find(t => t.task_type === "scout_cave");
@@ -425,7 +425,7 @@ describe("cave mining scenario", () => {
       fortressDeriver: deriver,
       fortressTileOverrides: scoutResult.fortressTileOverrides,
       tasks: [...scoutResult.tasks, ...mineTasks],
-      ticks: 500, seed: 99,
+      ticks: 1000, seed: 99,
     });
 
     const completed = mineResult.tasks.filter(
