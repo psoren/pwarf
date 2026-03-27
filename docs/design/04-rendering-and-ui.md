@@ -1,7 +1,7 @@
 # Rendering & UI System
 
 > **Status:** Implemented
-> **Last verified:** 2026-03-25
+> **Last verified:** 2026-03-26
 
 ## Overview
 
@@ -140,6 +140,20 @@ All values are integers. The hook exposes `pan()`, `setCursor()`, and drag handl
 ### Typography
 
 Monospace only. Font stack: `IBM Plex Mono → Fira Code → Cascadia Code → monospace`. Base size 14px. The canvas uses 16px (CHAR_H - 2) for tile glyphs.
+
+## Fortress Tile Caching
+
+The `useFortressTiles` hook manages a two-layer tile system:
+
+1. **Procedural deriver** — `createFortressDeriver()` generates base terrain from noise functions. Created once per seed + civId (memoized).
+2. **DB overrides** — mined/built tiles fetched from Supabase, polled at `POLL_FORTRESS_TILES_MS` intervals.
+3. **Snapshot overrides** — live sim state applied on top of DB overrides so changes appear immediately without waiting for the next flush.
+
+A **tile cache** (`cacheRef`, max 20k entries) stores resolved tiles to avoid re-running noise derivation on every frame. The cache is cleared when the deriver, DB overrides, or z-level changes.
+
+### Cache stability
+
+The DB poll creates a new `Map` of overrides each cycle. To prevent unnecessary cache clears, `setDbOverrides` compares the new data against the previous map by checking `tile_type`, `is_mined`, and `material` for each entry. If nothing changed, the previous Map reference is kept, avoiding a re-render and cache clear. Without this, panning becomes slow because every poll cycle forces re-derivation of all ~5000 visible tiles through noise functions.
 
 ## Mode Toggle
 
