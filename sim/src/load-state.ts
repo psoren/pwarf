@@ -136,6 +136,7 @@ export async function loadStateFromSupabase(
     tantrumTicks: new Map(),
     strangeMoodDwarfIds: new Set(),
     pathCache: new Map(),
+    pathFailCooldown: new Map(),
     warnedNeedIds: new Map(),
     civPopulation: (civResult.data as { population: number } | null)?.population ?? 0,
     civWealth: (civResult.data as { wealth: number } | null)?.wealth ?? 0,

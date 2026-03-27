@@ -262,6 +262,15 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
   }
 
   if (nextStep === null) {
+    // Check pathfinding failure cooldown — skip expensive re-computation
+    // for a few ticks after a failed search (saves ~100ms/tick in caves).
+    const PATHFAIL_COOLDOWN_TICKS = 10;
+    const cooldownKey = `${dwarf.id}:${task.id}`;
+    const cooldownExpiry = ctx.state.pathFailCooldown.get(cooldownKey);
+    if (cooldownExpiry !== undefined && ctx.step < cooldownExpiry) {
+      return false;
+    }
+
     // Compute full path and cache it.
     // For cross-z paths (surface → underground), use two-stage pathfinding:
     // 1) surface to cave entrance, 2) entrance to target in cave.
@@ -303,7 +312,10 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
       // Full-path search failed — fall back to single-step BFS.
       // This is much cheaper and lets the dwarf make incremental progress.
       nextStep = bfsNextStep(start, goal, getTile, needsAdjacent, zResolver);
-      if (nextStep === null) return false;
+      if (nextStep === null) {
+        ctx.state.pathFailCooldown.set(cooldownKey, ctx.step + PATHFAIL_COOLDOWN_TICKS);
+        return false;
+      }
     } else if (fullPath.length === 0) {
       // Already at goal (adjacent)
       return true;
@@ -312,6 +324,7 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
       if (!occupiedTiles.has(`${firstStep.x},${firstStep.y},${firstStep.z}`)) {
         nextStep = fullPath.shift()!;
         ctx.state.pathCache.set(dwarf.id, { taskId: task.id, goalKey, steps: fullPath });
+        ctx.state.pathFailCooldown.delete(cooldownKey);
       } else {
         // First step is occupied — use single-step search with occupancy handling
         nextStep = bfsNextStep(start, goal, getTile, needsAdjacent, zResolver);
