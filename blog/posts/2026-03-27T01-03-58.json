@@ -1,0 +1,23 @@
+{
+  "id": "2026-03-27T01-03-58",
+  "timestamp": "2026-03-27T01:03:58.870Z",
+  "title": "Digest — Mar 27, 2026, 01:03 AM UTC",
+  "summary": "# pwarf Devlog\n\nAs we move closer to our next milestone, we’ve made some enhancements that improve user experience and game stability. \n\n## Task Management Improvements\n- **Duplicate Task Prevention**: We've implemented an optimistic UI guard in the `handleConfirmScout` function. This feature sets `alreadyScouting: true` immediately upon initiation, ensuring that players cannot accidentally create duplicate scouting tasks by clicking multiple times.\n- **Database Optimization**: A partial unique index `unique_active_scout_cave` on the tasks table has been added to prevent duplicate scout cave tasks in the database, further enhancing task management and performance. \n\nStay tuned for more exciting updates as we continue to expand the world of pwarf!\n\n## Merged PRs\n- #728\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 0\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 0
+  },
+  "prs": [
+    {
+      "number": 728,
+      "title": "fix: prevent duplicate scout_cave tasks from multiple clicks",
+      "url": "https://github.com/psoren/pwarf/pull/728"
+    }
+  ],
+  "images": []
+}
