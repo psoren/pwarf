@@ -15,7 +15,6 @@ import {
   makeSkill,
   makeMapTile,
   makeStructure,
-  makeRuin,
   makeMonster,
 } from "./test-helpers.js";
 import { DWARF_CARRY_CAPACITY, STEPS_PER_YEAR } from "@pwarf/shared";

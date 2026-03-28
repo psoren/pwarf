@@ -68,7 +68,7 @@ export const TUTORIAL_STEPS: TutorialStep[] = [
   {
     id: "right_panel",
     title: "Activity Log",
-    body: "Tracks everything that happens in your fortress. Switch to Legends to read world history grouped by year, or Graveyard to browse published ruins from other runs.",
+    body: "Tracks everything that happens in your fortress. Switch to Legends to read world history grouped by year.",
     spotlight: {
       top: TOOLBAR_H,
       left: `calc(100% - ${RIGHT_PANEL_W}px)`,

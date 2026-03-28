@@ -33,7 +33,7 @@ function createRoundTripSupabase() {
       ["p_new_relationships", "dwarf_relationships"],
       ["p_dirty_relationships", "dwarf_relationships"],
       ["p_events", "world_events"],
-      ["p_ruins", "ruins"],
+
     ];
     for (const [param, table] of tableParamMap) {
       const rows = params[param] as Record<string, unknown>[] | undefined;

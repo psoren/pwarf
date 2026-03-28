@@ -65,7 +65,7 @@ export async function monsterSpawning(ctx: SimContext): Promise<void> {
     slain_year: null,
     slain_by_dwarf_id: null,
     slain_in_civ_id: null,
-    slain_in_ruin_id: null,
+
     created_at: new Date().toISOString(),
   };
 
@@ -78,10 +78,10 @@ export async function monsterSpawning(ctx: SimContext): Promise<void> {
     year: ctx.year,
     category: 'monster_sighting',
     civilization_id: ctx.civilizationId,
-    ruin_id: null,
+
     dwarf_id: null,
     item_id: null,
-    faction_id: null,
+
     monster_id: monster.id,
     description: `A ${monster.name} approaches the fortress!`,
     event_data: { monster_type: monster.type, threat_level: monster.threat_level },

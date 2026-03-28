@@ -128,10 +128,10 @@ function claimTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       year: ctx.year,
       category: 'discovery',
       civilization_id: ctx.civilizationId,
-      ruin_id: null,
+
       dwarf_id: dwarf.id,
       item_id: null,
-      faction_id: null,
+
       monster_id: null,
       description: `${dwarfLabel} begins ${taskLabel}.`,
       event_data: { task_type: task.task_type, task_id: task.id },

@@ -117,7 +117,7 @@ function makeFood(rng: Rng, civId: string, count: number): Item[] {
       created_year: 1,
       held_by_dwarf_id: null,
       located_in_civ_id: civId,
-      located_in_ruin_id: null,
+
       position_x: 100 + (i % 10),
       position_y: 95,
       position_z: 0,
@@ -146,7 +146,7 @@ function makeDrink(rng: Rng, civId: string, count: number): Item[] {
       created_year: 1,
       held_by_dwarf_id: null,
       located_in_civ_id: civId,
-      located_in_ruin_id: null,
+
       position_x: 101 + (i % 10),
       position_y: 96,
       position_z: 0,

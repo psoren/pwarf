@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Cave, Dwarf, DwarfRelationship, DwarfSkill, FortressDeriver, FortressTile, Item, Ruin, StockpileTile, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
+import type { Cave, Dwarf, DwarfRelationship, DwarfSkill, FortressDeriver, FortressTile, Item, StockpileTile, Structure, Monster, Task, WorldEvent } from "@pwarf/shared";
 import type { SimContext, CachedState } from "./sim-context.js";
 import { createEmptyCachedState, createRng } from "./sim-context.js";
 import { DEFAULT_TEST_SEED } from "./rng.js";
@@ -13,7 +13,6 @@ export interface ScenarioConfig {
   items?: Item[];
   structures?: Structure[];
   monsters?: Monster[];
-  ruins?: Ruin[];
   tasks?: Task[];
   /** Pre-placed fortress tiles — bypasses the fortress deriver for controlled map fixtures. */
   fortressTileOverrides?: FortressTile[];
@@ -74,7 +73,6 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
   state.items = config.items ? config.items.map(i => ({ ...i })) : [];
   state.structures = config.structures ? config.structures.map(s => ({ ...s })) : [];
   state.monsters = config.monsters ? config.monsters.map(m => ({ ...m })) : [];
-  state.ruins = config.ruins ? config.ruins.map(r => ({ ...r })) : [];
   state.caves = config.caves ? config.caves.map(c => ({ ...c })) : [];
   state.tasks = config.tasks ? config.tasks.map(t => ({ ...t })) : [];
   // Rebuild task index after bulk assignment

@@ -8,7 +8,6 @@ import type {
   FortressDeriver,
   FortressTile,
   Item,
-  Ruin,
   StockpileTile,
   Structure,
   Monster,
@@ -100,7 +99,7 @@ export interface CachedState {
   /** Cause of death to record on the civilization row when civFallen becomes true. */
   civFallenCause: string;
 
-  /** High-water mark of live population — recorded on the ruin row when the fortress falls. */
+  /** High-water mark of live population. */
   civPeakPopulation: number;
 
   /**
@@ -110,10 +109,6 @@ export interface CachedState {
    * In-memory only; not persisted across sim restarts.
    */
   activeCombatPairs: Set<string>;
-
-  /** Ruins in the world. */
-  ruins: Ruin[];
-  dirtyRuinIds: Set<string>;
 
   /** Caves in this fortress. */
   caves: Cave[];
@@ -175,8 +170,6 @@ export function createEmptyCachedState(): CachedState {
     civFallenCause: 'unknown',
     civPeakPopulation: 0,
     activeCombatPairs: new Set(),
-    ruins: [],
-    dirtyRuinIds: new Set(),
     caves: [],
     dirtyCaveIds: new Set(),
   };
@@ -197,7 +190,7 @@ export interface SimContext {
   /** The world this civilization belongs to. */
   worldId: string;
 
-  /** The civilization's name (used when creating the ruin record on fall). */
+  /** The civilization's display name. */
   civName: string;
 
   /** World-map tile coordinates of the embark site. */

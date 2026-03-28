@@ -239,30 +239,6 @@ export interface Civilization {
   updated_at: string;
 }
 
-export interface Ruin {
-  id: string;
-  civilization_id: string;
-  world_id: string;
-  name: string;
-  tile_x: number;
-  tile_y: number;
-  fallen_year: number;
-  cause_of_death: CauseOfDeath;
-  original_wealth: number;
-  remaining_wealth: number;
-  peak_population: number;
-  danger_level: number;
-  is_contaminated: boolean;
-  contamination_type: string | null;
-  ghost_count: number;
-  is_trapped: boolean;
-  resident_monster_id: string | null;
-  snapshot: Record<string, unknown> | null;
-  snapshot_url: string | null;
-  is_published: boolean;
-  created_at: string;
-}
-
 export interface Dwarf {
   id: string;
   civilization_id: string;
@@ -329,7 +305,6 @@ export interface Item {
   created_year: number | null;
   held_by_dwarf_id: string | null;
   located_in_civ_id: string | null;
-  located_in_ruin_id: string | null;
   position_x: number | null;
   position_y: number | null;
   position_z: number | null;
@@ -374,7 +349,6 @@ export interface Monster {
   slain_year: number | null;
   slain_by_dwarf_id: string | null;
   slain_in_civ_id: string | null;
-  slain_in_ruin_id: string | null;
   created_at: string;
 }
 
@@ -384,10 +358,8 @@ export interface WorldEvent {
   year: number;
   category: EventCategory;
   civilization_id: string | null;
-  ruin_id: string | null;
   dwarf_id: string | null;
   item_id: string | null;
-  faction_id: string | null;
   monster_id: string | null;
   description: string;
   event_data: Record<string, unknown>;
@@ -401,7 +373,6 @@ export interface Structure {
   type: string;
   completion_pct: number;
   built_year: number | null;
-  ruin_id: string | null;
   quality: ItemQuality | null;
   notes: string | null;
   position_x: number | null;

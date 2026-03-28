@@ -87,10 +87,10 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       year: ctx.year,
       category: 'discovery',
       civilization_id: ctx.civilizationId,
-      ruin_id: null,
+
       dwarf_id: dwarf.id,
       item_id: null,
-      faction_id: null,
+
       monster_id: null,
       description: `${dwarfLabel} cannot ${taskLabel}: not enough resources.`,
       event_data: { task_type: task.task_type, task_id: task.id },
@@ -116,10 +116,10 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       year: ctx.year,
       category: 'discovery',
       civilization_id: ctx.civilizationId,
-      ruin_id: null,
+
       dwarf_id: dwarf.id,
       item_id: null,
-      faction_id: null,
+
       monster_id: null,
       description: `${dwarfLabel} has finished ${taskLabel}.`,
       event_data: { task_type: task.task_type, task_id: task.id },
@@ -276,7 +276,7 @@ function completeMine(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       created_year: ctx.year,
       held_by_dwarf_id: null,
       located_in_civ_id: ctx.civilizationId,
-      located_in_ruin_id: null,
+  
       position_x: null,
       position_y: null,
       position_z: null,
@@ -311,10 +311,10 @@ function completeMine(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       year: ctx.year,
       category: 'discovery',
       civilization_id: ctx.civilizationId,
-      ruin_id: null,
+
       dwarf_id: dwarf.id,
       item_id: artifact.id,
-      faction_id: null,
+
       monster_id: null,
       description: `${dwarfLabel} unearthed ${artifact.name}!`,
       event_data: { action: 'artifact_find', item_name: artifact.name },
@@ -484,7 +484,7 @@ function completeFarmHarvest(task: Task, ctx: SimContext): void {
     created_year: ctx.year,
     held_by_dwarf_id: null,
     located_in_civ_id: ctx.civilizationId,
-    located_in_ruin_id: null,
+
     position_x: task.target_x,
     position_y: task.target_y,
     position_z: task.target_z,
@@ -520,7 +520,7 @@ function completeForage(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     created_year: ctx.year,
     held_by_dwarf_id: null,
     located_in_civ_id: ctx.civilizationId,
-    located_in_ruin_id: null,
+
     position_x: task.target_x,
     position_y: task.target_y,
     position_z: task.target_z,
@@ -588,7 +588,7 @@ function completeBuildBed(task: Task, ctx: SimContext, builderId: string): boole
     type: 'bed',
     completion_pct: 100,
     built_year: ctx.year,
-    ruin_id: null,
+
     quality: 'standard',
     notes: null,
     position_x: task.target_x,
@@ -627,7 +627,7 @@ function completeBuildStructure(
     type: structureType,
     completion_pct: 100,
     built_year: ctx.year,
-    ruin_id: null,
+
     quality: 'standard',
     notes: null,
     position_x: task.target_x,
@@ -728,7 +728,7 @@ export function completeBrew(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     created_year: ctx.year,
     held_by_dwarf_id: null,
     located_in_civ_id: ctx.civilizationId,
-    located_in_ruin_id: null,
+
     position_x: task.target_x,
     position_y: task.target_y,
     position_z: task.target_z,
@@ -768,7 +768,7 @@ export function completeCook(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     created_year: ctx.year,
     held_by_dwarf_id: null,
     located_in_civ_id: ctx.civilizationId,
-    located_in_ruin_id: null,
+
     position_x: task.target_x,
     position_y: task.target_y,
     position_z: task.target_z,
@@ -809,7 +809,7 @@ export function completeSmith(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     created_year: ctx.year,
     held_by_dwarf_id: null,
     located_in_civ_id: ctx.civilizationId,
-    located_in_ruin_id: null,
+
     position_x: task.target_x,
     position_y: task.target_y,
     position_z: task.target_z,
@@ -870,10 +870,10 @@ export function completeScoutCave(dwarf: Dwarf, task: Task, ctx: SimContext): vo
     year: ctx.year,
     category: 'discovery',
     civilization_id: ctx.civilizationId,
-    ruin_id: null,
+
     dwarf_id: dwarf.id,
     item_id: null,
-    faction_id: null,
+
     monster_id: null,
     description: `${dwarfLabel} discovered ${caveName}!`,
     event_data: { action: 'scout_cave', cave_name: caveName, cave_z: caveZ },
@@ -899,7 +899,7 @@ function createGemArtifact(dwarf: Dwarf, task: Task, ctx: SimContext, material: 
     created_year: ctx.year,
     held_by_dwarf_id: null,
     located_in_civ_id: ctx.civilizationId,
-    located_in_ruin_id: null,
+
     position_x: task.target_x,
     position_y: task.target_y,
     position_z: task.target_z,
@@ -944,10 +944,10 @@ function awardXp(dwarfId: string, skillName: string, xpAmount: number, ctx: SimC
         year: ctx.year,
         category: 'discovery',
         civilization_id: ctx.civilizationId,
-        ruin_id: null,
+  
         dwarf_id: dwarf.id,
         item_id: null,
-        faction_id: null,
+  
         monster_id: null,
         description: `${dwarfLabel} has become a ${tierName} ${readableSkill}!`,
         event_data: { skill_name: skillName, new_level: newLevel, tier: tierName },

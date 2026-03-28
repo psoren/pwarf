@@ -40,7 +40,7 @@ function makeMonster(overrides?: Partial<Monster>): Monster {
     slain_year: null,
     slain_by_dwarf_id: null,
     slain_in_civ_id: null,
-    slain_in_ruin_id: null,
+
     created_at: new Date().toISOString(),
     ...overrides,
   };

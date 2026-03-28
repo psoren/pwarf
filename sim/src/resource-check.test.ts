@@ -17,7 +17,7 @@ function makeTestItem(material: string, civId = "civ-1", heldBy: string | null =
     created_year: 1,
     held_by_dwarf_id: heldBy,
     located_in_civ_id: civId,
-    located_in_ruin_id: null,
+
     position_x: 5,
     position_y: 5,
     position_z: 0,

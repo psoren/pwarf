@@ -10,10 +10,10 @@ function makeWorldEvent(overrides?: Partial<WorldEvent>): WorldEvent {
     year: 1,
     category: "death",
     civilization_id: null,
-    ruin_id: null,
+
     dwarf_id: null,
     item_id: null,
-    faction_id: null,
+
     monster_id: null,
     description: "Something happened",
     event_data: {},

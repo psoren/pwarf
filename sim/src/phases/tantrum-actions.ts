@@ -66,10 +66,10 @@ export async function tantrumActions(ctx: SimContext): Promise<void> {
             year,
             category: 'discovery',
             civilization_id: civilizationId,
-            ruin_id: null,
+
             dwarf_id: dwarf.id,
             item_id: nearbyItem.id,
-            faction_id: null,
+
             monster_id: null,
             description: `${dwarfName(dwarf)} destroys a ${nearbyItem.name} in a fit of rage!`,
             event_data: { action: 'destroy_item', item_name: nearbyItem.name, item_id: nearbyItem.id },
@@ -92,10 +92,10 @@ export async function tantrumActions(ctx: SimContext): Promise<void> {
           year,
           category: 'discovery',
           civilization_id: civilizationId,
-          ruin_id: null,
+
           dwarf_id: dwarf.id,
           item_id: null,
-          faction_id: null,
+
           monster_id: null,
           description: `${dwarfName(dwarf)} attacks ${dwarfName(target)} during a tantrum!`,
           event_data: { action: 'attack_dwarf', attacker_id: dwarf.id, victim_id: target.id, damage: TANTRUM_ATTACK_DAMAGE },

@@ -160,7 +160,6 @@ export class InMemoryStateAdapter implements StateAdapter {
     state.dirtyMonsterIds.clear();
     state.dirtyTaskIds.clear();
     state.dirtyFortressTileKeys.clear();
-    state.dirtyRuinIds.clear();
     state.newTasks = [];
     state.pendingEvents = [];
   }
