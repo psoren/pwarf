@@ -1,5 +1,7 @@
 export { SimRunner } from "./sim-runner.js";
 export type { SimSnapshot, BugReportSnapshot } from "./sim-runner.js";
+export { DebugLogger } from "./debug.js";
+export type { DebugEntry, DebugCategory } from "./debug.js";
 export { loadStateFromSupabase } from "./load-state.js";
 export { flushToSupabase } from "./flush-state.js";
 export type { StateAdapter } from "./state-adapter.js";

@@ -21,25 +21,51 @@ import {
   taskRecovery,
 } from "./phases/index.js";
 
+/** Phase descriptor for tick timing. */
+interface PhaseEntry {
+  name: string;
+  fn: (ctx: SimContext) => void | Promise<void>;
+}
+
+const PHASES: PhaseEntry[] = [
+  { name: 'needsDecay', fn: needsDecay },
+  { name: 'taskExecution', fn: taskExecution },
+  { name: 'needSatisfaction', fn: needSatisfaction },
+  { name: 'stressUpdate', fn: stressUpdate },
+  { name: 'tantrumCheck', fn: tantrumCheck },
+  { name: 'tantrumActions', fn: tantrumActions },
+  { name: 'monsterSpawning', fn: monsterSpawning },
+  { name: 'monsterPathfinding', fn: monsterPathfinding },
+  { name: 'combatResolution', fn: combatResolution },
+  { name: 'haulAssignment', fn: haulAssignment },
+  { name: 'taskRecovery', fn: taskRecovery },
+  { name: 'autoCookPhase', fn: autoCookPhase },
+  { name: 'autoBrew', fn: autoBrew },
+  { name: 'autoForage', fn: autoForage },
+  { name: 'jobClaiming', fn: jobClaiming },
+  { name: 'eventFiring', fn: eventFiring },
+  { name: 'thoughtGeneration', fn: thoughtGeneration },
+];
+
 /** Run all sim phases for one tick in deterministic order. */
 export async function runTick(ctx: SimContext): Promise<void> {
-  await needsDecay(ctx);
-  await taskExecution(ctx);
-  await needSatisfaction(ctx);
-  await stressUpdate(ctx);
-  await tantrumCheck(ctx);
-  await tantrumActions(ctx);
-  await monsterSpawning(ctx);
-  await monsterPathfinding(ctx);
-  await combatResolution(ctx);
-  await haulAssignment(ctx);
-  taskRecovery(ctx);
-  await autoCookPhase(ctx);
-  await autoBrew(ctx);
-  await autoForage(ctx);
-  await jobClaiming(ctx);
-  await eventFiring(ctx);
-  await thoughtGeneration(ctx);
+  const debug = ctx.debug;
+  if (debug) {
+    debug.setStep(ctx.step);
+    const timings: Record<string, number> = {};
+    const tickStart = performance.now();
+    for (const phase of PHASES) {
+      const start = performance.now();
+      await phase.fn(ctx);
+      timings[phase.name] = performance.now() - start;
+    }
+    const totalMs = performance.now() - tickStart;
+    debug.warn('tick_timing', `Tick ${ctx.step} took ${totalMs.toFixed(1)}ms`, { totalMs, phases: timings });
+  } else {
+    for (const phase of PHASES) {
+      await phase.fn(ctx);
+    }
+  }
 }
 
 /** Advance day/year counters on a SimContext for the given step number. */

@@ -6,6 +6,7 @@ import { createRng } from "./rng.js";
 import type { StateAdapter } from "./state-adapter.js";
 import { runTick } from "./tick.js";
 import { yearlyRollup } from "./phases/index.js";
+import { DebugLogger, type DebugEntry } from "./debug.js";
 
 /** Snapshot of sim state emitted after every tick for live UI rendering. */
 export interface SimSnapshot {
@@ -20,6 +21,8 @@ export interface SimSnapshot {
   caves: Cave[];
   year: number;
   civFallen: boolean;
+  /** Debug log entries from this tick (empty when debug mode is off). */
+  debugEntries: DebugEntry[];
 }
 
 /** Full state snapshot for bug reports — includes everything needed to reconstruct a ScenarioConfig. */
@@ -57,6 +60,8 @@ export class SimRunner {
   currentDay = 1;
   isPaused = false;
   speedMultiplier = 1;
+  /** Enable debug logging — when true, SimSnapshot.debugEntries will be populated. */
+  debugEnabled = false;
 
   /** Cached tile override array — only rebuilt when version changes. */
   private _lastTileVersion = -1;
@@ -112,6 +117,7 @@ export class SimRunner {
       day: this.currentDay,
       rng: createRng(Date.now()),
       state: cached,
+      debug: this.debugEnabled ? new DebugLogger() : undefined,
     };
 
     console.log(`[sim] starting simulation for civilization ${civilizationId}`);
@@ -155,6 +161,14 @@ export class SimRunner {
     this.timer = setInterval(() => {
       void this.tick();
     }, intervalMs);
+  }
+
+  /** Toggle debug logging at runtime. */
+  setDebug(enabled: boolean): void {
+    this.debugEnabled = enabled;
+    if (this.ctx) {
+      this.ctx.debug = enabled ? (this.ctx.debug ?? new DebugLogger()) : undefined;
+    }
   }
 
   /** Change tick speed without stopping. 1 = normal, 2 = double, 5 = fast. */
@@ -265,6 +279,7 @@ export class SimRunner {
         caves: state.caves,
         year: this.currentYear,
         civFallen: state.civFallen,
+        debugEntries: this.ctx.debug ? this.ctx.debug.drain() : [],
       });
     }
   }
