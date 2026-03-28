@@ -38,6 +38,13 @@ const DECONSTRUCTIBLE: ReadonlySet<string> = new Set([
   'constructed_wall', 'constructed_floor', 'bed', 'well', 'mushroom_garden', 'door',
 ]);
 
+/** Tile types considered walkable for mine-adjacency validation. */
+const WALKABLE_ADJACENT_TILES: ReadonlySet<string> = new Set([
+  'constructed_floor', 'cavern_floor', 'open_air', 'soil', 'well',
+  'mushroom_garden', 'grass', 'sand', 'mud', 'ice', 'cave_entrance',
+  'tree', 'bush', 'rock', 'bed', 'door', 'cave_mushroom',
+]);
+
 /** Tile types that can be designated as farm plots. */
 const FARMABLE: ReadonlySet<string> = new Set([
   'grass',
@@ -139,6 +146,50 @@ export function useDesignation(opts: {
     // Deconstruct mode: collect pending build tasks to cancel immediately (#512)
     const cancelBuildCoords: Array<{ x: number; y: number }> = [];
 
+    // For mine designations, collect all candidate tiles first then flood-fill
+    // from tiles adjacent to existing walkable space. This allows designating
+    // solid blocks — inner tiles are reachable once outer tiles are mined.
+    let mineReachable: Set<string> | null = null;
+    if (isMine) {
+      const candidates = new Set<string>();
+      for (let y = y1; y <= y2; y++) {
+        for (let x = x1; x <= x2; x++) {
+          if (designatedTiles.has(`${x},${y}`)) continue;
+          const tile = getFortressTile(x, y);
+          if (!tile || !mineable.includes(tile.tileType)) continue;
+          candidates.add(`${x},${y}`);
+        }
+      }
+      // Flood-fill: seed with candidates that have at least one walkable neighbor
+      mineReachable = new Set<string>();
+      const queue: string[] = [];
+      for (const key of candidates) {
+        const [cx, cy] = key.split(',').map(Number);
+        const hasWalkableNeighbor = [
+          getFortressTile(cx - 1, cy),
+          getFortressTile(cx + 1, cy),
+          getFortressTile(cx, cy - 1),
+          getFortressTile(cx, cy + 1),
+        ].some(n => n && WALKABLE_ADJACENT_TILES.has(n.tileType));
+        if (hasWalkableNeighbor) {
+          mineReachable.add(key);
+          queue.push(key);
+        }
+      }
+      // Expand: a candidate is reachable if it neighbors a reachable candidate
+      while (queue.length > 0) {
+        const key = queue.pop()!;
+        const [cx, cy] = key.split(',').map(Number);
+        for (const [nx, ny] of [[cx-1,cy],[cx+1,cy],[cx,cy-1],[cx,cy+1]]) {
+          const nk = `${nx},${ny}`;
+          if (candidates.has(nk) && !mineReachable.has(nk)) {
+            mineReachable.add(nk);
+            queue.push(nk);
+          }
+        }
+      }
+    }
+
     for (let y = y1; y <= y2; y++) {
       for (let x = x1; x <= x2; x++) {
         if (designatedTiles.has(`${x},${y}`)) {
@@ -156,7 +207,7 @@ export function useDesignation(opts: {
         if (!tile) continue;
 
         if (isMine) {
-          if (!mineable.includes(tile.tileType)) continue;
+          if (!mineReachable!.has(`${x},${y}`)) continue;
         } else if (isDeconstruct) {
           if (!DECONSTRUCTIBLE.has(tile.tileType)) continue;
         } else if (isFarm) {

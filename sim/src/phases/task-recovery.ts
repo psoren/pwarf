@@ -34,6 +34,7 @@ export function taskRecovery(ctx: SimContext): void {
     // Autonomous tasks self-regenerate — don't retry them
     if (NO_RETRY_TYPES.has(task.task_type)) {
       task.status = 'cancelled';
+      state._taskFailureCounts?.delete(task.id);
       state.dirtyTaskIds.add(task.id);
       continue;
     }
@@ -48,6 +49,7 @@ export function taskRecovery(ctx: SimContext): void {
       const minable = new Set(['rock', 'soil', 'stone', 'ore', 'gem', 'ignite']);
       if (override && !minable.has(override.tile_type)) {
         task.status = 'cancelled';
+        state._taskFailureCounts?.delete(task.id);
         state.dirtyTaskIds.add(task.id);
         continue;
       }
