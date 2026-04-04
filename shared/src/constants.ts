@@ -359,6 +359,34 @@ export const FOOD_RESTORE_AMOUNT = 60;
 /** Amount need_drink is restored when drinking basic drink */
 export const DRINK_RESTORE_AMOUNT = 70;
 
+/** Base nutrition values by food name. Foods not listed use FOOD_RESTORE_AMOUNT. */
+export const FOOD_NUTRITION: Record<string, number> = {
+  'Wild mushroom': 35,     // foraged, raw — least nutritious
+  'Berries': 40,           // foraged, raw — slightly better
+  'Plump helmet': 40,      // raw farm produce
+  'Dried meat': 50,        // starting provisions — decent
+  'Cured meat': 55,        // trade caravan — preserved, good
+  'Prepared meal': 75,     // cooked — best non-artifact food
+};
+
+/** Base hydration values by drink name. Drinks not listed use DRINK_RESTORE_AMOUNT. */
+export const DRINK_HYDRATION: Record<string, number> = {
+  'Plump helmet brew': 65, // basic homebrew
+  'Dwarven ale': 80,       // trade caravan — imported quality
+};
+
+/** Quality multipliers applied to food/drink restoration values. */
+export const QUALITY_RESTORE_MULTIPLIERS: Record<string, number> = {
+  'garbage': 0.5,
+  'poor': 0.75,
+  'standard': 1.0,
+  'fine': 1.1,
+  'superior': 1.2,
+  'exceptional': 1.3,
+  'masterwork': 1.5,
+  'artifact': 2.0,
+};
+
 /** Total amount need_sleep is restored over the course of one sleep task */
 export const SLEEP_RESTORE_AMOUNT = 60;
 
