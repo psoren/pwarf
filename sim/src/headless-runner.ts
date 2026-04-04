@@ -3,11 +3,15 @@ import type { SimContext } from "./sim-context.js";
 import { createEmptyCachedState } from "./sim-context.js";
 import { createRng } from "./rng.js";
 import { runTick, advanceTime, maybeYearRollup } from "./tick.js";
+import { pruneTerminalTasks } from "./task-pruning.js";
 import { SCENARIOS, buildScenarioState, buildEatDrinkTasks } from "./scenarios.js";
 import { serializeState } from "./state-serializer.js";
 import type { StateSnapshot, ActionLogEntry } from "./state-serializer.js";
 import type { ScenarioDefinition } from "./scenarios.js";
 import type { CachedState } from "./sim-context.js";
+
+/** Prune terminal tasks every N ticks to prevent unbounded growth. */
+const PRUNE_INTERVAL = 2000;
 
 export interface HeadlessRunOptions {
   /** Scenario name from SCENARIOS map, or null to use custom initialState. */
@@ -93,6 +97,11 @@ export async function runHeadless(opts: HeadlessRunOptions): Promise<HeadlessRun
     tasksCompleted += tasksAfter - tasksBefore;
 
     currentYear = await maybeYearRollup(ctx, stepCount, currentYear);
+
+    // Periodically prune terminal tasks to prevent unbounded growth.
+    if (i > 0 && i % PRUNE_INTERVAL === 0) {
+      pruneTerminalTasks(state, true);
+    }
 
     // Flush pendingEvents → worldEvents (mirrors what run-scenario does)
     if (state.pendingEvents.length > 0) {

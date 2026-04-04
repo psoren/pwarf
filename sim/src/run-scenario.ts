@@ -4,6 +4,14 @@ import type { SimContext, CachedState } from "./sim-context.js";
 import { createEmptyCachedState, createRng } from "./sim-context.js";
 import { DEFAULT_TEST_SEED } from "./rng.js";
 import { runTick, advanceTime, maybeYearRollup } from "./tick.js";
+import { pruneTerminalTasks } from "./task-pruning.js";
+
+/**
+ * Prune terminal tasks every N ticks to prevent unbounded growth.
+ * Set high enough to avoid affecting short-running scenario tests
+ * (most run < 2000 ticks) while still capping growth in long runs.
+ */
+const PRUNE_INTERVAL = 2000;
 
 /** Input configuration for a scenario run. */
 export interface ScenarioConfig {
@@ -109,6 +117,8 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
 
   // Accumulate all events fired across the run
   const allEvents: WorldEvent[] = [];
+  // Archive terminal tasks before they get pruned so the result includes them
+  const archivedTasks: Task[] = [];
   let stepCount = 0;
   let currentYear = 1;
 
@@ -119,6 +129,17 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     await runTick(ctx);
     currentYear = await maybeYearRollup(ctx, stepCount, currentYear);
 
+    // Periodically prune terminal tasks to prevent unbounded growth.
+    // Archive them first so the result includes complete task history.
+    if (i > 0 && i % PRUNE_INTERVAL === 0) {
+      for (const t of state.tasks) {
+        if (t.status === 'completed' || t.status === 'cancelled' || t.status === 'failed') {
+          archivedTasks.push({ ...t });
+        }
+      }
+      pruneTerminalTasks(state, true);
+    }
+
     // Flush pendingEvents → worldEvents (mirrors what flush-state does for the DB)
     if (state.pendingEvents.length > 0) {
       state.worldEvents.push(...state.pendingEvents);
@@ -127,12 +148,21 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     allEvents.push(...state.worldEvents.slice(allEvents.length));
   }
 
+  // Merge live tasks with archived (pruned) tasks for complete results.
+  // Archived tasks are snapshots taken before pruning; live tasks in
+  // state.tasks are the current versions. Deduplicate by ID.
+  const liveIds = new Set(state.tasks.map(t => t.id));
+  const merged = [
+    ...state.tasks,
+    ...archivedTasks.filter(t => !liveIds.has(t.id)),
+  ];
+
   return {
     dwarves: state.dwarves,
     items: state.items,
     structures: state.structures,
     events: allEvents,
-    tasks: state.tasks,
+    tasks: merged,
     ticks: stepCount,
     year: currentYear,
     fortressTileOverrides: [...state.fortressTileOverrides.values()],
