@@ -1,5 +1,5 @@
 > **Status:** Implemented
-> **Last verified:** 2026-03-26
+> **Last verified:** 2026-04-04
 
 # 14 — Sim Performance Optimizations
 
@@ -56,7 +56,7 @@ The index is updated at these locations:
 | Polling new tasks | `sim-runner.ts:pollNewTasks()` | `state.taskById.set(task.id, task)` |
 | Initial load | `load-state.ts` | Built from loaded tasks array |
 | Scenario setup | `run-scenario.ts`, `sim-context.ts:createTestContext()` | Rebuilt from tasks array |
-| Post-prune | `flush-state.ts:pruneTerminalTasks()` | Full rebuild |
+| Post-prune | `task-pruning.ts:pruneTerminalTasks()` | Full rebuild |
 
 Since `Task` objects are shared by reference between the array and the Map, mutations to task properties (status, work_progress, etc.) are automatically visible in both.
 
@@ -79,19 +79,18 @@ These hot-path `state.tasks.find(t => t.id === ...)` calls now use `getTaskById(
 
 Terminal tasks (`completed`, `cancelled`, `failed`) accumulate in `state.tasks` because the sim never removes them. Over a long session, this array grows into hundreds of entries, making every `.find()`, `.filter()`, and loop iteration slower.
 
-`pruneTerminalTasks()` in `flush-state.ts` removes terminal tasks that:
+`pruneTerminalTasks()` in `task-pruning.ts` removes terminal tasks that:
 
 1. Are in a terminal status (completed, cancelled, failed)
 2. Are **not** referenced by any live dwarf's `current_task_id`
-3. Are **not** dirty (not modified this tick — already flushed to DB in a previous cycle)
-4. Are **not** in `newTasks` (not yet flushed at all)
+3. In DB mode (`skipDirtyCheck=false`): are **not** dirty and **not** in `newTasks`
+4. In headless mode (`skipDirtyCheck=true`): dirty/newTasks checks are skipped
 
 ### When it runs
 
-Pruning runs at the **start** of `doFlush()`, before collecting dirty entities. This ensures:
+**DB path:** Pruning runs at the **start** of `doFlush()` (in `flush-state.ts`), before collecting dirty entities. Tasks that just completed this tick are flushed to DB first (they're dirty), then pruned on the next flush cycle.
 
-- Tasks that just completed this tick are flushed to DB first (they're dirty), then pruned on the next flush cycle.
-- The DB always has the complete history. Pruning only affects the in-memory array.
+**Headless path:** `run-scenario.ts` and `headless-runner.ts` call pruning every 2000 ticks with `skipDirtyCheck=true`. Since there is no DB to flush, dirty flags are irrelevant — terminal tasks are removed as soon as no dwarf references them. Archived snapshots of pruned tasks are merged into the scenario result so test assertions can still find completed tasks by ID.
 
 ### Impact
 
@@ -123,7 +122,10 @@ Cave mining dropped from **83ms/tick** to **~1ms/tick** (warm) with 5 dwarves an
 |------|--------|
 | `shared/src/fortress-gen-helpers.ts` | Tile derivation cache in `createFortressDeriver()` |
 | `sim/src/sim-context.ts` | `taskById` on `CachedState`, `getTaskById()` helper |
-| `sim/src/flush-state.ts` | `pruneTerminalTasks()` |
+| `sim/src/task-pruning.ts` | `pruneTerminalTasks()` — extracted from flush-state.ts |
+| `sim/src/flush-state.ts` | Re-exports `pruneTerminalTasks` for backward compat |
+| `sim/src/run-scenario.ts` | Periodic pruning in headless scenario runs |
+| `sim/src/headless-runner.ts` | Periodic pruning in headless runner |
 | `sim/src/task-helpers.ts` | Index sync in `createTask()` |
 | `sim/src/phases/task-execution.ts` | Uses `getTaskById()` |
 | `sim/src/phases/need-satisfaction.ts` | Uses `getTaskById()` |

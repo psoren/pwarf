@@ -143,7 +143,10 @@ describe("long-run stability (10000 ticks)", () => {
     if (result.tasks.length > 500) {
       console.warn(`  ⚠ Task count is high: ${result.tasks.length} — possible unbounded growth`);
     }
-    expect(result.tasks.length).toBeLessThan(5000); // Sanity limit
+    // result.tasks includes pruned terminal tasks (archived for test assertions).
+    // The important thing is that state.tasks during the run stays small, which
+    // is verified by the performance check below (ms/tick stays low).
+    expect(result.tasks.length).toBeLessThan(5000);
 
     // Events should grow but not explode
     console.log(`  Events: ${result.events.length}`);
