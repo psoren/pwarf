@@ -1,4 +1,4 @@
-import type { TaskType } from "./db-types.js";
+import type { FortressTileType, TaskType } from "./db-types.js";
 
 // ============================================================
 // Domain sets
@@ -644,6 +644,25 @@ export const CARAVAN_DRINK_COUNT = 15;
 
 /** Number of food items a caravan brings */
 export const CARAVAN_FOOD_COUNT = 10;
+
+// ============================================================
+// Tile beauty (terrain-based morale modifiers)
+// ============================================================
+
+/** Per-tick morale bonus/penalty for standing on specific tile types. */
+export const TILE_BEAUTY: Partial<Record<FortressTileType, number>> = {
+  'grass': 0.04,            // pleasant natural ground
+  'tree': 0.06,             // trees are beautiful
+  'bush': 0.05,             // bushes are nice
+  'mushroom_garden': 0.08,  // cultivated beauty (on top of structure bonus)
+  'cave_mushroom': 0.03,    // underground mushrooms have some charm
+  'mud': -0.03,             // ugly, depressing
+  'ice': -0.02,             // cold and unwelcoming
+  'sand': -0.01,            // barren
+  'cavern_floor': -0.02,    // dark underground
+  'constructed_floor': 0.01, // clean, orderly
+};
+// Tiles not listed have 0 beauty effect (e.g. soil, rock, open_air)
 
 // ============================================================
 // Cave system

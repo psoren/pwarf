@@ -9,6 +9,8 @@ import {
   MORALE_RESTORE_SKILLED_TASK,
   MORALE_RESTORE_HAUL_TASK,
   MAX_NEED,
+  TILE_BEAUTY,
+  OPENNESS_BEAUTY_MULTIPLIER,
 } from "@pwarf/shared";
 
 // ============================================================
@@ -118,5 +120,64 @@ describe("restoreMoraleOnTaskComplete", () => {
     restoreMoraleOnTaskComplete(diligent, "mine");
     // 10 * (1 + (1.0 - 0.5) * 0.5) = 10 * 1.25 = 12.5
     expect(diligent.need_social).toBeCloseTo(50 + MORALE_RESTORE_SKILLED_TASK * 1.25);
+  });
+});
+
+// ============================================================
+// Tile beauty morale modifier
+// ============================================================
+
+describe("restoreMorale — tile beauty", () => {
+  const emptyStructures: any[] = [];
+  const noOtherDwarves: any[] = [];
+
+  it("adds beauty bonus when standing on grass", () => {
+    const dwarf = makeDwarf({ need_social: 50, position_x: 5, position_y: 5, position_z: 0, trait_openness: null });
+    const getTile = () => "grass";
+    restoreMorale(dwarf, [dwarf], emptyStructures, getTile);
+    expect(dwarf.need_social).toBeCloseTo(50 + TILE_BEAUTY['grass']!);
+  });
+
+  it("applies mud penalty", () => {
+    const dwarf = makeDwarf({ need_social: 50, position_x: 5, position_y: 5, position_z: 0, trait_openness: null });
+    const getTile = () => "mud";
+    restoreMorale(dwarf, [dwarf], emptyStructures, getTile);
+    expect(dwarf.need_social).toBeCloseTo(50 + TILE_BEAUTY['mud']!);
+  });
+
+  it("openness trait modifies tile beauty bonus", () => {
+    const dwarf = makeDwarf({ need_social: 50, position_x: 5, position_y: 5, position_z: 0, trait_openness: 1.0 });
+    const getTile = () => "tree";
+    restoreMorale(dwarf, [dwarf], emptyStructures, getTile);
+    const opennessModifier = 1 + (1.0 - 0.5) * OPENNESS_BEAUTY_MULTIPLIER;
+    expect(dwarf.need_social).toBeCloseTo(50 + TILE_BEAUTY['tree']! * opennessModifier);
+  });
+
+  it("openness trait modifies tile beauty penalty", () => {
+    const dwarf = makeDwarf({ need_social: 50, position_x: 5, position_y: 5, position_z: 0, trait_openness: 1.0 });
+    const getTile = () => "mud";
+    restoreMorale(dwarf, [dwarf], emptyStructures, getTile);
+    const opennessModifier = 1 + (1.0 - 0.5) * OPENNESS_BEAUTY_MULTIPLIER;
+    expect(dwarf.need_social).toBeCloseTo(50 + TILE_BEAUTY['mud']! * opennessModifier);
+  });
+
+  it("unknown tile types have no effect", () => {
+    const dwarf = makeDwarf({ need_social: 50, position_x: 5, position_y: 5, position_z: 0 });
+    const getTile = () => "rock";
+    restoreMorale(dwarf, [dwarf], emptyStructures, getTile);
+    expect(dwarf.need_social).toBe(50);
+  });
+
+  it("works without getTile (backward compatibility)", () => {
+    const dwarf = makeDwarf({ need_social: 50, position_x: 5, position_y: 5, position_z: 0 });
+    restoreMorale(dwarf, [dwarf], emptyStructures);
+    expect(dwarf.need_social).toBe(50);
+  });
+
+  it("mud penalty does not drop need_social below 0", () => {
+    const dwarf = makeDwarf({ need_social: 0.01, position_x: 5, position_y: 5, position_z: 0, trait_openness: null });
+    const getTile = () => "mud";
+    restoreMorale(dwarf, [dwarf], emptyStructures, getTile);
+    expect(dwarf.need_social).toBeGreaterThanOrEqual(0);
   });
 });
