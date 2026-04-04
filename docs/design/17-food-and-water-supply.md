@@ -1,7 +1,7 @@
 # 17 — Food & Water Supply
 
-> **Status:** Design only
-> **Last verified:** 2026-03-26
+> **Status:** Partial
+> **Last verified:** 2026-04-04
 
 ## Problem
 
@@ -104,6 +104,47 @@ After this change, the player's food/drink sources are:
 | Wells | Water | Yes (infinite) | Build well |
 | Trade caravans | Food + drink | Yes (every 2 years) | None (automatic) |
 | Mining cave mushrooms | Food | No (one-time per tile) | Designate mine |
+
+## Food & Drink Nutrition Values (Implemented)
+
+Different food and drink items restore varying amounts of need based on their name and quality. This replaces the old flat `FOOD_RESTORE_AMOUNT` / `DRINK_RESTORE_AMOUNT` system.
+
+### Base nutrition by food name
+
+| Food | Base Nutrition | Source |
+|---|---|---|
+| Wild mushroom | 35 | Foraged (raw) |
+| Berries | 40 | Foraged (raw) |
+| Plump helmet | 40 | Farm produce (raw) |
+| Dried meat | 50 | Starting provisions |
+| Cured meat | 55 | Trade caravan |
+| Prepared meal | 75 | Cooked |
+| Unknown food | 60 (fallback) | Any other |
+
+### Base hydration by drink name
+
+| Drink | Base Hydration | Source |
+|---|---|---|
+| Plump helmet brew | 65 | Homebrew |
+| Dwarven ale | 80 | Trade caravan |
+| Unknown drink | 70 (fallback) | Any other |
+
+### Quality multipliers
+
+Quality modifies the base value: `final = round(base * multiplier)`, capped at `MAX_NEED` (100).
+
+| Quality | Multiplier |
+|---|---|
+| garbage | 0.5x |
+| poor | 0.75x |
+| standard | 1.0x |
+| fine | 1.1x |
+| superior | 1.2x |
+| exceptional | 1.3x |
+| masterwork | 1.5x |
+| artifact | 2.0x |
+
+Helper functions `getNutritionValue(item)` and `getHydrationValue(item)` in `shared/src/food-values.ts` compute the final value from an item's name and quality.
 
 ## Constants
 

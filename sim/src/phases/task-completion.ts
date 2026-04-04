@@ -21,6 +21,8 @@ import {
   AUTONOMOUS_TASK_TYPES,
   generateCaveName,
   getCaveSeed,
+  getNutritionValue,
+  getHydrationValue,
 } from "@pwarf/shared";
 import type { Dwarf, FortressTile, FortressTileType, Task, Item, ItemCategory, Structure } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -534,28 +536,32 @@ function completeForage(dwarf: Dwarf, task: Task, ctx: SimContext): void {
 }
 
 function completeEat(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  let restoreAmount = FOOD_RESTORE_AMOUNT;
   if (task.target_item_id) {
     const itemIdx = ctx.state.items.findIndex(i => i.id === task.target_item_id);
     if (itemIdx !== -1) {
+      restoreAmount = getNutritionValue(ctx.state.items[itemIdx]!);
       ctx.state.items.splice(itemIdx, 1);
     }
   }
 
-  dwarf.need_food = Math.min(MAX_NEED, dwarf.need_food + FOOD_RESTORE_AMOUNT);
+  dwarf.need_food = Math.min(MAX_NEED, dwarf.need_food + restoreAmount);
   ctx.state.dirtyDwarfIds.add(dwarf.id);
 
   ctx.state.zeroFoodTicks.delete(dwarf.id);
 }
 
 function completeDrink(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  let restoreAmount = DRINK_RESTORE_AMOUNT;
   if (task.target_item_id) {
     const itemIdx = ctx.state.items.findIndex(i => i.id === task.target_item_id);
     if (itemIdx !== -1) {
+      restoreAmount = getHydrationValue(ctx.state.items[itemIdx]!);
       ctx.state.items.splice(itemIdx, 1);
     }
   }
 
-  dwarf.need_drink = Math.min(MAX_NEED, dwarf.need_drink + DRINK_RESTORE_AMOUNT);
+  dwarf.need_drink = Math.min(MAX_NEED, dwarf.need_drink + restoreAmount);
   ctx.state.dirtyDwarfIds.add(dwarf.id);
 
   ctx.state.zeroDrinkTicks.delete(dwarf.id);
