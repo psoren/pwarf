@@ -13,10 +13,12 @@ import {
   BEAUTY_STRUCTURE_RADIUS,
   OPENNESS_BEAUTY_MULTIPLIER,
   AUTONOMOUS_TASK_TYPES,
+  TILE_BEAUTY,
 } from "@pwarf/shared";
-import type { Dwarf, Item, TaskType, Structure } from "@pwarf/shared";
+import type { Dwarf, FortressTileType, Item, TaskType, Structure } from "@pwarf/shared";
 import { getTaskById, type SimContext } from "../sim-context.js";
 import { createTask } from "../task-helpers.js";
+import { buildTileLookup } from "../tile-lookup.js";
 
 /**
  * Need Satisfaction Phase
@@ -30,6 +32,7 @@ import { createTask } from "../task-helpers.js";
  */
 export async function needSatisfaction(ctx: SimContext): Promise<void> {
   const { state } = ctx;
+  const getTile = buildTileLookup(ctx);
 
   for (const dwarf of state.dwarves) {
     if (dwarf.status !== 'alive') continue;
@@ -49,8 +52,8 @@ export async function needSatisfaction(ctx: SimContext): Promise<void> {
       maybeInterruptForNeed(dwarf, 'sleep', ctx);
     }
 
-    // Morale: restore need_social based on proximity to dwarves, structures, engravings
-    restoreMorale(dwarf, state.dwarves, state.structures);
+    // Morale: restore need_social based on proximity to dwarves, structures, tile beauty
+    restoreMorale(dwarf, state.dwarves, state.structures, getTile);
   }
 }
 
@@ -285,15 +288,17 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
 }
 
 /**
- * Restores morale (need_social) from two sources:
+ * Restores morale (need_social) from three sources:
  * 1. Nearby dwarf proximity (extraversion modifier)
  * 2. Nearby beauty structures — well, mushroom_garden (openness modifier)
+ * 3. Tile beauty — bonus/penalty for standing on certain tile types (openness modifier)
  * Exported for unit testing.
  */
 export function restoreMorale(
   dwarf: Dwarf,
   allDwarves: Dwarf[],
   structures: Structure[],
+  getTile?: (x: number, y: number, z: number) => string | null,
 ): void {
   let totalRestore = 0;
 
@@ -336,7 +341,20 @@ export function restoreMorale(
     }
   }
 
+  // 3. Tile beauty — bonus/penalty for standing on certain tile types
+  if (getTile) {
+    const tileType = getTile(dwarf.position_x, dwarf.position_y, dwarf.position_z);
+    if (tileType) {
+      const tileBeauty = TILE_BEAUTY[tileType as FortressTileType] ?? 0;
+      if (tileBeauty !== 0) {
+        totalRestore += tileBeauty * opennessModifier;
+      }
+    }
+  }
+
   if (totalRestore > 0) {
     dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + totalRestore);
+  } else if (totalRestore < 0) {
+    dwarf.need_social = Math.max(0, dwarf.need_social + totalRestore);
   }
 }
