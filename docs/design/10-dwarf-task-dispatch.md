@@ -1,7 +1,7 @@
 # Dwarf Task Dispatch
 
 > **Status:** Implemented
-> **Last verified:** 2026-03-25
+> **Last verified:** 2026-04-04
 
 ## Overview
 
@@ -381,7 +381,7 @@ All 7 dwarves spawn at the fortress center on the surface (z=0). The exact start
 | Plump helmet seed | raw_material | 10 | For first farm |
 | Stone pickaxe | tool | 2 | Mining (not consumed, just required) |
 
-With 30 food and 7 dwarves eating, food lasts many in-game days (~38 real minutes per dwarf before the food need hits the interrupt threshold). Drink runs out faster due to the higher decay rate. The player must have farming going before supplies run out.
+With 30 food and 7 dwarves eating, food lasts many in-game days (~53 real minutes per dwarf before the food need hits the interrupt threshold). Drink runs out faster due to the higher decay rate. The player must have farming going before supplies run out.
 
 ---
 
