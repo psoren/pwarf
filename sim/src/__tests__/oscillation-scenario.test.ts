@@ -82,24 +82,23 @@ describe("dwarf oscillation prevention", () => {
       items: [food, drink],
       fortressTileOverrides: tiles,
       fortressDeriver: wallDeriver(),
-      ticks: 30,
+      ticks: 50,
     });
 
     // Track dwarf A's position history
     const finalA = result.dwarves.find(d => d.name === dwarfA.name)!;
 
-    // The key assertion: dwarf A should NOT be stuck oscillating between (0,0)
-    // and (1,0). With the fix, A either waits in place (and eventually the task
-    // fails after 10 wait ticks), or advances once the blocker moves.
-    // After 30 ticks, if A were oscillating, it would still be at (0,0) or (1,0)
-    // with 0 task progress. With the fix, the farm task should have failed and
-    // been released (since the blocker won't move for 600 ticks).
+    // The key assertion: dwarf A should NOT be stuck oscillating.
+    // With anti-oscillation + occupancy wait (10 ticks) + fail count (3 attempts),
+    // after 50 ticks the task should be cancelled (unreachable) or pending.
+    // Each cycle: 1 move tick + ~10 wait ticks + 1 fail tick ≈ 12 ticks.
+    // 3 cycles = ~36 ticks → cancelled by MAX_TASK_FAIL_COUNT.
     const farmTaskResult = result.tasks.find(t => t.task_type === "farm_till")!;
 
-    // The task should not still be in_progress with 0 progress after 30 ticks.
-    // Either it was released (pending, no assignee) or the dwarf found a way.
+    // The task should have been cancelled (unreachable after 3 failures) or
+    // be pending (released but not yet re-cancelled). It should NOT be
+    // in_progress with 0 progress — that would indicate a stuck dwarf.
     if (farmTaskResult.status === "in_progress") {
-      // If still in progress, it should have made actual work progress
       expect(farmTaskResult.work_progress).toBeGreaterThan(0);
     }
 
