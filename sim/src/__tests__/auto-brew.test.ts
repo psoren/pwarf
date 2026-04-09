@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { runScenario } from "../run-scenario.js";
-import { makeDwarf, makeSkill, makeTask, makeItem, makeMapTile } from "./test-helpers.js";
+import { makeDwarf, makeSkill, makeTask, makeItem, makeMapTile, makeStructure } from "./test-helpers.js";
+
+function makeStill(x = 5, y = 5, z = 0) {
+  return makeStructure({ type: 'still', completion_pct: 100, position_x: x, position_y: y, position_z: z });
+}
 
 describe("auto-brew material filter", () => {
   it("does not consume stone blocks for brewing", async () => {
@@ -70,6 +74,7 @@ describe("auto-brew material filter", () => {
         // Stone block — should NOT be consumed
         makeItem({ name: "Stone block", category: "raw_material", material: "stone", position_x: 5, position_y: 5, position_z: 0, located_in_civ_id: "test-civ" }),
       ],
+      structures: [makeStill()],
       tasks: [],
       fortressTileOverrides: tiles,
       ticks: 100,

@@ -1,7 +1,7 @@
 # 13 — Workshop System
 
-> **Status:** Design only
-> **Last verified:** 2026-03-25
+> **Status:** Partial (Phase 1 implemented)
+> **Last verified:** 2026-04-09
 
 ## Problem
 

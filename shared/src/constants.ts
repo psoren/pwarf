@@ -473,6 +473,9 @@ export const BUILDING_COSTS: Partial<Record<string, BuildingCost[]>> = {
   build_well:            [{ category: 'raw_material', material: 'stone', count: 2 }],
   build_mushroom_garden: [{ category: 'raw_material', material: 'wood', count: 1 }],
   build_door: [{ category: 'raw_material', material: 'wood', count: 1 }],
+  build_still:   [{ category: 'raw_material', material: 'wood', count: 1 }],
+  build_kitchen: [{ category: 'raw_material', material: 'stone', count: 1 }, { category: 'raw_material', material: 'wood', count: 1 }],
+  build_forge:   [{ category: 'raw_material', material: 'stone', count: 2 }],
 };
 
 /** Work required to build a wall */
@@ -492,6 +495,25 @@ export const WORK_BUILD_MUSHROOM_GARDEN = 50;
 
 /** Work required to build a door */
 export const WORK_BUILD_DOOR = 35;
+
+/** Work required to build a still (brewing workshop) */
+export const WORK_BUILD_STILL = 50;
+
+/** Work required to build a kitchen (cooking workshop) */
+export const WORK_BUILD_KITCHEN = 50;
+
+/** Work required to build a forge (smithing workshop) */
+export const WORK_BUILD_FORGE = 70;
+
+/** Manhattan-distance radius within which a workshop can find ingredients */
+export const WORKSHOP_INGREDIENT_RADIUS = 5;
+
+/** Maps crafting task types to required workshop structure types. */
+export const TASK_WORKSHOP_MAP: Record<string, string> = {
+  brew: 'still',
+  cook: 'kitchen',
+  smith: 'forge',
+};
 
 /** Work required to scout a cave entrance */
 export const WORK_SCOUT_CAVE = 50;

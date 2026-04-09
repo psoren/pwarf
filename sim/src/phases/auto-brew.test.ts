@@ -1,7 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { autoBrew } from "./auto-brew.js";
-import { makeItem, makeContext } from "../__tests__/test-helpers.js";
+import { makeItem, makeStructure, makeContext } from "../__tests__/test-helpers.js";
 import { MIN_DRINK_STOCK } from "@pwarf/shared";
+
+/** Create a completed still workshop at a given position. */
+function makeStill(x = 3, y = 3, z = 0) {
+  return makeStructure({ type: 'still', completion_pct: 100, position_x: x, position_y: y, position_z: z });
+}
 
 describe("autoBrew", () => {
   it("does not create a brew task when drink count is at threshold", async () => {
@@ -33,13 +38,14 @@ describe("autoBrew", () => {
       makeItem({ category: "drink", position_x: 5, position_y: 5, position_z: 0 }),
     );
     const plant = makeItem({ category: "raw_material", position_x: 3, position_y: 3, position_z: 0 });
-    const ctx = makeContext({ items: [...drinks, plant] });
+    const still = makeStill();
+    const ctx = makeContext({ items: [...drinks, plant], structures: [still] });
 
     await autoBrew(ctx);
 
     const brewTasks = ctx.state.tasks.filter(t => t.task_type === "brew");
     expect(brewTasks).toHaveLength(1);
-    expect(brewTasks[0].target_x).toBe(3);
+    expect(brewTasks[0].target_x).toBe(3); // still position
     expect(brewTasks[0].target_y).toBe(3);
     expect(brewTasks[0].target_z).toBe(0);
     expect(brewTasks[0].status).toBe("pending");
@@ -70,7 +76,8 @@ describe("autoBrew", () => {
 
   it("does not create a duplicate brew task when one already pending", async () => {
     const plant = makeItem({ category: "raw_material", position_x: 3, position_y: 3, position_z: 0 });
-    const ctx = makeContext({ items: [plant] });
+    const still = makeStill();
+    const ctx = makeContext({ items: [plant], structures: [still] });
 
     // First call — creates a task
     await autoBrew(ctx);
@@ -83,7 +90,8 @@ describe("autoBrew", () => {
 
   it("creates a new brew task after the previous one completes", async () => {
     const plant = makeItem({ category: "raw_material", position_x: 3, position_y: 3, position_z: 0 });
-    const ctx = makeContext({ items: [plant] });
+    const still = makeStill();
+    const ctx = makeContext({ items: [plant], structures: [still] });
 
     await autoBrew(ctx);
     expect(ctx.state.tasks.filter(t => t.task_type === "brew")).toHaveLength(1);
