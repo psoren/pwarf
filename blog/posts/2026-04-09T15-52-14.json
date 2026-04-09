@@ -1,0 +1,37 @@
+{
+  "id": "2026-04-09T15-52-14",
+  "timestamp": "2026-04-09T15:52:14.671Z",
+  "title": "Digest — Apr 9, 2026, 03:52 PM UTC",
+  "summary": "# Pwarf Devlog Digest\n\nHello Pwarf community! Here's what's new in our latest development cycle. We've made some exciting enhancements and fixes to improve your gameplay experience.\n\n## Performance Improvements\n\n- **Pruned Dead Tasks in Headless Mode**: \n  - The game now efficiently removes dead tasks every 100 ticks, reducing the count from around 2900 to under 200. This change significantly lowers memory usage and minimizes performance overhead during task checks. \n\n## New Features\n\n- **Tile Variety - Phase 1**:\n  - We’ve introduced five new tile types! Explore the beauty of the world with `flower` and `spring` on the surface, and uncover new cave elements like `crystal`, `glowing_moss`, and `fungal_growth`. This addition enhances the environmental diversity and resource opportunities in the game.\n\n- **Idle Behavior Enhancements**:\n  - Dwarves now have a mind of their own! They will wander, socialize, rest, and even re-farm when idle. Personalities will influence their actions, making each game feel more dynamic and immersive.\n\nThank you for your continued support and feedback! Happy building!\n\n## Merged PRs\n- PR #760\n- PR #759\n- PR #756\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 23\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 23
+  },
+  "prs": [
+    {
+      "number": 760,
+      "title": "fix: prune terminal tasks in headless mode",
+      "url": "https://github.com/psoren/pwarf/pull/760",
+      "cost": {
+        "amount": "$2.27",
+        "tokens": "3.7M tokens"
+      }
+    },
+    {
+      "number": 759,
+      "title": "feat: tile variety phase 1 — flower, spring, crystal, glowing_moss, fungal_growth",
+      "url": "https://github.com/psoren/pwarf/pull/759"
+    },
+    {
+      "number": 756,
+      "title": "feat: idle behavior phase — dwarves wander, socialize, rest, re-farm when idle",
+      "url": "https://github.com/psoren/pwarf/pull/756"
+    }
+  ],
+  "images": []
+}
