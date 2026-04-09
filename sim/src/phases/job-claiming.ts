@@ -4,6 +4,7 @@ import {
   SCORE_DISTANCE_WEIGHT,
   SCORE_BEST_SKILL_BONUS,
   DWARF_CARRY_CAPACITY,
+  IDLE_TASK_TYPES,
 } from "@pwarf/shared";
 import type { Dwarf, Task } from "@pwarf/shared";
 import type { SimContext } from "../sim-context.js";
@@ -31,13 +32,22 @@ export async function jobClaiming(ctx: SimContext): Promise<void> {
   const pendingTasks = state.tasks.filter(t => t.status === 'pending');
   if (pendingTasks.length === 0) return;
 
-  const idleDwarves = state.dwarves.filter(isDwarfIdle);
-  if (idleDwarves.length === 0) return;
+  // Include truly idle dwarves AND dwarves on low-priority idle tasks
+  const availableDwarves = state.dwarves.filter(d => {
+    if (isDwarfIdle(d)) return true;
+    // Dwarves on idle tasks (wander, socialize, rest) can be reassigned
+    if (d.current_task_id && d.status === 'alive' && !d.is_in_tantrum) {
+      const currentTask = state.tasks.find(t => t.id === d.current_task_id);
+      if (currentTask && IDLE_TASK_TYPES.has(currentTask.task_type)) return true;
+    }
+    return false;
+  });
+  if (availableDwarves.length === 0) return;
 
   // Track which tasks get claimed this tick to avoid double-assignment
   const claimedTaskIds = new Set<string>();
 
-  for (const dwarf of idleDwarves) {
+  for (const dwarf of availableDwarves) {
     let bestTask: Task | null = null;
     let bestScore = -Infinity;
     const inventoryFull = getCarriedWeight(dwarf.id, state.items) >= DWARF_CARRY_CAPACITY;
@@ -111,6 +121,16 @@ function scoreTask(dwarf: Dwarf, task: Task, skills: SimContext['state']['dwarfS
 
 function claimTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   const { state } = ctx;
+
+  // If dwarf was on an idle task, cancel it first
+  if (dwarf.current_task_id) {
+    const oldTask = state.tasks.find(t => t.id === dwarf.current_task_id);
+    if (oldTask && IDLE_TASK_TYPES.has(oldTask.task_type)) {
+      oldTask.status = 'cancelled';
+      state.dirtyTaskIds.add(oldTask.id);
+    }
+  }
+
   task.status = 'claimed';
   task.assigned_dwarf_id = dwarf.id;
   dwarf.current_task_id = task.id;

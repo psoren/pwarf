@@ -17,6 +17,9 @@ import {
   XP_FORAGE,
   MORALE_RESTORE_SKILLED_TASK,
   MORALE_RESTORE_HAUL_TASK,
+  SOCIALIZE_MORALE_RESTORE,
+  REST_MORALE_RESTORE,
+  SOCIALIZE_ACQUAINTANCE_CHANCE,
   SKILL_TIER_NAMES,
   AUTONOMOUS_TASK_TYPES,
   generateCaveName,
@@ -214,6 +217,15 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'scout_cave':
       completeScoutCave(dwarf, task, ctx);
       break;
+    case 'socialize':
+      completeSocialize(dwarf, task, ctx);
+      break;
+    case 'rest':
+      completeRest(dwarf, task, ctx);
+      break;
+    case 'wander':
+      // No special effect — just walking around
+      break;
   }
 
   // Morale restoration: work gives dwarves a sense of meaning (restores need_social which is morale)
@@ -243,6 +255,99 @@ export function restoreMoraleOnTaskComplete(dwarf: Dwarf, taskType: string): voi
     }
     dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + restore);
   }
+}
+
+function completeSocialize(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  const { state } = ctx;
+
+  // Restore morale
+  dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + SOCIALIZE_MORALE_RESTORE);
+  state.dirtyDwarfIds.add(dwarf.id);
+
+  // Find who we socialized with (nearest alive dwarf at target position)
+  const targetDwarf = state.dwarves.find(
+    d => d.id !== dwarf.id && d.status === 'alive'
+      && d.position_x === task.target_x && d.position_y === task.target_y && d.position_z === task.target_z,
+  );
+
+  // Also restore morale for the target dwarf (they benefited from the interaction too)
+  if (targetDwarf) {
+    targetDwarf.need_social = Math.min(MAX_NEED, targetDwarf.need_social + SOCIALIZE_MORALE_RESTORE * 0.5);
+    state.dirtyDwarfIds.add(targetDwarf.id);
+  }
+
+  // Chance to form acquaintance with strangers
+  if (targetDwarf) {
+    const existingRel = state.dwarfRelationships.find(
+      r => (r.dwarf_a_id === dwarf.id && r.dwarf_b_id === targetDwarf.id)
+        || (r.dwarf_a_id === targetDwarf.id && r.dwarf_b_id === dwarf.id),
+    );
+    if (!existingRel && ctx.rng.random() < SOCIALIZE_ACQUAINTANCE_CHANCE) {
+      const rel = {
+        id: ctx.rng.uuid(),
+        dwarf_a_id: dwarf.id,
+        dwarf_b_id: targetDwarf.id,
+        type: 'acquaintance' as const,
+        strength: 1,
+        shared_events: [],
+        formed_year: ctx.year,
+      };
+      state.dwarfRelationships.push(rel);
+      state.newDwarfRelationships.push(rel);
+    }
+  }
+
+  // Generate thought
+  const targetName = targetDwarf
+    ? `${targetDwarf.name}${targetDwarf.surname ? ' ' + targetDwarf.surname : ''}`
+    : 'another dwarf';
+  state.pendingEvents.push({
+    id: ctx.rng.uuid(),
+    world_id: '',
+    year: ctx.year,
+    category: 'discovery',
+    civilization_id: ctx.civilizationId,
+    ruin_id: null,
+    dwarf_id: dwarf.id,
+    item_id: null,
+    faction_id: null,
+    monster_id: null,
+    description: `${dwarfName(dwarf)} enjoyed talking with ${targetName}.`,
+    event_data: { task_type: 'socialize' },
+    created_at: new Date().toISOString(),
+  });
+}
+
+function completeRest(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  const { state } = ctx;
+
+  // Restore morale
+  dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + REST_MORALE_RESTORE);
+  state.dirtyDwarfIds.add(dwarf.id);
+
+  // Find what structure we rested near
+  const nearbyStructure = state.structures.find(
+    s => (s.type === 'well' || s.type === 'mushroom_garden')
+      && s.position_x === task.target_x && s.position_y === task.target_y && s.position_z === task.target_z,
+  );
+  const structureName = nearbyStructure?.type === 'mushroom_garden' ? 'mushroom garden' : 'well';
+
+  // Generate thought
+  state.pendingEvents.push({
+    id: ctx.rng.uuid(),
+    world_id: '',
+    year: ctx.year,
+    category: 'discovery',
+    civilization_id: ctx.civilizationId,
+    ruin_id: null,
+    dwarf_id: dwarf.id,
+    item_id: null,
+    faction_id: null,
+    monster_id: null,
+    description: `${dwarfName(dwarf)} enjoyed resting by the ${structureName}.`,
+    event_data: { task_type: 'rest' },
+    created_at: new Date().toISOString(),
+  });
 }
 
 function completeMine(dwarf: Dwarf, task: Task, ctx: SimContext): void {
