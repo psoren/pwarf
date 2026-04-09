@@ -1,7 +1,7 @@
 # Core Game Loop (Simulation Engine)
 
 > **Status:** Implemented
-> **Last verified:** 2026-03-25
+> **Last verified:** 2026-04-09
 
 ## Overview
 
@@ -26,12 +26,12 @@ sim/src/
     ├── monster-spawning.ts   Phase 7: spawn new monsters
     ├── monster-pathfinding.ts Phase 8: move monsters
     ├── combat-resolution.ts  Phase 9: resolve fights
-    ├── expedition-tick.ts    Phase 10: advance expeditions
-    ├── haul-assignment.ts    Phase 11: assign haul tasks
-    ├── task-recovery.ts      Phase 12: recover stuck tasks
-    ├── auto-cook.ts          Phase 13: auto-create cook tasks
-    ├── auto-brew.ts          Phase 14: auto-create brew tasks
-    ├── auto-forage.ts        Phase 15: auto-create forage tasks
+    ├── haul-assignment.ts    Phase 10: assign haul tasks
+    ├── task-recovery.ts      Phase 11: recover stuck tasks
+    ├── auto-cook.ts          Phase 12: auto-create cook tasks
+    ├── auto-brew.ts          Phase 13: auto-create brew tasks
+    ├── auto-forage.ts        Phase 14: auto-create forage tasks
+    ├── idle-behavior.ts      Phase 15: personality-driven idle tasks
     ├── job-claiming.ts       Phase 16: assign idle dwarves
     ├── event-firing.ts       Phase 17: write events to DB
     ├── thought-generation.ts Phase 18: generate dwarf thoughts
@@ -65,7 +65,7 @@ Derived timings:
 ### `tick()`
 Each tick:
 1. Increments `stepCount` and `currentDay`
-2. Runs all 18 standard phases in deterministic order
+2. Runs all 18 standard phases in deterministic order (see Phase Execution Order below)
 3. If `stepCount % STEPS_PER_YEAR === 0`: increments year, resets day, runs `yearlyRollup`
 
 ### `stop()`
@@ -127,23 +127,25 @@ The phases run in a strict, deterministic order every tick. This ordering matter
 
 9. **Combat Resolution** — Checks for tile overlap between monsters and dwarves (or military squads). Resolves using attack/defense stats, equipment quality, skill levels, and dice rolls. Applies damage to health, generates wound descriptions, awards combat XP.
 
-10. **Expedition Tick** — Advances expedition progress for dwarves exploring ruins. Handles travel, exploration events, loot discovery, and return.
+10. **Haul Assignment** — Creates haul tasks for loose items on the ground that should be moved to stockpiles.
 
-11. **Haul Assignment** — Creates haul tasks for loose items on the ground that should be moved to stockpiles.
+11. **Task Recovery** — Detects and recovers stuck tasks (e.g., blocked paths, missing materials). Resets failed tasks to pending or cancels invalid ones. Tasks that fail 3 consecutive times are cancelled as unreachable.
 
-12. **Task Recovery** — Detects and recovers stuck tasks (e.g., blocked paths, missing materials). Resets failed tasks to pending or cancels invalid ones.
+12. **Auto-Cook** — Checks food stock levels and auto-creates cook tasks when supplies are low and raw ingredients are available.
 
-13. **Auto-Cook** — Checks food stock levels and auto-creates cook tasks when supplies are low and raw ingredients are available.
+13. **Auto-Brew** — Checks drink stock levels and auto-creates brew tasks when supplies are low and brewable plants are available.
 
-14. **Auto-Brew** — Checks drink stock levels and auto-creates brew tasks when supplies are low and brewable plants are available.
+14. **Auto-Forage** — Auto-creates forage tasks when food is scarce and forageable tiles exist nearby.
 
-15. **Auto-Forage** — Auto-creates forage tasks when food is scarce and forageable tiles exist nearby.
+15. **Idle Behavior** — When no real work is pending/active, creates personality-driven idle tasks for idle dwarves: wander, socialize, rest at meeting areas, or re-farm soil tiles. Skips entirely when player-designated work exists.
 
-16. **Job Claiming** — Finds idle dwarves (no current task) and matches them to unclaimed work orders. Matching considers: enabled labors, skill level, proximity to job site, job priority.
+16. **Job Claiming** — Finds idle dwarves (no current task) and matches them to unclaimed work orders. Matching considers: skill level, proximity to job site, job priority. Dwarves on idle tasks can be reassigned to higher-priority work.
 
 17. **Event Firing** — Collects all notable events from this tick and writes them to `world_events` in Supabase. Events include births, deaths, completions, artifact creation, sieges, discoveries.
 
 18. **Thought Generation** — Creates dwarf thoughts and memories based on recent events, surroundings, and need states. These feed into the stress system and activity log.
+
+**Periodic:** Every 100 ticks, `pruneTerminalTasks` removes completed/cancelled/failed tasks to prevent unbounded memory growth (runs in all execution modes including headless).
 
 ### Yearly Rollup (every 36,000 steps)
 

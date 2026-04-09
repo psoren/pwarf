@@ -1,7 +1,7 @@
 # 17 — Food & Water Supply
 
-> **Status:** Design only
-> **Last verified:** 2026-03-26
+> **Status:** Partial (auto-production exists; forage zones and manual brew/cook not yet implemented)
+> **Last verified:** 2026-04-09
 
 ## Problem
 
