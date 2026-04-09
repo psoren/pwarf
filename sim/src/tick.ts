@@ -1,5 +1,6 @@
 import { STEPS_PER_YEAR, STEPS_PER_DAY } from "@pwarf/shared";
 import type { SimContext } from "./sim-context.js";
+import { pruneTerminalTasks } from "./flush-state.js";
 import {
   needsDecay,
   taskExecution,
@@ -42,6 +43,12 @@ export async function runTick(ctx: SimContext): Promise<void> {
   await jobClaiming(ctx);
   await eventFiring(ctx);
   await thoughtGeneration(ctx);
+
+  // Prune completed/cancelled/failed tasks every 100 ticks to prevent unbounded growth.
+  // In live mode, flushState also prunes — this ensures headless mode stays clean too.
+  if (ctx.step % 100 === 0) {
+    pruneTerminalTasks(ctx.state);
+  }
 }
 
 /** Advance day/year counters on a SimContext for the given step number. */
