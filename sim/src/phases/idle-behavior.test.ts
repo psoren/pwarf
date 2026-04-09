@@ -60,7 +60,7 @@ describe('idleBehavior', () => {
     const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0, need_food: 95, need_drink: 95, need_sleep: 95 });
     const ctx = makeContext({ dwarves: [dwarf] });
     // Set a grass tile at the dwarf's position so tile lookup works
-    ctx.state.fortressTileOverrides.set('5,5,0', { id: 'ft-1', civilization_id: 'civ-1', x: 5, y: 5, z: 0, tile_type: 'grass', material: null, is_natural: true });
+    ctx.state.fortressTileOverrides.set('5,5,0', { id: 'ft-1', civilization_id: 'civ-1', x: 5, y: 5, z: 0, tile_type: 'grass', material: null, is_revealed: true, is_mined: false, created_at: '' });
 
     // First call should create a task
     await idleBehavior(ctx);
@@ -111,12 +111,12 @@ describe('selectBehavior', () => {
     const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0 });
     const ctx = makeContext({ dwarves: [dwarf] });
     // Add walkable tiles around the dwarf
-    ctx.state.fortressTileOverrides.set('5,5,0', { id: 'ft-1', civilization_id: 'civ-1', x: 5, y: 5, z: 0, tile_type: 'grass', material: null, is_natural: true });
+    ctx.state.fortressTileOverrides.set('5,5,0', { id: 'ft-1', civilization_id: 'civ-1', x: 5, y: 5, z: 0, tile_type: 'grass', material: null, is_revealed: true, is_mined: false, created_at: '' });
     for (let dx = -10; dx <= 10; dx++) {
       for (let dy = -10; dy <= 10; dy++) {
         const key = `${5 + dx},${5 + dy},0`;
         if (!ctx.state.fortressTileOverrides.has(key)) {
-          ctx.state.fortressTileOverrides.set(key, { id: `ft-${key}`, civilization_id: 'civ-1', x: 5 + dx, y: 5 + dy, z: 0, tile_type: 'grass', material: null, is_natural: true });
+          ctx.state.fortressTileOverrides.set(key, { id: `ft-${key}`, civilization_id: 'civ-1', x: 5 + dx, y: 5 + dy, z: 0, tile_type: 'grass', material: null, is_revealed: true, is_mined: false, created_at: '' });
         }
       }
     }
@@ -159,7 +159,7 @@ describe('selectBehavior', () => {
   it('can select refarm when soil tiles exist', () => {
     const dwarf = makeDwarf({ position_x: 5, position_y: 5, position_z: 0, trait_conscientiousness: 1.0 });
     const ctx = makeContext({ dwarves: [dwarf] });
-    ctx.state.fortressTileOverrides.set('7,5,0', { id: 'ft-1', civilization_id: 'civ-1', x: 7, y: 5, z: 0, tile_type: 'soil', material: null, is_natural: false });
+    ctx.state.fortressTileOverrides.set('7,5,0', { id: 'ft-1', civilization_id: 'civ-1', x: 7, y: 5, z: 0, tile_type: 'soil', material: null, is_revealed: true, is_mined: false, created_at: '' });
 
     const getTile = buildTileLookup(ctx);
 

@@ -470,7 +470,12 @@ export function getMineProduct(tileType: string | null, material: string | null 
     }
     case 'cave_mushroom':
       return { itemName: 'Cave mushroom', itemCategory: 'food', itemMaterial: 'mushroom', itemWeight: 1, itemValue: 2 };
+    case 'crystal':
+      return { itemName: 'Crystal shard', itemCategory: 'gem', itemMaterial: 'crystal', itemWeight: 3, itemValue: 20 };
+    case 'fungal_growth':
+      return { itemName: 'Cave fungus', itemCategory: 'food', itemMaterial: 'mushroom', itemWeight: 1, itemValue: 3 };
     case 'bush':
+    case 'flower':
       return { itemName: null, itemCategory: 'raw_material', itemMaterial: '', itemWeight: 0, itemValue: 0 };
     default:
       return { itemName: 'Stone block', itemCategory: 'raw_material', itemMaterial: 'stone', itemWeight: 10, itemValue: 1 };

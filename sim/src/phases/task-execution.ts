@@ -8,6 +8,8 @@ import {
   HARDNESS_ORE,
   HARDNESS_GEM,
   HARDNESS_CAVE_MUSHROOM,
+  HARDNESS_CRYSTAL,
+  HARDNESS_FUNGAL_GROWTH,
   CONSCIENTIOUSNESS_WORK_MULTIPLIER,
 } from "@pwarf/shared";
 import type { Dwarf, Task } from "@pwarf/shared";
@@ -410,8 +412,10 @@ export function getTileHardness(tileType: string | null): number {
   switch (tileType) {
     case 'soil':           return HARDNESS_SOIL;           // 0.3 — fast
     case 'cave_mushroom':  return HARDNESS_CAVE_MUSHROOM;  // 0.2 — very fast
+    case 'fungal_growth':  return HARDNESS_FUNGAL_GROWTH;  // 0.2 — very fast
     case 'ore':            return HARDNESS_ORE;            // 1.2
     case 'gem':            return HARDNESS_GEM;            // 1.4
+    case 'crystal':        return HARDNESS_CRYSTAL;        // 1.6 — hard
     case 'lava_stone':
     case 'cavern_wall': return HARDNESS_IGNITE; // 1.5 — slow
     default:           return HARDNESS_STONE;   // 1.0 — rock, open_air, etc.
