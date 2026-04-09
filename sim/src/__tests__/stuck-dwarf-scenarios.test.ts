@@ -162,12 +162,14 @@ function makeStockpileTile(x: number, y: number, z = 0): StockpileTile {
  * the dwarf may have just picked it up on the last tick.
  */
 function assertNoDwarfStuck(result: Awaited<ReturnType<typeof runScenario>>): void {
+  const idleTypes = new Set(['wander', 'socialize', 'rest']);
   for (const d of result.dwarves.filter(d => d.status === "alive")) {
     if (d.current_task_id) {
       const t = result.tasks.find(t => t.id === d.current_task_id);
       // Only flag in_progress tasks with no work done — those are truly stuck.
       // Claimed tasks may have 0 progress if just assigned on the final tick.
-      if (t?.status === "in_progress") {
+      // Idle tasks (wander, socialize, rest) may have 0 progress while walking to target.
+      if (t?.status === "in_progress" && !idleTypes.has(t.task_type)) {
         expect(
           t.work_progress,
           `Dwarf ${d.name} stuck on in_progress task ${t.task_type} with 0 work done`,

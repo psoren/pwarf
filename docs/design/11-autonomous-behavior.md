@@ -1,7 +1,7 @@
 # 11 — Autonomous Dwarf Behavior
 
-> **Status:** Design only
-> **Last verified:** 2026-03-25
+> **Status:** Implemented
+> **Last verified:** 2026-04-09
 
 ## Problem
 

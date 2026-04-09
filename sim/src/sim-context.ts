@@ -134,6 +134,13 @@ export interface CachedState {
    * In-memory only; not persisted.
    */
   _previousPositions?: Map<string, string>;
+
+  /**
+   * Tracks cooldown for idle behavior tasks per dwarf.
+   * Maps dwarf ID → tick number when the cooldown expires.
+   * In-memory only; not persisted.
+   */
+  _idleCooldowns?: Map<string, number>;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */

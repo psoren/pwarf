@@ -669,3 +669,49 @@ export const CAVE_NAME_NOUNS = [
 export const CAVE_NAME_MATERIALS = [
   'Iron', 'Gold', 'Silver', 'Emerald',
 ];
+
+// ============================================================
+// Idle behavior
+// ============================================================
+
+/** Ticks a dwarf waits after completing an idle task before getting another (~5 seconds) */
+export const IDLE_BEHAVIOR_COOLDOWN_TICKS = 50;
+
+/** Work required for a socialize task (30 ticks of chatting after arrival) */
+export const WORK_SOCIALIZE = 30;
+
+/** Work required for a rest task (20 ticks of idling at a meeting area) */
+export const WORK_REST = 20;
+
+/** Work required for a wander task (instant on arrival) */
+export const WORK_WANDER = 1;
+
+/** Morale (need_social) restored on completing a socialize task */
+export const SOCIALIZE_MORALE_RESTORE = 8;
+
+/** Morale (need_social) restored on completing a rest task */
+export const REST_MORALE_RESTORE = 5;
+
+/** Probability that socializing with a stranger forms an acquaintance relationship */
+export const SOCIALIZE_ACQUAINTANCE_CHANCE = 0.3;
+
+/** Base weight for re-farming in idle behavior selection */
+export const IDLE_WEIGHT_REFARM = 10;
+
+/** Base weight for socializing in idle behavior selection */
+export const IDLE_WEIGHT_SOCIALIZE = 8;
+
+/** Base weight for resting in idle behavior selection */
+export const IDLE_WEIGHT_REST = 6;
+
+/** Base weight for wandering in idle behavior selection (always available fallback) */
+export const IDLE_WEIGHT_WANDER = 3;
+
+/** Max Manhattan distance to consider another dwarf as a socialize target */
+export const SOCIALIZE_MAX_DISTANCE = 30;
+
+/** Minimum random wander distance */
+export const WANDER_DISTANCE_MIN = 3;
+
+/** Maximum random wander distance */
+export const WANDER_DISTANCE_MAX = 8;
