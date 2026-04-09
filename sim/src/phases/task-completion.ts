@@ -1,6 +1,8 @@
 import {
   FOOD_RESTORE_AMOUNT,
   DRINK_RESTORE_AMOUNT,
+  FOOD_NUTRITION,
+  DRINK_HYDRATION,
   FLOOR_SLEEP_STRESS,
   MAX_NEED,
   XP_MINE,
@@ -34,6 +36,7 @@ import { consumeResources } from "../resource-check.js";
 import { generateArtifactName, randomArtifactQuality } from "../artifact-names.js";
 import { getNeighbors } from "../pathfinding.js";
 import { buildTileLookup } from "../tile-lookup.js";
+import { getNutritionValue, getHydrationValue } from "../nutrition.js";
 
 /** Chance of finding a rare artifact when mining a gem tile. */
 export const ARTIFACT_CHANCE_GEM = 0.05;
@@ -635,7 +638,7 @@ function completeForage(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     position_y: task.target_y,
     position_z: task.target_z,
     lore: null,
-    properties: {},
+    properties: { nutrition_value: FOOD_NUTRITION[name] ?? FOOD_RESTORE_AMOUNT },
     created_at: new Date().toISOString(),
   };
 
@@ -644,28 +647,34 @@ function completeForage(dwarf: Dwarf, task: Task, ctx: SimContext): void {
 }
 
 function completeEat(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  let restoreAmount = FOOD_RESTORE_AMOUNT;
+
   if (task.target_item_id) {
     const itemIdx = ctx.state.items.findIndex(i => i.id === task.target_item_id);
     if (itemIdx !== -1) {
+      restoreAmount = getNutritionValue(ctx.state.items[itemIdx]);
       ctx.state.items.splice(itemIdx, 1);
     }
   }
 
-  dwarf.need_food = Math.min(MAX_NEED, dwarf.need_food + FOOD_RESTORE_AMOUNT);
+  dwarf.need_food = Math.min(MAX_NEED, dwarf.need_food + restoreAmount);
   ctx.state.dirtyDwarfIds.add(dwarf.id);
 
   ctx.state.zeroFoodTicks.delete(dwarf.id);
 }
 
 function completeDrink(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  let restoreAmount = DRINK_RESTORE_AMOUNT;
+
   if (task.target_item_id) {
     const itemIdx = ctx.state.items.findIndex(i => i.id === task.target_item_id);
     if (itemIdx !== -1) {
+      restoreAmount = getHydrationValue(ctx.state.items[itemIdx]);
       ctx.state.items.splice(itemIdx, 1);
     }
   }
 
-  dwarf.need_drink = Math.min(MAX_NEED, dwarf.need_drink + DRINK_RESTORE_AMOUNT);
+  dwarf.need_drink = Math.min(MAX_NEED, dwarf.need_drink + restoreAmount);
   ctx.state.dirtyDwarfIds.add(dwarf.id);
 
   ctx.state.zeroDrinkTicks.delete(dwarf.id);
@@ -843,7 +852,7 @@ export function completeBrew(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     position_y: task.target_y,
     position_z: task.target_z,
     lore: null,
-    properties: {},
+    properties: { hydration_value: DRINK_HYDRATION['Plump helmet brew'] ?? DRINK_RESTORE_AMOUNT },
     created_at: new Date().toISOString(),
   };
   ctx.state.items.push(ale);
@@ -883,7 +892,7 @@ export function completeCook(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     position_y: task.target_y,
     position_z: task.target_z,
     lore: null,
-    properties: {},
+    properties: { nutrition_value: FOOD_NUTRITION['Prepared meal'] ?? FOOD_RESTORE_AMOUNT },
     created_at: new Date().toISOString(),
   };
   ctx.state.items.push(meal);

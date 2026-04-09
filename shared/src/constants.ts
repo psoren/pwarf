@@ -371,11 +371,43 @@ export const STARVATION_TICKS = 18_000;
 /** Ticks at need_drink=0 before dehydration death (~5 in-game days) */
 export const DEHYDRATION_TICKS = 9_000;
 
-/** Amount need_food is restored when eating basic food */
+/** Default need_food restored when eating (fallback if item has no nutrition_value) */
 export const FOOD_RESTORE_AMOUNT = 60;
 
-/** Amount need_drink is restored when drinking basic drink */
+/** Default need_drink restored when drinking (fallback if item has no hydration_value) */
 export const DRINK_RESTORE_AMOUNT = 70;
+
+// ============================================================
+// Food/drink subtype nutrition values
+// ============================================================
+
+/** Nutrition values by food name. Used when creating food items. */
+export const FOOD_NUTRITION: Record<string, number> = {
+  'Wild mushroom': 35,
+  'Berries': 40,
+  'Cave mushroom': 35,
+  'Cave fungus': 30,
+  'Plump helmet': 45,
+  'Dried meat': 50,
+  'Prepared meal': 75,
+};
+
+/** Hydration values by drink name. Used when creating drink items. */
+export const DRINK_HYDRATION: Record<string, number> = {
+  'Plump helmet brew': 70,
+  'Dwarven ale': 65,
+  'Water': 80,
+};
+
+/** Quality multiplier for food/drink restoration. Better quality = more nutrition. */
+export const QUALITY_NUTRITION_MULTIPLIER: Record<string, number> = {
+  standard: 1.0,
+  fine: 1.1,
+  superior: 1.25,
+  exceptional: 1.4,
+  masterwork: 1.5,
+  artifact: 2.0,
+};
 
 /** Total amount need_sleep is restored over the course of one sleep task */
 export const SLEEP_RESTORE_AMOUNT = 60;
