@@ -141,6 +141,13 @@ export interface CachedState {
    * In-memory only; not persisted.
    */
   _idleCooldowns?: Map<string, number>;
+
+  /**
+   * Tracks consecutive failure count per task ID.
+   * After MAX_TASK_FAIL_COUNT failures, the task is cancelled instead of re-queued.
+   * In-memory only; not persisted.
+   */
+  _taskFailCounts?: Map<string, number>;
 }
 
 /** Returns a fresh CachedState with empty arrays and sets. */

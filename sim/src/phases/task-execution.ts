@@ -547,11 +547,29 @@ const NO_REQUEUE_TASK_TYPES: ReadonlySet<string> = new Set([
   'haul', 'eat', 'drink', 'sleep',
 ]);
 
+/** Max consecutive failures before a player-designated task is cancelled. */
+const MAX_TASK_FAIL_COUNT = 3;
+
 function failTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {
   // Self-generated tasks (haul, eat, drink, sleep) get cancelled — their
   // respective phases will recreate them if still needed. This prevents the
   // fail→pending→reclaim→fail loop that kept haul tasks stuck at 0%.
-  task.status = NO_REQUEUE_TASK_TYPES.has(task.task_type) ? 'cancelled' : 'pending';
+  if (NO_REQUEUE_TASK_TYPES.has(task.task_type)) {
+    task.status = 'cancelled';
+  } else {
+    // Track consecutive failures to detect permanently unreachable tasks
+    const failCounts = state._taskFailCounts ??= new Map();
+    const count = (failCounts.get(task.id) ?? 0) + 1;
+    failCounts.set(task.id, count);
+
+    if (count >= MAX_TASK_FAIL_COUNT) {
+      // Task has failed too many times — likely unreachable, cancel it
+      task.status = 'cancelled';
+      failCounts.delete(task.id);
+    } else {
+      task.status = 'pending';
+    }
+  }
   task.assigned_dwarf_id = null;
   task.work_progress = 0;
   state.dirtyTaskIds.add(task.id);
