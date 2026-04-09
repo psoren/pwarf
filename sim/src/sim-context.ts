@@ -240,6 +240,11 @@ export interface SimContext {
   stepsPerYear?: number;
   /** Override for STEPS_PER_DAY — used in tests to speed up day progression. */
   stepsPerDay?: number;
+
+  /** Enable debug logging for pathfinding failures, task issues, tick timing. */
+  debug?: boolean;
+  /** Accumulated debug log entries (only populated when debug=true). */
+  debugLog?: import("./sim-debug.js").DebugLogEntry[];
 }
 
 /** Creates a SimContext with a default test seed. Used in tests. */

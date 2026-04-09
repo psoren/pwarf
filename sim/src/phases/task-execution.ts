@@ -18,6 +18,7 @@ import { getDwarfSkillLevel, getRequiredSkill } from "../task-helpers.js";
 import { bfsNextStep, findFullPath, posKey, getNeighbors, type ZResolver } from "../pathfinding.js";
 import { buildTileLookup } from "../tile-lookup.js";
 import { canPickUp, pickUpItem } from "../inventory.js";
+import { simDebug } from "../sim-debug.js";
 import { handleDeprivationDeaths } from "./deprivation.js";
 import { completeTask } from "./task-completion.js";
 
@@ -90,7 +91,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
             if (canPickUp(dwarf.id, haulItem, state.items)) {
               pickUpItem(dwarf, haulItem, state);
             } else {
-              failTask(dwarf, task, state);
+              failTask(dwarf, task, ctx);
             }
           } else {
             const getTile = buildTileLookup(ctx);
@@ -110,7 +111,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
                 const haulPrevPos = ctx.state._previousPositions?.get(dwarf.id);
                 if (haulUsedAlt && haulPrevPos && haulPrevPos === finalKey) {
                   if (!incrementOccupancyWait(dwarf, ctx)) {
-                    failTask(dwarf, task, state);
+                    failTask(dwarf, task, ctx);
                   }
                 } else {
                   ctx.state._occupancyWaitTicks?.delete(dwarf.id);
@@ -145,17 +146,17 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
                 } else if (trySwapWithBlocker(dwarf, haulNext, ctx, occupiedTiles, dwarfAtPos)) {
                   // Swapped — dwarf already moved
                 } else if (!incrementOccupancyWait(dwarf, ctx)) {
-                  failTask(dwarf, task, state);
+                  failTask(dwarf, task, ctx);
                 }
               }
             } else {
-              failTask(dwarf, task, state);
+              failTask(dwarf, task, ctx);
             }
           }
           continue;
         }
         if (haulItem.held_by_dwarf_id !== null) {
-          failTask(dwarf, task, state);
+          failTask(dwarf, task, ctx);
           continue;
         }
       }
@@ -174,7 +175,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
         && dwarf.position_x === task.target_x && dwarf.position_y === task.target_y && dwarf.position_z === task.target_z) {
         const stepped = stepOffTarget(dwarf, task, ctx, occupiedTiles, zResolver);
         if (!stepped) {
-          failTask(dwarf, task, state);
+          failTask(dwarf, task, ctx);
         }
         continue;
       }
@@ -182,7 +183,7 @@ export async function taskExecution(ctx: SimContext): Promise<void> {
       if (!atSite) {
         const moved = moveTowardTarget(dwarf, task, ctx, occupiedTiles, dwarfAtPos, zResolver);
         if (!moved) {
-          failTask(dwarf, task, state);
+          failTask(dwarf, task, ctx);
         }
         continue;
       }
@@ -303,6 +304,7 @@ function moveTowardTarget(dwarf: Dwarf, task: Task, ctx: SimContext, occupiedTil
 
     if (fullPath === null) {
       // No path exists within node limit
+      simDebug(ctx, 'pathfinding', `no path: ${dwarf.name} at (${start.x},${start.y},${start.z}) → (${goal.x},${goal.y},${goal.z}) for ${task.task_type}`);
       return false;
     }
     if (fullPath.length === 0) {
@@ -550,7 +552,8 @@ const NO_REQUEUE_TASK_TYPES: ReadonlySet<string> = new Set([
 /** Max consecutive failures before a player-designated task is cancelled. */
 const MAX_TASK_FAIL_COUNT = 3;
 
-function failTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {
+function failTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
+  const { state } = ctx;
   // Self-generated tasks (haul, eat, drink, sleep) get cancelled — their
   // respective phases will recreate them if still needed. This prevents the
   // fail→pending→reclaim→fail loop that kept haul tasks stuck at 0%.
@@ -566,8 +569,10 @@ function failTask(dwarf: Dwarf, task: Task, state: SimContext['state']): void {
       // Task has failed too many times — likely unreachable, cancel it
       task.status = 'cancelled';
       failCounts.delete(task.id);
+      simDebug(ctx, 'task', `cancelled unreachable ${task.task_type} at (${task.target_x},${task.target_y},${task.target_z}) after ${MAX_TASK_FAIL_COUNT} failures`);
     } else {
       task.status = 'pending';
+      simDebug(ctx, 'task', `${task.task_type} failed (attempt ${count}/${MAX_TASK_FAIL_COUNT}) for ${dwarf.name} at (${task.target_x},${task.target_y},${task.target_z})`);
     }
   }
   task.assigned_dwarf_id = null;

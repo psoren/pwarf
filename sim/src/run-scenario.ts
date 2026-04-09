@@ -29,6 +29,8 @@ export interface ScenarioConfig {
   stepsPerYear?: number;
   /** Override STEPS_PER_DAY for faster day progression in tests. */
   stepsPerDay?: number;
+  /** Enable debug logging (pathfinding failures, task issues, tick timing). */
+  debug?: boolean;
 }
 
 /** Full final state returned after a scenario run — suitable for test assertions. */
@@ -57,6 +59,8 @@ export interface ScenarioResult {
   monsters: Monster[];
   /** Final cave state. */
   caves: Cave[];
+  /** Debug log entries (only populated when debug=true). */
+  debugLog?: import("./sim-debug.js").DebugLogEntry[];
 }
 
 /**
@@ -105,6 +109,8 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     state,
     stepsPerYear: config.stepsPerYear,
     stepsPerDay: config.stepsPerDay,
+    debug: config.debug,
+    debugLog: config.debug ? [] : undefined,
   };
 
   // Accumulate all events fired across the run
@@ -140,5 +146,6 @@ export async function runScenario(config: ScenarioConfig): Promise<ScenarioResul
     dwarfRelationships: state.dwarfRelationships,
     monsters: state.monsters,
     caves: state.caves,
+    debugLog: ctx.debugLog,
   };
 }
