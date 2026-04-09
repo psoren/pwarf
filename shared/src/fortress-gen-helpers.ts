@@ -172,6 +172,21 @@ function caveSeed(baseSeed: bigint, entranceX: number, entranceY: number): bigin
 /** Noise threshold for cave mushroom patches (lower = more common). */
 const CAVE_MUSHROOM_THRESHOLD = 0.78;
 
+/** Noise threshold for flower clusters on grassland. */
+const FLOWER_THRESHOLD = 0.82;
+
+/** Noise threshold for rare natural springs. */
+const SPRING_THRESHOLD = 0.97;
+
+/** Noise threshold for crystal deposits in caves. */
+const CRYSTAL_THRESHOLD = 0.96;
+
+/** Noise threshold for glowing moss patches in caves. */
+const GLOWING_MOSS_THRESHOLD = 0.80;
+
+/** Noise threshold for fungal growth in caves. */
+const FUNGAL_GROWTH_THRESHOLD = 0.83;
+
 function buildCaveForEntrance(
   baseSeed: bigint,
   entranceX: number,
@@ -429,6 +444,18 @@ export function deriveSurfaceTile(
     return { tileType: "bush", material: null };
   }
 
+  // Flowers: spawn in clusters on grassland (using tree noise at different frequency)
+  const flowerVal = (treeNoise(x * 0.12 + 700, y * 0.12 + 700) + 1) / 2;
+  if (p.base === "grass" && flowerVal > FLOWER_THRESHOLD && treeRegion < p.bushRegionMin) {
+    return { tileType: "flower", material: null };
+  }
+
+  // Springs: very rare natural water sources (using pond noise at different frequency)
+  const springVal = (pondNoise(x * 0.02 + 800, y * 0.02 + 800) + 1) / 2;
+  if (springVal > SPRING_THRESHOLD) {
+    return { tileType: "spring", material: null };
+  }
+
   const rockVal = (rockNoise(x * 0.05, y * 0.05) + 1) / 2;
   if (rockVal > p.rockThreshold) {
     return { tileType: "rock", material: "stone" };
@@ -559,7 +586,23 @@ export function createFortressDeriver(
         if (mushroomVal > CAVE_MUSHROOM_THRESHOLD) {
           return { tileType: "cave_mushroom", material: "mushroom" };
         }
+        // Fungal growth: similar to cave mushrooms but different noise frequency
+        const fungalVal = (cave.mushroomNoise(cx * 0.04 + 200, cy * 0.04 + 200) + 1) / 2;
+        if (fungalVal > FUNGAL_GROWTH_THRESHOLD) {
+          return { tileType: "fungal_growth", material: "mushroom" };
+        }
+        // Glowing moss: decorative cave floor variant
+        const mossVal = (cave.mushroomNoise(cx * 0.03 + 400, cy * 0.03 + 400) + 1) / 2;
+        if (mossVal > GLOWING_MOSS_THRESHOLD) {
+          return { tileType: "glowing_moss", material: null };
+        }
         return { tileType: "cavern_floor", material: null };
+      }
+
+      // Crystal: rare mineable deposit in cave walls (check before ore/gem)
+      const crystalVal = (cave.mushroomNoise(cx * 0.05 + 600, cy * 0.05 + 600) + 1) / 2;
+      if (crystalVal > CRYSTAL_THRESHOLD) {
+        return { tileType: "crystal", material: "crystal" };
       }
 
       const mat = checkCaveMaterial(cx, cy, cave.materialNoises);

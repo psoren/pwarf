@@ -86,6 +86,7 @@ describe("createFortressDeriver", () => {
     const d = createFortressDeriver(SEED, CIV_ID);
     const surfaceTypes = new Set([
       "grass", "tree", "rock", "bush", "pond", "cave_entrance",
+      "flower", "spring",
     ]);
     for (let x = 0; x < 50; x++) {
       for (let y = 0; y < 50; y++) {
@@ -150,8 +151,10 @@ describe("createFortressDeriver", () => {
       expect(surface.tileType).toBe("cave_entrance");
 
       // The cave center is now at the entrance position (grid centered on entrance)
+      // It should be a walkable cave floor variant (cavern_floor, glowing_moss, fungal_growth, cave_mushroom)
       const center = d.deriveTile(entrance.x, entrance.y, entrance.z);
-      expect(center.tileType).toBe("cavern_floor");
+      const caveFloorTypes = new Set(["cavern_floor", "glowing_moss", "fungal_growth", "cave_mushroom"]);
+      expect(caveFloorTypes.has(center.tileType)).toBe(true);
 
       // getZForEntrance returns the correct z
       expect(d.getZForEntrance(entrance.x, entrance.y)).toBe(entrance.z);
