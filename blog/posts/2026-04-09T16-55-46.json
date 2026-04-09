@@ -1,0 +1,71 @@
+{
+  "id": "2026-04-09T16-55-46",
+  "timestamp": "2026-04-09T16:55:46.260Z",
+  "title": "Digest — Apr 9, 2026, 04:55 PM UTC",
+  "summary": "# pwarf Devlog Digest\n\nHello, Pwarf community! We're excited to share the latest updates from our development team. Here's a roundup of the changes recently merged into the main branch:\n\n## New Features\n\n- **Workshop System Phase 1**\n  - Introduced three new buildable workshops: still, kitchen, and forge required for crafting tasks (brew, cook, smith).\n  - Automatic resource finding initiated within a 5-tile radius for unoccupied workshops.\n\n- **Food and Drink Subtypes**\n  - Added varying nutritional and hydration values for food/drink items based on type and quality, with multipliers for exceptional items.\n\n- **Tile-Based Mood Modifiers**\n  - Terrain tiles now impact dwarf morale through specific TILE_MORALE_MODIFIERS, providing varied boosts or reductions based on proximity to different terrain features.\n\n- **Simulation Debug Mode**\n  - Implemented logging for pathfinding failures, stuck tasks, and timing, with zero overhead when disabled.\n\n## Quality of Life Improvements\n\n- **Task Management Enhancements**\n  - Unreachable tasks will now be canceled after three consecutive failures, improving task handling for dwarves.\n  - Terminal tasks are pruned in headless mode, significantly reducing memory usage and preventing a backlog of tasks.\n\n- **Oscillation Scenario Test Fix**\n  - Adjusted the test duration to ensure reliable failure cycles, ensuring all simulation tests are stable and passing.\n\n## Documentation Updates\n\n- **Design Docs Cleanup**\n  - Removed outdated phase lists and updated status banners to reflect current functionality, enhancing clarity in the documentation.\n\n- **Stockpile Designation Tests**\n  - Implemented three new scenario tests to ensure effective stockpile hauling and management.\n\nWe're always looking for feedback, so feel free to reach out with your thoughts!\n\n## Merged PRs\n- #770\n- #768\n- #766\n- #765\n- #764\n- #763\n- #762\n- #761\n- #760\n\n## Sim Health Check\n\nBaseline scenario: 3 dwarves, 500 ticks (0 days)\n\n- **Dwarves alive:** 3 / 3\n- **Tasks completed:** 23\n- **Avg stress:** 0\n- **Deaths:**\n  - No deaths",
+  "simStats": {
+    "ticks": 500,
+    "days": 0,
+    "dwarves_alive": 3,
+    "dwarves_total": 3,
+    "deaths": [],
+    "avg_stress": 0,
+    "tasks_completed": 23
+  },
+  "prs": [
+    {
+      "number": 770,
+      "title": "fix: oscillation scenario test — increase ticks for full fail cycle",
+      "url": "https://github.com/psoren/pwarf/pull/770"
+    },
+    {
+      "number": 768,
+      "title": "feat: workshop system phase 1 — still, kitchen, forge required for crafting",
+      "url": "https://github.com/psoren/pwarf/pull/768"
+    },
+    {
+      "number": 766,
+      "title": "feat: sim debug mode — log pathfinding failures, stuck tasks, tick timing",
+      "url": "https://github.com/psoren/pwarf/pull/766"
+    },
+    {
+      "number": 765,
+      "title": "feat: food/drink subtypes with varying nutrition and hydration",
+      "url": "https://github.com/psoren/pwarf/pull/765"
+    },
+    {
+      "number": 764,
+      "title": "feat: tile-based beauty/mood modifiers for terrain types",
+      "url": "https://github.com/psoren/pwarf/pull/764"
+    },
+    {
+      "number": 763,
+      "title": "test: stockpile designation scenario tests",
+      "url": "https://github.com/psoren/pwarf/pull/763"
+    },
+    {
+      "number": 762,
+      "title": "docs: fix stale phase list and status banners in design docs",
+      "url": "https://github.com/psoren/pwarf/pull/762"
+    },
+    {
+      "number": 761,
+      "title": "fix: cancel unreachable tasks after 3 consecutive failures",
+      "url": "https://github.com/psoren/pwarf/pull/761",
+      "cost": {
+        "amount": "$6.57",
+        "tokens": "11.0M tokens"
+      }
+    },
+    {
+      "number": 760,
+      "title": "fix: prune terminal tasks in headless mode",
+      "url": "https://github.com/psoren/pwarf/pull/760",
+      "cost": {
+        "amount": "$2.27",
+        "tokens": "3.7M tokens"
+      }
+    }
+  ],
+  "images": []
+}
