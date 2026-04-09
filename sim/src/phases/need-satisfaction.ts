@@ -13,10 +13,13 @@ import {
   BEAUTY_STRUCTURE_RADIUS,
   OPENNESS_BEAUTY_MULTIPLIER,
   AUTONOMOUS_TASK_TYPES,
+  TILE_BEAUTY_RADIUS,
+  TILE_MORALE_MODIFIERS,
 } from "@pwarf/shared";
-import type { Dwarf, Item, TaskType, Structure } from "@pwarf/shared";
+import type { Dwarf, FortressTileType, Item, TaskType, Structure } from "@pwarf/shared";
 import { getTaskById, type SimContext } from "../sim-context.js";
 import { createTask } from "../task-helpers.js";
+import { buildTileLookup } from "../tile-lookup.js";
 
 /**
  * Need Satisfaction Phase
@@ -30,6 +33,8 @@ import { createTask } from "../task-helpers.js";
  */
 export async function needSatisfaction(ctx: SimContext): Promise<void> {
   const { state } = ctx;
+
+  const getTile = buildTileLookup(ctx);
 
   for (const dwarf of state.dwarves) {
     if (dwarf.status !== 'alive') continue;
@@ -49,8 +54,8 @@ export async function needSatisfaction(ctx: SimContext): Promise<void> {
       maybeInterruptForNeed(dwarf, 'sleep', ctx);
     }
 
-    // Morale: restore need_social based on proximity to dwarves, structures, engravings
-    restoreMorale(dwarf, state.dwarves, state.structures);
+    // Morale: restore need_social based on proximity to dwarves, structures, tiles
+    restoreMorale(dwarf, state.dwarves, state.structures, getTile);
   }
 }
 
@@ -284,16 +289,21 @@ function maybeInterruptForNeed(dwarf: Dwarf, taskType: TaskType, ctx: SimContext
   state.dirtyTaskIds.add(task.id);
 }
 
+/** Tile lookup function type (nullable for backwards compat in tests). */
+type TileLookup = ((x: number, y: number, z: number) => FortressTileType | null) | null;
+
 /**
- * Restores morale (need_social) from two sources:
+ * Restores morale (need_social) from three sources:
  * 1. Nearby dwarf proximity (extraversion modifier)
  * 2. Nearby beauty structures — well, mushroom_garden (openness modifier)
+ * 3. Nearby tile types — flowers, moss, springs boost; mud depresses (openness modifier)
  * Exported for unit testing.
  */
 export function restoreMorale(
   dwarf: Dwarf,
   allDwarves: Dwarf[],
   structures: Structure[],
+  tileLookup?: TileLookup,
 ): void {
   let totalRestore = 0;
 
@@ -336,7 +346,30 @@ export function restoreMorale(
     }
   }
 
+  // 3. Nearby tile beauty modifiers (flowers, moss, springs, mud)
+  if (tileLookup) {
+    let tileRestore = 0;
+    for (let dx = -TILE_BEAUTY_RADIUS; dx <= TILE_BEAUTY_RADIUS; dx++) {
+      for (let dy = -TILE_BEAUTY_RADIUS; dy <= TILE_BEAUTY_RADIUS; dy++) {
+        const dist = Math.abs(dx) + Math.abs(dy);
+        if (dist > TILE_BEAUTY_RADIUS) continue;
+        const tile = tileLookup(dwarf.position_x + dx, dwarf.position_y + dy, dwarf.position_z);
+        if (!tile) continue;
+        const mod = TILE_MORALE_MODIFIERS[tile];
+        if (mod === undefined) continue;
+        // Scale by inverse distance (standing on = full, further = weaker)
+        const distScale = 1 / (1 + dist);
+        tileRestore += mod * distScale;
+      }
+    }
+    if (tileRestore !== 0) {
+      totalRestore += tileRestore * opennessModifier;
+    }
+  }
+
   if (totalRestore > 0) {
     dwarf.need_social = Math.min(MAX_NEED, dwarf.need_social + totalRestore);
+  } else if (totalRestore < 0) {
+    dwarf.need_social = Math.max(0, dwarf.need_social + totalRestore);
   }
 }
