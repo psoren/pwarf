@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { FOOD_RESTORE_AMOUNT, DRINK_RESTORE_AMOUNT, FLOOR_SLEEP_STRESS, MAX_NEED } from "@pwarf/shared";
+import { FOOD_RESTORE_AMOUNT, DRINK_RESTORE_AMOUNT, FLOOR_SLEEP_STRESS, MAX_NEED, FOOD_NUTRITION } from "@pwarf/shared";
 import { completeTask } from "../phases/task-completion.js";
 import { createTask } from "../task-helpers.js";
 import { makeDwarf, makeSkill, makeItem, makeContext, makeStructure } from "./test-helpers.js";
@@ -87,7 +87,9 @@ describe("completeTask", () => {
 
     completeTask(dwarf, task, ctx);
 
-    expect(dwarf.need_food).toBe(Math.min(MAX_NEED, 20 + FOOD_RESTORE_AMOUNT));
+    // Default test item is "Plump helmet" — uses FOOD_NUTRITION value
+    const expectedRestore = FOOD_NUTRITION['Plump helmet'] ?? FOOD_RESTORE_AMOUNT;
+    expect(dwarf.need_food).toBe(Math.min(MAX_NEED, 20 + expectedRestore));
     expect(ctx.state.items.find(i => i.id === food.id)).toBeUndefined();
   });
 
