@@ -119,6 +119,24 @@ export const BEAUTY_RESTORE_NEAR_STRUCTURE = 0.0041;
 /** Manhattan-distance radius for beauty structure proximity */
 export const BEAUTY_STRUCTURE_RADIUS = 6;
 
+/** Manhattan-distance radius for tile beauty scanning */
+export const TILE_BEAUTY_RADIUS = 3;
+
+/**
+ * Per-tick morale modifier for standing on or near certain tile types.
+ * Positive = pleasant, negative = depressing. Applied per qualifying tile
+ * within TILE_BEAUTY_RADIUS, scaled by distance.
+ */
+export const TILE_MORALE_MODIFIERS: Partial<Record<string, number>> = {
+  flower: 0.06,
+  spring: 0.08,
+  glowing_moss: 0.05,
+  grass: 0.01,
+  mud: -0.02,
+  magma: -0.04,
+  lava_stone: -0.02,
+};
+
 /** Number of recent world events to load at startup for engrave scene generation */
 export const WORLD_EVENTS_RECENT_LIMIT = 20;
 
