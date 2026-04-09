@@ -37,6 +37,7 @@ import { generateArtifactName, randomArtifactQuality } from "../artifact-names.j
 import { getNeighbors } from "../pathfinding.js";
 import { buildTileLookup } from "../tile-lookup.js";
 import { getNutritionValue, getHydrationValue } from "../nutrition.js";
+import { findItemNearWorkshop } from "../workshop-utils.js";
 
 /** Chance of finding a rare artifact when mining a gem tile. */
 export const ARTIFACT_CHANCE_GEM = 0.05;
@@ -73,6 +74,15 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
       break;
     case 'build_door':
       buildSuccess = completeBuildStructure(task, ctx, 'door', 'door', dwarf.id);
+      break;
+    case 'build_still':
+      buildSuccess = completeBuildStructure(task, ctx, 'still', 'still', dwarf.id);
+      break;
+    case 'build_kitchen':
+      buildSuccess = completeBuildStructure(task, ctx, 'kitchen', 'kitchen', dwarf.id);
+      break;
+    case 'build_forge':
+      buildSuccess = completeBuildStructure(task, ctx, 'forge', 'forge', dwarf.id);
       break;
   }
 
@@ -194,6 +204,9 @@ export function completeTask(dwarf: Dwarf, task: Task, ctx: SimContext): void {
     case 'build_well':
     case 'build_mushroom_garden':
     case 'build_door':
+    case 'build_still':
+    case 'build_kitchen':
+    case 'build_forge':
       // Already handled above — just award XP
       awardXp(dwarf.id, 'building', XP_BUILD, ctx, dwarf);
       break;
@@ -824,9 +837,13 @@ function completeDeconstruct(task: Task, ctx: SimContext): void {
 export function completeBrew(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
-  // Consume a plant raw_material at the target tile (or anywhere in inventory)
-  const plant = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'raw_material', 'plant') ??
-    findItemHeldBy(ctx, dwarf.id, 'raw_material', 'plant');
+  // Release workshop occupancy
+  releaseWorkshop(task, ctx);
+
+  // Find plant ingredient: check workshop radius first, then held items, then exact position
+  const plant = findItemNearWorkshop(ctx, task.target_x, task.target_y, task.target_z, 'raw_material', 'plant') ??
+    findItemHeldBy(ctx, dwarf.id, 'raw_material', 'plant') ??
+    findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'raw_material', 'plant');
   if (!plant) return; // No ingredient — nothing to brew
   const plantIdx = ctx.state.items.findIndex(i => i.id === plant.id);
   if (plantIdx !== -1) ctx.state.items.splice(plantIdx, 1);
@@ -866,8 +883,12 @@ export function completeBrew(dwarf: Dwarf, task: Task, ctx: SimContext): void {
 export function completeCook(dwarf: Dwarf, task: Task, ctx: SimContext): void {
   if (task.target_x === null || task.target_y === null || task.target_z === null) return;
 
-  const ingredient = findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'food') ??
-    findItemHeldBy(ctx, dwarf.id, 'food');
+  // Release workshop occupancy
+  releaseWorkshop(task, ctx);
+
+  const ingredient = findItemNearWorkshop(ctx, task.target_x, task.target_y, task.target_z, 'food') ??
+    findItemHeldBy(ctx, dwarf.id, 'food') ??
+    findItemAt(ctx, task.target_x, task.target_y, task.target_z, 'food');
   if (!ingredient) return; // No ingredient — nothing to cook
   const ingredientIdx = ctx.state.items.findIndex(i => i.id === ingredient.id);
   if (ingredientIdx !== -1) ctx.state.items.splice(ingredientIdx, 1);
@@ -1026,6 +1047,16 @@ function createGemArtifact(dwarf: Dwarf, task: Task, ctx: SimContext, material: 
     properties: {},
     created_at: new Date().toISOString(),
   };
+}
+
+/** Release workshop occupancy when a crafting task completes or fails. */
+function releaseWorkshop(task: Task, ctx: SimContext): void {
+  if (!task.target_item_id) return;
+  const workshop = ctx.state.structures.find(s => s.id === task.target_item_id);
+  if (workshop && workshop.occupied_by_dwarf_id !== null) {
+    workshop.occupied_by_dwarf_id = null;
+    ctx.state.dirtyStructureIds.add(workshop.id);
+  }
 }
 
 /** Find the first item at a given tile position with the given category (and optionally material). */

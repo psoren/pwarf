@@ -1,7 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { autoCookPhase } from "./auto-cook.js";
-import { makeItem, makeTask, makeContext } from "../__tests__/test-helpers.js";
+import { makeItem, makeTask, makeStructure, makeContext } from "../__tests__/test-helpers.js";
 import { MIN_COOK_STOCK } from "@pwarf/shared";
+
+function makeKitchen(x = 3, y = 4, z = 0) {
+  return makeStructure({ type: 'kitchen', completion_pct: 100, position_x: x, position_y: y, position_z: z });
+}
 
 /** Make a raw food item on the ground at a given position */
 function rawFoodAt(x: number, y: number, z: number) {
@@ -48,15 +52,15 @@ describe("autoCookPhase", () => {
 
   it("creates a cook task when food count is below threshold and raw food exists", async () => {
     const items = [rawFoodAt(3, 4, 0)];
-    const ctx = makeContext({ items });
+    const ctx = makeContext({ items, structures: [makeKitchen()] });
 
     await autoCookPhase(ctx);
 
     const cookTasks = ctx.state.tasks.filter(t => t.task_type === "cook");
     expect(cookTasks).toHaveLength(1);
+    // Task targets the kitchen position
     expect(cookTasks[0].target_x).toBe(3);
     expect(cookTasks[0].target_y).toBe(4);
-    expect(cookTasks[0].target_z).toBe(0);
   });
 
   it("does not create a duplicate task when a pending cook task exists", async () => {
@@ -99,7 +103,7 @@ describe("autoCookPhase", () => {
   it("creates a new task after a completed cook task (completed tasks are ignored)", async () => {
     const items = [rawFoodAt(3, 4, 0)];
     const completedTask = makeTask("cook", { status: "completed" });
-    const ctx = makeContext({ items, tasks: [completedTask] });
+    const ctx = makeContext({ items, tasks: [completedTask], structures: [makeKitchen()] });
 
     await autoCookPhase(ctx);
 

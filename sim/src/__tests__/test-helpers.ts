@@ -330,6 +330,24 @@ export function makeRealisticScenario(overrides?: Partial<ScenarioConfig> & {
     position_y: 258,
     position_z: 0,
   }));
+  // 1 still (for brewing)
+  structures.push(makeStructure({
+    civilization_id: "test-civ",
+    type: "still",
+    completion_pct: 100,
+    position_x: 258,
+    position_y: 256,
+    position_z: 0,
+  }));
+  // 1 kitchen (for cooking)
+  structures.push(makeStructure({
+    civilization_id: "test-civ",
+    type: "kitchen",
+    completion_pct: 100,
+    position_x: 256,
+    position_y: 256,
+    position_z: 0,
+  }));
 
   return {
     dwarves,

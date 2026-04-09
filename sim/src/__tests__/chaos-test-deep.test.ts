@@ -1176,12 +1176,15 @@ describe("Auto-system feedback loops", () => {
       position_x: 3,
       position_y: 3,
       position_z: 0,
+      located_in_civ_id: "test-civ",
     });
 
+    const still = makeStructure({ type: 'still', completion_pct: 100, position_x: 3, position_y: 3, position_z: 0 });
     const result = await runScenario({
       dwarves: [brewer],
       dwarfSkills: [brewSkill],
       items: [plant],
+      structures: [still],
       ticks: 300,
     });
 
